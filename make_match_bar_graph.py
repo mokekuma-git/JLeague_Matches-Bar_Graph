@@ -37,7 +37,7 @@ def make_team_df(all_matches: pd.DataFrame, target_team: str):
     """
     _df = all_matches[(all_matches['home_team'] == target_team) | (all_matches['away_team'] == target_team)]
     _df = _df.sort_values('match_date')
-    _df['is_home'] = _df.apply(lambda x: True if x['home_team'] == target_team else False, axis=1)
+    _df['is_home'] = _df.apply(lambda x: x['home_team'] == target_team, axis=1)
     _df['opponent'] = _df.apply(lambda x: x['away_team'] if x['is_home'] else x['home_team'], axis=1)
     _df['goal_get'] = _df.apply(lambda x: x['home_goal'] if x['is_home'] else x['away_goal'], axis=1)
     _df['goal_lose'] = _df.apply(lambda x: x['away_goal'] if x['is_home'] else x['home_goal'], axis=1)
@@ -50,7 +50,7 @@ def make_team_df(all_matches: pd.DataFrame, target_team: str):
 def get_available_point(_df: pd.DataFrame):
     """該当チームの最大勝ち点を求める
     """
-    return _df['point'].sum() + 3 * len(_df[_df['has_result'] == False])
+    return _df['point'].sum() + 3 * len(_df[(~ _df['has_result'])])
 
 
 def make_html_column(_df: pd.DataFrame, target_team: str, max_point: int,
@@ -74,23 +74,20 @@ def make_html_column(_df: pd.DataFrame, target_team: str, max_point: int,
         if box_height == 0:
             continue
 
-        if type(_row['match_date']) is str:
+        if isinstance(_row['match_date'], str):
             match_date = _row['match_date']
         else:
-            if pd.isnull(_row['match_date']):
-                match_date = '未定 '
-            else:
-                match_date = _row['match_date'].strftime('%m/%d')
+            match_date = '未定 ' if pd.isnull(_row['match_date']) else _row['match_date'].strftime('%m/%d')
 
         if box_height == 3:
-            content = f"{match_date}{_row['opponent']}</br>{_row['goal_get']}-{_row['goal_lose']}</br>{_row['stadium']}</br>"
+            content = f"{match_date}{_row['opponent']}<br/>{_row['goal_get']}-{_row['goal_lose']}<br/>{_row['stadium']}<br/>"
             if future:
                 box_html = f'<div class="tall box"><div class="future bg {target_team}"></div><p>{content}</p></div>\n'
             else:
                 box_html = f'<div class="tall box"><p class="{target_team}">{content}</p></div>\n'
         else:
             box_html = f'<div class="short box"><p class="{target_team}">{match_date}{_row["opponent"]}</p></div>\n'
-                # _row['goal_get'] + '-' + _row['goal_lose'] + '</br>'
+                # _row['goal_get'] + '-' + _row['goal_lose'] + '<br/>'
         box_list.append(box_html)
 
     space_cols = max_point - get_available_point(_df)
@@ -103,7 +100,7 @@ def make_html_column(_df: pd.DataFrame, target_team: str, max_point: int,
     return '<div>' + team_name + ''.join(box_list) + team_name + '</div>\n\n'
 
 
-def get_point_column(max_point: int, old_bottom: bool=True):
+def make_point_column(max_point: int, old_bottom: bool=True):
     """勝点列を作って返す
         old_bottom: 各チームの勝ち点の表を、古い日程を下にしたい時はTrue (default: True)
     """
@@ -114,9 +111,23 @@ def get_point_column(max_point: int, old_bottom: bool=True):
         box_list.reverse()
     return '<div><div class="point box">勝点</div>' + ''.join(box_list) + '<div class="point box">勝点</div></div>\n\n'
 
+def make_team_map(all_matches: pd.DataFrame):
+    """各チームのチームごとの試合リスト、勝ち点などを収めたdictを返す
+    """
+    team_map = {}
+    max_point = 0
+    for target_team in all_matches['home_team'].value_counts().keys():
+        _df = make_team_df(all_matches, target_team)
+        cur_point = _df['point'].sum()
+        available_point = get_available_point(_df)
+        team_map[target_team] = {'df': _df,'point': cur_point, 'avlbl_pt': available_point}
+        if available_point > max_point:
+            max_point = available_point
+        # pirnt(_df)
+    return (team_map, max_point)
 
 def make_bar_graph_html(all_matches: pd.DataFrame, team_sort_key: str='point', old_bottom: bool=True,
-                        insert_point_columns: list=[4, 10, 16], css_file: str='j_points.css'):
+                        insert_point_columns: list=None, css_file: str='j_points.css'):
     """read_jleague_matches.py を読み込んだ結果から、勝ち点積み上げ棒グラフを表示するHTMLファイルを作り、内容を返す
         all_matches: read_jleague_matches.py を読み込んだ結果
         team_sort_key: チーム列の並べ方 ('point': 最新の勝ち点順 (default), 'avlbl_pt': 最大勝ち点=残り全部勝った時の勝ち点)
@@ -124,38 +135,29 @@ def make_bar_graph_html(all_matches: pd.DataFrame, team_sort_key: str='point', o
         insert_point_columns: 何番目に勝ち点表示を挟むか (default: 4, 10, 16チーム目の後)
         css_file: CSSスタイルシートのパス (default: j_points.css)
     """
-    team_map = {}
-    max_point = 0
-    team_list = all_matches['home_team'].value_counts().keys()
+    if not insert_point_columns:
+        insert_point_columns = [4, 10, 16]
+    (team_map, max_point) = make_team_map(all_matches)
 
-    for target_team in team_list:
-        _df = make_team_df(all_matches, target_team)
-        cur_point = _df['point'].sum()
-        available_point = get_available_point(_df)
-        team_map[target_team] = {'df': _df, 'point': cur_point, 'avlbl_pt': available_point}
-        if available_point > max_point:
-            max_point = available_point
-        # pirnt(_df)
+    for target_team in team_map:
+        team_map[target_team]['html'] = make_html_column(team_map[target_team]['df'], target_team, max_point, old_bottom)
 
-    for target_team in team_list:
-        target_column = make_html_column(team_map[target_team]['df'], target_team, max_point, old_bottom)
-        team_map[target_team]['html'] = target_column
-
-    point_column = get_point_column(max_point)
-    html_list = [f'<html><head><link rel="stylesheet" type="text/css" href={css_file}></head><body><div class="boxContainer">']
+    point_column = make_point_column(max_point)
+    html_list = ['<html>\n',
+                 f'<head><link rel="stylesheet" type="text/css" href={css_file}></head>\n',
+                 '<body><div class="boxContainer">\n']
     html_list.append(point_column)
     index = 0
-    for (target_team, point) in sorted(team_map.items(), key=lambda x:x[1][team_sort_key], reverse=True):
+    for (target_team, _point) in sorted(team_map.items(), key=lambda x:x[1][team_sort_key], reverse=True):
         html_list.append(team_map[target_team]['html'])
         index += 1
         if index in insert_point_columns:
             html_list.append(point_column)
     html_list.append(point_column)
 
-    html_list.append('</div></body></html>')
+    html_list.append('</div></body>\n</html>')
 
-    html_result = ''.join(html_list)
-    return html_result
+    return ''.join(html_list)
 
 
 def read_allmatches_csv(matches_file: str):
@@ -169,14 +171,35 @@ def read_allmatches_csv(matches_file: str):
     return all_matches
 
 
+def make_example_html(matches_file: str='match_result-J{}-20210524.csv', old_bottom: bool=True):
+    """各カテゴリのexampleファイルを作成 (勝ち点順、最大勝ち点順の二つずつ)
+        matches_file: 試合結果ファイルのフォーマット
+            default: 'match_result-J{}-20210524.csv'
+            カテゴリを表す数値が入る部分に {} を入れて置く
+    """
+    for category in [1, 2, 3]:
+        # 最大勝ち点差順に並べるファイル
+        all_matches = read_allmatches_csv(matches_file.format(category))
+        print(all_matches)
+        html_result = make_bar_graph_html(all_matches, 'avlbl_pt', old_bottom)
+        output_file = f'examples/j{category}_points.html'
+        with open(output_file, mode='w') as _fp:
+            _fp.write(html_result)
+
+        # 現在の勝ち点差順に並べるファイル
+        html_result = make_bar_graph_html(all_matches, 'point', old_bottom)
+        output_file = f'examples/j{category}_points-alt.html'
+        with open(output_file, mode='w') as _fp:
+            _fp.write(html_result)
+
+
 if __name__ == '__main__':
     import sys
-    matches_file = sys.argv[1]
-    team_sort_key = sys.argv[2]
-    old_bottom = sys.argv[3]
-    all_matches = read_allmatches_csv(matches_file)
-    html_result = make_bar_graph_html(all_matches, team_sort_key, old_bottom)
+    _matches_file = sys.argv[1]
+    _team_sort_key = sys.argv[2]
+    _old_bottom = sys.argv[3]
+    _all_matches = read_allmatches_csv(_matches_file)
 
-    output_file = sys.argv[4]
-    with open(output_file, mode='w') as _fp:
-        _fp.write(html_result)
+    _output_file = sys.argv[4]
+    with open(_output_file, mode='w') as _fp:
+        _fp.write(make_bar_graph_html(_all_matches, _team_sort_key, _old_bottom))
