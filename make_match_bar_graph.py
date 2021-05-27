@@ -93,7 +93,7 @@ def make_html_column(_df: pd.DataFrame, target_team: str, max_point: int,
     space_cols = max_point - get_available_point(_df)
     #print(space_cols)
     if space_cols:
-        box_list.append(f'<div class="space box" style="height:{height_unit * space_cols}px">&nbsp;</div>')
+        box_list.append(f'<div class="space box" style="height:{height_unit * space_cols}px">({space_cols})</div>')
 
     if old_bottom:
         box_list.reverse()
@@ -195,11 +195,26 @@ def make_example_html(matches_file: str='match_result-J{}-20210524.csv', old_bot
 
 if __name__ == '__main__':
     import sys
-    _matches_file = sys.argv[1]
-    _team_sort_key = sys.argv[2]
-    _old_bottom = bool(sys.argv[3])
-    _all_matches = read_allmatches_csv(_matches_file)
+    from glob import glob
+    import re
 
-    _output_file = sys.argv[4]
-    with open(_output_file, mode='w') as _fp:
-        _fp.write(make_bar_graph_html(_all_matches, _team_sort_key, _old_bottom))
+    if len(sys.argv) > 1:
+        _team_sort_key = sys.argv[1]
+    else:
+        _team_sort_key = 'avlbl_pt'
+    if len(sys.argv) > 2:
+        _old_bottom = bool(sys.argv[2])
+    else:
+        _old_bottom = True
+
+
+    for _matches_file in glob('*.csv'):
+        category = re.search(r'J(\d)', _matches_file)[1]
+        if _team_sort_key == 'avlbl_pt':
+            _output_file = f'examples/j{category}_points.html'
+        elif _team_sort_key == 'point':
+            _output_file = f'examples/j{category}_points-alt.html'
+
+        _all_matches = read_allmatches_csv(_matches_file)
+        with open(_output_file, mode='w') as _fp:
+            _fp.write(make_bar_graph_html(_all_matches, _team_sort_key, _old_bottom))
