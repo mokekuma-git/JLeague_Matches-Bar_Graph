@@ -197,7 +197,7 @@ if __name__ == '__main__':
     import sys
     _matches_file = sys.argv[1]
     _team_sort_key = sys.argv[2]
-    _old_bottom = sys.argv[3]
+    _old_bottom = bool(sys.argv[3])
     _all_matches = read_allmatches_csv(_matches_file)
 
     _output_file = sys.argv[4]
