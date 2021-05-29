@@ -129,6 +129,7 @@ def make_point_column(max_point: int, old_bottom: bool=True):
         box_list.reverse()
     return '<div><div class="point box">勝点</div>' + ''.join(box_list) + '<div class="point box">勝点</div></div>\n\n'
 
+
 def make_team_map(all_matches: pd.DataFrame):
     """各チームのチームごとの試合リスト、勝ち点などを収めたdictを返す
     """
@@ -144,15 +145,14 @@ def make_team_map(all_matches: pd.DataFrame):
         # pirnt(_df)
     return (team_map, max_point)
 
+
 def make_bar_graph_html(all_matches: pd.DataFrame, category: int,
-                        team_sort_key: str='point', old_bottom: bool=True,
-                        insert_point_columns: list=None, css_file: str='j_points.css'):
+                        team_sort_key: str='point', old_bottom: bool=True, insert_point_columns: list=None):
     """read_jleague_matches.py を読み込んだ結果から、勝ち点積み上げ棒グラフを表示するHTMLファイルを作り、内容を返す
         all_matches: read_jleague_matches.py を読み込んだ結果
         team_sort_key: チーム列の並べ方 ('point': 最新の勝ち点順 (default), 'avlbl_pt': 最大勝ち点=残り全部勝った時の勝ち点)
         old_bottom: 各チームの勝ち点の表を、古い日程を下にしたい時はTrue (default: True)
         insert_point_columns: 何番目に勝ち点表示を挟むか (default: 4, 10, 16チーム目の後)
-        css_file: CSSスタイルシートのパス (default: j_points.css)
     """
     if not insert_point_columns:
         insert_point_columns = make_insert_columns(category)
@@ -225,15 +225,15 @@ if __name__ == '__main__':
 
 
     if len(sys.argv) > 1:
-        _old_bottom = bool(sys.argv[1])
+        _OLD_BOTTOM = bool(sys.argv[1])
     else:
-        _old_bottom = True
+        _OLD_BOTTOM = True
 
 
     for _matches_file in glob('*.csv'):
-        category = int(re.search(r'J(\d)', _matches_file)[1])
-        for (_team_sort_key, _output_file) in [('avlbl_pt', f'examples/j{category}_points.html'),
-                                               ('point', f'examples/j{category}_points-alt.html')]:
+        _category = int(re.search(r'J(\d)', _matches_file)[1])
+        for (_team_sort_key, _output_file) in [('avlbl_pt', f'examples/j{_category}_points.html'),
+                                               ('point', f'examples/j{_category}_points-alt.html')]:
             _all_matches = read_allmatches_csv(_matches_file)
             with open(_output_file, mode='w') as _fp:
-                _fp.write(make_bar_graph_html(_all_matches, category, _team_sort_key, _old_bottom))
+                _fp.write(make_bar_graph_html(_all_matches, _category, _team_sort_key, _OLD_BOTTOM))
