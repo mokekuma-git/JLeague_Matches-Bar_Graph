@@ -6,6 +6,8 @@ CATEGORY_TOP_TEAMS = [3, 2, 2]
 CATEGORY_BOTTOM_TEAMS = [4, 4, 0]
 CATEGORY_TEAMS_COUNT = [20, 22, 15]
 
+HEADER_FILE = 'j_points_header.html'
+FOOTER_FILE = 'j_points_header.html'
 
 def make_insert_columns(category: int):
     """各カテゴリの勝ち点列を入れる敷居位置を決定
@@ -160,9 +162,7 @@ def make_bar_graph_html(all_matches: pd.DataFrame, category: int,
         team_map[target_team]['html'] = make_html_column(team_map[target_team]['df'], target_team, max_point, old_bottom)
 
     point_column = make_point_column(max_point)
-    html_list = ['<html>\n',
-                 f'<head><link rel="stylesheet" type="text/css" href={css_file}></head>\n',
-                 '<body><div class="boxContainer">\n']
+    html_list = [read_file(HEADER_FILE)]
     html_list.append(point_column)
     index = 0
     for (target_team, _point) in sorted(team_map.items(), key=lambda x:x[1][team_sort_key], reverse=True):
@@ -172,7 +172,7 @@ def make_bar_graph_html(all_matches: pd.DataFrame, category: int,
             html_list.append(point_column)
     html_list.append(point_column)
 
-    html_list.append('</div></body>\n</html>')
+    html_list.append(read_file(FOOTER_FILE))
 
     return ''.join(html_list)
 
@@ -208,6 +208,14 @@ def make_example_html(matches_file: str='match_result-J{}-20210524.csv', old_bot
         output_file = f'examples/j{category}_points-alt.html'
         with open(output_file, mode='w') as _fp:
             _fp.write(html_result)
+
+
+def read_file(file_name: str):
+    """指定されたファイルをテキストで読んで返す
+    """
+    with open(file_name, mode='r') as _fp:
+        result = _fp.read()
+    return result
 
 
 if __name__ == '__main__':
