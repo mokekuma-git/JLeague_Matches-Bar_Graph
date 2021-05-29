@@ -2,6 +2,22 @@
 """
 import pandas as pd
 
+CATEGORY_TOP_TEAMS = [3, 2, 2]
+CATEGORY_BOTTOM_TEAMS = [4, 4, 0]
+CATEGORY_TEAMS_COUNT = [20, 22, 15]
+
+
+def make_insert_columns(category: int):
+    """各カテゴリの勝ち点列を入れる敷居位置を決定
+        昇格チーム (ACL出場チーム)、中間、降格チームの位置に挟む
+    """
+    category -= 1
+    columns = [CATEGORY_TOP_TEAMS[category],
+               int(CATEGORY_TEAMS_COUNT[category] / 2)]
+    if CATEGORY_BOTTOM_TEAMS[category]:
+        columns.append(CATEGORY_TEAMS_COUNT[category] - CATEGORY_BOTTOM_TEAMS[category])
+    return columns
+
 
 def get_point_from_match(_row: pd.Series):
     """勝点を計算
@@ -126,7 +142,8 @@ def make_team_map(all_matches: pd.DataFrame):
         # pirnt(_df)
     return (team_map, max_point)
 
-def make_bar_graph_html(all_matches: pd.DataFrame, team_sort_key: str='point', old_bottom: bool=True,
+def make_bar_graph_html(all_matches: pd.DataFrame, category: int,
+                        team_sort_key: str='point', old_bottom: bool=True,
                         insert_point_columns: list=None, css_file: str='j_points.css'):
     """read_jleague_matches.py を読み込んだ結果から、勝ち点積み上げ棒グラフを表示するHTMLファイルを作り、内容を返す
         all_matches: read_jleague_matches.py を読み込んだ結果
@@ -136,7 +153,7 @@ def make_bar_graph_html(all_matches: pd.DataFrame, team_sort_key: str='point', o
         css_file: CSSスタイルシートのパス (default: j_points.css)
     """
     if not insert_point_columns:
-        insert_point_columns = [4, 10, 16]
+        insert_point_columns = make_insert_columns(category)
     (team_map, max_point) = make_team_map(all_matches)
 
     for target_team in team_map:
@@ -181,13 +198,13 @@ def make_example_html(matches_file: str='match_result-J{}-20210524.csv', old_bot
         # 最大勝ち点差順に並べるファイル
         all_matches = read_allmatches_csv(matches_file.format(category))
         print(all_matches)
-        html_result = make_bar_graph_html(all_matches, 'avlbl_pt', old_bottom)
+        html_result = make_bar_graph_html(all_matches, category, 'avlbl_pt', old_bottom)
         output_file = f'examples/j{category}_points.html'
         with open(output_file, mode='w') as _fp:
             _fp.write(html_result)
 
         # 現在の勝ち点差順に並べるファイル
-        html_result = make_bar_graph_html(all_matches, 'point', old_bottom)
+        html_result = make_bar_graph_html(all_matches, category, 'point', old_bottom)
         output_file = f'examples/j{category}_points-alt.html'
         with open(output_file, mode='w') as _fp:
             _fp.write(html_result)
@@ -198,23 +215,17 @@ if __name__ == '__main__':
     from glob import glob
     import re
 
+
     if len(sys.argv) > 1:
-        _team_sort_key = sys.argv[1]
-    else:
-        _team_sort_key = 'avlbl_pt'
-    if len(sys.argv) > 2:
-        _old_bottom = bool(sys.argv[2])
+        _old_bottom = bool(sys.argv[1])
     else:
         _old_bottom = True
 
 
     for _matches_file in glob('*.csv'):
-        category = re.search(r'J(\d)', _matches_file)[1]
-        if _team_sort_key == 'avlbl_pt':
-            _output_file = f'examples/j{category}_points.html'
-        elif _team_sort_key == 'point':
-            _output_file = f'examples/j{category}_points-alt.html'
-
-        _all_matches = read_allmatches_csv(_matches_file)
-        with open(_output_file, mode='w') as _fp:
-            _fp.write(make_bar_graph_html(_all_matches, _team_sort_key, _old_bottom))
+        category = int(re.search(r'J(\d)', _matches_file)[1])
+        for (_team_sort_key, _output_file) in [('avlbl_pt', f'examples/j{category}_points.html'),
+                                               ('point', f'examples/j{category}_points-alt.html')]:
+            _all_matches = read_allmatches_csv(_matches_file)
+            with open(_output_file, mode='w') as _fp:
+                _fp.write(make_bar_graph_html(_all_matches, category, _team_sort_key, _old_bottom))
