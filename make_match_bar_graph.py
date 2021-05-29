@@ -1,7 +1,7 @@
 """read_jleague_matches.pyで読み取ったJリーグ試合結果から、各チームの勝ち点積み上げ棒グラフを作成
 """
-import pandas as pd
 import json
+import pandas as pd
 import numpy
 
 CATEGORY_TOP_TEAMS = [3, 2, 2]
@@ -13,18 +13,21 @@ FOOTER_FILE = 'j_points_footer.html'
 JS_HEADER_FILE = 'j_points_js_header.html'
 JS_FOOTER_FILE = 'j_points_js_footer.html'
 
+
 class NumDFEncoder(json.JSONEncoder):
+    """JSON展開用エンコーダ
+        pandasが出すnumpyの数値と、DataFrameを今回向けにシリアライズ
+    """
     def default(self, obj):
         if isinstance(obj, numpy.integer):
             return int(obj)
-        elif isinstance(obj, numpy.floating):
+        if isinstance(obj, numpy.floating):
             return float(obj)
-        elif isinstance(obj, numpy.ndarray):
+        if isinstance(obj, numpy.ndarray):
             return obj.tolist()
-        elif isinstance(obj, pd.DataFrame):
+        if isinstance(obj, pd.DataFrame):
             return obj.to_dict(orient='records')
-        else:
-            return super(NumDFEncoder, self).default(obj)
+        return super().default(obj)
 
 
 def make_insert_columns(category: int):
@@ -143,6 +146,8 @@ def make_point_column(max_point: int, old_bottom: bool=True):
     box_list = []
     for _i in range(1, max_point + 1):
         box_list.append(f'<div class="point box">{_i}</div>')
+    if old_bottom:
+        box_list.reverse()
     return '<div><div class="point box">勝点</div>' + ''.join(box_list) + '<div class="point box">勝点</div></div>\n\n'
 
 
