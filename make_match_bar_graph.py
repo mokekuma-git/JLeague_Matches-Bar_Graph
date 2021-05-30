@@ -10,8 +10,6 @@ CATEGORY_TEAMS_COUNT = [20, 22, 15]
 
 HEADER_FILE = 'j_points_header.html'
 FOOTER_FILE = 'j_points_footer.html'
-JS_HEADER_FILE = 'j_points_js_header.html'
-JS_FOOTER_FILE = 'j_points_js_footer.html'
 
 
 class NumDFEncoder(json.JSONEncoder):
@@ -206,18 +204,6 @@ def make_bar_graph_html(all_matches: pd.DataFrame, category: int,
     return ''.join(html_list)
 
 
-def make_bar_graph_js_html(all_matches: pd.DataFrame, category: int):
-    """read_jleague_matches.py を読み込んだ結果から、勝ち点積み上げ棒グラフを表示するHTMLファイルを作り、内容を返す
-        all_matches: read_jleague_matches.py を読み込んだ結果
-        category: Jカテゴリ
-    """
-    html_list = [read_file(JS_HEADER_FILE)]
-    html_list.append(f'    inputs = {dump_team_map(all_matches, category)};\n')
-    html_list.append(read_file(JS_FOOTER_FILE))
-
-    return ''.join(html_list)
-
-
 def read_allmatches_csv(matches_file: str):
     """read_jleague_matches.py が書き出した結果のCSVファイルを読み込んでDataFrame構造を再現
         matches_file: 読み込むファイル名
@@ -227,28 +213,6 @@ def read_allmatches_csv(matches_file: str):
     all_matches['home_goal'] = all_matches['home_goal'].fillna('')
     all_matches['away_goal'] = all_matches['away_goal'].fillna('')
     return all_matches
-
-
-def make_example_html(matches_file: str='match_result-J{}-20210524.csv', old_bottom: bool=True):
-    """各カテゴリのexampleファイルを作成 (勝ち点順、最大勝ち点順の二つずつ)
-        matches_file: 試合結果ファイルのフォーマット
-            default: 'match_result-J{}-20210524.csv'
-            カテゴリを表す数値が入る部分に {} を入れて置く
-    """
-    for category in [1, 2, 3]:
-        # 最大勝ち点差順に並べるファイル
-        all_matches = read_allmatches_csv(matches_file.format(category))
-        print(all_matches)
-        html_result = make_bar_graph_html(all_matches, category, 'avlbl_pt', old_bottom)
-        output_file = f'examples/j{category}_points.html'
-        with open(output_file, mode='w') as _fp:
-            _fp.write(html_result)
-
-        # 現在の勝ち点差順に並べるファイル
-        html_result = make_bar_graph_html(all_matches, category, 'point', old_bottom)
-        output_file = f'examples/j{category}_points-alt.html'
-        with open(output_file, mode='w') as _fp:
-            _fp.write(html_result)
 
 
 def read_file(file_name: str):
@@ -272,11 +236,6 @@ if __name__ == '__main__':
     for _matches_file in glob('*.csv'):
         _category = int(re.search(r'J(\d)', _matches_file)[1])
         _all_matches = read_allmatches_csv(_matches_file)
-        _output_file = f'examples/j{_category}_points.html'
+        _output_file = f'docs/j{_category}_points.json'
         with open(_output_file, mode='w') as _fp:
-            _fp.write(make_bar_graph_js_html(_all_matches, _category))
-#        for (_team_sort_key, _output_file) in [('avlbl_pt', f'examples/j{_category}_points.html'),
-#                                               ('point', f'examples/j{_category}_points-alt.html')]:
-#            _all_matches = read_allmatches_csv(_matches_file)
-#            with open(_output_file, mode='w') as _fp:
-#                _fp.write(make_bar_graph_html(_all_matches, _category, _team_sort_key, _OLD_BOTTOM))
+            _fp.write(dump_team_map(_all_matches, _category))
