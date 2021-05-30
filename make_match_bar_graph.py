@@ -212,6 +212,7 @@ def read_allmatches_csv(matches_file: str):
     all_matches['match_date'] = pd.to_datetime(all_matches['match_date']).dt.strftime('%m/%d')
     all_matches['home_goal'] = all_matches['home_goal'].fillna('')
     all_matches['away_goal'] = all_matches['away_goal'].fillna('')
+    all_matches = all_matches.where(pd.notnull(all_matches), None)
     return all_matches
 
 

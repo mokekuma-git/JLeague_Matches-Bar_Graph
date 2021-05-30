@@ -9,20 +9,20 @@ const CATEGORY_TEAMS_COUNT = [20, 22, 15];
 window.addEventListener('load', init, false);
 
 function init() {
-  read_inputs();
+  read_inputs('j1_points.json');
   document.querySelector('#space').addEventListener('change', updateSpace, false);
   HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
   document.querySelector('#team_sort_key').addEventListener('change', render_bar_graph, false);
   document.querySelector('#old_bottom').addEventListener('change', render_bar_graph, false);
-  render_bar_graph();
 }
 
-function read_inputs() {
+function read_inputs(filename) {
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', 'j1_points.json');
+  xhr.open('GET', filename);
   xhr.send();
   xhr.onload = ()=> {
     INPUTS = JSON.parse(xhr.responseText);
+    render_bar_graph();
   };
 }
 
@@ -106,7 +106,7 @@ function render_bar_graph() {
   var boxContainer = document.querySelector('.boxContainer');
   boxContainer.innerHTML = '';
   var columns = {};
-  Object.keys(INPUTS.matches).forEach(function (key) {
+  Object.keys(INPUTS['matches']).forEach(function (key) {
     columns[key] = make_html_column(key, INPUTS.matches[key], INPUTS.max_point);
   });
   var insert_point_columns = make_insert_columns(INPUTS.category);
