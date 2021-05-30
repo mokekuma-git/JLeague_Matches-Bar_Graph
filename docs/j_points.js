@@ -19,7 +19,6 @@ function init() {
 
 function refresh_category() {
   const filename = 'j' + document.querySelector('#category').value + '_points.json';
-  console.log(filename);
   read_inputs(filename);
 }
 
