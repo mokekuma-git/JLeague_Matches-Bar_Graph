@@ -10,7 +10,11 @@ window.addEventListener('load', init, false);
 
 function init() {
   read_inputs('j1_points.json');
-  document.querySelector('#space').addEventListener('change', updateSpace, false);
+  document.querySelector('#space_color').addEventListener('change', update_space, false);
+  var _rule = get_css_rule('.future');
+  document.querySelector('#space_opacity').value = _rule.style.opacity;
+  document.querySelector('#current_opacity').innerHTML = _rule.style.opacity;
+  document.querySelector('#space_opacity').addEventListener('change', set_space_opacity, false);
   HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
   document.querySelector('#team_sort_key').addEventListener('change', render_bar_graph, false);
   document.querySelector('#old_bottom').addEventListener('change', render_bar_graph, false);
@@ -131,12 +135,26 @@ function get_sorted_team_list(matches) {
   return Object.keys(matches).sort(function(a, b) {return matches[b][sort_key] - matches[a][sort_key]});
 }
 /////////////////////////////////////////////////////////////// 背景調整用
-function updateSpace(event) {
+function set_space_opacity(event) {
+  _rule = get_css_rule('.future')
+  _rule.style.opacity = event.target.value;
+  document.querySelector('#current_opacity').innerHTML = event.target.value;
+}
+
+function get_css_rule(selector) {
+  var _sheet;
+  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href.endsWith('j_points.css')) {_sheet = sheet;}});
+  var _rule;
+  Array.from(_sheet.cssRules).forEach(function(rule) {if(rule.selectorText == selector) _rule = rule;});
+  return _rule;
+}
+function update_space(event) {
   document.querySelectorAll('.space').forEach(function(space) {
   space.style.backgroundColor = event.target.value;
   space.style.color = getBright(event.target.value, mod) > 0.5 ? 'black' : 'white';
   });
 }
+
 //https://qiita.com/fnobi/items/d3464ba0e4b6596863cb より
 // 補正付きの明度取得
 var getBright = function (colorcode, mod) {
