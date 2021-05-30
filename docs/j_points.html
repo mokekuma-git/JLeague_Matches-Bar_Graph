@@ -20,14 +20,23 @@
   <label for="old_bottom">試合上下順</label>
 </span>&nbsp;
 <span>
-  <input type="color" id="space" name="body" value="#ffffff">
-  <label for="space">余白背景 (好みの色を指定すると余白の背景が変わります)</label>
-</span>
+  <select id="category" name="category">
+    <option value="1" selected="true">J1</option>
+    <option value="2">J2</option>
+    <option value="3">J3</option>
+  </select>
+  <label for="category">対象カテゴリ</label>
+</span>&nbsp;
 <hr/>
 
 <div class="boxContainer">
 
 </div>
 <div class='short' style='display: none;'></div>
+<hr/>
+<span>
+  <input type="color" id="space" name="body" value="#ffffff">
+  <label for="space">余白背景 (好みの色を指定すると余白の背景が変わります)</label>
+</span>
 </body>
 </html>
