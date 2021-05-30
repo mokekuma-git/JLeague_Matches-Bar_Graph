@@ -22,7 +22,7 @@ function read_inputs() {
   xhr.open('GET', 'j1_points.json');
   xhr.send();
   xhr.onload = ()=> {
-    console.log(xhr.response);
+    INPUTS = JSON.parse(xhr.responseText);
   };
 }
 
