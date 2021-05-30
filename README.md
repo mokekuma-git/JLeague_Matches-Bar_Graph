@@ -10,9 +10,7 @@ Make a bar graph of points each team got and will get.
 
 これらdocsに置いている例は、なるべく最新のものにするつもりですが、自動的にアップデートするようにはしていないので、最新のものを確認したい場合は、ご自身でこのプロジェクトを clone して、以下の二つのスクリプトを実行してください  
 ```
-mv match_result-J*.csv csv
 python3 read_jleague_matches.py 1-3
-python3 make_match_bar_graph.py
 ```
 
 

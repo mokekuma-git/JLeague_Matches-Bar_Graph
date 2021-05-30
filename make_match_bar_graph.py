@@ -239,5 +239,6 @@ if __name__ == '__main__':
     import re
 
     for _category in [1, 2, 3]:
-        for _matches_file in sorted(glob(f'csv/*J{_category}.csv'), reverse=True):
-            dump_team_file(read_allmatches_csv(_matches_file), int(re.search(r'J(\d)', _matches_file)[1]))
+        _matches_file = glob(f'csv/*J{_category}*.csv')[-1]
+        print(_matches_file)
+        dump_team_file(read_allmatches_csv(_matches_file), int(re.search(r'J(\d)', _matches_file)[1]))
