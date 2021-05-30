@@ -14,6 +14,13 @@ function init() {
   HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
   document.querySelector('#team_sort_key').addEventListener('change', render_bar_graph, false);
   document.querySelector('#old_bottom').addEventListener('change', render_bar_graph, false);
+  document.querySelector('#category').addEventListener('change', refresh_category, false);
+}
+
+function refresh_category() {
+  const filename = 'j' + document.querySelector('#category').value + '_points.json';
+  console.log(filename);
+  read_inputs(filename);
 }
 
 function read_inputs(filename) {
