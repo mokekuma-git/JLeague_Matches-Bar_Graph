@@ -11,6 +11,8 @@ CATEGORY_TEAMS_COUNT = [20, 22, 15]
 HEADER_FILE = 'j_points_header.html'
 FOOTER_FILE = 'j_points_footer.html'
 
+OUTPUT_FILE = 'docs/j{}_points.json'
+
 
 class NumDFEncoder(json.JSONEncoder):
     """JSON展開用エンコーダ
@@ -225,19 +227,17 @@ def read_file(file_name: str):
     return result
 
 
+def dump_team_file(all_matches: pd.DataFrame, category: int):
+    """カテゴリ毎の試合結果などをJSONファイルに書き込む
+    """
+    with open(OUTPUT_FILE.format(category), mode='w') as _fp:
+        _fp.write(dump_team_map(all_matches, category))
+
+
 if __name__ == '__main__':
-    import sys
     from glob import glob
     import re
 
-    if len(sys.argv) > 1:
-        _OLD_BOTTOM = bool(sys.argv[1])
-    else:
-        _OLD_BOTTOM = True
-
-    for _matches_file in glob('*.csv'):
-        _category = int(re.search(r'J(\d)', _matches_file)[1])
-        _all_matches = read_allmatches_csv(_matches_file)
-        _output_file = f'docs/j{_category}_points.json'
-        with open(_output_file, mode='w') as _fp:
-            _fp.write(dump_team_map(_all_matches, _category))
+    for _category in [1, 2, 3]:
+        for _matches_file in sorted(glob(f'csv/*J{_category}.csv'), reverse=True):
+            dump_team_file(read_allmatches_csv(_matches_file), int(re.search(r'J(\d)', _matches_file)[1]))
