@@ -76,16 +76,12 @@ def parse_argv(arg: str):
 
 
 if __name__ == '__main__':
-    #import shutil
     import sys
-    #from glob import glob
     from make_match_bar_graph import dump_team_file
     _PREFIX = 'csv/match_result-J'
     for _category in parse_argv(sys.argv[1]):
         print(f'Start read J{_category} matches...')
-        #for old_file in glob(f'{_PREFIX}{_category}*.csv'):
-        #    shutil.move(old_file, f'csv/{old_file}')
         _DF = read_all_matches(_category)
         _DF.to_csv(f'{_PREFIX}{_category}-{datetime.now().strftime("%Y%m%d")}.csv')
         _DF['match_date'] = _DF['match_date'].dt.strftime('%m/%d')
-        dump_team_file(_DF, _category)
+        dump_team_file(_DF.where(pd.notnull(_DF), None), _category)
