@@ -62,6 +62,9 @@ p {
 .top_label {
   align-self: flex-start;
 }
+
+
+/**************************************************************** J1 Team style definition */
 .仙台 {
   background-color: #FFFF99
 }
@@ -147,4 +150,168 @@ p {
 .神戸 {
   color: white;
   background-color: #EE0000
+}
+
+
+/**************************************************************** J2 Team style definition */
+.新潟 {
+  color: white;
+  background-color: #FF9900
+}
+.金沢 {
+  color: white;
+  background-color: #d70c1f
+}
+.京都 {
+  color: white;
+  background-color: #993399
+}
+.大宮 {
+  color: white;
+  background-color: #FF9900
+}
+.岡山 {
+  color: white;
+  background: -moz-linear-gradient(left, #ad0040, #ad0040, #0c0a58); 
+  background: -webkit-linear-gradient(left, #ad0040, #ad0040, #0c0a58);
+  background: linear-gradient(to right, #ad0040, #ad0040, #0c0a58);
+}
+.秋田 {
+  color: white;
+  background-color: #004093;
+}
+.甲府 {
+  color: white;
+  background: -moz-linear-gradient(left, #B8193F, #005bac, #005bac); 
+  background: -webkit-linear-gradient(left, #B8193F, #005bac, #005bac);
+  background: linear-gradient(to right, #B8193F, #005bac, #005bac);
+}
+.山形 {
+  color: white;
+  background-color: #004098;
+}
+.愛媛 {
+  color: white;
+  background-color: #ff951c;
+}
+.磐田 {
+  color: black;
+  background-color: #7399d1;
+}
+.松本 {
+  color: white;
+  background-color: #00693E;
+}
+.長崎 {
+  color: white;
+  background: -moz-linear-gradient(top left, #f39800, #f39800, #005bac); 
+  background: -webkit-linear-gradient(top left, #f39800, #f39800, #005bac);
+  background: linear-gradient(to bottom right, #f39800, #f39800, #005bac);
+}
+.町田 {
+  color: white;
+  background-color: #0054a7;
+}
+.水戸 {
+  color: white;
+  background-color: #004B93;
+}
+.山口 {
+  color: white;
+  background-color: #ff8628;
+}
+.群馬 {
+  color: #fdd448;
+  background-color: #285B99;
+}
+.千葉 {
+  color: #d7083b;
+  background: -moz-linear-gradient(top left, #ffe100, #ffe100, #009260); 
+  background: -webkit-linear-gradient(top left, #ffe100, #ffe100, #009260);
+  background: linear-gradient(to bottom right, #ffe100, #ffe100, #009260);
+}
+.琉球 {
+  color: white;
+  background-color: #be003c;;
+}
+.東京Ｖ {
+  color: white;
+  background-color: #046A38;
+}
+.栃木 {
+  color: #005bac;
+  background-color: #fff100;
+}
+.北九州 {
+  color:  #ea1300;
+  background-color: #f9c900;
+}
+.相模原 {
+  color: white;
+  background-color: #005748;
+}
+
+
+/**************************************************************** J3 Team style definition */
+.藤枝 {
+  color: white;
+  background-color: #a854a2;
+}
+.富山 {
+  color: white;
+  background-color: #023894;
+}
+.熊本 {
+  color: white;
+  background-color: #B61B15
+}
+.岩手 {
+  color: white;
+  background-color: #e50012;
+}
+.八戸 {
+  color: white;
+  background-color: #009844;
+}
+.長野 {
+  color: #333444;
+  background-color: #ff6000;
+}
+.鳥取 {
+  color: #043459;
+  background-color: #6eba3d;
+}
+.YS横浜 {
+  color: #051c33;
+  background-color: #00aaec;
+}
+.今治 {
+  color: yellow;
+  background-color: #171c61;
+}
+.鹿児島 {
+  color: white;
+  background-color: #183060;
+}
+.岐阜 {
+  color: white;
+  background-color: #00491e
+}
+.宮崎 {
+  color: white;
+  background-color: #d70071;
+}
+.沼津 {
+  color: white;
+  background-color: #4a5bb3;
+}
+.福島 {
+  color: white;
+  background: -moz-linear-gradient(left, #e60012, #333333); 
+  background: -webkit-linear-gradient(left, #e60012, #333333);
+  background: linear-gradient(to right, #e60012, #333333);
+}
+.讃岐 {
+  color: #004471;
+  background-color: #65aadd;
 }
