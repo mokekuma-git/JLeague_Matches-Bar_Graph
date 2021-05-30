@@ -169,7 +169,8 @@ def dump_team_map(all_matches: pd.DataFrame, category: int):
     """全チームの試合データをJSON文字列としてダンプする
     """
     (_df, max_p) = make_team_map(all_matches)
-    return json.dumps({'matches':_df, 'category': category, 'max_point': max_p}, cls=NumDFEncoder)
+    return json.dumps({'matches':_df, 'category': category, 'max_point': max_p},
+                      cls=NumDFEncoder, ensure_ascii=False)
 
 
 def make_bar_graph_html(all_matches: pd.DataFrame, category: int,
