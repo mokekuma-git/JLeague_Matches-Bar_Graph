@@ -1,24 +1,83 @@
 // TODO: Global変数以外の解決方法は、後で調べる
 let HEIGHT_UNIT;
 let INPUTS;
+let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 
 const CATEGORY_TOP_TEAMS = [3, 2, 2];
 const CATEGORY_BOTTOM_TEAMS = [4, 4, 0];
 const CATEGORY_TEAMS_COUNT = [20, 22, 15];
+const TARGET_ITEM_ID = {
+  'sort': '#team_sort_key',
+  'bottom': '#old_bottom',
+  'cat': '#category'
+}
 
 window.addEventListener('load', init, false);
 
 function init() {
-  read_inputs('j1_points.json');
-  document.querySelector('#space_color').addEventListener('change', update_space, false);
-  var _rule = get_css_rule('.future');
-  document.querySelector('#space_opacity').value = _rule.style.opacity;
-  document.querySelector('#current_opacity').innerHTML = _rule.style.opacity;
-  document.querySelector('#space_opacity').addEventListener('change', set_space_opacity, false);
+  load_cookies();
+  refresh_category();
+  document.querySelector('#future_opacity').addEventListener('change', set_future_opacity_ev, false);
+  document.querySelector('#space_color').addEventListener('change', set_space_ev, false);
+  document.querySelector('#team_sort_key').addEventListener('change', set_sort_key_ev, false);
+  document.querySelector('#old_bottom').addEventListener('change', set_old_bottom_ev, false);
+  document.querySelector('#category').addEventListener('change', set_category_ev, false);
+
+  // デフォルト値の読み込み
   HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
-  document.querySelector('#team_sort_key').addEventListener('change', render_bar_graph, false);
-  document.querySelector('#old_bottom').addEventListener('change', render_bar_graph, false);
-  document.querySelector('#category').addEventListener('change', refresh_category, false);
+  if(! get_cookie('opacity')) { // cookieにopacity設定がなければ、CSSのデフォルト値を設定
+    let _rule = get_css_rule('.future');
+    document.querySelector('#future_opacity').value = _rule.style.opacity;
+    document.querySelector('#current_opacity').innerHTML = _rule.style.opacity;
+  }
+
+}
+
+function load_cookies() {
+  COOKIE_OBJ = parse_cookies();
+  let opacity = get_cookie('opacity');
+  if(opacity) set_future_opacity(opacity, false, true);
+
+  let space = get_cookie('space');
+  if(space) set_space(space, false, true);
+
+  let sort = get_cookie('sort');
+  if(sort) set_pulldown('sort', sort, false, true, false);
+
+  let bottom = get_cookie('bottom');
+  if(bottom) set_pulldown('bottom', bottom, false, true, false);
+
+  let cat = get_cookie('cat');
+  if(cat) set_pulldown('cat', cat, false, true, false);
+  // load_cookieの後にはrenderが呼ばれるので、ここではrenderは不要
+}
+
+function parse_cookies() {
+  let cookies = document.cookie;
+  let cookiesArray = cookies.split(';');
+  COOKIE_OBJ = {};
+  for(let c of cookiesArray){
+    let cArray = c.trim().split('=');
+    COOKIE_OBJ[cArray[0]] = cArray[1];
+  }
+  return COOKIE_OBJ;
+}
+
+function get_cookie(key) {
+  if(key in COOKIE_OBJ) return COOKIE_OBJ[key];
+  return undefined;
+}
+
+function set_cookie(key, value) { // COOKIE_OBJはwrite throughキャッシュ
+  COOKIE_OBJ[key] = value;
+  document.cookie = key + '=' + value;
+}
+
+function clear_cookies() {
+  let cookie_obj = parse_cookies();
+  Object.keys(cookie_obj).forEach(function(key) {
+    document.cookie = key + '=;max-age=0';
+  });
 }
 
 function refresh_category() {
@@ -27,7 +86,7 @@ function refresh_category() {
 }
 
 function read_inputs(filename) {
-  var xhr = new XMLHttpRequest();
+  let xhr = new XMLHttpRequest();
   xhr.open('GET', filename);
   xhr.send();
   xhr.onload = ()=> {
@@ -40,7 +99,7 @@ function make_insert_columns(category) {
   //各カテゴリの勝ち点列を入れる敷居位置を決定
   //  昇格チーム (ACL出場チーム)、中間、降格チームの位置に挟む
   category -= 1;
-  var columns = [CATEGORY_TOP_TEAMS[category], Math.floor(CATEGORY_TEAMS_COUNT[category] / 2)];
+  let columns = [CATEGORY_TOP_TEAMS[category], Math.floor(CATEGORY_TEAMS_COUNT[category] / 2)];
   if(CATEGORY_BOTTOM_TEAMS[category])
     columns.push(CATEGORY_TEAMS_COUNT[category] - CATEGORY_BOTTOM_TEAMS[category]);
   return columns;
@@ -53,10 +112,10 @@ function make_html_column(target_team, team_data, max_point) {
   //    .df: make_team_dfで抽出したチームデータ (試合リスト)
   //    .point: 対象チームの最大勝ち点
   //  max_point: 全チーム中の最大勝ち点
-  var team_name = '<div class="short box ' + target_team + '">' + target_team + '</div>\n';
-  var box_list = [];
+  let team_name = '<div class="short box ' + target_team + '">' + target_team + '</div>\n';
+  let box_list = [];
   team_data.df.sort().forEach(function(_row) {
-    var future;
+    let future;
     if(! _row['has_result']) {
       box_height = 3;
       future = true;
@@ -66,14 +125,14 @@ function make_html_column(target_team, team_data, max_point) {
     }
     if(box_height == 0)
       return;
-    var match_date;
+    let match_date;
     if(_row['match_date'] instanceof String) {
       match_date = _row['match_date'];
     } else {
       match_date = (_row['match_date']) ? _row['match_date'] : '未定 ';
     }
-    var content;
-    var box_html;
+    let content;
+    let box_html;
     // INNER_HTMLにHTML直書きはダサい？ コンポーネントごと追加していくスタイルにすべきか
     if(box_height == 3) {
       content = match_date + _row['opponent'] + '<br/>';
@@ -89,7 +148,7 @@ function make_html_column(target_team, team_data, max_point) {
     }
     box_list.push(box_html);
   });
-  var space_cols = max_point - team_data.avlbl_pt;
+  let space_cols = max_point - team_data.avlbl_pt;
   // console.log(target_team, space_cols)
   if(space_cols) {
     box_list.push('<div class="space box" style="height:' + HEIGHT_UNIT * space_cols + 'px">(' + space_cols + ')</div>');
@@ -102,7 +161,7 @@ function make_html_column(target_team, team_data, max_point) {
 
 function make_point_column(max_point) {
   // 勝点列を作って返す
-  var box_list = []
+  let box_list = []
   Array.from(Array(max_point), (v, k) => k + 1).forEach(function(_i) {
     box_list.push('<div class="point box">' + _i + '</div>')
   });
@@ -113,14 +172,15 @@ function make_point_column(max_point) {
 }
 
 function render_bar_graph() {
-  var boxContainer = document.querySelector('.boxContainer');
+  if(! INPUTS) return;
+  let boxContainer = document.querySelector('.boxContainer');
   boxContainer.innerHTML = '';
-  var columns = {};
+  let columns = {};
   Object.keys(INPUTS['matches']).forEach(function (key) {
     columns[key] = make_html_column(key, INPUTS.matches[key], INPUTS.max_point);
   });
-  var insert_point_columns = make_insert_columns(INPUTS.category);
-  var point_column = make_point_column(INPUTS.max_point);
+  let insert_point_columns = make_insert_columns(INPUTS.category);
+  let point_column = make_point_column(INPUTS.max_point);
   boxContainer.innerHTML += point_column;
   get_sorted_team_list(INPUTS.matches).forEach(function(key, index) {
     if(insert_point_columns.includes(index))
@@ -131,58 +191,89 @@ function render_bar_graph() {
 }
 
 function get_sorted_team_list(matches) {
-  var sort_key = document.querySelector('#team_sort_key').value;
+  let sort_key = document.querySelector('#team_sort_key').value;
   return Object.keys(matches).sort(function(a, b) {return matches[b][sort_key] - matches[a][sort_key]});
 }
 /////////////////////////////////////////////////////////////// 背景調整用
-function set_space_opacity(event) {
+function set_future_opacity_ev(event) {
+  set_future_opacity(event.target.value, true, false);
+}
+function set_future_opacity(value, cookie_write = true, slidebar_write = true) {
+  // set_future_opacity はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
   _rule = get_css_rule('.future')
-  _rule.style.opacity = event.target.value;
-  document.querySelector('#current_opacity').innerHTML = event.target.value;
+  _rule.style.opacity = value;
+  document.querySelector('#current_opacity').innerHTML = value;
+  if(cookie_write) set_cookie('opacity', value);
+  if(slidebar_write) document.querySelector('#future_opacity').value = value;
+}
+
+function set_space_ev(event) {
+  set_space(event.target.value, true, false);
+}
+function set_space(value, cookie_write = true, color_write = true) {
+  // set_space はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
+  _rule = get_css_rule('.space')
+  _rule.style.backgroundColor = value;
+  _rule.style.color = getBright(value, mod) > 0.5 ? 'black' : 'white';
+  if(cookie_write) set_cookie('space', value);
+  if(color_write) document.querySelector('#space_color').value = value;
+}
+
+function set_sort_key_ev(event) {
+  set_pulldown('sort', event.target.value, true, false);
+}
+function set_old_bottom_ev(event) {
+  set_pulldown('bottom', event.target.value, true, false);
+}
+function set_category_ev(event) {
+  refresh_category();
+  set_pulldown('cat', event.target.value, true, false, false);
+}
+function set_pulldown(key, value, cookie_write = true, pulldown_write = true, call_render = true) {
+  if(cookie_write) set_cookie(key, value);
+  if(pulldown_write) {
+    const select = document.querySelector(TARGET_ITEM_ID[key]);
+    select.selectedIndex = select.querySelector('option[value="' + value + '"]').index;
+  }
+  if(call_render) render_bar_graph();
 }
 
 function get_css_rule(selector) {
-  var _sheet;
+  let _sheet;
   Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href.endsWith('j_points.css')) {_sheet = sheet;}});
-  var _rule;
+  let _rule;
   Array.from(_sheet.cssRules).forEach(function(rule) {if(rule.selectorText == selector) _rule = rule;});
   return _rule;
-}
-function update_space(event) {
-  document.querySelectorAll('.space').forEach(function(space) {
-  space.style.backgroundColor = event.target.value;
-  space.style.color = getBright(event.target.value, mod) > 0.5 ? 'black' : 'white';
-  });
 }
 
 //https://qiita.com/fnobi/items/d3464ba0e4b6596863cb より
 // 補正付きの明度取得
-var getBright = function (colorcode, mod) {
+let getBright = function (colorcode, mod) {
   // 先頭の#は、あってもなくてもOK
   if (colorcode.match(/^#/)) {
     colorcode = colorcode.slice(1);
   }
   // 無駄に、ケタを動的に判断してるので、
   // 3の倍数ケタの16進数表現ならOK etc) #ff0000 #f00 #fff000000
-  var rank = Math.floor(colorcode.length / 3);
+  let rank = Math.floor(colorcode.length / 3);
   if (rank < 1) {
     return false;
   }
   // 16進数をparseして、RGBそれぞれに割り当て
-  var rgb = [];
-  for (var i = 0; i < 3; i++) {
+  let rgb = [];
+  for (let i = 0; i < 3; i++) {
     rgb.push(parseInt(colorcode.slice(rank * i, rank * (i + 1)), 16));
   }
   // 青は暗めに見えるなど、見え方はRGBそれぞれで違うので、
   // それぞれ補正値を付けて、人間の感覚に寄せられるようにした
-  var rmod = mod.r || 1;
-  var gmod = mod.g || 1;
-  var bmod = mod.b || 1;
+  let rmod = mod.r || 1;
+  let gmod = mod.g || 1;
+  let bmod = mod.b || 1;
   // 明度 = RGBの最大値
-  var bright = Math.max(rgb[0] * rmod, rgb[1] * gmod, rgb[2] * bmod) / 255;
+  let bright = Math.max(rgb[0] * rmod, rgb[1] * gmod, rgb[2] * bmod) / 255;
   // 明度を返す
   return bright;
 };
 
 // 補正はとりあえず、こんなもんがよさげだった
-var mod = { r: 0.9, g: 0.8, b: 0.4 };
+let mod = { r: 0.9, g: 0.8, b: 0.4 };
