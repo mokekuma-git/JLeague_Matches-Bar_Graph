@@ -11,7 +11,7 @@ CATEGORY_TEAMS_COUNT = [20, 22, 15]
 HEADER_FILE = 'j_points_header.html'
 FOOTER_FILE = 'j_points_footer.html'
 
-OUTPUT_FILE = 'docs/j{}_points.json'
+OUTPUT_FILE = '../docs/j{}_points.json'
 
 
 class NumDFEncoder(json.JSONEncoder):
@@ -239,6 +239,6 @@ if __name__ == '__main__':
     import re
 
     for _category in [1, 2, 3]:
-        _matches_file = glob(f'csv/*J{_category}*.csv')[-1]
+        _matches_file = glob(f'../csv/*J{_category}*.csv')[-1]
         print(_matches_file)
         dump_team_file(read_allmatches_csv(_matches_file), int(re.search(r'J(\d)', _matches_file)[1]))

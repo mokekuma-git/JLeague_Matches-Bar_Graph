@@ -78,7 +78,7 @@ def parse_argv(arg: str):
 if __name__ == '__main__':
     import sys
     from make_match_bar_graph import dump_team_file
-    _PREFIX = 'csv/match_result-J'
+    _PREFIX = '../csv/match_result-J'
     for _category in parse_argv(sys.argv[1]):
         print(f'Start read J{_category} matches...')
         _DF = read_all_matches(_category)
