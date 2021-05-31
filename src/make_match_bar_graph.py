@@ -1,8 +1,10 @@
 """read_jleague_matches.pyで読み取ったJリーグ試合結果から、各チームの勝ち点積み上げ棒グラフを作成
 """
 import json
+from typing import Dict, List, Tuple, Any
 import pandas as pd
 import numpy
+from read_jleague_matches import read_latest_allmatches_csv
 
 CATEGORY_TOP_TEAMS = [3, 2, 2]
 CATEGORY_BOTTOM_TEAMS = [4, 4, 0]
@@ -18,19 +20,19 @@ class NumDFEncoder(json.JSONEncoder):
     """JSON展開用エンコーダ
         pandasが出すnumpyの数値と、DataFrameを今回向けにシリアライズ
     """
-    def default(self, obj):
-        if isinstance(obj, numpy.integer):
-            return int(obj)
-        if isinstance(obj, numpy.floating):
-            return float(obj)
-        if isinstance(obj, numpy.ndarray):
-            return obj.tolist()
-        if isinstance(obj, pd.DataFrame):
-            return obj.to_dict(orient='records')
-        return super().default(obj)
+    def default(self, o):
+        if isinstance(o, numpy.integer):
+            return int(o)
+        if isinstance(o, numpy.floating):
+            return float(o)
+        if isinstance(o, numpy.ndarray):
+            return o.tolist()
+        if isinstance(o, pd.DataFrame):
+            return o.to_dict(orient='records')
+        return super().default(o)
 
 
-def make_insert_columns(category: int):
+def make_insert_columns(category: int) -> List[int]:
     """各カテゴリの勝ち点列を入れる敷居位置を決定
         昇格チーム (ACL出場チーム)、中間、降格チームの位置に挟む
     """
@@ -42,7 +44,7 @@ def make_insert_columns(category: int):
     return columns
 
 
-def get_point_from_match(_row: pd.Series):
+def get_point_from_match(_row: pd.Series) -> int:
     """勝点を計算
         先に、has_match_resultの結果が 'has_result' に入っていることを期待
         _row: 該当試合の1行データ
@@ -58,7 +60,7 @@ def get_point_from_match(_row: pd.Series):
     return 1
 
 
-def has_match_result(_row: pd.Series):
+def has_match_result(_row: pd.Series) -> bool:
     """試合結果 (途中経過) があるか否かを返す
         _row: 該当試合の1行データ
     """
@@ -69,7 +71,7 @@ def has_match_result(_row: pd.Series):
     return True
 
 
-def make_team_df(all_matches: pd.DataFrame, target_team: str):
+def make_team_df(all_matches: pd.DataFrame, target_team: str) -> pd.DataFrame:
     """対象チームを抽出して相手チームと勝ち負けの形に整形
         all_matches: read_jleague_matches.py を読み込んだ結果
         target_team: 対象チームの名称
@@ -86,14 +88,14 @@ def make_team_df(all_matches: pd.DataFrame, target_team: str):
     return _df
 
 
-def get_available_point(_df: pd.DataFrame):
+def get_available_point(_df: pd.DataFrame) -> int:
     """該当チームの最大勝ち点を求める
     """
     return _df['point'].sum() + 3 * len(_df[(~ _df['has_result'])])
 
 
 def make_html_column(_df: pd.DataFrame, target_team: str, max_point: int,
-                     old_bottom: bool=True, height_unit: int=25):
+                     old_bottom: bool=True, height_unit: int=25) -> str:
     """抽出したチームごとのDataFrameを使って、HTMLでチームの勝ち点積み上げ表を作る
         _df: make_team_dfで抽出したチームデータ (DataFrame)
         target_team: 対象チームの名称
@@ -139,7 +141,7 @@ def make_html_column(_df: pd.DataFrame, target_team: str, max_point: int,
     return '<div>' + team_name + ''.join(box_list) + team_name + '</div>\n\n'
 
 
-def make_point_column(max_point: int, old_bottom: bool=True):
+def make_point_column(max_point: int, old_bottom: bool=True) -> str:
     """勝点列を作って返す
         old_bottom: 各チームの勝ち点の表を、古い日程を下にしたい時はTrue (default: True)
     """
@@ -151,7 +153,7 @@ def make_point_column(max_point: int, old_bottom: bool=True):
     return '<div><div class="point box">勝点</div>' + ''.join(box_list) + '<div class="point box">勝点</div></div>\n\n'
 
 
-def make_team_map(all_matches: pd.DataFrame):
+def make_team_map(all_matches: pd.DataFrame) -> Tuple[Dict[str, Dict[str, Any]], int]:
     """各チームのチームごとの試合リスト、勝ち点などを収めたdictを返す
     """
     team_map = {}
@@ -167,16 +169,16 @@ def make_team_map(all_matches: pd.DataFrame):
     return (team_map, max_point)
 
 
-def dump_team_map(all_matches: pd.DataFrame, category: int):
+def dump_team_map(all_matches: pd.DataFrame, category: int) -> str:
     """全チームの試合データをJSON文字列としてダンプする
     """
     (_df, max_p) = make_team_map(all_matches)
     return json.dumps({'matches':_df, 'category': category, 'max_point': max_p},
-                      cls=NumDFEncoder, ensure_ascii=False)
+                      cls=NumDFEncoder, ensure_ascii=False, sort_keys=True)
 
 
 def make_bar_graph_html(all_matches: pd.DataFrame, category: int,
-                        team_sort_key: str='point', old_bottom: bool=True, insert_point_columns: list=None):
+                        team_sort_key: str='point', old_bottom: bool=True, insert_point_columns: list=None) -> str:
     """read_jleague_matches.py を読み込んだ結果から、勝ち点積み上げ棒グラフを表示するHTMLファイルを作り、内容を返す
         all_matches: read_jleague_matches.py を読み込んだ結果
         category: Jカテゴリ
@@ -207,19 +209,7 @@ def make_bar_graph_html(all_matches: pd.DataFrame, category: int,
     return ''.join(html_list)
 
 
-def read_allmatches_csv(matches_file: str):
-    """read_jleague_matches.py が書き出した結果のCSVファイルを読み込んでDataFrame構造を再現
-        matches_file: 読み込むファイル名
-    """
-    all_matches = pd.read_csv(matches_file, index_col=0, dtype=str, na_values='')
-    all_matches['match_date'] = pd.to_datetime(all_matches['match_date']).dt.strftime('%m/%d')
-    all_matches['home_goal'] = all_matches['home_goal'].fillna('')
-    all_matches['away_goal'] = all_matches['away_goal'].fillna('')
-    all_matches = all_matches.where(pd.notnull(all_matches), None)
-    return all_matches
-
-
-def read_file(file_name: str):
+def read_file(file_name: str) -> str:
     """指定されたファイルをテキストで読んで返す
     """
     with open(file_name, mode='r') as _fp:
@@ -227,7 +217,7 @@ def read_file(file_name: str):
     return result
 
 
-def dump_team_file(all_matches: pd.DataFrame, category: int):
+def dump_team_file(all_matches: pd.DataFrame, category: int) -> None:
     """カテゴリ毎の試合結果などをJSONファイルに書き込む
     """
     with open(OUTPUT_FILE.format(category), mode='w') as _fp:
@@ -235,10 +225,7 @@ def dump_team_file(all_matches: pd.DataFrame, category: int):
 
 
 if __name__ == '__main__':
-    from glob import glob
-    import re
-
+    import os
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     for _category in [1, 2, 3]:
-        _matches_file = glob(f'../csv/*J{_category}*.csv')[-1]
-        print(_matches_file)
-        dump_team_file(read_allmatches_csv(_matches_file), int(re.search(r'J(\d)', _matches_file)[1]))
+        dump_team_file(read_latest_allmatches_csv(_category), _category)
