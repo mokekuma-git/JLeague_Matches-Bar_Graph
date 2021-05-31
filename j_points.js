@@ -1,1 +1,0 @@
-examples/j_points.js
