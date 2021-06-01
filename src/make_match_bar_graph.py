@@ -220,6 +220,8 @@ def read_file(file_name: str) -> str:
 def dump_team_file(all_matches: pd.DataFrame, category: int) -> None:
     """カテゴリ毎の試合結果などをJSONファイルに書き込む
     """
+    all_matches['match_date'] = all_matches['match_date'].dt.strftime('%m/%d')
+    all_matches = all_matches.where(pd.notnull(all_matches), None)
     with open(OUTPUT_FILE.format(category), mode='w') as _fp:
         _fp.write(dump_team_map(all_matches, category))
 
