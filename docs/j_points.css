@@ -90,26 +90,29 @@ p {
 
 /**************************************************************** J1 Team style definition */
 .仙台 {
-  background-color: #FFFF99
+  color: #193076;
+  background-color: #fcc800;
 }
 .柏 {
-  background-color: #FFFF44
+  background-color: #fff100;
 }
 .広島 {
   color: white;
-  background-color: #993399
+  background-color: #51318f;
 }
 .鳥栖 {
-  background: -moz-linear-gradient(top left, #FFCCFF, #33FFFF); 
-  background: -webkit-linear-gradient(top left, #FFCCFF, #33FFFF);
-  background: linear-gradient(to bottom right, #FFCCFF, #33FFFF);
+  background: -moz-linear-gradient(top left, #f580a7, #4fc3f7 50%); 
+  background: -webkit-linear-gradient(top left, #f580a7, #4fc3f7 50%);
+  background: linear-gradient(to bottom right, #f580a7, #4fc3f7 50%);
 }
 .横浜FC {
-  background-color: #00CCFF
+  background-color: #00a4f9;
 }
 .名古屋 {
   color: white;
-  background-color: #EE0000
+  background: -moz-linear-gradient(top left, #f29600, #d70c18 50%); 
+  background: -webkit-linear-gradient(top left, #f29600, #d70c18 50%);
+  background: linear-gradient(to bottom right, #f29600, #d70c18 50%);
 }
 .FC東京 {
   color: white;
@@ -118,81 +121,83 @@ p {
   background: linear-gradient(to bottom right, #FF0000, #0000FF);
 }
 .大分 {
-  color: white;
-  background-color: #000099;
+  color: #ffb606;
+  background-color: #140b8c;
 }
 .横浜FM {
-  background: -moz-linear-gradient(top left, #FF0000, #FFFFFF, #0000FF); 
-  background: -webkit-linear-gradient(top left, #FF0000, #FFFFFF, #0000FF);
-  background: linear-gradient(to bottom right, #FF0000, #FFFFFF, #0000FF);
+  background: -moz-linear-gradient(top left, #E60039 10%, #FFFFFF, #004098 90%); 
+  background: -webkit-linear-gradient(top left, #E60039 10%, #FFFFFF, #004098 90%);
+  background: linear-gradient(to bottom right, #E60039 10%, #FFFFFF, #004098 90%);
 }
 .鹿島 {
   color: white;
-  background-color: #EE0000
+  background-color: #b8193f;
 }
 .清水 {
-  background-color: #FF9900
+  color: #0d3862;
+  background-color: #f18a01;
 }
 .Ｃ大阪 {
-  background-color: #FFCCFF
+  color: white;
+  background-color: #da005c;
 }
 .川崎Ｆ {
   color: white;
-  background: -moz-linear-gradient(left, #00CCFF, #333333); 
-  background: -webkit-linear-gradient(left, #00CCFF, #333333);
-  background: linear-gradient(to right, #00CCFF, #333333);
+  background: -moz-linear-gradient(left, #198cca 60%, #000000); 
+  background: -webkit-linear-gradient(left, #198cca 60%, #000000);
+  background: linear-gradient(to right, #198cca 60%, #000000);
 }
 .湘南 {
-  background-color: #00FF00
+  background-color: #8dd64c;
 }
 .福岡 {
   color: white;
-  background-color: #000080
+  background-color: #00205b;
 }
 .札幌 {
   color: white;
-  background: -moz-linear-gradient(left, #FF0000, #333333); 
-  background: -webkit-linear-gradient(left, #FF0000, #333333);
-  background: linear-gradient(to right, #FF0000, #333333);
+  background: -moz-linear-gradient(left, #d60000 60%, #000000); 
+  background: -webkit-linear-gradient(left, #d60000 60%, #000000);
+  background: linear-gradient(to right, #d60000 60%, #000000);
 }
 .徳島 {
   color: white;
-  background: -moz-linear-gradient(top left, #009955, #333399); 
-  background: -webkit-linear-gradient(top left, #009955, #333399);
-  background: linear-gradient(to bottom right, #009955, #333399);
+  background: -moz-linear-gradient(top left, #009955, #333399 60%); 
+  background: -webkit-linear-gradient(top left, #009955, #333399 60%);
+  background: linear-gradient(to bottom right, #009955, #333399 60%);
 }
 .Ｇ大阪 {
   color: white;
-  background: -moz-linear-gradient(left, #000099, #333333); 
-  background: -webkit-linear-gradient(left, #000099, #333333);
-  background: linear-gradient(to right, #000099, #333333);
+  background: -moz-linear-gradient(left, #003a68 60%, #000000); 
+  background: -webkit-linear-gradient(left, #003a68 60%, #000000);
+  background: linear-gradient(to right, #003a68 60%, #000000);
 }
 .浦和 {
   color: white;
-  background-color: #EE0000
+  background-color: #e6002d;
 }
 .神戸 {
   color: white;
-  background-color: #EE0000
+  background-color: #980323;
 }
 
 
 /**************************************************************** J2 Team style definition */
 .新潟 {
   color: white;
-  background-color: #FF9900
+  background-color: #FF9900;
 }
 .金沢 {
   color: white;
-  background-color: #d70c1f
+  background-color: #d70c1f;
 }
 .京都 {
   color: white;
-  background-color: #993399
+  background-color: #993399;
 }
 .大宮 {
   color: white;
-  background-color: #FF9900
+  background-color: #FF9900;
 }
 .岡山 {
   color: white;
