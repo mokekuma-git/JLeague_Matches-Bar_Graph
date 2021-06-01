@@ -7,9 +7,9 @@ const CATEGORY_TOP_TEAMS = [3, 2, 2];
 const CATEGORY_BOTTOM_TEAMS = [4, 4, 0];
 const CATEGORY_TEAMS_COUNT = [20, 22, 15];
 const TARGET_ITEM_ID = {
-  'sort': '#team_sort_key',
-  'bottom': '#old_bottom',
-  'cat': '#category'
+  sort: '#team_sort_key',
+  bottom: '#old_bottom',
+  cat: '#category'
 }
 
 window.addEventListener('load', init, false);
@@ -25,8 +25,8 @@ function init() {
 
   // デフォルト値の読み込み
   HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
-  if(! get_cookie('opacity')) { // cookieにopacity設定がなければ、CSSのデフォルト値を設定
-    let _rule = get_css_rule('.future');
+  if(!get_cookie('opacity')) { // cookieにopacity設定がなければ、CSSのデフォルト値を設定
+    const _rule = get_css_rule('.future');
     document.querySelector('#future_opacity').value = _rule.style.opacity;
     document.querySelector('#current_opacity').innerHTML = _rule.style.opacity;
   }
@@ -35,29 +35,29 @@ function init() {
 
 function load_cookies() {
   COOKIE_OBJ = parse_cookies();
-  let opacity = get_cookie('opacity');
+  const opacity = get_cookie('opacity');
   if(opacity) set_future_opacity(opacity, false, true);
 
-  let space = get_cookie('space');
+  const space = get_cookie('space');
   if(space) set_space(space, false, true);
 
-  let sort = get_cookie('sort');
+  const sort = get_cookie('sort');
   if(sort) set_pulldown('sort', sort, false, true, false);
 
-  let bottom = get_cookie('bottom');
+  const bottom = get_cookie('bottom');
   if(bottom) set_pulldown('bottom', bottom, false, true, false);
 
-  let cat = get_cookie('cat');
+  const cat = get_cookie('cat');
   if(cat) set_pulldown('cat', cat, false, true, false);
   // load_cookieの後にはrenderが呼ばれるので、ここではrenderは不要
 }
 
 function parse_cookies() {
-  let cookies = document.cookie;
-  let cookiesArray = cookies.split(';');
+  const cookies = document.cookie;
   COOKIE_OBJ = {};
-  for(let c of cookiesArray){
-    let cArray = c.trim().split('=');
+  for(const c of cookies.split(';')) {
+    const cArray = c.trim().split('=');
+    // TODO: =が無かった時のチェック
     COOKIE_OBJ[cArray[0]] = cArray[1];
   }
   return COOKIE_OBJ;
@@ -74,7 +74,7 @@ function set_cookie(key, value) { // COOKIE_OBJはwrite throughキャッシュ
 }
 
 function clear_cookies() {
-  let cookie_obj = parse_cookies();
+  const cookie_obj = parse_cookies();
   Object.keys(cookie_obj).forEach(function(key) {
     document.cookie = key + '=;max-age=0';
   });
@@ -86,7 +86,7 @@ function refresh_category() {
 }
 
 function read_inputs(filename) {
-  let xhr = new XMLHttpRequest();
+  const xhr = new XMLHttpRequest();
   xhr.open('GET', filename);
   xhr.send();
   xhr.onload = ()=> {
@@ -96,55 +96,62 @@ function read_inputs(filename) {
 }
 
 function make_insert_columns(category) {
-  //各カテゴリの勝ち点列を入れる敷居位置を決定
+  // 各カテゴリの勝ち点列を入れる敷居位置を決定
   //  昇格チーム (ACL出場チーム)、中間、降格チームの位置に挟む
   category -= 1;
-  let columns = [CATEGORY_TOP_TEAMS[category], Math.floor(CATEGORY_TEAMS_COUNT[category] / 2)];
+  const columns = [CATEGORY_TOP_TEAMS[category], Math.floor(CATEGORY_TEAMS_COUNT[category] / 2)];
   if(CATEGORY_BOTTOM_TEAMS[category])
     columns.push(CATEGORY_TEAMS_COUNT[category] - CATEGORY_BOTTOM_TEAMS[category]);
   return columns;
 }
 
 function make_html_column(target_team, team_data, max_point) {
-  //抽出したチームごとのDataFrameを使って、HTMLでチームの勝ち点積み上げ表を作る
+  // 抽出したチームごとのDataFrameを使って、HTMLでチームの勝ち点積み上げ表を作る
   //  target_team: 対象チームの名称
   //  team_data:
   //    .df: make_team_dfで抽出したチームデータ (試合リスト)
   //    .point: 対象チームの最大勝ち点
   //  max_point: 全チーム中の最大勝ち点
-  let team_name = '<div class="short box ' + target_team + '">' + target_team + '</div>\n';
-  let box_list = [];
+  const box_list = [];
+  const lose_box = [];
   team_data.df.sort().forEach(function(_row) {
     let future;
-    if(! _row['has_result']) {
+    if(! _row.has_result) {
       box_height = 3;
       future = true;
     } else {
-      box_height = _row['point'];
+      box_height = _row.point;
       future = false;
     }
-    if(box_height == 0)
-      return;
+
     let match_date;
-    if(_row['match_date'] instanceof String) {
-      match_date = _row['match_date'];
+    if(_row.match_date instanceof String) {
+      match_date = _row.match_date;
     } else {
-      match_date = (_row['match_date']) ? _row['match_date'] : '未定 ';
+      match_date = (_row.match_date) ? _row.match_date : '未定 ';
     }
-    let content;
+
     let box_html;
     // INNER_HTMLにHTML直書きはダサい？ コンポーネントごと追加していくスタイルにすべきか
+    const draw_content = match_date + _row.opponent;
+    const win_content = draw_content + '<br/>' + _row.goal_get + '-' + _row.goal_lose + '<br/>' + _row.stadium;
+    const full_content = '(' + _row.section_no + ') ' + win_content;
     if(box_height == 3) {
-      content = match_date + _row['opponent'] + '<br/>';
-      content += _row['goal_get'] + '-' + _row['goal_lose'] + '<br/>' + _row['stadium'] + '<br/>';
       if(future) {
-        box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p>' + content + '</p></div>\n';
+        box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
+          + win_content
+          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
       } else {
-        box_html = '<div class="tall box"><p class="' + target_team + '">' + content + '</p></div>\n';
+        box_html = '<div class="tall box"><p class="tooltip ' + target_team + '">' + win_content
+          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
       }
-    } else {
-      box_html = '<div class="short box"><p class="' + target_team + '">' + match_date + _row['opponent'] + '</p></div>\n';
-      // _row['goal_get'] + '-' + _row['goal_lose'] + '<br/>';
+    } else if(box_height == 1) {
+      box_html = '<div class="short box"><p class="tooltip ' + target_team + '">'
+        + draw_content + '<span class="tooltiptext ' + target_team + '" style="width: 150px">'
+        + full_content + '</span></p></div>';
+      // _row.goal_get + '-' + _row.goal_lose + '<br/>';
+    } else if(box_height == 0) {
+      lose_box.push(full_content);
     }
     box_list.push(box_html);
   });
@@ -156,6 +163,9 @@ function make_html_column(target_team, team_data, max_point) {
   if(document.querySelector('#old_bottom').value == 'true') {
     box_list.reverse();
   }
+  const team_name = '<div class="short box tooltip ' + target_team + '">' + target_team
+    + '<span class=" tooltiptext ' + target_team + '" style="width: 150px">敗戦記録:<hr/>'
+    + lose_box.join('<hr/>') + '</span></div>\n';
   return '<div>' + team_name + box_list.join('') + team_name + '</div>\n\n';
 }
 
@@ -176,7 +186,7 @@ function render_bar_graph() {
   let boxContainer = document.querySelector('.boxContainer');
   boxContainer.innerHTML = '';
   let columns = {};
-  Object.keys(INPUTS['matches']).forEach(function (key) {
+  Object.keys(INPUTS.matches).forEach(function (key) {
     columns[key] = make_html_column(key, INPUTS.matches[key], INPUTS.max_point);
   });
   let insert_point_columns = make_insert_columns(INPUTS.category);
@@ -194,7 +204,7 @@ function get_sorted_team_list(matches) {
   let sort_key = document.querySelector('#team_sort_key').value;
   return Object.keys(matches).sort(function(a, b) {return matches[b][sort_key] - matches[a][sort_key]});
 }
-/////////////////////////////////////////////////////////////// 背景調整用
+/// //////////////////////////////////////////////////////////// 背景調整用
 function set_future_opacity_ev(event) {
   set_future_opacity(event.target.value, true, false);
 }
@@ -214,7 +224,7 @@ function set_space(value, cookie_write = true, color_write = true) {
   // set_space はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
   _rule = get_css_rule('.space')
   _rule.style.backgroundColor = value;
-  _rule.style.color = getBright(value, mod) > 0.5 ? 'black' : 'white';
+  _rule.style.color = getBright(value, RGB_MOD) > 0.5 ? 'black' : 'white';
   if(cookie_write) set_cookie('space', value);
   if(color_write) document.querySelector('#space_color').value = value;
 }
@@ -246,34 +256,34 @@ function get_css_rule(selector) {
   return _rule;
 }
 
-//https://qiita.com/fnobi/items/d3464ba0e4b6596863cb より
+// https://qiita.com/fnobi/items/d3464ba0e4b6596863cb より
 // 補正付きの明度取得
-let getBright = function (colorcode, mod) {
+function getBright (colorcode, RGB_MOD) {
   // 先頭の#は、あってもなくてもOK
   if (colorcode.match(/^#/)) {
     colorcode = colorcode.slice(1);
   }
   // 無駄に、ケタを動的に判断してるので、
   // 3の倍数ケタの16進数表現ならOK etc) #ff0000 #f00 #fff000000
-  let rank = Math.floor(colorcode.length / 3);
+  const rank = Math.floor(colorcode.length / 3);
   if (rank < 1) {
     return false;
   }
   // 16進数をparseして、RGBそれぞれに割り当て
-  let rgb = [];
+  const rgb = [];
   for (let i = 0; i < 3; i++) {
     rgb.push(parseInt(colorcode.slice(rank * i, rank * (i + 1)), 16));
   }
   // 青は暗めに見えるなど、見え方はRGBそれぞれで違うので、
   // それぞれ補正値を付けて、人間の感覚に寄せられるようにした
-  let rmod = mod.r || 1;
-  let gmod = mod.g || 1;
-  let bmod = mod.b || 1;
+  const rmod = RGB_MOD.r || 1;
+  const gmod = RGB_MOD.g || 1;
+  const bmod = RGB_MOD.b || 1;
   // 明度 = RGBの最大値
-  let bright = Math.max(rgb[0] * rmod, rgb[1] * gmod, rgb[2] * bmod) / 255;
+  const bright = Math.max(rgb[0] * rmod, rgb[1] * gmod, rgb[2] * bmod) / 255;
   // 明度を返す
   return bright;
 };
 
 // 補正はとりあえず、こんなもんがよさげだった
-let mod = { r: 0.9, g: 0.8, b: 0.4 };
+const RGB_MOD = { r: 0.9, g: 0.8, b: 0.4 };
