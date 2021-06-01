@@ -72,7 +72,6 @@ p {
 
 /* Tooltip text */
 .tooltip .tooltiptext {
-  width: 150px;
   border: black solid 2px;
   visibility: hidden;
   text-align: center;

@@ -112,8 +112,8 @@ function make_html_column(target_team, team_data, max_point) {
   //    .df: make_team_dfで抽出したチームデータ (試合リスト)
   //    .point: 対象チームの最大勝ち点
   //  max_point: 全チーム中の最大勝ち点
-  const team_name = '<div class="short box ' + target_team + '">' + target_team + '</div>\n';
   const box_list = [];
+  const lose_box = [];
   team_data.df.sort().forEach(function(_row) {
     let future;
     if(! _row.has_result) {
@@ -123,8 +123,7 @@ function make_html_column(target_team, team_data, max_point) {
       box_height = _row.point;
       future = false;
     }
-    if(box_height == 0)
-      return;
+
     let match_date;
     if(_row.match_date instanceof String) {
       match_date = _row.match_date;
@@ -139,14 +138,20 @@ function make_html_column(target_team, team_data, max_point) {
     const full_content = '(' + _row.section_no + ') ' + win_content;
     if(box_height == 3) {
       if(future) {
-        box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p>' + win_content + '</p></div>\n';
+        box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
+          + win_content
+          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
       } else {
-        box_html = '<div class="tall box"><p class="' + target_team + '">' + win_content + '</p></div>\n';
+        box_html = '<div class="tall box"><p class="tooltip ' + target_team + '">' + win_content
+          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
       }
-    } else {
-      box_html = '<div class="short box"><p class=" tooltip ' + target_team + '">'
-        + draw_content + '<br/><span class="tooltiptext ' + target_team + '">' + full_content + '</span></p></div>';
+    } else if(box_height == 1) {
+      box_html = '<div class="short box"><p class="tooltip ' + target_team + '">'
+        + draw_content + '<span class="tooltiptext ' + target_team + '" style="width: 150px">'
+        + full_content + '</span></p></div>';
       // _row.goal_get + '-' + _row.goal_lose + '<br/>';
+    } else if(box_height == 0) {
+      lose_box.push(full_content);
     }
     box_list.push(box_html);
   });
@@ -158,6 +163,9 @@ function make_html_column(target_team, team_data, max_point) {
   if(document.querySelector('#old_bottom').value == 'true') {
     box_list.reverse();
   }
+  const team_name = '<div class="short box tooltip ' + target_team + '">' + target_team
+    + '<span class=" tooltiptext ' + target_team + '" style="width: 150px">敗戦記録:<hr/>'
+    + lose_box.join('<hr/>') + '</span></div>\n';
   return '<div>' + team_name + box_list.join('') + team_name + '</div>\n\n';
 }
 
