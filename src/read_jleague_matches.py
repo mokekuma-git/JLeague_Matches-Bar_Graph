@@ -16,7 +16,7 @@ _PREFIX = '../csv/match_result-J'
 SOURCE_URL_FORMAT = 'https://www.jleague.jp/match/section/j{}/{}/'
 
 
-def read_match_data(soup: BeautifulSoup) -> List[Dict[str, Any]]:
+def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
     """Jリーグの各節の試合情報リストから内容を読み込んで返す
     """
     result_list = []
@@ -58,6 +58,7 @@ def read_match_data(soup: BeautifulSoup) -> List[Dict[str, Any]]:
 def read_all_matches(category: int) -> pd.DataFrame:
     """指定されたカテゴリの全て試合をWeb経由で読み込む
     """
+    # TODO: 各カテゴリの全試合数はチーム数から出したいところだが、チーム数をどこから取るか？
     match_counts = {1: 39, 2: 43, 3: 30}
     return read_matches_range(category, list(range(1, match_counts[category])))
 
@@ -67,8 +68,10 @@ def read_matches_range(category: int, _range: List[int]) -> pd.DataFrame:
     """
     _matches = pd.DataFrame()
     for _i in _range:
-        soup = BeautifulSoup(requests.get(SOURCE_URL_FORMAT.format(category, _i)).text, 'lxml')
-        result_list = read_match_data(soup)
+        _url = SOURCE_URL_FORMAT.format(category, _i)
+        print(f'access {_url}...')
+        soup = BeautifulSoup(requests.get(_url).text, 'lxml')
+        result_list = read_match_from_web(soup)
         _matches = pd.concat([_matches, pd.DataFrame(result_list)])
     _matches.reset_index(drop=True)
     return _matches
@@ -159,9 +162,9 @@ def update_all_matches(category: int) -> pd.DataFrame:
     if not need_update:
         return current_matches
 
-    diff_matches = read_matches_range(1, need_update)
+    diff_matches = read_matches_range(category, need_update)
     new_matches = pd.concat([current_matches[~current_matches['section_no'].isin(need_update)],
-                             diff_matches]).reset_index()
+                             diff_matches]).sort_values(['section_no', 'match_index_in_section']).reset_index()
     store_all_matches(new_matches, category)
     return new_matches
 
