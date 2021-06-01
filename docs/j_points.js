@@ -2,6 +2,8 @@
 let HEIGHT_UNIT;
 let INPUTS;
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
+let TARGET_DATE;
+const MATCH_DATE_SET = [];
 
 const CATEGORY_TOP_TEAMS = [3, 2, 2];
 const CATEGORY_BOTTOM_TEAMS = [4, 4, 0];
@@ -17,11 +19,14 @@ window.addEventListener('load', init, false);
 function init() {
   load_cookies();
   refresh_category();
+  TARGET_DATE = date_format(new Date());
   document.querySelector('#future_opacity').addEventListener('change', set_future_opacity_ev, false);
   document.querySelector('#space_color').addEventListener('change', set_space_ev, false);
   document.querySelector('#team_sort_key').addEventListener('change', set_sort_key_ev, false);
   document.querySelector('#old_bottom').addEventListener('change', set_old_bottom_ev, false);
   document.querySelector('#category').addEventListener('change', set_category_ev, false);
+  document.querySelector('#date_slider').addEventListener('change', set_date_slider_ev, false);
+  document.querySelector('#reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
 
   // デフォルト値の読み込み
   HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
@@ -105,35 +110,38 @@ function make_insert_columns(category) {
   return columns;
 }
 
-function make_html_column(target_team, team_data, max_point) {
+function make_html_column(target_team, team_data) {
   // 抽出したチームごとのDataFrameを使って、HTMLでチームの勝ち点積み上げ表を作る
   //  target_team: 対象チームの名称
   //  team_data:
   //    .df: make_team_dfで抽出したチームデータ (試合リスト)
   //    .point: 対象チームの最大勝ち点
-  //  max_point: 全チーム中の最大勝ち点
   const box_list = [];
   const lose_box = [];
+  let avlbl_pt = 0;
   team_data.df.sort().forEach(function(_row) {
-    let future;
-    if(! _row.has_result) {
-      box_height = 3;
-      future = true;
-    } else {
-      box_height = _row.point;
-      future = false;
-    }
-
     let match_date;
-    if(_row.match_date instanceof String) {
+    if(is_string(_row.match_date)) {
       match_date = _row.match_date;
+      if (!MATCH_DATE_SET.includes(match_date)) MATCH_DATE_SET.push(match_date)
     } else {
       match_date = (_row.match_date) ? _row.match_date : '未定 ';
     }
 
+    let future;
+    if(! _row.has_result || match_date > TARGET_DATE) {
+      box_height = 3;
+      future = true;
+      avlbl_pt += 3;
+    } else {
+      box_height = _row.point;
+      avlbl_pt += _row.point;
+      future = false;
+    }
+
     let box_html;
     // INNER_HTMLにHTML直書きはダサい？ コンポーネントごと追加していくスタイルにすべきか
-    const draw_content = match_date + _row.opponent;
+    const draw_content = match_date + ' ' + _row.opponent;
     const win_content = draw_content + '<br/>' + _row.goal_get + '-' + _row.goal_lose + '<br/>' + _row.stadium;
     const full_content = '(' + _row.section_no + ') ' + win_content;
     if(box_height == 3) {
@@ -155,18 +163,30 @@ function make_html_column(target_team, team_data, max_point) {
     }
     box_list.push(box_html);
   });
-  let space_cols = max_point - team_data.avlbl_pt;
-  // console.log(target_team, space_cols)
+  return {html: box_list, avlbl_pt: avlbl_pt, target_team: target_team, lose_box: lose_box};
+}
+function append_space_cols(cache, max_point) {
+  const space_cols = max_point - cache.avlbl_pt; // 最大勝ち点は、スライダーで変わるので毎回計算することに修正
   if(space_cols) {
-    box_list.push('<div class="space box" style="height:' + HEIGHT_UNIT * space_cols + 'px">(' + space_cols + ')</div>');
+    cache.html.push('<div class="space box" style="height:' + HEIGHT_UNIT * space_cols + 'px">(' + space_cols + ')</div>');
   }
-  if(document.querySelector('#old_bottom').value == 'true') {
-    box_list.reverse();
+  if(document.querySelector('#old_bottom').value === 'true') {
+    cache.html.reverse();
   }
-  const team_name = '<div class="short box tooltip ' + target_team + '">' + target_team
-    + '<span class=" tooltiptext ' + target_team + '" style="width: 150px">敗戦記録:<hr/>'
-    + lose_box.join('<hr/>') + '</span></div>\n';
-  return '<div>' + team_name + box_list.join('') + team_name + '</div>\n\n';
+  const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
+    + '<span class=" tooltiptext ' + cache.target_team + '" style="width: 150px">敗戦記録:<hr/>'
+    + cache.lose_box.join('<hr/>') + '</span></div>\n';
+  return '<div>' + team_name + cache.html.join('') + team_name + '</div>\n\n';
+}
+
+const dgt = (m, n) => ('0000' + m).substr(-n);
+function date_format(_date) {
+  if(is_string(_date)) return _date;
+  return [dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
+}
+
+function is_string(obj) {
+  return (typeof(obj) === "string" || obj instanceof String);
 }
 
 function make_point_column(max_point) {
@@ -181,21 +201,37 @@ function make_point_column(max_point) {
   return '<div><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
 }
 
+/*
+// 日付は二けた二けたのMM/DDフォーマットの文字列にするので、文字列比較で充分
+function compare_datelike_str(foo, bar) {
+  return new Date(foo) < new Date(bar);
+}
+*/
+
 function render_bar_graph() {
   if(! INPUTS) return;
+  MATCH_DATE_SET.length = 0;
+  MATCH_DATE_SET.push('01/01');
   let boxContainer = document.querySelector('.boxContainer');
   boxContainer.innerHTML = '';
   let columns = {};
+  let max_point = 0;
   Object.keys(INPUTS.matches).forEach(function (key) {
-    columns[key] = make_html_column(key, INPUTS.matches[key], INPUTS.max_point);
+    columns[key] = make_html_column(key, INPUTS.matches[key]);
+    max_point = Math.max(max_point, columns[key].avlbl_pt);
   });
+  Object.keys(INPUTS.matches).forEach(function (key) {
+    columns[key].html = append_space_cols(columns[key], max_point);
+  });
+  MATCH_DATE_SET.sort();
+  reset_date_slider(date_format(TARGET_DATE));
   let insert_point_columns = make_insert_columns(INPUTS.category);
-  let point_column = make_point_column(INPUTS.max_point);
+  let point_column = make_point_column(max_point);
   boxContainer.innerHTML += point_column;
   get_sorted_team_list(INPUTS.matches).forEach(function(key, index) {
     if(insert_point_columns.includes(index))
       boxContainer.innerHTML += point_column;
-    boxContainer.innerHTML += columns[key];
+    boxContainer.innerHTML += columns[key].html;
   });
   boxContainer.innerHTML += point_column;
 }
@@ -203,6 +239,21 @@ function render_bar_graph() {
 function get_sorted_team_list(matches) {
   let sort_key = document.querySelector('#team_sort_key').value;
   return Object.keys(matches).sort(function(a, b) {return matches[b][sort_key] - matches[a][sort_key]});
+}
+
+function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
+  if(!MATCH_DATE_SET) return;
+  const slider = document.querySelector('#date_slider');
+  slider.max = MATCH_DATE_SET.length - 1;
+  document.querySelector('#pre_date_slider').innerHTML = MATCH_DATE_SET[0];
+  document.querySelector('#post_date_slider').innerHTML = MATCH_DATE_SET[MATCH_DATE_SET.length - 1];
+  document.querySelector('#target_date').innerHTML = target_date;
+  let _i = 0;
+  for(; _i < MATCH_DATE_SET.length; _i++) {
+    if(MATCH_DATE_SET[_i + 1] <= target_date) continue;
+    break;
+  }
+  slider.value = _i;
 }
 /// //////////////////////////////////////////////////////////// 背景調整用
 function set_future_opacity_ev(event) {
@@ -245,7 +296,18 @@ function set_pulldown(key, value, cookie_write = true, pulldown_write = true, ca
     const select = document.querySelector(TARGET_ITEM_ID[key]);
     select.selectedIndex = select.querySelector('option[value="' + value + '"]').index;
   }
-  if(call_render) render_bar_graph();
+  if(call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
+}
+
+function set_date_slider_ev(event) { // Cookieで制御しないし、数値リセットは別コマンドなので、シンプルに
+  TARGET_DATE = MATCH_DATE_SET[event.target.value];
+  document.querySelector('#target_date').innerHTML = TARGET_DATE;
+  render_bar_graph();
+}
+function reset_date_slider_ev(event) {
+  TARGET_DATE = date_format(new Date());
+  reset_date_slider(TARGET_DATE);
+  render_bar_graph();
 }
 
 function get_css_rule(selector) {
