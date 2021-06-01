@@ -8,9 +8,9 @@ Make a bar graph of points each team got and will get.
 同じディレクトリに置いて、Chromeなどのブラウザで開く (JSONを読むようにしたので、HTTPでないとダメかも (サーバが要る？))
 1. https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/j_points.html を見る
 
-これらdocsに置いている例は、なるべく最新のものにするつもりですが、自動的にアップデートするようにはしていないので、最新のものを確認したい場合は、ご自身でこのプロジェクトを clone して、以下の二つのスクリプトを実行してください  
+これらdocsに置いている例は、なるべく最新のものにするつもりですが、自動的にアップデートするようにはしていないので、最新のものを確認したい場合は、ご自身でこのプロジェクトを clone して、以下のスクリプトを実行してください  
 ```
-python3 read_jleague_matches.py 1-3
+python3 read_jleague_matches.py
 ```
 
 
