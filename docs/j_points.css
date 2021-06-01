@@ -184,8 +184,8 @@ p {
 
 /**************************************************************** J2 Team style definition */
 .新潟 {
-  color: white;
-  background-color: #FF9900;
+  color: #014099;
+  background-color: #FF7527;;
 }
 .金沢 {
   color: white;
@@ -193,11 +193,11 @@ p {
 }
 .京都 {
   color: white;
-  background-color: #993399;
+  background-color: #750069;
 }
 .大宮 {
   color: white;
-  background-color: #FF9900;
+  background-color: #f18900;
 }
 .岡山 {
   color: white;
@@ -233,9 +233,9 @@ p {
 }
 .長崎 {
   color: white;
-  background: -moz-linear-gradient(top left, #f39800, #f39800, #005bac); 
-  background: -webkit-linear-gradient(top left, #f39800, #f39800, #005bac);
-  background: linear-gradient(to bottom right, #f39800, #f39800, #005bac);
+  background: -moz-linear-gradient(top left, #f39800, #005bac 60%); 
+  background: -webkit-linear-gradient(top left, #f39800, #005bac 60%);
+  background: linear-gradient(to bottom right, #f39800, #005bac 60%);
 }
 .町田 {
   color: white;
@@ -261,7 +261,7 @@ p {
 }
 .琉球 {
   color: white;
-  background-color: #be003c;;
+  background-color: #be003c;
 }
 .東京Ｖ {
   color: white;
@@ -292,7 +292,7 @@ p {
 }
 .熊本 {
   color: white;
-  background-color: #B61B15
+  background-color: #B61B15;
 }
 .岩手 {
   color: white;
@@ -324,7 +324,7 @@ p {
 }
 .岐阜 {
   color: white;
-  background-color: #00491e
+  background-color: #00491e;
 }
 .宮崎 {
   color: white;
