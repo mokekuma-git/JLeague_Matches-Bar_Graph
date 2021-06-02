@@ -141,25 +141,22 @@ function make_html_column(target_team, team_data) {
 
     let box_html;
     // INNER_HTMLにHTML直書きはダサい？ コンポーネントごと追加していくスタイルにすべきか
-    const draw_content = match_date + ' ' + _row.opponent;
-    const win_content = draw_content + '<br/>' + _row.goal_get + '-' + _row.goal_lose + '<br/>' + _row.stadium;
-    const full_content = '(' + _row.section_no + ') ' + win_content;
     if(box_height == 3) {
       if(future) {
         box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
-          + win_content
+          + make_win_content(_row, match_date)
           + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
       } else {
-        box_html = '<div class="tall box"><p class="tooltip ' + target_team + '">' + win_content
+        box_html = '<div class="tall box"><p class="tooltip ' + target_team + '">' + make_win_content(_row, match_date)
           + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
       }
     } else if(box_height == 1) {
       box_html = '<div class="short box"><p class="tooltip ' + target_team + '">'
-        + draw_content + '<span class="tooltiptext ' + target_team + '" style="width: 150px">'
-        + full_content + '</span></p></div>';
+        + make_draw_content(_row, match_date) + '<span class="tooltiptext full ' + target_team + '">'
+        + make_full_content(_row, match_date) + '</span></p></div>';
       // _row.goal_get + '-' + _row.goal_lose + '<br/>';
     } else if(box_height == 0) {
-      lose_box.push(full_content);
+      lose_box.push(make_full_content(_row, match_date));
     }
     box_list.push(box_html);
   });
@@ -174,9 +171,22 @@ function append_space_cols(cache, max_point) {
     cache.html.reverse();
   }
   const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
-    + '<span class=" tooltiptext ' + cache.target_team + '" style="width: 150px">敗戦記録:<hr/>'
+    + '<span class=" tooltiptext full ' + cache.target_team + '">敗戦記録:<hr/>'
     + cache.lose_box.join('<hr/>') + '</span></div>\n';
   return '<div>' + team_name + cache.html.join('') + team_name + '</div>\n\n';
+}
+
+function make_win_content(_row, match_date) {
+  return match_date + ' ' + _row.opponent + '<br/>'
+    + _row.goal_get + '-' + _row.goal_lose
+    + '<br/>' + _row.stadium;
+}
+function make_draw_content(_row, match_date) {
+  return match_date + ' ' + _row.opponent;
+}
+function make_full_content(_row, match_date) {
+  return '(' + _row.section_no + ') ' + match_date + ' ' + _row.opponent + '<br/>'
+    + _row.goal_get + '-' + _row.goal_lose + ' ' + _row.stadium;
 }
 
 const dgt = (m, n) => ('0000' + m).substr(-n);

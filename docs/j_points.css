@@ -87,6 +87,9 @@ p {
   z-index: 1;
 }
 
+.full {
+  width: 180px;
+}
 /* Show the tooltip text when you mouse over the tooltip container */
 .tooltip:hover .tooltiptext {
   visibility: visible;
