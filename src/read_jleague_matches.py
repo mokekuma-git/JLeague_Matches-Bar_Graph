@@ -59,7 +59,7 @@ def read_all_matches(category: int) -> pd.DataFrame:
     """指定されたカテゴリの全て試合をWeb経由で読み込む
     """
     # TODO: 各カテゴリの全試合数はチーム数から出したいところだが、チーム数をどこから取るか？
-    match_counts = {1: 39, 2: 43, 3: 30}
+    match_counts = {1: 39, 2: 43, 3: 31}
     return read_matches_range(category, list(range(1, match_counts[category])))
 
 
@@ -140,7 +140,7 @@ def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
     all_matches.to_csv(f'{_PREFIX}{category}-{datetime.now().strftime(DATE_FORMAT)}.csv')
 
 
-def update_all_matches(category: int) -> pd.DataFrame:
+def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
     """これまでに読み込んだ試合データからの差分をWeb経由で読み込んで、差分を上書きした結果を返す
     該当ファイルが一つもない場合は、全試合のデータをWeb経由で読み込む
     試合データに変化があった場合は、実行日を付けた試合データファイルを保存する
@@ -148,7 +148,7 @@ def update_all_matches(category: int) -> pd.DataFrame:
     latest_file = get_latest_allmatches_filename(category)
 
     # 最新の試合結果が無い場合は、全データを読んで保存して読み込み結果を返す
-    if not latest_file:
+    if (not latest_file) or force_update:
         all_matches = read_all_matches(category)
         store_all_matches(all_matches, category)
         return all_matches
@@ -199,7 +199,11 @@ if __name__ == '__main__':
         _ARGV = '1-3'
     else:
         _ARGV = sys.argv[1]
+    if len(sys.argv) > 2:
+        _FORCE_UPDATE_ALL = True
+    else:
+        _FORCE_UPDATE_ALL = False
 
     for _category in parse_argv(_ARGV):
         print(f'Start read J{_category} matches...')
-        dump_team_file(update_all_matches(_category), _category)
+        dump_team_file(update_all_matches(_category, _FORCE_UPDATE_ALL), _category)
