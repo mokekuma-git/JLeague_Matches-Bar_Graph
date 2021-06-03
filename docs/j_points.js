@@ -9,8 +9,8 @@ const CATEGORY_TOP_TEAMS = [3, 2, 2];
 const CATEGORY_BOTTOM_TEAMS = [4, 4, 0];
 const CATEGORY_TEAMS_COUNT = [20, 22, 15];
 const TARGET_ITEM_ID = {
-  sort: '#team_sort_key',
-  bottom: '#old_bottom',
+  team_sort: '#team_sort_key',
+  match_sort: '#match_sort_key',
   cat: '#category'
 }
 
@@ -32,10 +32,11 @@ function init() {
   document.querySelector('#future_opacity').addEventListener('change', set_future_opacity_ev, false);
   document.querySelector('#space_color').addEventListener('change', set_space_ev, false);
   document.querySelector('#team_sort_key').addEventListener('change', set_sort_key_ev, false);
-  document.querySelector('#old_bottom').addEventListener('change', set_old_bottom_ev, false);
+  document.querySelector('#match_sort_key').addEventListener('change', set_match_sort_key_ev, false);
   document.querySelector('#category').addEventListener('change', set_category_ev, false);
   document.querySelector('#date_slider').addEventListener('change', set_date_slider_ev, false);
   document.querySelector('#reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
+  document.querySelector('#reset_cookie').addEventListener('click', clear_cookies, false);
 
   // デフォルト値の読み込み
   HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
@@ -55,11 +56,11 @@ function load_cookies() {
   const space = get_cookie('space');
   if(space) set_space(space, false, true);
 
-  const sort = get_cookie('sort');
-  if(sort) set_pulldown('sort', sort, false, true, false);
+  const team_sort = get_cookie('team_sort');
+  if(team_sort) set_pulldown('team_sort', team_sort, false, true, false);
 
-  const bottom = get_cookie('bottom');
-  if(bottom) set_pulldown('bottom', bottom, false, true, false);
+  const match_sort = get_cookie('match_sort');
+  if(match_sort) set_pulldown('match_sort', match_sort, false, true, false);
 
   const cat = get_cookie('cat');
   if(cat) set_pulldown('cat', cat, false, true, false);
@@ -119,6 +120,10 @@ function make_insert_columns(category) {
   return columns;
 }
 
+const is_string = (value) => (typeof(value) === "string" || value instanceof String);
+const is_number = (value) => (typeof(value) === "number");
+
+const compare_str = (a, b) => (a === b) ? 0 : (a < b) ? -1 : 1;
 function make_html_column(target_team, team_data) {
   // 抽出したチームごとのDataFrameを使って、HTMLでチームの勝ち点積み上げ表を作る
   //  target_team: 対象チームの名称
@@ -132,7 +137,18 @@ function make_html_column(target_team, team_data) {
   const lose_box = [];
   let avlbl_pt = 0;
   let point = 0;
-  team_data.df.sort().forEach(function(_row) {
+  let match_sort_key;
+  if(['first_bottom', 'last_bottom'].includes(document.querySelector('#match_sort_key').value)) {
+    match_sort_key = 'section_no';
+  } else {
+    match_sort_key = 'match_date';
+  }
+  team_data.df.sort(function(a, b) {
+    v_a = a[match_sort_key];
+    v_b = b[match_sort_key];
+    if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
+    return compare_str(v_a, v_b);
+  }).forEach(function(_row) {
     let match_date;
     if(is_string(_row.match_date)) {
       match_date = _row.match_date;
@@ -185,8 +201,9 @@ function append_space_cols(cache, max_avlbl_pt) {
   if(space_cols) {
     cache.html.push('<div class="space box" style="height:' + HEIGHT_UNIT * space_cols + 'px">(' + space_cols + ')</div>');
   }
-  if(document.querySelector('#old_bottom').value === 'true') {
+  if(['old_bottom', 'first_bottom'].includes(document.querySelector('#match_sort_key').value)) {
     cache.html.reverse();
+    cache.lose_box.reverse();
   }
   const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
     + '<span class=" tooltiptext full ' + cache.target_team + '">敗戦記録:<hr/>'
@@ -213,17 +230,13 @@ function date_format(_date) {
   return [dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
 }
 
-function is_string(obj) {
-  return (typeof(obj) === "string" || obj instanceof String);
-}
-
 function make_point_column(max_avlbl_pt) {
   // 勝点列を作って返す
   let box_list = []
   Array.from(Array(max_avlbl_pt), (v, k) => k + 1).forEach(function(_i) {
     box_list.push('<div class="point box">' + _i + '</div>')
   });
-  if(document.querySelector('#old_bottom').value == 'true') {
+  if(['old_bottom', 'first_bottom'].includes(document.querySelector('#match_sort_key').value)) {
     box_list.reverse();
   }
   return '<div><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
@@ -315,10 +328,10 @@ function set_space(value, cookie_write = true, color_write = true) {
 }
 
 function set_sort_key_ev(event) {
-  set_pulldown('sort', event.target.value, true, false);
+  set_pulldown('team_sort', event.target.value, true, false);
 }
-function set_old_bottom_ev(event) {
-  set_pulldown('bottom', event.target.value, true, false);
+function set_match_sort_key_ev(event) {
+  set_pulldown('match_sort', event.target.value, true, false);
 }
 function set_category_ev(event) {
   refresh_category();
