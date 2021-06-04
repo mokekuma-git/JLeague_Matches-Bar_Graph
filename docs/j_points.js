@@ -9,10 +9,19 @@ const CATEGORY_TOP_TEAMS = [3, 2, 2];
 const CATEGORY_BOTTOM_TEAMS = [4, 4, 0];
 const CATEGORY_TEAMS_COUNT = [20, 22, 15];
 const TARGET_ITEM_ID = {
-  sort: '#team_sort_key',
-  bottom: '#old_bottom',
+  team_sort: '#team_sort_key',
+  match_sort: '#match_sort_key',
   cat: '#category'
 }
+
+const DEFAULT_TEAM_SORT = [ // 2021開始時点の並び順 (シーズン2020終了時の順序)
+  ['川崎Ｆ', 'Ｇ大阪', '名古屋', 'Ｃ大阪', '鹿島', 'FC東京', '柏', '広島', '横浜FM', '浦和',
+    '大分', '札幌', '鳥栖', '神戸', '横浜FC', '清水', '仙台', '湘南', '徳島', '福岡'],
+  ['長崎', '甲府', '北九州', '磐田', '山形', '水戸', '京都', '栃木', '新潟', '東京Ｖ', '松本',
+    '千葉', '大宮', '琉球', '岡山', '金沢', '町田', '群馬', '愛媛', '山口', '秋田', '相模原'],
+  ['長野', '鹿児島', '鳥取', '岐阜', '今治', '熊本', '富山', '藤枝',
+    '岩手', '沼津', '福島', '八戸', '讃岐', 'YS横浜', '宮崎']
+]; // TODO: 過去の年度に拡張した時、どう設定しよう？ 別ファイルかな？
 
 window.addEventListener('load', init, false);
 
@@ -23,10 +32,12 @@ function init() {
   document.querySelector('#future_opacity').addEventListener('change', set_future_opacity_ev, false);
   document.querySelector('#space_color').addEventListener('change', set_space_ev, false);
   document.querySelector('#team_sort_key').addEventListener('change', set_sort_key_ev, false);
-  document.querySelector('#old_bottom').addEventListener('change', set_old_bottom_ev, false);
+  document.querySelector('#match_sort_key').addEventListener('change', set_match_sort_key_ev, false);
   document.querySelector('#category').addEventListener('change', set_category_ev, false);
   document.querySelector('#date_slider').addEventListener('change', set_date_slider_ev, false);
   document.querySelector('#reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
+  document.querySelector('#reset_cookie').addEventListener('click', clear_cookies, false);
+  document.querySelector('#scale_slider').addEventListener('change', set_scale_ev, false);
 
   // デフォルト値の読み込み
   HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
@@ -46,15 +57,18 @@ function load_cookies() {
   const space = get_cookie('space');
   if(space) set_space(space, false, true);
 
-  const sort = get_cookie('sort');
-  if(sort) set_pulldown('sort', sort, false, true, false);
+  const team_sort = get_cookie('team_sort');
+  if(team_sort) set_pulldown('team_sort', team_sort, false, true, false);
 
-  const bottom = get_cookie('bottom');
-  if(bottom) set_pulldown('bottom', bottom, false, true, false);
+  const match_sort = get_cookie('match_sort');
+  if(match_sort) set_pulldown('match_sort', match_sort, false, true, false);
 
   const cat = get_cookie('cat');
   if(cat) set_pulldown('cat', cat, false, true, false);
   // load_cookieの後にはrenderが呼ばれるので、ここではrenderは不要
+
+  const scale = get_cookie('scale');
+  if(scale) set_scale(scale, false, true);
 }
 
 function parse_cookies() {
@@ -110,16 +124,37 @@ function make_insert_columns(category) {
   return columns;
 }
 
+const is_string = (value) => (typeof(value) === 'string' || value instanceof String);
+const is_number = (value) => (typeof(value) === 'number');
+
+const compare_str = (a, b) => (a === b) ? 0 : (a < b) ? -1 : 1;
 function make_html_column(target_team, team_data) {
   // 抽出したチームごとのDataFrameを使って、HTMLでチームの勝ち点積み上げ表を作る
   //  target_team: 対象チームの名称
   //  team_data:
   //    .df: make_team_dfで抽出したチームデータ (試合リスト)
-  //    .point: 対象チームの最大勝ち点
+  //    .point: 対象チームの勝ち点 (最新)
+  //    .avlbl_pt: 対象チームの最大勝ち点 (最新)
+  //    .disp_point: (この関数の中で生成) 表示時点の勝点
+  //    .disp_avlbl_pt: (この関数の中で生成) 表示時点の最大勝点
   const box_list = [];
   const lose_box = [];
   let avlbl_pt = 0;
-  team_data.df.sort().forEach(function(_row) {
+  let point = 0;
+  let goal_diff = 0;
+  let disp_goal_diff = 0;
+  let match_sort_key;
+  if(['first_bottom', 'last_bottom'].includes(document.querySelector('#match_sort_key').value)) {
+    match_sort_key = 'section_no';
+  } else {
+    match_sort_key = 'match_date';
+  }
+  team_data.df.sort(function(a, b) {
+    v_a = a[match_sort_key];
+    v_b = b[match_sort_key];
+    if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
+    return compare_str(v_a, v_b);
+  }).forEach(function(_row) {
     let match_date;
     if(is_string(_row.match_date)) {
       match_date = _row.match_date;
@@ -136,7 +171,12 @@ function make_html_column(target_team, team_data) {
     } else {
       box_height = _row.point;
       avlbl_pt += _row.point;
+      point += _row.point;
       future = false;
+    }
+    if(_row.has_result) {
+      goal_diff += _row.goal_get - _row.goal_lose;
+      if(match_date <= TARGET_DATE) disp_goal_diff += _row.goal_get - _row.goal_lose;
     }
 
     let box_html;
@@ -160,20 +200,27 @@ function make_html_column(target_team, team_data) {
     }
     box_list.push(box_html);
   });
+  team_data.disp_point = point; // 表示時の勝ち点
+  team_data.disp_avlbl_pt = avlbl_pt; // 表示時の最大勝点
+  team_data.goal_diff = goal_diff; // 最新の得失点差
+  team_data.disp_goal_diff = disp_goal_diff; // 表示時の得失点差
   return {html: box_list, avlbl_pt: avlbl_pt, target_team: target_team, lose_box: lose_box};
 }
-function append_space_cols(cache, max_point) {
-  const space_cols = max_point - cache.avlbl_pt; // 最大勝ち点は、スライダーで変わるので毎回計算することに修正
+function append_space_cols(cache, max_avlbl_pt) {
+  // 上の make_html_column の各チームの中間状態と、全チームで最大の「シーズン最大勝ち点(avlbl_pt)」を受け取る
+  //
+  const space_cols = max_avlbl_pt - cache.avlbl_pt; // 最大勝ち点は、スライダーで変わるので毎回計算することに修正
   if(space_cols) {
     cache.html.push('<div class="space box" style="height:' + HEIGHT_UNIT * space_cols + 'px">(' + space_cols + ')</div>');
   }
-  if(document.querySelector('#old_bottom').value === 'true') {
+  if(['old_bottom', 'first_bottom'].includes(document.querySelector('#match_sort_key').value)) {
     cache.html.reverse();
+    cache.lose_box.reverse();
   }
   const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
     + '<span class=" tooltiptext full ' + cache.target_team + '">敗戦記録:<hr/>'
     + cache.lose_box.join('<hr/>') + '</span></div>\n';
-  return '<div>' + team_name + cache.html.join('') + team_name + '</div>\n\n';
+  return '<div id="' + cache.target_team + '_column">' + team_name + cache.html.join('') + team_name + '</div>\n\n';
 }
 
 function make_win_content(_row, match_date) {
@@ -195,60 +242,71 @@ function date_format(_date) {
   return [dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
 }
 
-function is_string(obj) {
-  return (typeof(obj) === "string" || obj instanceof String);
-}
-
-function make_point_column(max_point) {
+function make_point_column(max_avlbl_pt) {
   // 勝点列を作って返す
   let box_list = []
-  Array.from(Array(max_point), (v, k) => k + 1).forEach(function(_i) {
+  Array.from(Array(max_avlbl_pt), (v, k) => k + 1).forEach(function(_i) {
     box_list.push('<div class="point box">' + _i + '</div>')
   });
-  if(document.querySelector('#old_bottom').value == 'true') {
+  if(['old_bottom', 'first_bottom'].includes(document.querySelector('#match_sort_key').value)) {
     box_list.reverse();
   }
-  return '<div><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
+  return '<div class="point_column"><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
 }
-
-/*
-// 日付は二けた二けたのMM/DDフォーマットの文字列にするので、文字列比較で充分
-function compare_datelike_str(foo, bar) {
-  return new Date(foo) < new Date(bar);
-}
-*/
 
 function render_bar_graph() {
   if(! INPUTS) return;
   MATCH_DATE_SET.length = 0;
   MATCH_DATE_SET.push('01/01');
-  let boxContainer = document.querySelector('.boxContainer');
-  boxContainer.innerHTML = '';
+  let box_container = document.querySelector('.box_container');
+  box_container.innerHTML = '';
   let columns = {};
-  let max_point = 0;
-  Object.keys(INPUTS.matches).forEach(function (key) {
-    columns[key] = make_html_column(key, INPUTS.matches[key]);
-    max_point = Math.max(max_point, columns[key].avlbl_pt);
+  let max_avlbl_pt = 0;
+  Object.keys(INPUTS.matches).forEach(function (team_name) {
+    // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
+    columns[team_name] = make_html_column(team_name, INPUTS.matches[team_name]);
+    max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
   });
-  Object.keys(INPUTS.matches).forEach(function (key) {
-    columns[key].html = append_space_cols(columns[key], max_point);
+  Object.keys(INPUTS.matches).forEach(function (team_name) {
+    columns[team_name].html = append_space_cols(columns[team_name], max_avlbl_pt);
   });
   MATCH_DATE_SET.sort();
   reset_date_slider(date_format(TARGET_DATE));
   let insert_point_columns = make_insert_columns(INPUTS.category);
-  let point_column = make_point_column(max_point);
-  boxContainer.innerHTML += point_column;
-  get_sorted_team_list(INPUTS.matches).forEach(function(key, index) {
+  let point_column = make_point_column(max_avlbl_pt);
+  box_container.innerHTML += point_column;
+  get_sorted_team_list(INPUTS.matches).forEach(function(team_name, index) {
     if(insert_point_columns.includes(index))
-      boxContainer.innerHTML += point_column;
-    boxContainer.innerHTML += columns[key].html;
+      box_container.innerHTML += point_column;
+    box_container.innerHTML += columns[team_name].html;
   });
-  boxContainer.innerHTML += point_column;
+  box_container.innerHTML += point_column;
+  set_scale(document.querySelector('#scale_slider').value, false, false);
 }
 
 function get_sorted_team_list(matches) {
-  let sort_key = document.querySelector('#team_sort_key').value;
-  return Object.keys(matches).sort(function(a, b) {return matches[b][sort_key] - matches[a][sort_key]});
+  const sort_key = document.querySelector('#team_sort_key').value;
+  return Object.keys(matches).sort(function(a, b) {
+    // team_sort_keyで指定された勝ち点で比較
+    let compare = matches[b][sort_key] - matches[a][sort_key];
+    // console.log('勝点', sort_key, a, matches[a][sort_key], b, matches[b][sort_key]);
+    if(compare != 0) return compare;
+
+    // 得失点差で比較 (表示時点か最新かで振り分け)
+    if(sort_key.startsWith('disp_')) {
+      compare = matches[b].disp_goal_diff - matches[a].disp_goal_diff;
+      // console.log('得失点(disp)', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
+    } else {
+      compare = matches[b].goal_diff - matches[a].goal_diff;
+      // console.log('得失点', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
+    }
+    if(compare != 0) return compare;
+
+    // それでも同じなら、昨年の順位を元にソート
+    const category = INPUTS.category - 1;
+    // console.log('昨年順位', a, DEFAULT_TEAM_SORT[category].indexOf(a), b, DEFAULT_TEAM_SORT[category].indexOf(b));
+    return DEFAULT_TEAM_SORT[category].indexOf(a) - DEFAULT_TEAM_SORT[category].indexOf(b);
+  });
 }
 
 function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
@@ -265,36 +323,25 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
   }
   slider.value = _i;
 }
-/// //////////////////////////////////////////////////////////// 背景調整用
-function set_future_opacity_ev(event) {
-  set_future_opacity(event.target.value, true, false);
-}
-function set_future_opacity(value, cookie_write = true, slidebar_write = true) {
-  // set_future_opacity はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
-  _rule = get_css_rule('.future')
-  _rule.style.opacity = value;
-  document.querySelector('#current_opacity').innerHTML = value;
-  if(cookie_write) set_cookie('opacity', value);
-  if(slidebar_write) document.querySelector('#future_opacity').value = value;
-}
 
-function set_space_ev(event) {
-  set_space(event.target.value, true, false);
+/// //////////////////////////////////////////////////////////// 設定変更
+function set_scale_ev(event) {
+  set_scale(event.target.value, true, false);
 }
-function set_space(value, cookie_write = true, color_write = true) {
-  // set_space はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
-  _rule = get_css_rule('.space')
-  _rule.style.backgroundColor = value;
-  _rule.style.color = getBright(value, RGB_MOD) > 0.5 ? 'black' : 'white';
-  if(cookie_write) set_cookie('space', value);
-  if(color_write) document.querySelector('#space_color').value = value;
+function set_scale(scale, cookie_write = true, slider_write = true) {
+  document.querySelector('.box_container').style.transform = "scale(" + scale + ")";
+  if(document.querySelector('.point_column'))
+    document.querySelector('.box_container').style.height = document.querySelector('.point_column').clientHeight * scale;
+  document.querySelector('#current_scale').innerHTML = scale;
+  if(cookie_write) set_cookie('scale', scale);
+  if(slider_write) document.querySelector('#scale_slider').value = scale;
 }
 
 function set_sort_key_ev(event) {
-  set_pulldown('sort', event.target.value, true, false);
+  set_pulldown('team_sort', event.target.value, true, false);
 }
-function set_old_bottom_ev(event) {
-  set_pulldown('bottom', event.target.value, true, false);
+function set_match_sort_key_ev(event) {
+  set_pulldown('match_sort', event.target.value, true, false);
 }
 function set_category_ev(event) {
   refresh_category();
@@ -318,6 +365,31 @@ function reset_date_slider_ev(event) {
   TARGET_DATE = date_format(new Date());
   reset_date_slider(TARGET_DATE);
   render_bar_graph();
+}
+
+/// //////////////////////////////////////////////////////////// 背景調整用
+function set_future_opacity_ev(event) {
+  set_future_opacity(event.target.value, true, false);
+}
+function set_future_opacity(value, cookie_write = true, slider_write = true) {
+  // set_future_opacity はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
+  _rule = get_css_rule('.future')
+  _rule.style.opacity = value;
+  document.querySelector('#current_opacity').innerHTML = value;
+  if(cookie_write) set_cookie('opacity', value);
+  if(slider_write) document.querySelector('#future_opacity').value = value;
+}
+
+function set_space_ev(event) {
+  set_space(event.target.value, true, false);
+}
+function set_space(value, cookie_write = true, color_write = true) {
+  // set_space はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
+  _rule = get_css_rule('.space')
+  _rule.style.backgroundColor = value;
+  _rule.style.color = getBright(value, RGB_MOD) > 0.5 ? 'black' : 'white';
+  if(cookie_write) set_cookie('space', value);
+  if(color_write) document.querySelector('#space_color').value = value;
 }
 
 function get_css_rule(selector) {
