@@ -43,7 +43,7 @@ p {
   opacity:0.2;
 }
 
-.boxContainer{
+.box_container{
   display:-webkit-box;
   display:-ms-flexbox;
   display:flex;
