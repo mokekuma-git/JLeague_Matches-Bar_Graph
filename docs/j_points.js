@@ -3,7 +3,6 @@ let HEIGHT_UNIT;
 let INPUTS;
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 let TARGET_DATE;
-let CONTAINER_HEIGHT;
 const MATCH_DATE_SET = [];
 
 const CATEGORY_TOP_TEAMS = [3, 2, 2];
@@ -221,7 +220,7 @@ function append_space_cols(cache, max_avlbl_pt) {
   const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
     + '<span class=" tooltiptext full ' + cache.target_team + '">敗戦記録:<hr/>'
     + cache.lose_box.join('<hr/>') + '</span></div>\n';
-  return '<div>' + team_name + cache.html.join('') + team_name + '</div>\n\n';
+  return '<div id="' + cache.target_team + '_column">' + team_name + cache.html.join('') + team_name + '</div>\n\n';
 }
 
 function make_win_content(_row, match_date) {
@@ -252,7 +251,7 @@ function make_point_column(max_avlbl_pt) {
   if(['old_bottom', 'first_bottom'].includes(document.querySelector('#match_sort_key').value)) {
     box_list.reverse();
   }
-  return '<div><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
+  return '<div class="point_column"><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
 }
 
 function render_bar_graph() {
@@ -282,7 +281,6 @@ function render_bar_graph() {
     box_container.innerHTML += columns[team_name].html;
   });
   box_container.innerHTML += point_column;
-  CONTAINER_HEIGHT = document.querySelector('.box_container').clientHeight; // 覚えさせる必要ない？
   set_scale(document.querySelector('#scale_slider').value, false, false);
 }
 
@@ -332,7 +330,8 @@ function set_scale_ev(event) {
 }
 function set_scale(scale, cookie_write = true, slider_write = true) {
   document.querySelector('.box_container').style.transform = "scale(" + scale + ")";
-  document.querySelector('.box_container').style.height = CONTAINER_HEIGHT * scale;
+  if(document.querySelector('.point_column'))
+    document.querySelector('.box_container').style.height = document.querySelector('.point_column').clientHeight * scale;
   document.querySelector('#current_scale').innerHTML = scale;
   if(cookie_write) set_cookie('scale', scale);
   if(slider_write) document.querySelector('#scale_slider').value = scale;
