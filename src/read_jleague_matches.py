@@ -4,12 +4,14 @@ from datetime import datetime
 from typing import List, Set, Dict, Any
 import re
 from glob import glob
+import argparse
 from numpy import diff
 import pandas as pd
 from bs4 import BeautifulSoup
 import requests
 
-DEBUG = False
+PREFERENCE = {}
+PREFERENCE['debug'] = False
 DATE_FORMAT = '%Y%m%d'
 _PREFIX = '../csv/match_result-J'
 
@@ -49,7 +51,7 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
             match_dict['away_goal'] = _tr.find('td', class_='point leftside').text.strip()
             match_dict['away_team'] = _tr.find('td', class_='clubName leftside').text.strip()
             # str_match_date = (match_date.strftime("%Y/%m/%d") if match_date else '未定')
-            if DEBUG:
+            if PREFERENCE['debug']:
                 print(match_dict)
             result_list.append(match_dict)
             _index += 1
@@ -103,6 +105,8 @@ def get_sections_to_update(all_matches: pd.DataFrame,
             if _start <= _date <= _end:
                 print(f'add {_sec} for match on {_date} between {_start} - {_end}')
                 target_sec.add(_sec)
+    target_sec = list(target_sec)
+    target_sec.sort()
     return target_sec
 
 
@@ -128,6 +132,8 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
     """
     print('match file "' + matches_file + '" reading.')
     all_matches = pd.read_csv(matches_file, index_col=0, dtype=str, na_values='')
+    if 'index' in all_matches.columns:
+        all_matches = all_matches.drop(columns=['index'])
     all_matches['match_date'] = pd.to_datetime(all_matches['match_date'])
     all_matches['home_goal'] = all_matches['home_goal'].fillna('')
     all_matches['away_goal'] = all_matches['away_goal'].fillna('')
@@ -166,13 +172,41 @@ def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
 
     diff_matches = read_matches_range(category, need_update)
     old_matches = current_matches[current_matches['section_no'].isin(need_update)]
-    print(diff_matches)
-    print(old_matches)
-    print(diff_matches == old_matches)
-    new_matches = pd.concat([current_matches[~current_matches['section_no'].isin(need_update)],
-                             diff_matches]).sort_values(['section_no', 'match_index_in_section']).reset_index()
-    # store_all_matches(new_matches, category)
-    return new_matches
+    if compare_matches(diff_matches, old_matches):
+        new_matches = pd.concat([current_matches[~current_matches['section_no'].isin(need_update)],
+                                diff_matches]).sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
+        store_all_matches(new_matches, category)
+        return new_matches
+    return None
+
+
+def compare_matches(foo_df, bar_df) -> bool:
+    """試合情報を比較
+    """
+    _foo = foo_df.drop(columns=['match_index_in_section'])
+    _bar = bar_df.drop(columns=['match_index_in_section'])
+    _foo = _foo.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
+    _bar = _bar.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
+    diff = {}
+    for col_name in _foo.columns:
+        if list(_foo[col_name].fillna('')) == list(_bar[col_name].fillna('')):
+            continue
+        for _index in _foo[col_name].index:
+            if _foo[col_name].at[_index] == _bar[col_name].at[_index]:
+                continue
+            if _index not in diff:
+                diff[_index] = []
+            diff[_index].append(col_name)
+    if diff:
+        print(_foo)
+        print(_bar)
+        if PREFERENCE['debug']:
+            for (_index, col_list) in diff.items():
+                print(_index, col_list)
+                print(_foo.loc[_index])
+                print(_bar.loc[_index])
+        return True
+    return False
 
 
 def parse_date_from_filename(filename: str) -> datetime:
@@ -183,7 +217,7 @@ def parse_date_from_filename(filename: str) -> datetime:
     return datetime.strptime(date_str, DATE_FORMAT)
 
 
-def parse_argv(arg: str) -> List[int]:
+def parse_range(arg: str) -> List[int]:
     """引数をパースする
         数値と、"数値-数値" の形式を受け取り、範囲全体の数値リストに変換
         1-3 -> [1, 2, 3]
@@ -194,6 +228,23 @@ def parse_argv(arg: str) -> List[int]:
     return [int(arg)]
 
 
+def make_args() -> argparse.Namespace:
+    """引数チェッカ
+    """
+    parser = argparse.ArgumentParser(
+        description='read_jleague_matches.py\n' + \
+                    'Jリーグの各カテゴリの試合情報を読み込んでCSV化し、JSONファイルを作成')
+
+    parser.add_argument('category', default='1-3', nargs='*',
+                        help='リーグカテゴリ (数値指定、複数指定時は-で繋ぐ [default: 1-3])')
+    parser.add_argument('-f', '--force_update_all', action='store_true',
+                        help='差分を考えずにすべての試合データを読み込んで保存')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='デバッグ出力を表示')
+
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -201,15 +252,10 @@ if __name__ == '__main__':
     import sys
     from make_match_bar_graph import dump_team_file
 
-    if len(sys.argv) <= 1:
-        _ARGV = '1-3'
-    else:
-        _ARGV = sys.argv[1]
-    if len(sys.argv) > 2:
-        _FORCE_UPDATE_ALL = True
-    else:
-        _FORCE_UPDATE_ALL = False
+    ARGS = make_args()
+    if ARGS.debug:
+        PREFERENCE['debug'] = True
 
-    for _category in parse_argv(_ARGV):
+    for _category in parse_range(ARGS.category):
         print(f'Start read J{_category} matches...')
-        dump_team_file(update_all_matches(_category, _FORCE_UPDATE_ALL), _category)
+        dump_team_file(update_all_matches(_category, ARGS.force_update_all), _category)
