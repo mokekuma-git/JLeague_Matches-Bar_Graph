@@ -43,7 +43,7 @@ p {
   opacity:0.2;
 }
 
-.box_container{
+.boxContainer{
   display:-webkit-box;
   display:-ms-flexbox;
   display:flex;
@@ -54,7 +54,6 @@ p {
   -webkit-box-align: end;
   -ms-flex-align: end;
   align-items: flex-end;
-  transform-origin: left bottom;
 }
 .bottom_label {
   align-self: flex-end;
