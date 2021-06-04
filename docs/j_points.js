@@ -287,7 +287,7 @@ function render_bar_graph() {
 }
 
 function get_sorted_team_list(matches) {
-  let sort_key = document.querySelector('#team_sort_key').value;
+  const sort_key = document.querySelector('#team_sort_key').value;
   return Object.keys(matches).sort(function(a, b) {
     // team_sort_keyで指定された勝ち点で比較
     let compare = matches[b][sort_key] - matches[a][sort_key];
@@ -305,7 +305,7 @@ function get_sorted_team_list(matches) {
     if(compare != 0) return compare;
 
     // それでも同じなら、昨年の順位を元にソート
-    let category = INPUTS.category - 1;
+    const category = INPUTS.category - 1;
     // console.log('昨年順位', a, DEFAULT_TEAM_SORT[category].indexOf(a), b, DEFAULT_TEAM_SORT[category].indexOf(b));
     return DEFAULT_TEAM_SORT[category].indexOf(a) - DEFAULT_TEAM_SORT[category].indexOf(b);
   });
