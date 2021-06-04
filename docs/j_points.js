@@ -120,8 +120,8 @@ function make_insert_columns(category) {
   return columns;
 }
 
-const is_string = (value) => (typeof(value) === "string" || value instanceof String);
-const is_number = (value) => (typeof(value) === "number");
+const is_string = (value) => (typeof(value) === 'string' || value instanceof String);
+const is_number = (value) => (typeof(value) === 'number');
 
 const compare_str = (a, b) => (a === b) ? 0 : (a < b) ? -1 : 1;
 function make_html_column(target_team, team_data) {
@@ -131,12 +131,14 @@ function make_html_column(target_team, team_data) {
   //    .df: make_team_dfで抽出したチームデータ (試合リスト)
   //    .point: 対象チームの勝ち点 (最新)
   //    .avlbl_pt: 対象チームの最大勝ち点 (最新)
-  //    .dip_point: (この関数の中で生成) 表示時点の勝点
-  //    .dip_avlbl_pt: (この関数の中で生成) 表示時点の最大勝点
+  //    .disp_point: (この関数の中で生成) 表示時点の勝点
+  //    .disp_avlbl_pt: (この関数の中で生成) 表示時点の最大勝点
   const box_list = [];
   const lose_box = [];
   let avlbl_pt = 0;
   let point = 0;
+  let goal_diff = 0;
+  let disp_goal_diff = 0;
   let match_sort_key;
   if(['first_bottom', 'last_bottom'].includes(document.querySelector('#match_sort_key').value)) {
     match_sort_key = 'section_no';
@@ -168,6 +170,10 @@ function make_html_column(target_team, team_data) {
       point += _row.point;
       future = false;
     }
+    if(_row.has_result) {
+      goal_diff += _row.goal_get - _row.goal_lose;
+      if(match_date <= TARGET_DATE) disp_goal_diff += _row.goal_get - _row.goal_lose;
+    }
 
     let box_html;
     // INNER_HTMLにHTML直書きはダサい？ コンポーネントごと追加していくスタイルにすべきか
@@ -190,8 +196,10 @@ function make_html_column(target_team, team_data) {
     }
     box_list.push(box_html);
   });
-  team_data.disp_point = point // 表示時の勝ち点
-  team_data.dsip_avlbl_pt = avlbl_pt // 表示時の最大勝点
+  team_data.disp_point = point; // 表示時の勝ち点
+  team_data.disp_avlbl_pt = avlbl_pt; // 表示時の最大勝点
+  team_data.goal_diff = goal_diff; // 最新の得失点差
+  team_data.disp_goal_diff = disp_goal_diff; // 表示時の得失点差
   return {html: box_list, avlbl_pt: avlbl_pt, target_team: target_team, lose_box: lose_box};
 }
 function append_space_cols(cache, max_avlbl_pt) {
@@ -281,9 +289,24 @@ function render_bar_graph() {
 function get_sorted_team_list(matches) {
   let sort_key = document.querySelector('#team_sort_key').value;
   return Object.keys(matches).sort(function(a, b) {
+    // team_sort_keyで指定された勝ち点で比較
     let compare = matches[b][sort_key] - matches[a][sort_key];
+    // console.log('勝点', sort_key, a, matches[a][sort_key], b, matches[b][sort_key]);
     if(compare != 0) return compare;
+
+    // 得失点差で比較 (表示時点か最新かで振り分け)
+    if(sort_key.startsWith('disp_')) {
+      compare = matches[b].disp_goal_diff - matches[a].disp_goal_diff;
+      // console.log('得失点(disp)', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
+    } else {
+      compare = matches[b].goal_diff - matches[a].goal_diff;
+      // console.log('得失点', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
+    }
+    if(compare != 0) return compare;
+
+    // それでも同じなら、昨年の順位を元にソート
     let category = INPUTS.category - 1;
+    // console.log('昨年順位', a, DEFAULT_TEAM_SORT[category].indexOf(a), b, DEFAULT_TEAM_SORT[category].indexOf(b));
     return DEFAULT_TEAM_SORT[category].indexOf(a) - DEFAULT_TEAM_SORT[category].indexOf(b);
   });
 }
