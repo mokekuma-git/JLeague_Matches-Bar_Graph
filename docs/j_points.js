@@ -3,6 +3,7 @@ let HEIGHT_UNIT;
 let INPUTS;
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 let TARGET_DATE;
+let CONTAINER_HEIGHT;
 const MATCH_DATE_SET = [];
 
 const CATEGORY_TOP_TEAMS = [3, 2, 2];
@@ -261,8 +262,8 @@ function render_bar_graph() {
   if(! INPUTS) return;
   MATCH_DATE_SET.length = 0;
   MATCH_DATE_SET.push('01/01');
-  let boxContainer = document.querySelector('.boxContainer');
-  boxContainer.innerHTML = '';
+  let box_container = document.querySelector('.box_container');
+  box_container.innerHTML = '';
   let columns = {};
   let max_avlbl_pt = 0;
   Object.keys(INPUTS.matches).forEach(function (team_name) {
@@ -277,13 +278,14 @@ function render_bar_graph() {
   reset_date_slider(date_format(TARGET_DATE));
   let insert_point_columns = make_insert_columns(INPUTS.category);
   let point_column = make_point_column(max_avlbl_pt);
-  boxContainer.innerHTML += point_column;
+  box_container.innerHTML += point_column;
   get_sorted_team_list(INPUTS.matches).forEach(function(team_name, index) {
     if(insert_point_columns.includes(index))
-      boxContainer.innerHTML += point_column;
-    boxContainer.innerHTML += columns[team_name].html;
+      box_container.innerHTML += point_column;
+    box_container.innerHTML += columns[team_name].html;
   });
-  boxContainer.innerHTML += point_column;
+  box_container.innerHTML += point_column;
+  CONTAINER_HEIGHT = document.querySelector('.box_container').clientHeight;
 }
 
 function get_sorted_team_list(matches) {
@@ -325,6 +327,14 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
   }
   slider.value = _i;
 }
+
+/// //////////////////////////////////////////////////////////// 拡大縮小調整用
+function scale(x) {
+  document.querySelector('.box_container').style.transform = "scale(" + x + ")";
+  document.querySelector('.box_container').style.height = CONTAINER_HEIGHT * x;
+}
+
+
 /// //////////////////////////////////////////////////////////// 背景調整用
 function set_future_opacity_ev(event) {
   set_future_opacity(event.target.value, true, false);
