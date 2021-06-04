@@ -18,7 +18,7 @@
   <select id="match_sort_key" name="match_sort_key">
     <option value="old_bottom" selected="true">古い試合が下</option>
     <option value="new_bottom">新しい試合が下</option>
-    <option value="first_bottom" selected="true">第1節が下</option>
+    <option value="first_bottom">第1節が下</option>
     <option value="last_bottom">最終節が下</option>
   </select>
   <label for="match_sort_key">試合上下順</label>
@@ -56,7 +56,7 @@
 <input type="button" id="reset_cookie" name="reset_cookie" value="ブラウザで覚えた状態をリセット" />
 <br/>
 <span>
-  <input type="range" id="scale_slider" name="scale_slider" list="match_date_set" min=0 max=1 step=0.1 />
+  <input type="range" id="scale_slider" name="scale_slider" list="match_date_set" min=0 max=1 step=0.1 value=1.0 />
   <label for="scale_slider"> グラフ表示領域縮小 [<span id="current_scale"></span> 倍表示]</label>
 </span>
 </body>
