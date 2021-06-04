@@ -37,6 +37,7 @@ function init() {
   document.querySelector('#date_slider').addEventListener('change', set_date_slider_ev, false);
   document.querySelector('#reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
   document.querySelector('#reset_cookie').addEventListener('click', clear_cookies, false);
+  document.querySelector('#scale_slider').addEventListener('change', set_scale_ev, false);
 
   // デフォルト値の読み込み
   HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
@@ -65,6 +66,9 @@ function load_cookies() {
   const cat = get_cookie('cat');
   if(cat) set_pulldown('cat', cat, false, true, false);
   // load_cookieの後にはrenderが呼ばれるので、ここではrenderは不要
+
+  const scale = get_cookie('scale');
+  if(scale) set_scale(scale, false, true);
 }
 
 function parse_cookies() {
@@ -216,7 +220,7 @@ function append_space_cols(cache, max_avlbl_pt) {
   const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
     + '<span class=" tooltiptext full ' + cache.target_team + '">敗戦記録:<hr/>'
     + cache.lose_box.join('<hr/>') + '</span></div>\n';
-  return '<div>' + team_name + cache.html.join('') + team_name + '</div>\n\n';
+  return '<div id="' + cache.target_team + '_column">' + team_name + cache.html.join('') + team_name + '</div>\n\n';
 }
 
 function make_win_content(_row, match_date) {
@@ -247,22 +251,15 @@ function make_point_column(max_avlbl_pt) {
   if(['old_bottom', 'first_bottom'].includes(document.querySelector('#match_sort_key').value)) {
     box_list.reverse();
   }
-  return '<div><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
+  return '<div class="point_column"><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
 }
-
-/*
-// 日付は二けた二けたのMM/DDフォーマットの文字列にするので、文字列比較で充分
-function compare_datelike_str(foo, bar) {
-  return new Date(foo) < new Date(bar);
-}
-*/
 
 function render_bar_graph() {
   if(! INPUTS) return;
   MATCH_DATE_SET.length = 0;
   MATCH_DATE_SET.push('01/01');
-  let boxContainer = document.querySelector('.boxContainer');
-  boxContainer.innerHTML = '';
+  let box_container = document.querySelector('.box_container');
+  box_container.innerHTML = '';
   let columns = {};
   let max_avlbl_pt = 0;
   Object.keys(INPUTS.matches).forEach(function (team_name) {
@@ -277,13 +274,14 @@ function render_bar_graph() {
   reset_date_slider(date_format(TARGET_DATE));
   let insert_point_columns = make_insert_columns(INPUTS.category);
   let point_column = make_point_column(max_avlbl_pt);
-  boxContainer.innerHTML += point_column;
+  box_container.innerHTML += point_column;
   get_sorted_team_list(INPUTS.matches).forEach(function(team_name, index) {
     if(insert_point_columns.includes(index))
-      boxContainer.innerHTML += point_column;
-    boxContainer.innerHTML += columns[team_name].html;
+      box_container.innerHTML += point_column;
+    box_container.innerHTML += columns[team_name].html;
   });
-  boxContainer.innerHTML += point_column;
+  box_container.innerHTML += point_column;
+  set_scale(document.querySelector('#scale_slider').value, false, false);
 }
 
 function get_sorted_team_list(matches) {
@@ -325,29 +323,18 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
   }
   slider.value = _i;
 }
-/// //////////////////////////////////////////////////////////// 背景調整用
-function set_future_opacity_ev(event) {
-  set_future_opacity(event.target.value, true, false);
-}
-function set_future_opacity(value, cookie_write = true, slidebar_write = true) {
-  // set_future_opacity はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
-  _rule = get_css_rule('.future')
-  _rule.style.opacity = value;
-  document.querySelector('#current_opacity').innerHTML = value;
-  if(cookie_write) set_cookie('opacity', value);
-  if(slidebar_write) document.querySelector('#future_opacity').value = value;
-}
 
-function set_space_ev(event) {
-  set_space(event.target.value, true, false);
+/// //////////////////////////////////////////////////////////// 設定変更
+function set_scale_ev(event) {
+  set_scale(event.target.value, true, false);
 }
-function set_space(value, cookie_write = true, color_write = true) {
-  // set_space はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
-  _rule = get_css_rule('.space')
-  _rule.style.backgroundColor = value;
-  _rule.style.color = getBright(value, RGB_MOD) > 0.5 ? 'black' : 'white';
-  if(cookie_write) set_cookie('space', value);
-  if(color_write) document.querySelector('#space_color').value = value;
+function set_scale(scale, cookie_write = true, slider_write = true) {
+  document.querySelector('.box_container').style.transform = "scale(" + scale + ")";
+  if(document.querySelector('.point_column'))
+    document.querySelector('.box_container').style.height = document.querySelector('.point_column').clientHeight * scale;
+  document.querySelector('#current_scale').innerHTML = scale;
+  if(cookie_write) set_cookie('scale', scale);
+  if(slider_write) document.querySelector('#scale_slider').value = scale;
 }
 
 function set_sort_key_ev(event) {
@@ -378,6 +365,31 @@ function reset_date_slider_ev(event) {
   TARGET_DATE = date_format(new Date());
   reset_date_slider(TARGET_DATE);
   render_bar_graph();
+}
+
+/// //////////////////////////////////////////////////////////// 背景調整用
+function set_future_opacity_ev(event) {
+  set_future_opacity(event.target.value, true, false);
+}
+function set_future_opacity(value, cookie_write = true, slider_write = true) {
+  // set_future_opacity はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
+  _rule = get_css_rule('.future')
+  _rule.style.opacity = value;
+  document.querySelector('#current_opacity').innerHTML = value;
+  if(cookie_write) set_cookie('opacity', value);
+  if(slider_write) document.querySelector('#future_opacity').value = value;
+}
+
+function set_space_ev(event) {
+  set_space(event.target.value, true, false);
+}
+function set_space(value, cookie_write = true, color_write = true) {
+  // set_space はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
+  _rule = get_css_rule('.space')
+  _rule.style.backgroundColor = value;
+  _rule.style.color = getBright(value, RGB_MOD) > 0.5 ? 'black' : 'white';
+  if(cookie_write) set_cookie('space', value);
+  if(color_write) document.querySelector('#space_color').value = value;
 }
 
 function get_css_rule(selector) {
