@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List, Set, Dict, Any
 import re
 from glob import glob
+from numpy import diff
 import pandas as pd
 from bs4 import BeautifulSoup
 import requests
@@ -99,7 +100,8 @@ def get_sections_to_update(all_matches: pd.DataFrame,
     target_sec = set()
     for (_sec, _dates) in get_match_dates_of_section(all_matches).items():
         for _date in _dates:
-            if _start < _date < _end:
+            if _start <= _date <= _end:
+                print(f'add {_sec} for match on {_date} between {_start} - {_end}')
                 target_sec.add(_sec)
     return target_sec
 
@@ -163,9 +165,13 @@ def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
         return current_matches
 
     diff_matches = read_matches_range(category, need_update)
+    old_matches = current_matches[current_matches['section_no'].isin(need_update)]
+    print(diff_matches)
+    print(old_matches)
+    print(diff_matches == old_matches)
     new_matches = pd.concat([current_matches[~current_matches['section_no'].isin(need_update)],
                              diff_matches]).sort_values(['section_no', 'match_index_in_section']).reset_index()
-    store_all_matches(new_matches, category)
+    # store_all_matches(new_matches, category)
     return new_matches
 
 
