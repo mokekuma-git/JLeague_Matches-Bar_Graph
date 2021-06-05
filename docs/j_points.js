@@ -38,22 +38,23 @@ function init() {
   document.getElementById('category').addEventListener('change', set_category_ev, false);
   document.getElementById('date_slider').addEventListener('change', set_date_slider_ev, false);
   document.getElementById('reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
-  document.getElementById('reset_cookie').addEventListener('click', function(){clear_cookies(); init();}, false);
+  document.getElementById('reset_cookie').addEventListener('click', function(){clear_cookies(); load_cookies();}, false);
   document.getElementById('scale_slider').addEventListener('change', set_scale_ev, false);
 
   // デフォルト値の読み込み
-  HEIGHT_UNIT = parseInt(window.getComputedStyle(document.querySelector('.short')).getPropertyValue('height'));
-  if(!get_cookie('opacity')) { // cookieにopacity設定がなければ、CSSのデフォルト値を設定
-    const _rule = get_css_rule('.future');
-    document.getElementById('future_opacity').value = _rule.style.opacity;
-    document.getElementById('current_opacity').innerHTML = _rule.style.opacity;
-  }
+  HEIGHT_UNIT = parseInt(get_css_rule('.short').style.height);
 }
 
 function load_cookies() {
   COOKIE_OBJ = parse_cookies();
   const opacity = get_cookie('opacity');
-  if(opacity) set_future_opacity(opacity, false, true);
+  if(opacity) {
+    set_future_opacity(opacity, false, true);
+  } else { // cookieにopacity設定がなければ、CSSのデフォルト値を設定
+    const _rule = get_css_rule('.future');
+    document.getElementById('future_opacity').value = _rule.style.opacity;
+    document.getElementById('current_opacity').innerHTML = _rule.style.opacity;
+  }
 
   const space = get_cookie('space');
   if(space) set_space(space, false, true);
