@@ -133,16 +133,19 @@ function make_html_column(target_team, team_data) {
   //  target_team: 対象チームの名称
   //  team_data:
   //    .df: make_team_dfで抽出したチームデータ (試合リスト)
+  //    以下、この関数の中で生成
   //    .point: 対象チームの勝ち点 (最新)
   //    .avlbl_pt: 対象チームの最大勝ち点 (最新)
-  //    .disp_point: (この関数の中で生成) 表示時点の勝点
-  //    .disp_avlbl_pt: (この関数の中で生成) 表示時点の最大勝点
+  //    .disp_point: 表示時点の勝点
+  //    .disp_avlbl_pt: 表示時点の最大勝点
   const box_list = [];
   const lose_box = [];
-  let avlbl_pt = 0;
-  let point = 0;
-  let goal_diff = 0;
-  let disp_goal_diff = 0;
+  team_data.point = 0; // 最新の勝点
+  team_data.avlbl_pt = 0; // 最新の最大勝ち点
+  team_data.goal_diff = 0; // 最新の得失点差
+  team_data.disp_avlbl_pt = 0; // 表示時の最大勝点
+  team_data.disp_point = 0; // 表示時の勝ち点
+  team_data.disp_goal_diff = 0; // 表示時の得失点差
   let match_sort_key;
   if(['first_bottom', 'last_bottom'].includes(document.querySelector('#match_sort_key').value)) {
     match_sort_key = 'section_no';
@@ -164,19 +167,30 @@ function make_html_column(target_team, team_data) {
     }
 
     let future;
-    if(! _row.has_result || match_date > TARGET_DATE) {
-      box_height = 3;
+    if(! _row.has_result) {
       future = true;
-      avlbl_pt += 3;
+      box_height = 3;
+      // 試合が無いので、勝点、得失点差は不変、最大勝ち点は⁺3
+      team_data.avlbl_pt += 3;
+      team_data.disp_avlbl_pt += 3;
     } else {
-      box_height = _row.point;
-      avlbl_pt += _row.point;
-      point += _row.point;
-      future = false;
-    }
-    if(_row.has_result) {
-      goal_diff += _row.goal_get - _row.goal_lose;
-      if(match_date <= TARGET_DATE) disp_goal_diff += _row.goal_get - _row.goal_lose;
+      // 試合があるので、実際の勝ち点、最大勝ち点、得失点は実際の記録通り
+      team_data.point += _row.point;
+      team_data.avlbl_pt += _row.point;
+      team_data.goal_diff += _row.goal_get - _row.goal_lose;
+      if(match_date <= TARGET_DATE) {
+        future = false;
+        box_height = _row.point;
+        // 表示対象なので、表示時点のdisp_も実際と同じ
+        team_data.disp_point += _row.point;
+        team_data.disp_avlbl_pt += _row.point;
+        team_data.disp_goal_diff += _row.goal_get - _row.goal_lose;
+      } else {
+        future = true;
+        box_height = 3;
+        // 表示対象ではないので、表示時点のdisp_は勝点、得失点差は不変、最大勝ち点は⁺3
+        team_data.disp_avlbl_pt += 3;
+      }
     }
 
     let box_html;
@@ -200,11 +214,7 @@ function make_html_column(target_team, team_data) {
     }
     box_list.push(box_html);
   });
-  team_data.disp_point = point; // 表示時の勝ち点
-  team_data.disp_avlbl_pt = avlbl_pt; // 表示時の最大勝点
-  team_data.goal_diff = goal_diff; // 最新の得失点差
-  team_data.disp_goal_diff = disp_goal_diff; // 表示時の得失点差
-  return {html: box_list, avlbl_pt: avlbl_pt, target_team: target_team, lose_box: lose_box};
+  return {html: box_list, avlbl_pt: team_data.disp_avlbl_pt, target_team: target_team, lose_box: lose_box};
 }
 function append_space_cols(cache, max_avlbl_pt) {
   // 上の make_html_column の各チームの中間状態と、全チームで最大の「シーズン最大勝ち点(avlbl_pt)」を受け取る
@@ -298,7 +308,7 @@ function get_sorted_team_list(matches) {
       // console.log('得失点(disp)', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
     } else {
       compare = matches[b].goal_diff - matches[a].goal_diff;
-      // console.log('得失点', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
+      // console.log('得失点', a, matches[a].goal_diff, b, matches[b].goal_diff);
     }
     if(compare != 0) return compare;
 
