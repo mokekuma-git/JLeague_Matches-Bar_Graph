@@ -5,7 +5,6 @@ from typing import List, Set, Dict, Any
 import re
 from glob import glob
 import argparse
-from numpy import diff
 import pandas as pd
 from bs4 import BeautifulSoup
 import requests
@@ -17,6 +16,37 @@ _PREFIX = '../csv/match_result-J'
 
 # Jリーグ公開の各節試合情報のURL
 SOURCE_URL_FORMAT = 'https://www.jleague.jp/match/section/j{}/{}/'
+# Jリーグ公開の順位情報のURL
+STANDING_URL_FORMAT = 'https://www.jleague.jp/standings/j{}/'
+
+
+def read_teams(category: int):
+    """各カテゴリのチームリストを返す
+    """
+    _url = STANDING_URL_FORMAT.format(category)
+    print(f'access {_url}...')
+    soup = BeautifulSoup(requests.get(_url).text, 'lxml')
+    return read_teams_from_web(soup, category)
+
+
+def read_teams_from_web(soup: BeautifulSoup, category: int) -> List[str]:
+    """Jリーグの順位情報からチームリストを読み込んで返す
+    """
+    standings = soup.find('table', class_=f'J{category}table')
+    if not standings:
+        print(f'Can\'t find J{category} teams...')
+        return []
+    td_teams = standings.find_all('td', class_='tdTeam')
+    return [list(_td.stripped_strings)[1] for _td in td_teams]
+
+
+def read_match(category: int, sec: int) -> pd.DataFrame:
+    """指定されたカテゴリの指定された1つの節をデータをWebから読み込む
+    """
+    _url = SOURCE_URL_FORMAT.format(category, sec)
+    print(f'access {_url}...')
+    soup = BeautifulSoup(requests.get(_url).text, 'lxml')
+    return read_match_from_web(soup)
 
 
 def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
@@ -61,20 +91,22 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
 def read_all_matches(category: int) -> pd.DataFrame:
     """指定されたカテゴリの全て試合をWeb経由で読み込む
     """
-    # TODO: 各カテゴリの全試合数はチーム数から出したいところだが、チーム数をどこから取るか？
-    match_counts = {1: 39, 2: 43, 3: 31}
-    return read_matches_range(category, list(range(1, match_counts[category])))
+    return read_matches_range(category)
 
 
-def read_matches_range(category: int, _range: List[int]) -> pd.DataFrame:
-    """指定されたカテゴリの指定された節のデータをWebから読み込む
+def read_matches_range(category: int, _range: List[int]=None) -> pd.DataFrame:
+    """指定されたカテゴリの指定された節リストのデータをWebから読み込む
     """
     _matches = pd.DataFrame()
+    if not _range:
+        teams_count = len(read_teams(category))
+        if teams_count % 2 > 0:
+            _range = range(1, teams_count * 2 + 1)
+        else:
+            _range = range(1, (teams_count - 1) * 2 + 1)
+
     for _i in _range:
-        _url = SOURCE_URL_FORMAT.format(category, _i)
-        print(f'access {_url}...')
-        soup = BeautifulSoup(requests.get(_url).text, 'lxml')
-        result_list = read_match_from_web(soup)
+        result_list = read_match(category, _i)
         _matches = pd.concat([_matches, pd.DataFrame(result_list)])
     _matches.reset_index(drop=True)
     return _matches
@@ -103,7 +135,8 @@ def get_sections_to_update(all_matches: pd.DataFrame,
     for (_sec, _dates) in get_match_dates_of_section(all_matches).items():
         for _date in _dates:
             if _start <= _date <= _end:
-                print(f'add {_sec} for match on {_date} between {_start} - {_end}')
+                print(f'add "{_sec}" for match on {_date.strftime(DATE_FORMAT)}' + \
+                      f' between {_start.strftime(DATE_FORMAT)} - {_end.strftime(DATE_FORMAT)}')
                 target_sec.add(_sec)
     target_sec = list(target_sec)
     target_sec.sort()
@@ -187,21 +220,19 @@ def compare_matches(foo_df, bar_df) -> bool:
     _bar = bar_df.drop(columns=['match_index_in_section'])
     _foo = _foo.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
     _bar = _bar.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
-    diff = {}
+    _diff = {}
     for col_name in _foo.columns:
         if list(_foo[col_name].fillna('')) == list(_bar[col_name].fillna('')):
             continue
         for _index in _foo[col_name].index:
             if _foo[col_name].at[_index] == _bar[col_name].at[_index]:
                 continue
-            if _index not in diff:
-                diff[_index] = []
-            diff[_index].append(col_name)
-    if diff:
-        print(_foo)
-        print(_bar)
+            if _index not in _diff:
+                _diff[_index] = []
+            _diff[_index].append(col_name)
+    if _diff:
         if PREFERENCE['debug']:
-            for (_index, col_list) in diff.items():
+            for (_index, col_list) in _diff.items():
                 print(_index, col_list)
                 print(_foo.loc[_index])
                 print(_bar.loc[_index])
@@ -248,8 +279,6 @@ def make_args() -> argparse.Namespace:
 if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-    import sys
     from make_match_bar_graph import dump_team_file
 
     ARGS = make_args()
