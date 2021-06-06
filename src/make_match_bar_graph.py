@@ -1,20 +1,12 @@
 """read_jleague_matches.pyで読み取ったJリーグ試合結果から、各チームの勝ち点積み上げ棒グラフを作成
 """
 import json
-from typing import Dict, List, Tuple, Any
+from typing import Dict, Tuple, Any
 import pandas as pd
 import numpy
 from read_jleague_matches import read_latest_allmatches_csv
 
-CATEGORY_TOP_TEAMS = [3, 2, 2]
-CATEGORY_BOTTOM_TEAMS = [4, 4, 0]
-CATEGORY_TEAMS_COUNT = [20, 22, 15]
-
-HEADER_FILE = 'j_points_header.html'
-FOOTER_FILE = 'j_points_footer.html'
-
 OUTPUT_FILE = '../docs/j{}_points.json'
-
 
 class NumDFEncoder(json.JSONEncoder):
     """JSON展開用エンコーダ
@@ -29,7 +21,19 @@ class NumDFEncoder(json.JSONEncoder):
             return o.tolist()
         if isinstance(o, pd.DataFrame):
             return o.to_dict(orient='records')
+        if isinstance(o, pd.Timestamp):
+            return o.strftime('%m/%d')
+        if type(o) == type(pd.NaT):
+            return ''
         return super().default(o)
+
+'''
+CATEGORY_TOP_TEAMS = [3, 2, 2]
+CATEGORY_BOTTOM_TEAMS = [4, 4, 0]
+CATEGORY_TEAMS_COUNT = [20, 22, 15]
+
+HEADER_FILE = 'j_points_header.html'
+FOOTER_FILE = 'j_points_footer.html'
 
 
 def make_insert_columns(category: int) -> List[int]:
@@ -42,50 +46,6 @@ def make_insert_columns(category: int) -> List[int]:
     if CATEGORY_BOTTOM_TEAMS[category]:
         columns.append(CATEGORY_TEAMS_COUNT[category] - CATEGORY_BOTTOM_TEAMS[category])
     return columns
-
-
-def get_point_from_match(_row: pd.Series) -> int:
-    """勝点を計算
-        先に、has_match_resultの結果が 'has_result' に入っていることを期待
-        _row: 該当試合の1行データ
-    """
-    if not _row['has_result']:
-        return 0
-    # str型で入ってるはずなんだけど、比べられるからそのまま
-    # まじめにやるなら int()を使う?
-    if _row['goal_get'] > _row['goal_lose']:
-        return 3
-    if _row['goal_get'] < _row['goal_lose']:
-        return 0
-    return 1
-
-
-def has_match_result(_row: pd.Series) -> bool:
-    """試合結果 (途中経過) があるか否かを返す
-        _row: 該当試合の1行データ
-    """
-    if not _row['goal_get']:
-        return False
-    if not _row['goal_lose']:
-        return False
-    return True
-
-
-def make_team_df(all_matches: pd.DataFrame, target_team: str) -> pd.DataFrame:
-    """対象チームを抽出して相手チームと勝ち負けの形に整形
-        all_matches: read_jleague_matches.py を読み込んだ結果
-        target_team: 対象チームの名称
-    """
-    _df = all_matches[(all_matches['home_team'] == target_team) | (all_matches['away_team'] == target_team)]
-    _df = _df.sort_values('match_date')
-    _df['is_home'] = _df.apply(lambda x: x['home_team'] == target_team, axis=1)
-    _df['opponent'] = _df.apply(lambda x: x['away_team'] if x['is_home'] else x['home_team'], axis=1)
-    _df['goal_get'] = _df.apply(lambda x: x['home_goal'] if x['is_home'] else x['away_goal'], axis=1)
-    _df['goal_lose'] = _df.apply(lambda x: x['away_goal'] if x['is_home'] else x['home_goal'], axis=1)
-    _df = _df.drop(columns=['home_team', 'away_team', 'home_goal', 'away_goal', 'match_index_in_section'])
-    _df['has_result'] = _df.apply(has_match_result, axis=1)
-    _df['point'] = _df.apply(get_point_from_match, axis=1)
-    return _df
 
 
 def get_available_point(_df: pd.DataFrame) -> int:
@@ -153,30 +113,6 @@ def make_point_column(max_point: int, old_bottom: bool=True) -> str:
     return '<div><div class="point box">勝点</div>' + ''.join(box_list) + '<div class="point box">勝点</div></div>\n\n'
 
 
-def make_team_map(all_matches: pd.DataFrame) -> Tuple[Dict[str, Dict[str, Any]], int]:
-    """各チームのチームごとの試合リスト、勝ち点などを収めたdictを返す
-    """
-    team_map = {}
-    max_point = 0
-    for target_team in all_matches['home_team'].value_counts().keys():
-        _df = make_team_df(all_matches, target_team)
-        cur_point = _df['point'].sum()
-        available_point = get_available_point(_df)
-        team_map[target_team] = {'df': _df,'point': cur_point, 'avlbl_pt': available_point}
-        if available_point > max_point:
-            max_point = available_point
-        # pirnt(_df)
-    return (team_map, max_point)
-
-
-def dump_team_map(all_matches: pd.DataFrame, category: int) -> str:
-    """全チームの試合データをJSON文字列としてダンプする
-    """
-    (_df, max_p) = make_team_map(all_matches)
-    return json.dumps({'matches':_df, 'category': category, 'max_point': max_p},
-                      cls=NumDFEncoder, ensure_ascii=False, sort_keys=True)
-
-
 def make_bar_graph_html(all_matches: pd.DataFrame, category: int,
                         team_sort_key: str='point', old_bottom: bool=True, insert_point_columns: list=None) -> str:
     """read_jleague_matches.py を読み込んだ結果から、勝ち点積み上げ棒グラフを表示するHTMLファイルを作り、内容を返す
@@ -215,11 +151,74 @@ def read_file(file_name: str) -> str:
     with open(file_name, mode='r') as _fp:
         result = _fp.read()
     return result
+'''
+
+
+def get_point_from_match(_row: pd.Series) -> int:
+    """勝点を計算
+        先に、has_match_resultの結果が 'has_result' に入っていることを期待
+        _row: 該当試合の1行データ
+    """
+    if not _row['has_result']:
+        return 0
+    # str型で入ってるはずなんだけど、比べられるからそのまま
+    # まじめにやるなら int()を使う?
+    if _row['goal_get'] > _row['goal_lose']:
+        return 3
+    if _row['goal_get'] < _row['goal_lose']:
+        return 0
+    return 1
+
+
+def has_match_result(_row: pd.Series) -> bool:
+    """試合結果 (途中経過) があるか否かを返す
+        _row: 該当試合の1行データ
+    """
+    return True if (_row['goal_get'] and _row['goal_lose']) else False
+
+
+def make_team_df(all_matches: pd.DataFrame, target_team: str) -> pd.DataFrame:
+    """対象チームを抽出して相手チームと勝ち負けの形に整形
+        all_matches: read_jleague_matches.py を読み込んだ結果
+        target_team: 対象チームの名称
+    """
+    _df = all_matches[(all_matches['home_team'] == target_team) | (all_matches['away_team'] == target_team)]
+    _df = _df.sort_values('match_date')
+    _df['is_home'] = _df.apply(lambda x: x['home_team'] == target_team, axis=1)
+    _df['opponent'] = _df.apply(lambda x: x['away_team'] if x['is_home'] else x['home_team'], axis=1)
+    _df['goal_get'] = _df.apply(lambda x: x['home_goal'] if x['is_home'] else x['away_goal'], axis=1)
+    _df['goal_lose'] = _df.apply(lambda x: x['away_goal'] if x['is_home'] else x['home_goal'], axis=1)
+    _df = _df.drop(columns=['home_team', 'away_team', 'home_goal', 'away_goal', 'match_index_in_section'])
+    _df['has_result'] = _df.apply(has_match_result, axis=1)
+    _df['point'] = _df.apply(get_point_from_match, axis=1)
+    return _df
+
+
+def make_team_map(all_matches: pd.DataFrame) -> Tuple[Dict[str, Dict[str, Any]], int]:
+    """各チームのチームごとの試合リストを収めたdictを返す
+        最大勝ち点などは、過去の状況などを再現する際にどのみちView側で計算すことになったので、
+        出力から削除した
+    """
+    team_map = {}
+    for target_team in all_matches['home_team'].value_counts().keys():
+        _df = make_team_df(all_matches, target_team)
+        team_map[target_team] = {'df': _df}
+    return team_map
+
+
+def dump_team_map(all_matches: pd.DataFrame, category: int) -> str:
+    """全チームの試合データをJSON文字列としてダンプする
+    """
+    _df = make_team_map(all_matches)
+    return json.dumps({'matches':_df, 'category': category},
+                      cls=NumDFEncoder, ensure_ascii=False, sort_keys=True)
 
 
 def dump_team_file(all_matches: pd.DataFrame, category: int) -> None:
     """カテゴリ毎の試合結果などをJSONファイルに書き込む
     """
+    if all_matches is None or all_matches.empty:
+        return
     all_matches['match_date'] = all_matches['match_date'].dt.strftime('%m/%d')
     all_matches = all_matches.where(pd.notnull(all_matches), None)
     with open(OUTPUT_FILE.format(category), mode='w') as _fp:
