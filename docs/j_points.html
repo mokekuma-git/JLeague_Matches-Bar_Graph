@@ -9,15 +9,19 @@
   <select id="team_sort_key" name="team_sort_key">
     <option value="point" selected="true">現在の勝ち点</option>
     <option value="avlbl_pt">今年の最大勝ち点</option>
+    <option value="disp_point">表示時の勝ち点</option>
+    <option value="disp_avlbl_pt">表示時の最大勝点</option>
   </select>
   <label for="team_sort_key">チーム並び順</label>
 </span>&nbsp;
 <span>
-  <select id="old_bottom" name="old_bottom">
-    <option value="true" selected="true">古い試合が下</option>
-    <option value="false">新しい試合が下</option>
+  <select id="match_sort_key" name="match_sort_key">
+    <option value="old_bottom" selected="true">古い試合が下</option>
+    <option value="new_bottom">新しい試合が下</option>
+    <option value="first_bottom">第1節が下</option>
+    <option value="last_bottom">最終節が下</option>
   </select>
-  <label for="old_bottom">試合上下順</label>
+  <label for="match_sort_key">試合上下順</label>
 </span>&nbsp;
 <span>
   <select id="category" name="category">
@@ -27,9 +31,16 @@
   </select>
   <label for="category">対象カテゴリ</label>
 </span>&nbsp;
+<br/>
+<span>
+  <span id='pre_date_slider'></span>
+  <input type="range" id="date_slider" name="date_slider" list="match_date_set" min=0 max=0 step=1 />
+  <label for="date_slider"> <span id='post_date_slider'></span> [<span id="target_date"></span> 現在の状況]</label>
+</span>
+<input type="button" id="reset_date_slider" name="reset_date_slider" value="最新の状態にリセット" />
 <hr/>
 
-<div class="boxContainer">
+<div id="box_container">
 
 </div>
 <div class='short' style='display: none;'></div>
@@ -41,6 +52,12 @@
 <span>
   <input type="range" id="future_opacity" name="future_opacity" min="0.0" max="0.5" step="0.01" />
   <label for="future_opacity">未実施試合のチームカラー透明度 [<span id="current_opacity"></span>] (0:白 ⇒ 0.5: 濃) </label>
+</span>&nbsp;
+<input type="button" id="reset_cookie" name="reset_cookie" value="ブラウザで覚えた状態をリセット" />
+<br/>
+<span>
+  <input type="range" id="scale_slider" name="scale_slider" list="match_date_set" min=0 max=1 step=0.1 value=1.0 />
+  <label for="scale_slider"> グラフ表示領域縮小 [<span id="current_scale"></span> 倍表示]</label>
 </span>
 </body>
 </html>
