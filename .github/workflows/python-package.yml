@@ -35,7 +35,7 @@ jobs:
         git config --global user.email "mokekuma.git@gmail.com"
         git checkout data/match/update
         git pull
-        python src/read_jleague_matches.py
+        RESULT=`python src/read_jleague_matches.py`
         git add .
-        git commit -m "Make new csv & json (append games on $DATE)"
+        git commit -m "Make new csv & json (append games on $DATE)\n$RESULT"
         git push
