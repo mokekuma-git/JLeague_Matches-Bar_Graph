@@ -17,7 +17,6 @@ jobs:
         python-version: [3.9]
 
     steps:
-    - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -29,11 +28,16 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Set current date as env variable
       run: DATE=`date +'%m/%d'`
-    - name: Update matches json
+    - name: Set git config
       run: |
         git config --global user.name "mokekuma-git"
         git config --global user.email "mokekuma.git@gmail.com"
-        git checkout data/match/update
+    - name: git checkout
+      uses: actions/checkout@v2
+      with:
+        ref: data/match/update
+    - name: Update matches json
+      run: |
         git pull
         RESULT=`python src/read_jleague_matches.py`
         git add .
