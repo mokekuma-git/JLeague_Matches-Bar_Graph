@@ -7,6 +7,7 @@ import numpy
 from read_jleague_matches import read_latest_allmatches_csv
 
 OUTPUT_FILE = '../docs/j{}_points.json'
+OLD_FILE = '../docs/{}-j{}_points.json'
 
 class NumDFEncoder(json.JSONEncoder):
     """JSON展開用エンコーダ
@@ -214,14 +215,19 @@ def dump_team_map(all_matches: pd.DataFrame, category: int) -> str:
                       cls=NumDFEncoder, ensure_ascii=False, sort_keys=True)
 
 
-def dump_team_file(all_matches: pd.DataFrame, category: int) -> None:
+def dump_team_file(all_matches: pd.DataFrame, category: int, year:str=None) -> None:
     """カテゴリ毎の試合結果などをJSONファイルに書き込む
+        year: 数値ではなく文字列、ステージ制の年は別の year として扱うことにする
     """
     if all_matches is None or all_matches.empty:
         return
     all_matches['match_date'] = all_matches['match_date'].dt.strftime('%m/%d')
     all_matches = all_matches.where(pd.notnull(all_matches), None)
-    with open(OUTPUT_FILE.format(category), mode='w') as _fp:
+    if year:
+        filename = OLD_FILE.format(year, category) # 過去のファイル
+    else:
+        filename = OUTPUT_FILE.format(category) # 最新のファイル
+    with open(filename, mode='w') as _fp:
         _fp.write(dump_team_map(all_matches, category))
 
 
