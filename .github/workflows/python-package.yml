@@ -39,6 +39,8 @@ jobs:
       run: |
         git pull
         RESULT=`python src/read_jleague_matches.py`
-        git add .
-        git commit -m "Make new csv & json (append games on $DATE)\n$RESULT"
-        git push
+        if (git diff --shortstat | grep '[0-9]'); then \
+            git add .; \
+            git commit -m "Make new csv & json (append games on $DATE)\n$RESULT"; \
+            git push origin HEAD; \
+        fi
