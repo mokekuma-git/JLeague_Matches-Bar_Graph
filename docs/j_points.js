@@ -24,18 +24,25 @@ const DEFAULT_TEAM_SORT = [ // 2021開始時点の並び順 (シーズン2020終
     '岩手', '沼津', '福島', '八戸', '讃岐', 'YS横浜', '宮崎']
 ]; // TODO: 過去の年度に拡張した時、どう設定しよう？ 別ファイルかな？
 
+const SEASON_MAP = {
+  '1':  ["2020", "2019", "2018", "2017", "2016B", "2016A", "2015B", "2015A", "2014", "2013", "2012", "2011", "2010", "2009", "2008", "2007", "2006", "2005", "2004B", "2004A", "2003B", "2003A", "2002B", "2002A", "2001B", "2001A", "2000B", "2000A", "1999B", "1999A", "1998B", "1998A", "1997B", "1997A", "1996", "1995B", "1995A", "1994B", "1994A", "1993B"],
+  '2': ["2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2011", "2010", "2009", "2008", "2007", "2006", "2005", "2004", "2003", "2002", "2001", "2000", "1999"],
+  '3': ["2020", "2019", "2018", "2017", "2016", "2015", "2014"]
+}
+
 window.addEventListener('load', init, false);
 
 function init() {
   BOX_CON = document.getElementById('box_container');
   load_cookies();
-  refresh_category();
+  refresh_match_data();
   TARGET_DATE = date_format(new Date());
   document.getElementById('future_opacity').addEventListener('change', set_future_opacity_ev, false);
   document.getElementById('space_color').addEventListener('change', set_space_ev, false);
   document.getElementById('team_sort_key').addEventListener('change', set_sort_key_ev, false);
   document.getElementById('match_sort_key').addEventListener('change', set_match_sort_key_ev, false);
   document.getElementById('category').addEventListener('change', set_category_ev, false);
+  document.getElementById('season').addEventListener('change', set_season_ev, false);
   document.getElementById('date_slider').addEventListener('change', set_date_slider_ev, false);
   document.getElementById('reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
   document.getElementById('reset_cookie').addEventListener('click', function(){clear_cookies(); load_cookies();}, false);
@@ -68,6 +75,7 @@ function load_cookies() {
   const cat = get_cookie('cat');
   if(cat) set_pulldown('cat', cat, false, true, false);
   // load_cookieの後にはrenderが呼ばれるので、ここではrenderは不要
+  make_season_pulldown();
 
   const scale = get_cookie('scale');
   if(scale) set_scale(scale, false, true);
@@ -101,8 +109,11 @@ function clear_cookies() {
   });
 }
 
-function refresh_category() {
-  const filename = 'j' + document.getElementById('category').value + '_points.json';
+function refresh_match_data() {
+  let filename = 'j' + document.getElementById('category').value + '_points.json';
+  let season = document.querySelector('#season').value;
+  if(season != 'current') filename = season + '-' + filename;
+  // console.log('Read match data: ' + filename);
   read_inputs(filename);
 }
 
@@ -335,6 +346,14 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
   slider.value = _i;
 }
 
+function make_season_pulldown() {
+  const options = ['<option value="current" selected="true">現在</option>\n'];
+  (SEASON_MAP[document.querySelector('#category').value]).forEach(function(x) {
+    options.push('<option value="' + x + '">' + x + '</option>\n');
+  });
+  document.querySelector('#season').innerHTML = options.join('');
+}
+
 /// //////////////////////////////////////////////////////////// 設定変更
 function set_scale_ev(event) {
   set_scale(event.target.value, true, false);
@@ -355,8 +374,14 @@ function set_match_sort_key_ev(event) {
   set_pulldown('match_sort', event.target.value, true, false);
 }
 function set_category_ev(event) {
-  refresh_category();
+  make_season_pulldown();
+  refresh_match_data();
   set_pulldown('cat', event.target.value, true, false, false);
+}
+function set_season_ev(event) {
+  reset_target_date();
+  refresh_match_data();
+  // set_pulldown('season', event.target.value, true, false, false); // COOKIE保存は後回し
 }
 function set_pulldown(key, value, cookie_write = true, pulldown_write = true, call_render = true) {
   if(cookie_write) set_cookie(key, value);
@@ -373,11 +398,14 @@ function set_date_slider_ev(event) { // Cookieで制御しないし、数値リ�
   render_bar_graph();
 }
 function reset_date_slider_ev(event) {
-  TARGET_DATE = date_format(new Date());
+  reset_target_date();
   reset_date_slider(TARGET_DATE);
   render_bar_graph();
 }
-
+function reset_target_date() {
+  if(document.querySelector('#season').value == 'current') TARGET_DATE = date_format(new Date());
+  else TARGET_DATE = '12/31';
+}
 /// //////////////////////////////////////////////////////////// 背景調整用
 function set_future_opacity_ev(event) {
   set_future_opacity(event.target.value, true, false);
