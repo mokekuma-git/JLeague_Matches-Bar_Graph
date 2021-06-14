@@ -113,7 +113,7 @@ function refresh_match_data() {
   let filename = 'j' + document.getElementById('category').value + '_points.json';
   let season = document.querySelector('#season').value;
   if(season != 'current') filename = season + '-' + filename;
-  console.log(filename);
+  // console.log('Read match data: ' + filename);
   read_inputs(filename);
 }
 
