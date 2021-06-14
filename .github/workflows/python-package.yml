@@ -21,10 +21,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
     - name: Set current date as env variable
       run: DATE=`date +'%m/%d'`
     - name: Set git config
@@ -35,6 +31,10 @@ jobs:
       uses: actions/checkout@v2
       with:
         ref: data/match/update
+    - name: Install Python dependencies
+      uses: py-actions/py-dependency-install@v2
+      with:
+        path: "requirements.txt"
     - name: Update matches json
       run: |
         git pull
