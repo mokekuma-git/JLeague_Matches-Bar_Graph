@@ -1,9 +1,11 @@
-"""
+"""過去のJリーグデータを元に、2020年以前の勝敗データをJSON化して保存
 """
 from typing import Dict
 from glob import glob
 import re
 import pandas as pd
+from read_jleague_matches import read_allmatches_csv
+from make_match_bar_graph import dump_team_file
 
 LEAGUE_NAME = [['Ｊ１', 'Ｊ１ １ｓｔ', 'Ｊ１ ２ｎｄ', 'Ｊ１ サントリー', 'Ｊ１ ＮＩＣＯＳ'], ['Ｊ２'], ['Ｊ３']]
 SEASON_SUFFIX = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -17,6 +19,19 @@ RENAME_DICT = {
 COLUMNS_LIST = ['match_date', 'section_no', 'match_index_in_section', 'start_time', 'stadium',
                 'home_team', 'home_goal', 'away_goal', 'away_team',
                 'broadcast', 'attendance']
+
+
+def dump_all_season_matches():
+    """CSVディレクトリ内のすべてのシーズンについて、JSON化を実施
+    """
+    for _file in glob('../csv/[12][09][0129][0-9]_allmatch_result*.csv'):
+        match_res = re.match(r'\.\./csv/(\d+)_allmatch_result-J(\d)\.csv', _file)
+        if not match_res:
+            print(f'NO_MATCH to regexp... {_file}')
+            continue
+        print(match_res[1], match_res[2], _file)
+        all_matches = read_allmatches_csv(_file)
+        dump_team_file(all_matches, match_res[2], match_res[1])
 
 
 def make_old_matches_csv(category: int) -> None:
@@ -94,3 +109,5 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     for category in [1, 2, 3]:
         make_old_matches_csv(category)
+
+    dump_all_season_matches()
