@@ -6,29 +6,106 @@ let TARGET_DATE;
 let BOX_CON;
 const MATCH_DATE_SET = [];
 
-const CATEGORY_TOP_TEAMS = [3, 2, 2];
-const CATEGORY_BOTTOM_TEAMS = [4, 4, 0];
-const CATEGORY_TEAMS_COUNT = [20, 22, 15];
 const TARGET_ITEM_ID = {
   team_sort: 'team_sort_key',
   match_sort: 'match_sort_key',
   cat: 'category'
 }
 
-const DEFAULT_TEAM_SORT = [ // 2021開始時点の並び順 (シーズン2020終了時の順序)
-  ['川崎Ｆ', 'Ｇ大阪', '名古屋', 'Ｃ大阪', '鹿島', 'FC東京', '柏', '広島', '横浜FM', '浦和',
-    '大分', '札幌', '鳥栖', '神戸', '横浜FC', '清水', '仙台', '湘南', '徳島', '福岡'],
-  ['長崎', '甲府', '北九州', '磐田', '山形', '水戸', '京都', '栃木', '新潟', '東京Ｖ', '松本',
-    '千葉', '大宮', '琉球', '岡山', '金沢', '町田', '群馬', '愛媛', '山口', '秋田', '相模原'],
-  ['長野', '鹿児島', '鳥取', '岐阜', '今治', '熊本', '富山', '藤枝',
-    '岩手', '沼津', '福島', '八戸', '讃岐', 'YS横浜', '宮崎']
-]; // TODO: 過去の年度に拡張した時、どう設定しよう？ 別ファイルかな？
-
 const SEASON_MAP = {
-  '1':  ["2020", "2019", "2018", "2017", "2016B", "2016A", "2015B", "2015A", "2014", "2013", "2012", "2011", "2010", "2009", "2008", "2007", "2006", "2005", "2004B", "2004A", "2003B", "2003A", "2002B", "2002A", "2001B", "2001A", "2000B", "2000A", "1999B", "1999A", "1998B", "1998A", "1997B", "1997A", "1996", "1995B", "1995A", "1994B", "1994A", "1993B"],
-  '2': ["2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2011", "2010", "2009", "2008", "2007", "2006", "2005", "2004", "2003", "2002", "2001", "2000", "1999"],
-  '3': ["2020", "2019", "2018", "2017", "2016", "2015", "2014"]
-}
+  // {Category: {Season: [All, Promoted, Relegated, [Default_Ranking]]}
+  1: {
+    "2021": [20, 3, 4,
+      ["川崎Ｆ", "Ｇ大阪", "名古屋", "Ｃ大阪", "鹿島", "FC東京", "柏", "広島", "横浜FM", "浦和", "大分", "札幌", "鳥栖", "神戸", "横浜FC", "清水", "仙台", "湘南", "徳島", "福岡"]],
+    "2020": [18, 4, 0,
+      ["横浜FM", "FC東京", "鹿島", "川崎Ｆ", "Ｃ大阪", "広島", "Ｇ大阪", "神戸", "大分", "札幌", "仙台", "清水", "名古屋", "浦和", "鳥栖", "湘南", "柏", "横浜FC"]],
+    "2019": [18, 3, 3,
+      ["川崎Ｆ", "広島", "鹿島", "札幌", "浦和", "FC東京", "Ｃ大阪", "清水", "Ｇ大阪", "神戸", "仙台", "横浜FM", "湘南", "鳥栖", "名古屋", "磐田", "松本", "大分"]],
+    "2018": [18, 3, 3,
+      ["川崎Ｆ", "鹿島", "Ｃ大阪", "柏", "横浜FM", "磐田", "浦和", "鳥栖", "神戸", "Ｇ大阪", "札幌", "仙台", "FC東京", "清水", "広島", "湘南", "長崎", "名古屋"]],
+    "2017": [18, 4, 3],
+    "2016B": [18, 4, 3],
+    "2016A": [18, 4, 3],
+    "2015B": [18, 4, 3],
+    "2015A": [18, 4, 3],
+    "2014": [18, 4, 3],
+    "2013": [18, 4, 3],
+    "2012": [18, 3, 3],
+    "2011": [18, 3, 3],
+    "2010": [18, 3, 3],
+    "2009": [18, 4, 3],
+    "2008": [18, 3, 3],
+    "2007": [18, 1, 3],
+    "2006": [18, 2, 3],
+    "2005": [18, 1, 3],
+    "2004B": [16, 1, 2],
+    "2004A": [16, 1, 2],
+    "2003B": [16, 1, 2],
+    "2003A": [16, 1, 2],
+    "2002B": [16, 1, 2],
+    "2002A": [16, 1, 2],
+    "2001B": [16, 1, 2],
+    "2001A": [16, 1, 2],
+    "2000B": [16, 1, 2],
+    "2000A": [16, 1, 2],
+    "1999B": [16, 1, 2],
+    "1999A": [16, 1, 2],
+    "1998B": [18, 1, 0],
+    "1998A": [18, 1, 0],
+    "1997B": [17, 1, 0],
+    "1997A": [17, 1, 0],
+    "1996": [16, 1, 0],
+    "1995B": [14, 1, 0],
+    "1995A": [14, 1, 0],
+    "1994B": [12, 1, 0],
+    "1994A": [12, 1, 0],
+    "1993B": [10, 1, 0],
+    "1993A": [10, 1, 0],
+  },
+  2: {
+    "2021": [22, 2, 4,
+      ["長崎", "甲府", "北九州", "磐田", "山形", "水戸", "京都", "栃木", "新潟", "東京Ｖ", "松本", "千葉", "大宮", "琉球", "岡山", "金沢", "町田", "群馬", "愛媛", "山口", "秋田", "相模原"]],
+    "2020": [22, 2, 0,
+      ["松本", "磐田", "大宮", "徳島", "甲府", "山形", "水戸", "京都", "岡山", "新潟", "金沢", "長崎", "東京Ｖ", "琉球", "山口", "福岡", "千葉", "町田", "愛媛", "栃木", "北九州", "群馬"]],
+    "2019": [22, 6, 2,
+      ["柏", "長崎", "横浜FC", "町田", "大宮", "東京Ｖ", "福岡", "山口", "甲府", "水戸", "徳島", "山形", "金沢", "千葉", "岡山", "新潟", "栃木", "愛媛", "京都", "岐阜", "琉球", "鹿児島"]],
+    "2018": [22, 6, 2,
+      ["甲府", "新潟", "大宮", "福岡", "東京Ｖ", "千葉", "徳島", "松本", "大分", "横浜FC", "山形","京都", "岡山", "水戸", "愛媛", "町田", "金沢", "岐阜", "讃岐", "山口", "熊本", "栃木"]],
+    "2017": [22, 6, 2],
+    "2016": [22, 6, 2],
+    "2015": [22, 6, 2],
+    "2014": [22, 6, 2],
+    "2013": [22, 6, 1],
+    "2012": [22, 6, 1],
+    "2011": [20, 3, 0],
+    "2010": [19, 3, 0],
+    "2009": [18, 3, 0],
+    "2008": [15, 3, 0],
+    "2007": [13, 3, 0],
+    "2006": [13, 3, 0],
+    "2005": [12, 3, 0],
+    "2004": [12, 3, 0],
+    "2003": [12, 2, 0],
+    "2002": [12, 2, 0],
+    "2001": [12, 2, 0],
+    "2000": [11, 2, 0],
+    "1999": [10, 2, 0],
+  },
+  3: {
+    "2021": [15, 2, 0,
+      ["長野", "鹿児島", "鳥取", "岐阜", "今治", "熊本", "富山", "藤枝", "岩手", "沼津", "福島", "八戸", "讃岐", "YS横浜", "宮崎"]],
+    "2020": [18, 2, 0,
+      ["鹿児島", "岐阜", "藤枝", "富山", "熊本", "Ｃ大23", "鳥取", "秋田", "長野", "八戸", "福島", "沼津", "YS横浜", "讃岐", "相模原", "Ｆ東23", "Ｇ大23", "岩手", "今治"]],
+    "2019": [18, 2, 0,
+      ["熊本", "讃岐", "鳥取", "沼津", "群馬", "Ｇ大23", "Ｃ大23", "秋田", "相模原", "長野", "富山", "福島", "盛岡", "Ｆ東23", "YS横浜", "藤枝", "北九州", "八戸"]],
+    "2018": [17, 2, 0,
+      ["群馬", "秋田", "沼津", "鹿児島", "長野", "琉球", "藤枝", "富山", "北九州", "福島", "Ｆ東23", "相模原", "Ｃ大23", "YS横浜", "盛岡", "Ｇ大23", "鳥取"]],
+    "2017": [17, 2, 0],
+    "2016": [16, 2, 0],
+    "2015": [13, 2, 0],
+    "2014": [12, 2, 0],
+  },
+};
 
 window.addEventListener('load', init, false);
 
@@ -112,7 +189,7 @@ function clear_cookies() {
 function refresh_match_data() {
   let filename = 'j' + document.getElementById('category').value + '_points.json';
   let season = document.querySelector('#season').value;
-  if(season != 'current') filename = season + '-' + filename;
+  if (document.querySelector("#season").selectedIndex != 0) filename = season + "-" + filename;
   // console.log('Read match data: ' + filename);
   read_inputs(filename);
 }
@@ -130,10 +207,11 @@ function read_inputs(filename) {
 function make_insert_columns(category) {
   // 各カテゴリの勝ち点列を入れる敷居位置を決定
   //  昇格チーム (ACL出場チーム)、中間、降格チームの位置に挟む
-  category -= 1;
-  const columns = [CATEGORY_TOP_TEAMS[category], Math.floor(CATEGORY_TEAMS_COUNT[category] / 2)];
-  if(CATEGORY_BOTTOM_TEAMS[category])
-    columns.push(CATEGORY_TEAMS_COUNT[category] - CATEGORY_BOTTOM_TEAMS[category]);
+  let season = document.querySelector("#season").value;
+  if (season == "current") season = new Date().getYear() + 1900;
+  let season_data = SEASON_MAP[category][season];
+  const columns = [season_data[1], Math.floor(season_data[0] / 2)];
+  if (season_data[2] != 0) columns.push(season_data[0] - season_data[2]);
   return columns;
 }
 
@@ -156,9 +234,11 @@ function make_html_column(target_team, team_data) {
   team_data.point = 0; // 最新の勝点 TODO: 最新情報は、CSVを直接読む形式に変えた時にそちらで計算
   team_data.avlbl_pt = 0; // 最新の最大勝ち点
   team_data.goal_diff = 0; // 最新の得失点差
+  team_data.goal_get = 0; // 最新の総得点
   team_data.disp_avlbl_pt = 0; // 表示時の最大勝点
   team_data.disp_point = 0; // 表示時の勝ち点
   team_data.disp_goal_diff = 0; // 表示時の得失点差
+  team_data.disp_goal_get = 0; // 表示時の総得点
   let match_sort_key;
   if(['first_bottom', 'last_bottom'].includes(document.getElementById('match_sort_key').value)) {
     match_sort_key = 'section_no';
@@ -191,6 +271,7 @@ function make_html_column(target_team, team_data) {
       team_data.point += _row.point;
       team_data.avlbl_pt += _row.point;
       team_data.goal_diff += _row.goal_get - _row.goal_lose;
+      team_data.goal_get += _row.goal_get;
       if(match_date <= TARGET_DATE) {
         future = false;
         box_height = _row.point;
@@ -198,6 +279,7 @@ function make_html_column(target_team, team_data) {
         team_data.disp_point += _row.point;
         team_data.disp_avlbl_pt += _row.point;
         team_data.disp_goal_diff += _row.goal_get - _row.goal_lose;
+        team_data.disp_goal_get += _row.goal_get;
       } else {
         future = true;
         box_height = 3;
@@ -324,10 +406,24 @@ function get_sorted_team_list(matches) {
     }
     if(compare != 0) return compare;
 
-    // それでも同じなら、昨年の順位を元にソート
-    const category = INPUTS.category - 1;
-    // console.log('昨年順位', a, DEFAULT_TEAM_SORT[category].indexOf(a), b, DEFAULT_TEAM_SORT[category].indexOf(b));
-    return DEFAULT_TEAM_SORT[category].indexOf(a) - DEFAULT_TEAM_SORT[category].indexOf(b);
+    // 総得点で比較 (表示時点か最新かで振り分け)
+    if (sort_key.startsWith("disp_")) {
+      compare = matches[b].disp_goal_get - matches[a].disp_goal_get;
+      // console.log('総得点(disp)', a, matches[a].disp_goal_get, b, matches[b].disp_goal_get);
+    } else {
+      compare = matches[b].goal_get - matches[a].goal_get;
+      // console.log('総得点', a, matches[a].goal_get, b, matches[b].goal_get);
+    }
+    if (compare != 0) return compare;
+
+    // それでも同じなら、前年の順位を元にソート
+    // console.log('前年順位', a, DEFAULT_TEAM_SORT[category].indexOf(a), b, DEFAULT_TEAM_SORT[category].indexOf(b));
+    const season = document.querySelector("#season").value;
+    if (! SEASON_MAP[INPUTS.category][season][3]) return 0;
+    return (
+      SEASON_MAP[INPUTS.category][season][3].indexOf(a) -
+      SEASON_MAP[INPUTS.category][season][3].indexOf(b)
+    );
   });
 }
 
@@ -347,11 +443,12 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
 }
 
 function make_season_pulldown() {
-  const options = ['<option value="current" selected="true">現在</option>\n'];
-  (SEASON_MAP[document.querySelector('#category').value]).forEach(function(x) {
-    options.push('<option value="' + x + '">' + x + '</option>\n');
-  });
-  document.querySelector('#season').innerHTML = options.join('');
+  const category = document.querySelector("#category").value;
+  const options = [];
+  Object.keys(SEASON_MAP[category]).sort().reverse().forEach(function (x) {
+      options.push('<option value="' + x + '">' + x + "</option>\n");
+    });
+  document.querySelector("#season").innerHTML = options.join("");
 }
 
 /// //////////////////////////////////////////////////////////// 設定変更
