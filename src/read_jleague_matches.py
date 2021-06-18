@@ -244,7 +244,11 @@ def parse_date_from_filename(filename: str) -> datetime:
     """試合データファイル名から、取得日時を読みだす
     """
     # ファイルフォーマットが想定と違った時のことはあまり考えていない
-    date_str = re.search(r'\-(\d{8}).*\.csv', filename)[1]
+    _res = re.search(r'\-(\d{8}).*\.csv', filename)
+    if not _res:
+        print(f'{filename} cannot be parsed date')
+        return None
+    date_str = _res[1]
     return datetime.strptime(date_str, DATE_FORMAT)
 
 
