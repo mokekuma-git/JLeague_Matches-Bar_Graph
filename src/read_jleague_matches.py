@@ -146,7 +146,7 @@ def get_sections_to_update(all_matches: pd.DataFrame,
 def get_latest_allmatches_filename(category: int) -> str:
     """指定されたカテゴリの最新のCSVファイル名を返す
     """
-    _filelist = glob(f'../csv/*J{category}*.csv')
+    _filelist = sorted(glob(f'../csv/*J{category}*.csv'))
     if not _filelist:
         return None
     return _filelist[-1]
