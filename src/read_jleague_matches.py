@@ -1,6 +1,6 @@
 """Jリーグ各節の試合情報を読み込み、CSVとして取得、保存
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Set, Dict, Any
 import re
 from glob import glob
@@ -122,21 +122,32 @@ def get_match_dates_of_section(all_matches: pd.DataFrame) -> Dict[str, Set[pd.Ti
     """各節の開催日リストを返す
     開催日未定の試合は無視
     """
-    return all_matches.dropna(
-        subset=['match_date']).groupby('section_no')['match_date'].apply(set).to_dict()
+    return all_matches.dropna(subset=['match_date']).groupby('section_no').apply(make_kickoff_time)
+#    return all_matches.dropna(
+#        subset=['match_date']).groupby('section_no')['match_date'].apply(set).to_dict()
+
+
+def make_kickoff_time(_subset: pd.DataFrame):
+    """与えられた試合データから、キックオフ時間を作成し、その2時間後 (試合終了時間想定) のセットを返す
+    与えられる試合データは同一節のものと想定
+    試合開始時間未定の場合は 00:00 キックオフと考える
+    同一時間を複数返さないようにするためのセット化を実施
+    """
+    start_time = _subset['start_time'].str.replace('未定', '00:00')
+    result = pd.to_datetime(_subset['match_date'].dt.strftime('%Y/%m/%d ') + start_time) + timedelta(hours=2)
+    return set(result)
 
 
 def get_sections_to_update(all_matches: pd.DataFrame,
                            _start: pd.Timestamp, _end: pd.Timestamp) -> Set[str]:
-    """startからendまでの対象期間までに、試合が開催された節のセットを返す
-    startとend当日に試合が行われる節も含む
+    """startからendまでの対象期間に、試合が終了した節のセットを返す
     """
     target_sec = set()
     for (_sec, _dates) in get_match_dates_of_section(all_matches).items():
         for _date in _dates:
+            print(f'compare "{_sec}" for match on {_date}' + f' between {_start} - {_end}')
             if _start <= _date <= _end:
-                print(f'add "{_sec}" for match on {_date.strftime(DATE_FORMAT)}' + \
-                      f' between {_start.strftime(DATE_FORMAT)} - {_end.strftime(DATE_FORMAT)}')
+                print(f'add "{_sec}" for match on {_date}' + f' between {_start} - {_end}')
                 target_sec.add(_sec)
     target_sec = list(target_sec)
     target_sec.sort()
@@ -244,12 +255,8 @@ def parse_date_from_filename(filename: str) -> datetime:
     """試合データファイル名から、取得日時を読みだす
     """
     # ファイルフォーマットが想定と違った時のことはあまり考えていない
-    _res = re.search(r'\-(\d{8}).*\.csv', filename)
-    if not _res:
-        print(f'{filename} cannot be parsed date')
-        return None
-    date_str = _res[1]
-    return datetime.strptime(date_str, DATE_FORMAT)
+    #_res = re.search(r'\-(\d{8}).*\.csv', filename)
+    return datetime.fromtimestamp(os.stat(filename).st_mtime)
 
 
 def parse_range(arg: str) -> List[int]:
