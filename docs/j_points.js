@@ -6,28 +6,11 @@ let TARGET_DATE;
 let BOX_CON;
 const MATCH_DATE_SET = [];
 
-const CATEGORY_TOP_TEAMS = [3, 2, 2];
-const CATEGORY_BOTTOM_TEAMS = [4, 4, 0];
-const CATEGORY_TEAMS_COUNT = [20, 22, 15];
-const TARGET_ITEM_ID = {
+const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
   team_sort: 'team_sort_key',
   match_sort: 'match_sort_key',
-  cat: 'category'
-}
-
-const DEFAULT_TEAM_SORT = [ // 2021開始時点の並び順 (シーズン2020終了時の順序)
-  ['川崎Ｆ', 'Ｇ大阪', '名古屋', 'Ｃ大阪', '鹿島', 'FC東京', '柏', '広島', '横浜FM', '浦和',
-    '大分', '札幌', '鳥栖', '神戸', '横浜FC', '清水', '仙台', '湘南', '徳島', '福岡'],
-  ['長崎', '甲府', '北九州', '磐田', '山形', '水戸', '京都', '栃木', '新潟', '東京Ｖ', '松本',
-    '千葉', '大宮', '琉球', '岡山', '金沢', '町田', '群馬', '愛媛', '山口', '秋田', '相模原'],
-  ['長野', '鹿児島', '鳥取', '岐阜', '今治', '熊本', '富山', '藤枝',
-    '岩手', '沼津', '福島', '八戸', '讃岐', 'YS横浜', '宮崎']
-]; // TODO: 過去の年度に拡張した時、どう設定しよう？ 別ファイルかな？
-
-const SEASON_MAP = {
-  '1':  ["2020", "2019", "2018", "2017", "2016B", "2016A", "2015B", "2015A", "2014", "2013", "2012", "2011", "2010", "2009", "2008", "2007", "2006", "2005", "2004B", "2004A", "2003B", "2003A", "2002B", "2002A", "2001B", "2001A", "2000B", "2000A", "1999B", "1999A", "1998B", "1998A", "1997B", "1997A", "1996", "1995B", "1995A", "1994B", "1994A", "1993B"],
-  '2': ["2020", "2019", "2018", "2017", "2016", "2015", "2014", "2013", "2012", "2011", "2010", "2009", "2008", "2007", "2006", "2005", "2004", "2003", "2002", "2001", "2000", "1999"],
-  '3': ["2020", "2019", "2018", "2017", "2016", "2015", "2014"]
+  cat: 'category',
+  season: 'season'
 }
 
 window.addEventListener('load', init, false);
@@ -111,8 +94,8 @@ function clear_cookies() {
 
 function refresh_match_data() {
   let filename = 'j' + document.getElementById('category').value + '_points.json';
-  let season = document.querySelector('#season').value;
-  if(season != 'current') filename = season + '-' + filename;
+  let season = get_season();
+  if (document.querySelector("#season").selectedIndex != 0) filename = season + "-" + filename;
   // console.log('Read match data: ' + filename);
   read_inputs(filename);
 }
@@ -130,11 +113,16 @@ function read_inputs(filename) {
 function make_insert_columns(category) {
   // 各カテゴリの勝ち点列を入れる敷居位置を決定
   //  昇格チーム (ACL出場チーム)、中間、降格チームの位置に挟む
-  category -= 1;
-  const columns = [CATEGORY_TOP_TEAMS[category], Math.floor(CATEGORY_TEAMS_COUNT[category] / 2)];
-  if(CATEGORY_BOTTOM_TEAMS[category])
-    columns.push(CATEGORY_TEAMS_COUNT[category] - CATEGORY_BOTTOM_TEAMS[category]);
+  let season_data = SEASON_MAP[category][get_season()];
+  const columns = [season_data[1], Math.floor(season_data[0] / 2)];
+  if (season_data[2] != 0) columns.push(season_data[0] - season_data[2]);
   return columns;
+}
+
+function get_season() {
+  const season = document.querySelector("#season").value;
+  if (season == "current") return new Date().getYear() + 1900;
+  return season;
 }
 
 const is_string = (value) => (typeof(value) === 'string' || value instanceof String);
@@ -156,9 +144,11 @@ function make_html_column(target_team, team_data) {
   team_data.point = 0; // 最新の勝点 TODO: 最新情報は、CSVを直接読む形式に変えた時にそちらで計算
   team_data.avlbl_pt = 0; // 最新の最大勝ち点
   team_data.goal_diff = 0; // 最新の得失点差
+  team_data.goal_get = 0; // 最新の総得点
   team_data.disp_avlbl_pt = 0; // 表示時の最大勝点
   team_data.disp_point = 0; // 表示時の勝ち点
   team_data.disp_goal_diff = 0; // 表示時の得失点差
+  team_data.disp_goal_get = 0; // 表示時の総得点
   let match_sort_key;
   if(['first_bottom', 'last_bottom'].includes(document.getElementById('match_sort_key').value)) {
     match_sort_key = 'section_no';
@@ -190,14 +180,16 @@ function make_html_column(target_team, team_data) {
       // 試合があるので、実際の勝ち点、最大勝ち点、得失点は実際の記録通り
       team_data.point += _row.point;
       team_data.avlbl_pt += _row.point;
-      team_data.goal_diff += _row.goal_get - _row.goal_lose;
+      team_data.goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
+      team_data.goal_get += parseInt(_row.goal_get);
       if(match_date <= TARGET_DATE) {
         future = false;
         box_height = _row.point;
         // 表示対象なので、表示時点のdisp_も実際と同じ
         team_data.disp_point += _row.point;
         team_data.disp_avlbl_pt += _row.point;
-        team_data.disp_goal_diff += _row.goal_get - _row.goal_lose;
+        team_data.disp_goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
+        team_data.disp_goal_get += parseInt(_row.goal_get);
       } else {
         future = true;
         box_height = 3;
@@ -324,10 +316,24 @@ function get_sorted_team_list(matches) {
     }
     if(compare != 0) return compare;
 
-    // それでも同じなら、昨年の順位を元にソート
-    const category = INPUTS.category - 1;
-    // console.log('昨年順位', a, DEFAULT_TEAM_SORT[category].indexOf(a), b, DEFAULT_TEAM_SORT[category].indexOf(b));
-    return DEFAULT_TEAM_SORT[category].indexOf(a) - DEFAULT_TEAM_SORT[category].indexOf(b);
+    // 総得点で比較 (表示時点か最新かで振り分け)
+    if (sort_key.startsWith("disp_")) {
+      compare = matches[b].disp_goal_get - matches[a].disp_goal_get;
+      // console.log('総得点(disp)', a, matches[a].disp_goal_get, b, matches[b].disp_goal_get);
+    } else {
+      compare = matches[b].goal_get - matches[a].goal_get;
+      // console.log('総得点', a, matches[a].goal_get, b, matches[b].goal_get);
+    }
+    if (compare != 0) return compare;
+
+    // それでも同じなら、前年の順位を元にソート
+    // console.log('前年順位', a, DEFAULT_TEAM_SORT[category].indexOf(a), b, DEFAULT_TEAM_SORT[category].indexOf(b));
+    const season = get_season();
+    if (! SEASON_MAP[INPUTS.category][season][3]) return 0;
+    return (
+      SEASON_MAP[INPUTS.category][season][3].indexOf(a) -
+      SEASON_MAP[INPUTS.category][season][3].indexOf(b)
+    );
   });
 }
 
@@ -347,11 +353,12 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
 }
 
 function make_season_pulldown() {
-  const options = ['<option value="current" selected="true">現在</option>\n'];
-  (SEASON_MAP[document.querySelector('#category').value]).forEach(function(x) {
-    options.push('<option value="' + x + '">' + x + '</option>\n');
-  });
-  document.querySelector('#season').innerHTML = options.join('');
+  const category = document.querySelector("#category").value;
+  const options = [];
+  Object.keys(SEASON_MAP[category]).sort().reverse().forEach(function (x) {
+      options.push('<option value="' + x + '">' + x + "</option>\n");
+    });
+  document.querySelector("#season").innerHTML = options.join("");
 }
 
 /// //////////////////////////////////////////////////////////// 設定変更
@@ -403,7 +410,7 @@ function reset_date_slider_ev(event) {
   render_bar_graph();
 }
 function reset_target_date() {
-  if(document.querySelector('#season').value == 'current') TARGET_DATE = date_format(new Date());
+  if(document.querySelector('#season').selectedIndex == 0) TARGET_DATE = date_format(new Date());
   else TARGET_DATE = '12/31';
 }
 /// //////////////////////////////////////////////////////////// 背景調整用
