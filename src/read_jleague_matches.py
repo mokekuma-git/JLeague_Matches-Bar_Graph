@@ -145,7 +145,7 @@ def get_sections_to_update(all_matches: pd.DataFrame,
     target_sec = set()
     for (_sec, _dates) in get_match_dates_of_section(all_matches).items():
         for _date in _dates:
-            print(f'compare "{_sec}" for match on {_date}' + f' between {_start} - {_end}')
+            # print(f'compare "{_sec}" for match on {_date}' + f' between {_start} - {_end}')
             if _start <= _date <= _end:
                 print(f'add "{_sec}" for match on {_date}' + f' between {_start} - {_end}')
                 target_sec.add(_sec)
