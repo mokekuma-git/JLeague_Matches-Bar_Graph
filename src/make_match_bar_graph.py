@@ -199,9 +199,10 @@ def make_team_map(all_matches: pd.DataFrame) -> Tuple[Dict[str, Dict[str, Any]],
     """各チームのチームごとの試合リストを収めたdictを返す
         最大勝ち点などは、過去の状況などを再現する際にどのみちView側で計算すことになったので、
         出力から削除した
+        home_teamで探すと、J3に居たJ-22のように「全てアウェイ」のチームを見落とすので修正
     """
     team_map = {}
-    for target_team in all_matches['home_team'].value_counts().keys():
+    for target_team in all_matches['away_team'].value_counts().keys():
         _df = make_team_df(all_matches, target_team)
         team_map[target_team] = {'df': _df}
     return team_map
