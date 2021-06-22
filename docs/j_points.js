@@ -27,6 +27,8 @@ function init() {
   document.getElementById('category').addEventListener('change', set_category_ev, false);
   document.getElementById('season').addEventListener('change', set_season_ev, false);
   document.getElementById('date_slider').addEventListener('change', set_date_slider_ev, false);
+  document.getElementById('date_slider_up').addEventListener('click', function() {document.getElementById('date_slider').value++; set_date_slider_ev()}, false);
+  document.getElementById('date_slider_down').addEventListener('click', function() {document.getElementById('date_slider').value--; set_date_slider_ev()}, false);
   document.getElementById('reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
   document.getElementById('reset_cookie').addEventListener('click', function(){clear_cookies(); load_cookies();}, false);
   document.getElementById('scale_slider').addEventListener('change', set_scale_ev, false);
@@ -272,7 +274,6 @@ function make_point_column(max_avlbl_pt) {
 function render_bar_graph() {
   if(! INPUTS) return;
   MATCH_DATE_SET.length = 0; // TODO: 最新情報は、CSVを直接読む形式に変えた時にそちらで計算
-  MATCH_DATE_SET.push('01/01');
   BOX_CON.innerHTML = '';
   let columns = {};
   let max_avlbl_pt = 0;
@@ -285,6 +286,7 @@ function render_bar_graph() {
     columns[team_name].html = append_space_cols(columns[team_name], max_avlbl_pt);
   });
   MATCH_DATE_SET.sort();
+  MATCH_DATE_SET.unshift('01/01');
   reset_date_slider(date_format(TARGET_DATE));
   let insert_point_columns = make_insert_columns(INPUTS.category);
   let point_column = make_point_column(max_avlbl_pt);
@@ -341,9 +343,13 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
   if(!MATCH_DATE_SET) return;
   const slider = document.getElementById('date_slider');
   slider.max = MATCH_DATE_SET.length - 1;
-  document.getElementById('pre_date_slider').innerHTML = MATCH_DATE_SET[0];
+  document.getElementById('pre_date_slider').innerHTML = '開幕前';
   document.getElementById('post_date_slider').innerHTML = MATCH_DATE_SET[MATCH_DATE_SET.length - 1];
-  document.getElementById('target_date').innerHTML = target_date;
+  document.getElementById('target_date').innerHTML = (target_date === MATCH_DATE_SET[0]) ? '開幕前' : target_date;
+  if(target_date === MATCH_DATE_SET[0]) {
+    slider.value = 0;
+    return;
+  }
   let _i = 0;
   for(; _i < MATCH_DATE_SET.length; _i++) {
     if(MATCH_DATE_SET[_i + 1] <= target_date) continue;
@@ -400,7 +406,7 @@ function set_pulldown(key, value, cookie_write = true, pulldown_write = true, ca
 }
 
 function set_date_slider_ev(event) { // Cookieで制御しないし、数値リセットは別コマンドなので、シンプルに
-  TARGET_DATE = MATCH_DATE_SET[event.target.value];
+  TARGET_DATE = MATCH_DATE_SET[document.getElementById('date_slider').value];
   document.getElementById('target_date').innerHTML = TARGET_DATE;
   render_bar_graph();
 }
