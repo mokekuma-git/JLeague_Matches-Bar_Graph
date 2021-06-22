@@ -26,7 +26,10 @@ function init() {
   document.getElementById('match_sort_key').addEventListener('change', set_match_sort_key_ev, false);
   document.getElementById('category').addEventListener('change', set_category_ev, false);
   document.getElementById('season').addEventListener('change', set_season_ev, false);
-  document.getElementById('date_slider').addEventListener('change', set_date_slider_ev, false);
+  const date_slider = document.getElementById('date_slider')
+  date_slider.addEventListener('change', set_date_slider_ev, false);
+  document.getElementById('date_slider_up').addEventListener('click', function() {date_slider.value++; set_date_slider_ev()}, false);
+  document.getElementById('date_slider_down').addEventListener('click', function() {date_slider.value--; set_date_slider_ev()}, false);
   document.getElementById('reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
   document.getElementById('reset_cookie').addEventListener('click', function(){clear_cookies(); load_cookies();}, false);
   document.getElementById('scale_slider').addEventListener('change', set_scale_ev, false);
@@ -93,8 +96,14 @@ function clear_cookies() {
 }
 
 function refresh_match_data() {
-  let filename = 'j' + document.getElementById('category').value + '_points.json';
-  let season = get_season();
+  const category = document.getElementById('category').value;
+  const season = get_season();
+  if (SEASON_MAP[category].hasOwnProperty(season + 'A')) {
+    // 2シーズンある年の通年データを指定
+    read_inputs_first(season, '-j' + category + '_points.json');
+    return;
+  }
+  let filename = 'j' + category + '_points.json';
   if (document.querySelector("#season").selectedIndex != 0) filename = season + "-" + filename;
   // console.log('Read match data: ' + filename);
   read_inputs(filename);
@@ -106,6 +115,40 @@ function read_inputs(filename) {
   xhr.send();
   xhr.onload = ()=> {
     INPUTS = JSON.parse(xhr.responseText);
+    render_bar_graph();
+  };
+}
+
+function read_inputs_first(season, fileroot) {
+  // 1年2シーズンを通して読む際の1シーズン目
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', season + 'A' + fileroot);
+  xhr.send();
+  xhr.onload = ()=> {
+    INPUTS = JSON.parse(xhr.responseText);
+    read_inputs_second(season, fileroot);
+  };
+}
+
+function read_inputs_second(season, fileroot) {
+  // 1年2シーズンを通して読む際の2シーズン目
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', season + 'B' + fileroot);
+  xhr.send();
+  xhr.onload = ()=> {
+    second = JSON.parse(xhr.responseText);
+    Object.keys(second.matches).forEach(function(team_name) {
+      let _length = 0;
+      if (INPUTS.matches.hasOwnProperty(team_name)) {
+        _length = INPUTS.matches[team_name].df.length;
+      } else {
+        INPUTS.matches[team_name] = {"df": []};
+      }
+      second.matches[team_name].df.forEach(function(match_data) {
+        match_data.section_no = parseInt(match_data.section_no) + _length;
+        INPUTS.matches[team_name].df.push(match_data);
+      });
+    });
     render_bar_graph();
   };
 }
@@ -341,9 +384,13 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
   if(!MATCH_DATE_SET) return;
   const slider = document.getElementById('date_slider');
   slider.max = MATCH_DATE_SET.length - 1;
-  document.getElementById('pre_date_slider').innerHTML = MATCH_DATE_SET[0];
+  document.getElementById('pre_date_slider').innerHTML = '開幕前';
   document.getElementById('post_date_slider').innerHTML = MATCH_DATE_SET[MATCH_DATE_SET.length - 1];
-  document.getElementById('target_date').innerHTML = target_date;
+  document.getElementById('target_date').innerHTML = (target_date === MATCH_DATE_SET[0]) ? '開幕前' : target_date;
+  if(target_date === MATCH_DATE_SET[0]) {
+    slider.value = 0;
+    return;
+  }
   let _i = 0;
   for(; _i < MATCH_DATE_SET.length; _i++) {
     if(MATCH_DATE_SET[_i + 1] <= target_date) continue;
@@ -400,7 +447,7 @@ function set_pulldown(key, value, cookie_write = true, pulldown_write = true, ca
 }
 
 function set_date_slider_ev(event) { // Cookieで制御しないし、数値リセットは別コマンドなので、シンプルに
-  TARGET_DATE = MATCH_DATE_SET[event.target.value];
+  TARGET_DATE = MATCH_DATE_SET[document.getElementById('date_slider').value];
   document.getElementById('target_date').innerHTML = TARGET_DATE;
   render_bar_graph();
 }
