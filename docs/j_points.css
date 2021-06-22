@@ -65,8 +65,16 @@ p {
 }
 
 #date_slider {
-  width: 80%;
+  width: 60%;
 }
+#date_slider_up, #date_slider_down {
+  background-color: black;
+  color: white;
+}
+#target_date {
+  font-weight: bold;
+}
+
 /***********************************************************************************/
 /* Refer to https://www.w3schools.com/css/css_tooltip.asp */ 
 /* Tooltip container */
