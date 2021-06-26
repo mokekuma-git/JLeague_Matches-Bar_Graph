@@ -100,7 +100,8 @@ function refresh_match_data() {
   const season = get_season();
   if (SEASON_MAP[category].hasOwnProperty(season + 'A')) {
     // 2シーズンある年の通年データを指定
-    read_inputs_first(season, '-j' + category + '_points.json');
+    INPUTS = {category: category, matches: {}};
+    read_iputs_multi(category, season, 'A', '-j' + category + '_points.json');
     return;
   }
   let filename = 'j' + category + '_points.json';
@@ -119,39 +120,40 @@ function read_inputs(filename) {
   };
 }
 
-function read_inputs_first(season, fileroot) {
-  // 1年2シーズンを通して読む際の1シーズン目
+function read_iputs_multi(category, year, season_postfix, fileroot) {
+  // 1年複数シーズンを通して読む際
   const xhr = new XMLHttpRequest();
-  xhr.open('GET', season + 'A' + fileroot);
+  xhr.open('GET', year + season_postfix + fileroot);
   xhr.send();
   xhr.onload = ()=> {
-    INPUTS = JSON.parse(xhr.responseText);
-    read_inputs_second(season, fileroot);
+    append_inputs(JSON.parse(xhr.responseText));
+    next_postfix = get_next_char(season_postfix);
+    if (SEASON_MAP[category].hasOwnProperty(year + next_postfix)) {
+      read_iputs_multi(category, year, next_postfix, fileroot);
+    } else {
+      render_bar_graph();
+    }
   };
 }
 
-function read_inputs_second(season, fileroot) {
-  // 1年2シーズンを通して読む際の2シーズン目
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', season + 'B' + fileroot);
-  xhr.send();
-  xhr.onload = ()=> {
-    second = JSON.parse(xhr.responseText);
-    Object.keys(second.matches).forEach(function(team_name) {
-      let _length = 0;
-      if (INPUTS.matches.hasOwnProperty(team_name)) {
-        _length = INPUTS.matches[team_name].df.length;
-      } else {
-        INPUTS.matches[team_name] = {"df": []};
-      }
-      second.matches[team_name].df.forEach(function(match_data) {
-        match_data.section_no = parseInt(match_data.section_no) + _length;
-        INPUTS.matches[team_name].df.push(match_data);
-      });
+function append_inputs(next) {
+  // 複数シーズン表示用に、INPUTSの内容に、nextの試合内容を追加
+  // 追加するmatches以外は、元のINPUTSの内容を引き継ぐ
+  Object.keys(next.matches).forEach(function(team_name) {
+    let _length = 0;
+    if (INPUTS.matches.hasOwnProperty(team_name)) {
+      _length = INPUTS.matches[team_name].df.length;
+    } else {
+      INPUTS.matches[team_name] = {"df": []};
+    }
+    next.matches[team_name].df.forEach(function(match_data) {
+      match_data.section_no = parseInt(match_data.section_no) + _length;
+      INPUTS.matches[team_name].df.push(match_data);
     });
-    render_bar_graph();
-  };
+  });
 }
+
+const get_next_char = (value) => (String.fromCharCode(value.charCodeAt(0) + 1));
 
 function make_insert_columns(category) {
   // 各カテゴリの勝ち点列を入れる敷居位置を決定
