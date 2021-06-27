@@ -107,7 +107,7 @@ function refresh_match_data() {
   let filename = 'j' + category + '_points.json';
   if (document.querySelector("#season").selectedIndex != 0) filename = season + "-" + filename;
   // console.log('Read match data: ' + filename);
-  read_inputs(filename);
+  read_inputs('json/' + filename);
 }
 
 function read_inputs(filename) {
@@ -123,7 +123,7 @@ function read_inputs(filename) {
 function read_iputs_multi(category, year, season_postfix, fileroot) {
   // 1年複数シーズンを通して読む際
   const xhr = new XMLHttpRequest();
-  xhr.open('GET', year + season_postfix + fileroot);
+  xhr.open('GET', 'json/' + year + season_postfix + fileroot);
   xhr.send();
   xhr.onload = ()=> {
     append_inputs(JSON.parse(xhr.responseText));

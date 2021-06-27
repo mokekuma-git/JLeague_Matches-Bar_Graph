@@ -6,8 +6,8 @@ import pandas as pd
 import numpy
 from read_jleague_matches import read_latest_allmatches_csv
 
-OUTPUT_FILE = '../docs/j{}_points.json'
-OLD_FILE = '../docs/{}-j{}_points.json'
+OUTPUT_FILE = '../docs/json/j{}_points.json'
+OLD_FILE = '../docs/json/{}-j{}_points.json'
 
 class NumDFEncoder(json.JSONEncoder):
     """JSON展開用エンコーダ
