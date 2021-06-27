@@ -139,11 +139,15 @@ function read_iputs_multi(category, year, season_postfix, fileroot) {
 function append_inputs(next) {
   // 複数シーズン表示用に、INPUTSの内容に、nextの試合内容を追加
   // 追加するmatches以外は、元のINPUTSの内容を引き継ぐ
+  let _length = 0;
+  // 奇数チーム数の時、各節にかならず1試合あるとは限らない
+  // これまでの節数は、INPUTS内の最大のsection_noを調べて返す必要がある
+  Object.keys(INPUTS.matches).forEach(function(team_name) {
+    const match_data = INPUTS.matches[team_name].df;
+    _length = Math.max(_length, parseInt(match_data[match_data.length -1].section_no));
+  });
   Object.keys(next.matches).forEach(function(team_name) {
-    let _length = 0;
-    if (INPUTS.matches.hasOwnProperty(team_name)) {
-      _length = INPUTS.matches[team_name].df.length;
-    } else {
+    if (! INPUTS.matches.hasOwnProperty(team_name)) {
       INPUTS.matches[team_name] = {"df": []};
     }
     next.matches[team_name].df.forEach(function(match_data) {
