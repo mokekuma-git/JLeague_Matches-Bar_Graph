@@ -212,7 +212,7 @@ def dump_team_map(all_matches: pd.DataFrame, category: int) -> str:
     """全チームの試合データをJSON文字列としてダンプする
     """
     _df = make_team_map(all_matches)
-    return json.dumps({'matches':_df, 'category': category},
+    return json.dumps({'matches':_df, 'category': category}, indent=0,
                       cls=NumDFEncoder, ensure_ascii=False, sort_keys=True)
 
 
