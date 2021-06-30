@@ -208,6 +208,7 @@ def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
     current_matches = read_allmatches_csv(latest_file)
     _start = parse_date_from_filename(latest_file)
     _end = datetime.now()
+    print(f'  Check matches finished since {_start}')
     # undecided = get_undecided_section(current_matches)
     need_update = get_sections_to_update(current_matches, _start, _end)
 
