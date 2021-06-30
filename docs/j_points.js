@@ -1,5 +1,6 @@
 // TODO: Global変数以外の解決方法は、後で調べる
 let HEIGHT_UNIT;
+let SEASON_MAP;
 let INPUTS;
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 let TARGET_DATE;
@@ -13,7 +14,7 @@ const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
   season: 'season'
 }
 
-window.addEventListener('load', init, false);
+window.addEventListener('load', read_seasonmap, false);
 
 function init() {
   BOX_CON = document.getElementById('box_container');
@@ -108,6 +109,16 @@ function refresh_match_data() {
   if (document.querySelector("#season").selectedIndex != 0) filename = season + "-" + filename;
   // console.log('Read match data: ' + filename);
   read_inputs('json/' + filename);
+}
+
+function read_seasonmap() {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', './json/season_map.json');
+  xhr.send();
+  xhr.onload = ()=> {
+    SEASON_MAP = JSON.parse(xhr.responseText);
+    init();
+  };
 }
 
 function read_inputs(filename) {
