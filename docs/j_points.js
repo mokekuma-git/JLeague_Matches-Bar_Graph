@@ -1,5 +1,6 @@
 // TODO: Global変数以外の解決方法は、後で調べる
 let HEIGHT_UNIT;
+let SEASON_MAP;
 let INPUTS;
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 let TARGET_DATE;
@@ -13,7 +14,7 @@ const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
   season: 'season'
 }
 
-window.addEventListener('load', init, false);
+window.addEventListener('load', read_seasonmap, false);
 
 function init() {
   BOX_CON = document.getElementById('box_container');
@@ -110,6 +111,16 @@ function refresh_match_data() {
   read_inputs('json/' + filename);
 }
 
+function read_seasonmap() {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', './json/season_map.json');
+  xhr.send();
+  xhr.onload = ()=> {
+    SEASON_MAP = JSON.parse(xhr.responseText);
+    init();
+  };
+}
+
 function read_inputs(filename) {
   const xhr = new XMLHttpRequest();
   xhr.open('GET', filename);
@@ -139,11 +150,15 @@ function read_iputs_multi(category, year, season_postfix, fileroot) {
 function append_inputs(next) {
   // 複数シーズン表示用に、INPUTSの内容に、nextの試合内容を追加
   // 追加するmatches以外は、元のINPUTSの内容を引き継ぐ
+  let _length = 0;
+  // 奇数チーム数の時、各節にかならず1試合あるとは限らない
+  // これまでの節数は、INPUTS内の最大のsection_noを調べて返す必要がある
+  Object.keys(INPUTS.matches).forEach(function(team_name) {
+    const match_data = INPUTS.matches[team_name].df;
+    _length = Math.max(_length, parseInt(match_data[match_data.length -1].section_no));
+  });
   Object.keys(next.matches).forEach(function(team_name) {
-    let _length = 0;
-    if (INPUTS.matches.hasOwnProperty(team_name)) {
-      _length = INPUTS.matches[team_name].df.length;
-    } else {
+    if (! INPUTS.matches.hasOwnProperty(team_name)) {
       INPUTS.matches[team_name] = {"df": []};
     }
     next.matches[team_name].df.forEach(function(match_data) {
