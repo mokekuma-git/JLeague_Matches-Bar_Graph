@@ -325,7 +325,7 @@
 "point": 0,
 "section_no": "27",
 "stadium": "ノエスタ",
-"start_time": "19:00"
+"start_time": "18:00"
 },
 {
 "goal_get": "",
@@ -3957,7 +3957,7 @@
 "point": 0,
 "section_no": "23",
 "stadium": "ノエスタ",
-"start_time": "19:00"
+"start_time": "18:00"
 },
 {
 "goal_get": "",
@@ -5268,7 +5268,7 @@
 "start_time": "18:04"
 },
 {
-"goal_get": "2",
+"goal_get": "0",
 "goal_lose": "3",
 "has_result": true,
 "is_home": false,
@@ -6201,7 +6201,7 @@
 },
 {
 "goal_get": "3",
-"goal_lose": "2",
+"goal_lose": "0",
 "has_result": true,
 "is_home": true,
 "match_date": "06/20",
@@ -6717,7 +6717,7 @@
 "point": 0,
 "section_no": "23",
 "stadium": "ノエスタ",
-"start_time": "19:00"
+"start_time": "18:00"
 },
 {
 "goal_get": "",
@@ -6741,7 +6741,7 @@
 "point": 0,
 "section_no": "25",
 "stadium": "ノエスタ",
-"start_time": "19:00"
+"start_time": "18:00"
 },
 {
 "goal_get": "",
@@ -6765,7 +6765,7 @@
 "point": 0,
 "section_no": "27",
 "stadium": "ノエスタ",
-"start_time": "19:00"
+"start_time": "18:00"
 },
 {
 "goal_get": "",
@@ -8121,7 +8121,7 @@
 "point": 0,
 "section_no": "25",
 "stadium": "ノエスタ",
-"start_time": "19:00"
+"start_time": "18:00"
 },
 {
 "goal_get": "",
