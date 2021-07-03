@@ -488,16 +488,16 @@
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "2",
+"has_result": true,
 "is_home": false,
 "match_date": "07/03",
 "opponent": "鹿児島",
 "point": 0,
 "section_no": "14",
 "stadium": "夢スタ",
-"start_time": "16:00"
+"start_time": "16:03"
 },
 {
 "goal_get": "",
@@ -1508,16 +1508,16 @@
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "0",
+"has_result": true,
 "is_home": false,
 "match_date": "07/03",
 "opponent": "岩手",
-"point": 0,
+"point": 3,
 "section_no": "14",
 "stadium": "富山",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -2188,16 +2188,16 @@
 "start_time": "17:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/03",
 "opponent": "富山",
 "point": 0,
 "section_no": "14",
 "stadium": "富山",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -2528,16 +2528,16 @@
 "start_time": "16:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "4",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/03",
 "opponent": "鳥取",
-"point": 0,
+"point": 3,
 "section_no": "14",
 "stadium": "Ａｘｉｓ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -4568,16 +4568,16 @@
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "4",
+"has_result": true,
 "is_home": false,
 "match_date": "07/03",
 "opponent": "沼津",
 "point": 0,
 "section_no": "14",
 "stadium": "Ａｘｉｓ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -4908,16 +4908,16 @@
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/03",
 "opponent": "今治",
-"point": 0,
+"point": 3,
 "section_no": "14",
 "stadium": "夢スタ",
-"start_time": "16:00"
+"start_time": "16:03"
 },
 {
 "goal_get": "",
