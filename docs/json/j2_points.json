@@ -3800,16 +3800,16 @@
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "3",
+"has_result": true,
 "is_home": false,
 "match_date": "07/04",
 "opponent": "秋田",
 "point": 0,
 "section_no": "21",
 "stadium": "ニンスタ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -9388,16 +9388,16 @@
 "start_time": "15:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "3",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/04",
 "opponent": "愛媛",
-"point": 0,
+"point": 3,
 "section_no": "21",
 "stadium": "ニンスタ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
