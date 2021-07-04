@@ -67,6 +67,6 @@ docs に置いている、j_points.css  j_points.js j_points.html とjsonディ�
 
 これらdocsに置いている例は、なるべく最新のものにするつもりですが、今のところ自動的にアップデートするようにはしていないので、最新のものを確認したい場合は、ご自身でこのプロジェクトを clone して、以下のスクリプトを実行してください (pythonとその他requirements.txtで示すライブラリが必要)
 ```
-python3 read_jleague_matches.py
+python3 src/read_jleague_matches.py
 ```
 
