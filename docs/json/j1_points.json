@@ -1612,16 +1612,16 @@
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/04",
 "opponent": "清水",
 "point": 0,
 "section_no": "21",
 "stadium": "アイスタ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -3004,16 +3004,16 @@
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/04",
 "opponent": "札幌",
 "point": 0,
 "section_no": "21",
 "stadium": "札幌厚別",
-"start_time": "13:05"
+"start_time": "13:08"
 },
 {
 "goal_get": "",
@@ -3440,16 +3440,16 @@
 "start_time": "18:33"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "0",
+"has_result": true,
 "is_home": false,
 "match_date": "07/04",
 "opponent": "徳島",
-"point": 0,
+"point": 3,
 "section_no": "21",
 "stadium": "札幌厚別",
-"start_time": "13:05"
+"start_time": "13:08"
 },
 {
 "goal_get": "",
@@ -5752,16 +5752,16 @@
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "0",
+"has_result": true,
 "is_home": false,
 "match_date": "07/04",
 "opponent": "大分",
-"point": 0,
+"point": 3,
 "section_no": "21",
 "stadium": "アイスタ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
