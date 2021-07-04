@@ -148,16 +148,16 @@
 "start_time": "17:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "2",
+"has_result": true,
 "is_home": false,
 "match_date": "07/04",
 "opponent": "讃岐",
 "point": 0,
 "section_no": "14",
 "stadium": "ニッパツ",
-"start_time": "15:00"
+"start_time": "15:03"
 },
 {
 "goal_get": "",
@@ -828,16 +828,16 @@
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "0",
+"has_result": true,
 "is_home": false,
 "match_date": "07/04",
 "opponent": "藤枝",
-"point": 0,
+"point": 3,
 "section_no": "14",
 "stadium": "プラスタ",
-"start_time": "13:00"
+"start_time": "13:03"
 },
 {
 "goal_get": "",
@@ -1168,16 +1168,16 @@
 "start_time": "17:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "3",
+"goal_lose": "2",
+"has_result": true,
 "is_home": false,
 "match_date": "07/04",
 "opponent": "福島",
-"point": 0,
+"point": 3,
 "section_no": "14",
 "stadium": "ユニスタ",
-"start_time": "15:00"
+"start_time": "15:03"
 },
 {
 "goal_get": "",
@@ -1860,16 +1860,16 @@
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "2",
+"has_result": true,
 "is_home": true,
 "match_date": "07/04",
 "opponent": "長野",
 "point": 0,
 "section_no": "14",
 "stadium": "長野Ｕ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -3208,16 +3208,16 @@
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "3",
+"has_result": true,
 "is_home": true,
 "match_date": "07/04",
 "opponent": "宮崎",
 "point": 0,
 "section_no": "14",
 "stadium": "ユニスタ",
-"start_time": "15:00"
+"start_time": "15:03"
 },
 {
 "goal_get": "",
@@ -3548,16 +3548,16 @@
 "start_time": "17:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/04",
 "opponent": "八戸",
 "point": 0,
 "section_no": "14",
 "stadium": "プラスタ",
-"start_time": "13:00"
+"start_time": "13:03"
 },
 {
 "goal_get": "",
@@ -3888,16 +3888,16 @@
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/04",
 "opponent": "YS横浜",
-"point": 0,
+"point": 3,
 "section_no": "14",
 "stadium": "ニッパツ",
-"start_time": "15:00"
+"start_time": "15:03"
 },
 {
 "goal_get": "",
@@ -4228,16 +4228,16 @@
 "start_time": "16:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "1",
+"has_result": true,
 "is_home": false,
 "match_date": "07/04",
 "opponent": "岐阜",
-"point": 0,
+"point": 3,
 "section_no": "14",
 "stadium": "長野Ｕ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
