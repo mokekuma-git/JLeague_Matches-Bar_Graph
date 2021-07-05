@@ -209,6 +209,13 @@ function make_html_column(target_team, team_data) {
   team_data.disp_point = 0; // 表示時の勝ち点
   team_data.disp_goal_diff = 0; // 表示時の得失点差
   team_data.disp_goal_get = 0; // 表示時の総得点
+  team_data.win = 0; // 最新の勝利数
+  team_data.lose = 0; // 最新の敗北数
+  team_data.draw = 0; // 最新の引分数
+  team_data.disp_win = 0; // 最新の勝利数
+  team_data.disp_lose = 0; // 最新の敗北数
+  team_data.disp_draw = 0; // 最新の引分数
+
   let match_sort_key;
   if(['first_bottom', 'last_bottom'].includes(document.getElementById('match_sort_key').value)) {
     match_sort_key = 'section_no';
@@ -240,12 +247,18 @@ function make_html_column(target_team, team_data) {
       // 試合があるので、実際の勝ち点、最大勝ち点、得失点は実際の記録通り
       team_data.point += _row.point;
       team_data.avlbl_pt += _row.point;
+      if (_row.point > 1) team_data.win += 1;
+      else if (_row.point == 1) team_data.draw += 1;
+      else if (_row.point == 0) team_data.lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
       team_data.goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
       team_data.goal_get += parseInt(_row.goal_get);
       if(match_date <= TARGET_DATE) {
         future = false;
         box_height = _row.point;
         // 表示対象なので、表示時点のdisp_も実際と同じ
+        if (_row.point > 1) team_data.disp_win += 1;
+        else if (_row.point == 1) team_data.disp_draw += 1;
+        else if (_row.point == 0) team_data.disp_lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
         team_data.disp_point += _row.point;
         team_data.disp_avlbl_pt += _row.point;
         team_data.disp_goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
@@ -279,23 +292,42 @@ function make_html_column(target_team, team_data) {
     }
     box_list.push(box_html);
   });
-  return {html: box_list, avlbl_pt: team_data.disp_avlbl_pt, target_team: target_team, lose_box: lose_box};
+  const stats = make_team_stats(team_data);
+  return {graph: box_list, avlbl_pt: team_data.disp_avlbl_pt, target_team: target_team, lose_box: lose_box, stats: stats};
 }
+
+function make_team_stats(team_data) {
+  let _pre = '';
+  let _stats_type = '最新の状態';
+  if(document.getElementById('team_sort_key').value.startsWith('disp_')) {
+    _pre = 'disp_';
+    _stats_type = '表示時の状態';
+  }
+
+  return _stats_type + '<br/>'
+  + team_data[_pre + 'win'] + '勝 ' + team_data[_pre + 'draw'] + '分 ' + team_data[_pre + 'lose'] + '敗<br/>'
+  + '勝点' + team_data[_pre + 'point'] + ', 最大' + team_data[_pre + 'avlbl_pt'] + '<br/>'
+  + team_data[_pre + 'goal_get'] + '得点, ' + (team_data[_pre + 'goal_get'] - team_data[_pre + 'goal_diff']) + '失点<br/>'
+  + '得失点差: ' + team_data[_pre + 'goal_diff'];
+}
+
 function append_space_cols(cache, max_avlbl_pt) {
   // 上の make_html_column の各チームの中間状態と、全チームで最大の「シーズン最大勝ち点(avlbl_pt)」を受け取る
   //
   const space_cols = max_avlbl_pt - cache.avlbl_pt; // 最大勝ち点は、スライダーで変わるので毎回計算することに修正
   if(space_cols) {
-    cache.html.push('<div class="space box" style="height:' + HEIGHT_UNIT * space_cols + 'px">(' + space_cols + ')</div>');
+    cache.graph.push('<div class="space box" style="height:' + HEIGHT_UNIT * space_cols + 'px">(' + space_cols + ')</div>');
   }
   if(['old_bottom', 'first_bottom'].includes(document.getElementById('match_sort_key').value)) {
-    cache.html.reverse();
+    cache.graph.reverse();
     cache.lose_box.reverse();
   }
   const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
-    + '<span class=" tooltiptext full ' + cache.target_team + '">敗戦記録:<hr/>'
+    + '<span class=" tooltiptext full ' + cache.target_team + '">'
+    + '成績情報:<hr/>' + cache.stats
+    + '<hr/>敗戦記録:<hr/>'
     + cache.lose_box.join('<hr/>') + '</span></div>\n';
-  return '<div id="' + cache.target_team + '_column">' + team_name + cache.html.join('') + team_name + '</div>\n\n';
+  return '<div id="' + cache.target_team + '_column">' + team_name + cache.graph.join('') + team_name + '</div>\n\n';
 }
 
 function make_win_content(_row, match_date) {
@@ -342,7 +374,7 @@ function render_bar_graph() {
     max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
   });
   Object.keys(INPUTS.matches).forEach(function (team_name) {
-    columns[team_name].html = append_space_cols(columns[team_name], max_avlbl_pt);
+    columns[team_name].graph = append_space_cols(columns[team_name], max_avlbl_pt);
   });
   MATCH_DATE_SET.sort();
   reset_date_slider(date_format(TARGET_DATE));
@@ -352,7 +384,7 @@ function render_bar_graph() {
   get_sorted_team_list(INPUTS.matches).forEach(function(team_name, index) {
     if(insert_point_columns.includes(index))
       BOX_CON.innerHTML += point_column;
-    BOX_CON.innerHTML += columns[team_name].html;
+    BOX_CON.innerHTML += columns[team_name].graph;
   });
   BOX_CON.innerHTML += point_column;
   set_scale(document.getElementById('scale_slider').value, false, false);
