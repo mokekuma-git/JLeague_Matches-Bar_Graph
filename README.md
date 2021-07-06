@@ -76,6 +76,13 @@ J2, J3のデータもそろえています。
 その状態でブラウザを閉じれば、変なクッキーは残らないはず。
 
 
+### このスタイル、誰に聞いたの
+わたしがこの方式を見かけたのは2021年の春なんですが、[ミネ月 (id:mineja)](https://jalanjalansepakbola.hatenadiary.com/about) さんは少なくとも18年にはこのスタイルを確立されています。 (もっと古いかもしれません)  
+直接的には、5chのフロンターレスレで流れていたのを見たのがきっかけになりました。  
+先人達の工夫に敬意を表します。  
+
+http://jalanjalansepakbola.net/2018j1/2018_j1_standing
+
 
 ## 自分の環境で動かす方法
 docs に置いている、j_points.css  j_points.js j_points.html とjsonディレクトリのファイルをダウンロードして、
