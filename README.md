@@ -6,6 +6,8 @@ Make a bar graph of points each team got and will get.
 ## 結果を見る方法
 https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/ を見れば、基本的にその時の最新データを見られるようにしています。
 
+https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/aclgl_points.html お試しですが、ACLのグループリーグも見られるようにしてみました。試行錯誤中です。
+
 ## 簡単な説明
 ### これは何？
 今年の (も) Jリーグって節ごとの日程も前倒しや延期ばっかりで、いったいどのチームがどれくらい勝ってるのか、負けてるのか  
@@ -75,6 +77,26 @@ J2, J3のデータもそろえています。
 元の状態に戻したい時は、「ブラウザで覚えた状態をリセット」ボタンを押してくださいね。  
 その状態でブラウザを閉じれば、変なクッキーは残らないはず。
 
+
+### どこ情報よ
+Jリーグのデータは、Jリーグのサイトで公開される https://www.jleague.jp/match/section/j1/1/ などから取得しています。  
+変換した結果はこちらです。https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph/blob/main/docs/json/j1_points.json (ほか、J2, J3も)
+
+ACLのデータは、Yahoo スポーツナビさんのhttps://soccer.yahoo.co.jp/jleague/category/acl/schedule/ から取得しています。  
+こちらの変換結果は、これです。 https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph/blob/main/docs/json/aclgl_points.json
+
+取得頻度は、各節の試合終了後にスクリプトで取得しています。  
+データ化、公開してくださる皆様に感謝します。  
+いずれもオープンなニュースとしての情報で、著作物ではない情報という理解でいますが、問題がありましたら取得先、取得方法を見直します。
+
+
+### このスタイル、誰に聞いたの
+わたしがこの方式を見かけたのは2021年の春なんですが、[ミネ月 (id:mineja)](https://jalanjalansepakbola.hatenadiary.com/about) さんは少なくとも2016年4月にはこのスタイルを確立されています。 (もっと古いかもしれません)
+
+https://jalanjalansepakbola.hatenadiary.com/entry/2016/04/11/165521
+
+直接的には、5chのフロンターレスレで流れていたのを見たのがきっかけになりました。  
+先人達の工夫に敬意を表します。
 
 
 ## 自分の環境で動かす方法
