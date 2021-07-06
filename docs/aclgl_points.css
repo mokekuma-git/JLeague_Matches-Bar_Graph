@@ -1,6 +1,11 @@
 * {
   box-sizing: border-box;
 }
+
+th, td, tr {
+  border-collapse:
+  collapse;border: 1px solid #444;
+}
 .box {
   border-collapse: collapse;
   border:1px solid #333;
