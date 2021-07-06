@@ -3333,15 +3333,15 @@
 "start_time": "19:00:00"
 },
 {
-"goal_get": "",
-"goal_lose": "",
+"goal_get": "1",
+"goal_lose": "1",
 "group": "J",
-"has_result": false,
+"has_result": true,
 "is_home": true,
 "match_date": "07/06",
-"match_status": "試合前",
+"match_status": "試合終了",
 "opponent": "傑志",
-"point": 0,
+"point": 1,
 "section_no": "5",
 "stadium": "ブリーラム",
 "start_time": "23:00:00"
@@ -3421,15 +3421,15 @@
 "start_time": "23:00:00"
 },
 {
-"goal_get": "",
-"goal_lose": "",
+"goal_get": "1",
+"goal_lose": "1",
 "group": "J",
-"has_result": false,
+"has_result": true,
 "is_home": false,
 "match_date": "07/06",
-"match_status": "試合前",
+"match_status": "試合終了",
 "opponent": "ポートFC",
-"point": 0,
+"point": 1,
 "section_no": "5",
 "stadium": "ブリーラム",
 "start_time": "23:00:00"
