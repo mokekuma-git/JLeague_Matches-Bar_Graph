@@ -264,21 +264,24 @@ function append_space_cols(cache, max_avlbl_pt) {
 }
 
 function rename_short_team_name(team_name) {
-    if (team_name in TEAM_RENAME_MAP) return TEAM_RENAME_MAP[team_name];
-    return team_name;
+  if (team_name in TEAM_RENAME_MAP) return TEAM_RENAME_MAP[team_name];
+  return team_name;
 }
-
+function rename_short_stadium_name(stadium) {
+  if (stadium.length > 7) return stadium.substring(0, 7);
+  return stadium;
+}
 function make_win_content(_row, match_date) {
   return match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose
-    + '<br/>' + _row.stadium;
+    + '<br/>' + rename_short_stadium_name(_row.stadium);
 }
 function make_draw_content(_row, match_date) {
   return match_date + ' ' + rename_short_team_name(_row.opponent);
 }
 function make_full_content(_row, match_date) {
   return '(' + _row.section_no + ') ' + match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
-    + _row.goal_get + '-' + _row.goal_lose + ' ' + _row.stadium;
+    + _row.goal_get + '-' + _row.goal_lose + ' ' + rename_short_stadium_name(_row.stadium);
 }
 
 const dgt = (m, n) => ('0000' + m).substr(-n);
