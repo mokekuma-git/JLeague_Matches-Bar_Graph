@@ -12,7 +12,19 @@ const SHOWN_GROUP = ['F', 'G', 'H', 'I', 'J'];
 const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
   team_sort: 'team_sort_key',
   match_sort: 'match_sort_key',
-}
+};
+
+const TEAM_RENAME_MAP = {
+ 'ユナイテッドシティ': 'UnitC',
+ 'タンピネス': 'タンピ',
+ 'ポートFC': 'ポート',
+ 'チェンライU': 'チェン',
+ 'ラーチャブリー': 'ラチャ',
+ 'ベトテル': 'Viettel',
+ 'パトゥムユナイテッド': 'パトゥ',
+ '全北現代': '全北'
+};
+
 
 window.addEventListener('load', init, false);
 
@@ -251,16 +263,21 @@ function append_space_cols(cache, max_avlbl_pt) {
   return '<div id="' + cache.target_team + '_column">' + team_name + cache.graph.join('') + team_name + '</div>\n\n';
 }
 
+function rename_short_team_name(team_name) {
+    if (team_name in TEAM_RENAME_MAP) return TEAM_RENAME_MAP[team_name];
+    return team_name;
+}
+
 function make_win_content(_row, match_date) {
-  return match_date + ' ' + _row.opponent + '<br/>'
+  return match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose
     + '<br/>' + _row.stadium;
 }
 function make_draw_content(_row, match_date) {
-  return match_date + ' ' + _row.opponent;
+  return match_date + ' ' + rename_short_team_name(_row.opponent);
 }
 function make_full_content(_row, match_date) {
-  return '(' + _row.section_no + ') ' + match_date + ' ' + _row.opponent + '<br/>'
+  return '(' + _row.section_no + ') ' + match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose + ' ' + _row.stadium;
 }
 
