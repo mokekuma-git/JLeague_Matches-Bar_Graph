@@ -101,6 +101,9 @@ def dump_groupleague_map(all_matches: pd.DataFrame) -> str:
                       cls=NumDFEncoder, ensure_ascii=False, sort_keys=True)
 
 if __name__ == '__main__':
+    import os
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     match_df = pd.DataFrame()
     for section in SECTION_ID_LIST:
         match_df = pd.concat([match_df, pd.DataFrame(read_match(section))])
