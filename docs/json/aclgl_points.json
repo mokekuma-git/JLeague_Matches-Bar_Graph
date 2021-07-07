@@ -2537,15 +2537,15 @@
 "start_time": "01:00:00"
 },
 {
-"goal_get": "",
-"goal_lose": "",
+"goal_get": "8",
+"goal_lose": "1",
 "group": "H",
-"has_result": false,
+"has_result": true,
 "is_home": true,
 "match_date": "07/07",
-"match_status": "スタメン",
+"match_status": "試合終了",
 "opponent": "タンピネス",
-"point": 0,
+"point": 3,
 "section_no": "5",
 "stadium": "ブニョドコル",
 "start_time": "23:00:00"
@@ -2625,13 +2625,13 @@
 "start_time": "23:00:00"
 },
 {
-"goal_get": "",
-"goal_lose": "",
+"goal_get": "1",
+"goal_lose": "8",
 "group": "H",
-"has_result": false,
+"has_result": true,
 "is_home": false,
 "match_date": "07/07",
-"match_status": "スタメン",
+"match_status": "試合終了",
 "opponent": "G大阪",
 "point": 0,
 "section_no": "5",
