@@ -313,7 +313,7 @@ function render_bar_graph() {
   Object.keys(INPUTS).forEach(function(_group) {
     if(! SHOWN_GROUP.includes(_group)) return;
 
-    BOX_CON.innerHTML += '<div style="position: relative; top: -20px, width: 200px">グループ' + _group;
+    BOX_CON.innerHTML += '<div class="group_label">グループ' + _group;
     const grp_input = INPUTS[_group]
     Object.keys(grp_input).forEach(function (team_name) {
         // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
