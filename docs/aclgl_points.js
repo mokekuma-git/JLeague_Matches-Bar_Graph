@@ -313,7 +313,7 @@ function render_bar_graph() {
   Object.keys(INPUTS).forEach(function(_group) {
     if(! SHOWN_GROUP.includes(_group)) return;
 
-    BOX_CON.innerHTML += '<div>グループ' + _group;
+    BOX_CON.innerHTML += '<div style="position: relative; top: -20px, width: 200px">グループ' + _group;
     const grp_input = INPUTS[_group]
     Object.keys(grp_input).forEach(function (team_name) {
         // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
@@ -391,12 +391,12 @@ function set_scale_ev(event) {
 }
 function set_scale(scale, cookie_write = true, slider_write = true) {
   BOX_CON.style.transform = "scale(" + scale + ")";
-  const p_col = document.querySelector('.point_column');
-  if(p_col) {
+  MAX_GRAPH_HEIGHT = 0;
+  document.querySelectorAll('.point_column').forEach(function(p_col) {
     const current_height = p_col.clientHeight * scale;
     MAX_GRAPH_HEIGHT = Math.max(MAX_GRAPH_HEIGHT, current_height);
     BOX_CON.style.height = MAX_GRAPH_HEIGHT;
-  }
+  })
   document.getElementById('current_scale').innerHTML = scale;
   if(cookie_write) set_cookie('scale', scale);
   if(slider_write) document.getElementById('scale_slider').value = scale;
