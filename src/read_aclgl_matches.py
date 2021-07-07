@@ -104,12 +104,14 @@ if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    match_df = pd.DataFrame()
-    for section in SECTION_ID_LIST:
-        match_df = pd.concat([match_df, pd.DataFrame(read_match(section))])
+    if '--skip' not in sys.argv:
+        # Yahooが日本チーム以外の反映が遅いので、手動の時はこちらでWeb読み込みをスキップ
+        match_df = pd.DataFrame()
+        for section in SECTION_ID_LIST:
+            match_df = pd.concat([match_df, pd.DataFrame(read_match(section))])
 
-    match_df = match_df.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
-    match_df.to_csv(CSV_FILENAME)
+        match_df = match_df.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
+        match_df.to_csv(CSV_FILENAME)
     # 敢えて書いて読んで、バラバラに動かした時の挙動を再現、ついでに中間データ保存
     match_df = read_allmatches_csv(CSV_FILENAME)
 
