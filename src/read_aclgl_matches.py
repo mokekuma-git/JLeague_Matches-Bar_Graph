@@ -90,6 +90,8 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
             result_list.append(match_dict)
             _index += 1
     return result_list
+
+
 def dump_groupleague_map(all_matches: pd.DataFrame) -> str:
     """全チームの試合データをJSON文字列としてダンプする
     """
