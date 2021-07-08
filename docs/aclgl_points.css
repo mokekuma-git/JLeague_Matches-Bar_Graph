@@ -9,6 +9,8 @@ th, td, tr {
 .group_label {
   position: absolute;
   bottom: -25px;
+  width: 200px;
+  font-weight: bold;
 }
 .box {
   border-collapse: collapse;
