@@ -2639,13 +2639,13 @@
 "start_time": "23:00:00"
 },
 {
-"goal_get": "",
-"goal_lose": "",
+"goal_get": "0",
+"goal_lose": "3",
 "group": "H",
-"has_result": false,
+"has_result": true,
 "is_home": true,
 "match_date": "07/10",
-"match_status": "試合前",
+"match_status": "試合終了",
 "opponent": "チェンライU",
 "point": 0,
 "section_no": "6",
@@ -2727,15 +2727,15 @@
 "start_time": "01:00:00"
 },
 {
-"goal_get": "",
-"goal_lose": "",
+"goal_get": "3",
+"goal_lose": "0",
 "group": "H",
-"has_result": false,
+"has_result": true,
 "is_home": false,
 "match_date": "07/10",
-"match_status": "試合前",
+"match_status": "試合終了",
 "opponent": "タンピネス",
-"point": 0,
+"point": 3,
 "section_no": "6",
 "stadium": "ロコモティフ",
 "start_time": "23:00:00"
