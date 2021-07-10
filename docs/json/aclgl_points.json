@@ -2551,13 +2551,13 @@
 "start_time": "23:00:00"
 },
 {
-"goal_get": "",
-"goal_lose": "",
+"goal_get": "1",
+"goal_lose": "2",
 "group": "H",
-"has_result": false,
+"has_result": true,
 "is_home": false,
 "match_date": "07/10",
-"match_status": "試合前",
+"match_status": "試合終了",
 "opponent": "全北現代",
 "point": 0,
 "section_no": "6",
@@ -2815,15 +2815,15 @@
 "start_time": "01:00:00"
 },
 {
-"goal_get": "",
-"goal_lose": "",
+"goal_get": "2",
+"goal_lose": "1",
 "group": "H",
-"has_result": false,
+"has_result": true,
 "is_home": true,
 "match_date": "07/10",
-"match_status": "試合前",
+"match_status": "試合終了",
 "opponent": "G大阪",
-"point": 0,
+"point": 3,
 "section_no": "6",
 "stadium": "ブニョドコル",
 "start_time": "23:00:00"
