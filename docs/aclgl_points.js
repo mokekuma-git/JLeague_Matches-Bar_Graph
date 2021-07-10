@@ -325,8 +325,8 @@ function render_bar_graph() {
   });
   MATCH_DATE_SET.sort();
   reset_date_slider(date_format(TARGET_DATE));
-  const point_column = make_point_column(max_avlbl_pt, _group);
   Object.keys(grp_input).forEach(function (team_name) {
+    const point_column = make_point_column(max_avlbl_pt, _group);
     BOX_CON.innerHTML += '<div class="group_label group' +  _group + '">グループ' + _group;
     BOX_CON.innerHTML += point_column;
     get_sorted_team_list(grp_input).forEach(function(team_name, index) {
