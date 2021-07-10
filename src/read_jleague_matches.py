@@ -216,7 +216,9 @@ def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
         return current_matches
 
     diff_matches = read_matches_range(category, need_update)
+    diff_matches['section_no'] = diff_matches['section_no'].astype('int')
     old_matches = current_matches[current_matches['section_no'].isin(need_update)]
+    old_matches['section_no'] = old_matches['section_no'].astype('int')
     if compare_matches(diff_matches, old_matches):
         new_matches = pd.concat([current_matches[~current_matches['section_no'].isin(need_update)],
                                 diff_matches]).sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
