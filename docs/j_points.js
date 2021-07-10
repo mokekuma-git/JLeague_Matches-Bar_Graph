@@ -5,6 +5,7 @@ let INPUTS;
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 let TARGET_DATE;
 let BOX_CON;
+let COMPARE_DEBUG = false;
 const MATCH_DATE_SET = [];
 
 const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
@@ -395,37 +396,40 @@ function get_sorted_team_list(matches) {
   return Object.keys(matches).sort(function(a, b) {
     // team_sort_keyで指定された勝ち点で比較
     let compare = matches[b][sort_key] - matches[a][sort_key];
-    // console.log('勝点', sort_key, a, matches[a][sort_key], b, matches[b][sort_key]);
+    if (COMPARE_DEBUG) console.log('勝点', sort_key, a, matches[a][sort_key], b, matches[b][sort_key]);
     if(compare != 0) return compare;
+    if (sort_key.endsWith('avlbl_pt')) { // 最大勝ち点が同じときは、既に取った勝ち点を次点で比較
+      let sub_key = sort_key.replace('avlbl_pt', 'point');
+      compare = matches[b][sub_key] - matches[a][sub_key];
+      if (COMPARE_DEBUG) console.log('(通常の)勝点', sub_key, a, matches[a][sub_key], b, matches[b][sub_key]);
+      if(compare != 0) return compare;
+    }
 
     // 得失点差で比較 (表示時点か最新かで振り分け)
     if(sort_key.startsWith('disp_')) {
       compare = matches[b].disp_goal_diff - matches[a].disp_goal_diff;
-      // console.log('得失点(disp)', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
+      if (COMPARE_DEBUG) console.log('得失点(disp)', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
     } else {
       compare = matches[b].goal_diff - matches[a].goal_diff;
-      // console.log('得失点', a, matches[a].goal_diff, b, matches[b].goal_diff);
+      if (COMPARE_DEBUG) console.log('得失点', a, matches[a].goal_diff, b, matches[b].goal_diff);
     }
     if(compare != 0) return compare;
 
     // 総得点で比較 (表示時点か最新かで振り分け)
     if (sort_key.startsWith("disp_")) {
       compare = matches[b].disp_goal_get - matches[a].disp_goal_get;
-      // console.log('総得点(disp)', a, matches[a].disp_goal_get, b, matches[b].disp_goal_get);
+      if (COMPARE_DEBUG) console.log('総得点(disp)', a, matches[a].disp_goal_get, b, matches[b].disp_goal_get);
     } else {
       compare = matches[b].goal_get - matches[a].goal_get;
-      // console.log('総得点', a, matches[a].goal_get, b, matches[b].goal_get);
+      if (COMPARE_DEBUG) console.log('総得点', a, matches[a].goal_get, b, matches[b].goal_get);
     }
     if (compare != 0) return compare;
 
     // それでも同じなら、前年の順位を元にソート
-    // console.log('前年順位', a, DEFAULT_TEAM_SORT[category].indexOf(a), b, DEFAULT_TEAM_SORT[category].indexOf(b));
-    const season = get_season();
-    if (! SEASON_MAP[INPUTS.category][season][3]) return 0;
-    return (
-      SEASON_MAP[INPUTS.category][season][3].indexOf(a) -
-      SEASON_MAP[INPUTS.category][season][3].indexOf(b)
-    );
+    const pre_season = SEASON_MAP[INPUTS.category][get_season()][3];
+    if (! pre_season) return 0; // 前年データが入っていなければ、差分無しとして返す
+    if (COMPARE_DEBUG) console.log('前年順位', a, pre_season.indexOf(a), b, pre_season.indexOf(b));
+    return pre_season.indexOf(a) - pre_season.indexOf(b);
   });
 }
 
