@@ -11,7 +11,7 @@
 "match_date": "02/28",
 "opponent": "相模原",
 "point": 3,
-"section_no": 1,
+"section_no": "1",
 "stadium": "ギオンス",
 "start_time": "13:03"
 },
@@ -23,7 +23,7 @@
 "match_date": "03/07",
 "opponent": "松本",
 "point": 1,
-"section_no": 2,
+"section_no": "2",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -35,7 +35,7 @@
 "match_date": "03/21",
 "opponent": "磐田",
 "point": 0,
-"section_no": 4,
+"section_no": "4",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -47,7 +47,7 @@
 "match_date": "03/24",
 "opponent": "大宮",
 "point": 3,
-"section_no": 3,
+"section_no": "3",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:03"
 },
@@ -59,7 +59,7 @@
 "match_date": "03/28",
 "opponent": "秋田",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -71,7 +71,7 @@
 "match_date": "04/04",
 "opponent": "千葉",
 "point": 3,
-"section_no": 6,
+"section_no": "6",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -83,7 +83,7 @@
 "match_date": "04/11",
 "opponent": "町田",
 "point": 3,
-"section_no": 7,
+"section_no": "7",
 "stadium": "Ｇスタ",
 "start_time": "14:03"
 },
@@ -95,7 +95,7 @@
 "match_date": "04/17",
 "opponent": "北九州",
 "point": 3,
-"section_no": 8,
+"section_no": "8",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -107,7 +107,7 @@
 "match_date": "04/21",
 "opponent": "東京Ｖ",
 "point": 3,
-"section_no": 9,
+"section_no": "9",
 "stadium": "味フィ西",
 "start_time": "18:03"
 },
@@ -119,7 +119,7 @@
 "match_date": "04/25",
 "opponent": "山口",
 "point": 3,
-"section_no": 10,
+"section_no": "10",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -131,7 +131,7 @@
 "match_date": "05/01",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -143,7 +143,7 @@
 "match_date": "05/05",
 "opponent": "琉球",
 "point": 1,
-"section_no": 12,
+"section_no": "12",
 "stadium": "タピスタ",
 "start_time": "18:03"
 },
@@ -155,7 +155,7 @@
 "match_date": "05/09",
 "opponent": "山形",
 "point": 3,
-"section_no": 13,
+"section_no": "13",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -167,7 +167,7 @@
 "match_date": "05/16",
 "opponent": "水戸",
 "point": 3,
-"section_no": 14,
+"section_no": "14",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -179,7 +179,7 @@
 "match_date": "05/23",
 "opponent": "新潟",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -191,7 +191,7 @@
 "match_date": "05/30",
 "opponent": "甲府",
 "point": 1,
-"section_no": 16,
+"section_no": "16",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -203,7 +203,7 @@
 "match_date": "06/06",
 "opponent": "栃木",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "カンセキ",
 "start_time": "14:03"
 },
@@ -215,7 +215,7 @@
 "match_date": "06/13",
 "opponent": "群馬",
 "point": 1,
-"section_no": 18,
+"section_no": "18",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -227,7 +227,7 @@
 "match_date": "06/19",
 "opponent": "金沢",
 "point": 3,
-"section_no": 19,
+"section_no": "19",
 "stadium": "石川西部",
 "start_time": "19:03"
 },
@@ -239,7 +239,7 @@
 "match_date": "06/26",
 "opponent": "岡山",
 "point": 3,
-"section_no": 20,
+"section_no": "20",
 "stadium": "サンガＳ",
 "start_time": "18:33"
 },
@@ -251,21 +251,21 @@
 "match_date": "07/03",
 "opponent": "長崎",
 "point": 0,
-"section_no": 21,
+"section_no": "21",
 "stadium": "サンガＳ",
 "start_time": "18:33"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "0",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "北九州",
-"point": 0,
+"point": 3,
 "section_no": 22,
 "stadium": "ミクスタ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -275,7 +275,7 @@
 "match_date": "07/17",
 "opponent": "新潟",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "サンガＳ",
 "start_time": "18:30"
 },
@@ -287,7 +287,7 @@
 "match_date": "08/09",
 "opponent": "町田",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "サンガＳ",
 "start_time": "18:30"
 },
@@ -299,7 +299,7 @@
 "match_date": "08/14",
 "opponent": "松本",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "サンアル",
 "start_time": "18:00"
 },
@@ -311,7 +311,7 @@
 "match_date": "08/22",
 "opponent": "水戸",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "Ｋｓスタ",
 "start_time": "19:00"
 },
@@ -323,7 +323,7 @@
 "match_date": "08/28",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "サンガＳ",
 "start_time": "18:30"
 },
@@ -335,7 +335,7 @@
 "match_date": "09/04",
 "opponent": "甲府",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -347,7 +347,7 @@
 "match_date": "09/11",
 "opponent": "琉球",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -359,7 +359,7 @@
 "match_date": "09/18",
 "opponent": "山形",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -371,7 +371,7 @@
 "match_date": "09/25",
 "opponent": "栃木",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -383,7 +383,7 @@
 "match_date": "10/02",
 "opponent": "長崎",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -395,7 +395,7 @@
 "match_date": "10/10",
 "opponent": "相模原",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -407,7 +407,7 @@
 "match_date": "10/17",
 "opponent": "群馬",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -419,7 +419,7 @@
 "match_date": "10/24",
 "opponent": "山口",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -431,7 +431,7 @@
 "match_date": "10/30",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -443,7 +443,7 @@
 "match_date": "11/03",
 "opponent": "大宮",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -455,7 +455,7 @@
 "match_date": "11/07",
 "opponent": "磐田",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -467,7 +467,7 @@
 "match_date": "11/14",
 "opponent": "秋田",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -479,7 +479,7 @@
 "match_date": "11/20",
 "opponent": "岡山",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -491,7 +491,7 @@
 "match_date": "11/28",
 "opponent": "千葉",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -503,7 +503,7 @@
 "match_date": "12/05",
 "opponent": "金沢",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "サンガＳ",
 "start_time": "未定"
 }
@@ -519,7 +519,7 @@
 "match_date": "02/27",
 "opponent": "新潟",
 "point": 0,
-"section_no": 1,
+"section_no": "1",
 "stadium": "ミクスタ",
 "start_time": "14:05"
 },
@@ -531,7 +531,7 @@
 "match_date": "03/06",
 "opponent": "水戸",
 "point": 0,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -543,7 +543,7 @@
 "match_date": "03/14",
 "opponent": "金沢",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -555,7 +555,7 @@
 "match_date": "03/21",
 "opponent": "秋田",
 "point": 1,
-"section_no": 4,
+"section_no": "4",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -567,7 +567,7 @@
 "match_date": "03/28",
 "opponent": "群馬",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -579,7 +579,7 @@
 "match_date": "04/03",
 "opponent": "山形",
 "point": 1,
-"section_no": 6,
+"section_no": "6",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -591,7 +591,7 @@
 "match_date": "04/10",
 "opponent": "甲府",
 "point": 1,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -603,7 +603,7 @@
 "match_date": "04/17",
 "opponent": "京都",
 "point": 0,
-"section_no": 8,
+"section_no": "8",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -615,7 +615,7 @@
 "match_date": "04/21",
 "opponent": "山口",
 "point": 1,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ミクスタ",
 "start_time": "19:03"
 },
@@ -627,7 +627,7 @@
 "match_date": "04/25",
 "opponent": "岡山",
 "point": 0,
-"section_no": 10,
+"section_no": "10",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -639,7 +639,7 @@
 "match_date": "05/01",
 "opponent": "松本",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -651,7 +651,7 @@
 "match_date": "05/05",
 "opponent": "栃木",
 "point": 3,
-"section_no": 12,
+"section_no": "12",
 "stadium": "カンセキ",
 "start_time": "16:03"
 },
@@ -663,7 +663,7 @@
 "match_date": "05/09",
 "opponent": "長崎",
 "point": 0,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ミクスタ",
 "start_time": "16:03"
 },
@@ -675,7 +675,7 @@
 "match_date": "05/16",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 14,
+"section_no": "14",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -687,7 +687,7 @@
 "match_date": "05/23",
 "opponent": "大宮",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -699,7 +699,7 @@
 "match_date": "05/30",
 "opponent": "町田",
 "point": 3,
-"section_no": 16,
+"section_no": "16",
 "stadium": "Ｇスタ",
 "start_time": "15:03"
 },
@@ -711,7 +711,7 @@
 "match_date": "06/05",
 "opponent": "磐田",
 "point": 0,
-"section_no": 17,
+"section_no": "17",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -723,7 +723,7 @@
 "match_date": "06/13",
 "opponent": "琉球",
 "point": 0,
-"section_no": 18,
+"section_no": "18",
 "stadium": "タピスタ",
 "start_time": "19:03"
 },
@@ -735,7 +735,7 @@
 "match_date": "06/20",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ミクスタ",
 "start_time": "19:03"
 },
@@ -747,7 +747,7 @@
 "match_date": "06/26",
 "opponent": "千葉",
 "point": 1,
-"section_no": 20,
+"section_no": "20",
 "stadium": "ミクスタ",
 "start_time": "19:03"
 },
@@ -759,21 +759,21 @@
 "match_date": "07/03",
 "opponent": "相模原",
 "point": 1,
-"section_no": 21,
+"section_no": "21",
 "stadium": "ギオンス",
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "2",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "京都",
 "point": 0,
 "section_no": 22,
 "stadium": "ミクスタ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -783,7 +783,7 @@
 "match_date": "07/17",
 "opponent": "長崎",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "トラスタ",
 "start_time": "19:00"
 },
@@ -795,7 +795,7 @@
 "match_date": "08/09",
 "opponent": "琉球",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ミクスタ",
 "start_time": "19:00"
 },
@@ -807,7 +807,7 @@
 "match_date": "08/15",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "ニンスタ",
 "start_time": "19:00"
 },
@@ -819,7 +819,7 @@
 "match_date": "08/22",
 "opponent": "町田",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "ミクスタ",
 "start_time": "19:00"
 },
@@ -831,7 +831,7 @@
 "match_date": "08/28",
 "opponent": "岡山",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "ミクスタ",
 "start_time": "19:00"
 },
@@ -843,7 +843,7 @@
 "match_date": "09/04",
 "opponent": "新潟",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -855,7 +855,7 @@
 "match_date": "09/11",
 "opponent": "金沢",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -867,7 +867,7 @@
 "match_date": "09/19",
 "opponent": "秋田",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -879,7 +879,7 @@
 "match_date": "09/26",
 "opponent": "松本",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -891,7 +891,7 @@
 "match_date": "10/03",
 "opponent": "群馬",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -903,7 +903,7 @@
 "match_date": "10/09",
 "opponent": "磐田",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -915,7 +915,7 @@
 "match_date": "10/16",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -927,7 +927,7 @@
 "match_date": "10/23",
 "opponent": "大宮",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -939,7 +939,7 @@
 "match_date": "10/30",
 "opponent": "相模原",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -951,7 +951,7 @@
 "match_date": "11/03",
 "opponent": "水戸",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -963,7 +963,7 @@
 "match_date": "11/07",
 "opponent": "甲府",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -975,7 +975,7 @@
 "match_date": "11/13",
 "opponent": "山口",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -987,7 +987,7 @@
 "match_date": "11/21",
 "opponent": "千葉",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -999,7 +999,7 @@
 "match_date": "11/28",
 "opponent": "栃木",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -1011,7 +1011,7 @@
 "match_date": "12/05",
 "opponent": "山形",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 }
@@ -1027,7 +1027,7 @@
 "match_date": "02/28",
 "opponent": "甲府",
 "point": 1,
-"section_no": 1,
+"section_no": "1",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -1039,7 +1039,7 @@
 "match_date": "03/07",
 "opponent": "愛媛",
 "point": 1,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -1051,7 +1051,7 @@
 "match_date": "03/14",
 "opponent": "秋田",
 "point": 0,
-"section_no": 3,
+"section_no": "3",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -1063,7 +1063,7 @@
 "match_date": "03/21",
 "opponent": "松本",
 "point": 3,
-"section_no": 4,
+"section_no": "4",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -1075,7 +1075,7 @@
 "match_date": "03/27",
 "opponent": "琉球",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -1087,7 +1087,7 @@
 "match_date": "04/04",
 "opponent": "京都",
 "point": 0,
-"section_no": 6,
+"section_no": "6",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -1099,7 +1099,7 @@
 "match_date": "04/11",
 "opponent": "金沢",
 "point": 3,
-"section_no": 7,
+"section_no": "7",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -1111,7 +1111,7 @@
 "match_date": "04/17",
 "opponent": "栃木",
 "point": 1,
-"section_no": 8,
+"section_no": "8",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -1123,7 +1123,7 @@
 "match_date": "04/21",
 "opponent": "水戸",
 "point": 3,
-"section_no": 9,
+"section_no": "9",
 "stadium": "Ｋｓスタ",
 "start_time": "19:03"
 },
@@ -1135,7 +1135,7 @@
 "match_date": "04/25",
 "opponent": "相模原",
 "point": 0,
-"section_no": 10,
+"section_no": "10",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -1147,7 +1147,7 @@
 "match_date": "05/01",
 "opponent": "新潟",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -1159,7 +1159,7 @@
 "match_date": "05/05",
 "opponent": "山口",
 "point": 3,
-"section_no": 12,
+"section_no": "12",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -1171,7 +1171,7 @@
 "match_date": "05/09",
 "opponent": "岡山",
 "point": 3,
-"section_no": 13,
+"section_no": "13",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -1183,7 +1183,7 @@
 "match_date": "05/15",
 "opponent": "長崎",
 "point": 1,
-"section_no": 14,
+"section_no": "14",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -1195,7 +1195,7 @@
 "match_date": "05/23",
 "opponent": "町田",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -1207,7 +1207,7 @@
 "match_date": "05/29",
 "opponent": "大宮",
 "point": 3,
-"section_no": 16,
+"section_no": "16",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -1219,7 +1219,7 @@
 "match_date": "06/06",
 "opponent": "山形",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -1231,7 +1231,7 @@
 "match_date": "06/13",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 18,
+"section_no": "18",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -1243,7 +1243,7 @@
 "match_date": "06/19",
 "opponent": "磐田",
 "point": 0,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ヤマハ",
 "start_time": "19:03"
 },
@@ -1255,7 +1255,7 @@
 "match_date": "06/26",
 "opponent": "北九州",
 "point": 1,
-"section_no": 20,
+"section_no": "20",
 "stadium": "ミクスタ",
 "start_time": "19:03"
 },
@@ -1267,21 +1267,21 @@
 "match_date": "07/03",
 "opponent": "群馬",
 "point": 3,
-"section_no": 21,
+"section_no": "21",
 "stadium": "フクアリ",
 "start_time": "18:04"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "秋田",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "ソユスタ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -1291,7 +1291,7 @@
 "match_date": "07/17",
 "opponent": "金沢",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "フクアリ",
 "start_time": "18:00"
 },
@@ -1303,7 +1303,7 @@
 "match_date": "08/09",
 "opponent": "山形",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ＮＤスタ",
 "start_time": "19:00"
 },
@@ -1315,7 +1315,7 @@
 "match_date": "08/14",
 "opponent": "新潟",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "フクアリ",
 "start_time": "18:00"
 },
@@ -1327,7 +1327,7 @@
 "match_date": "08/21",
 "opponent": "甲府",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "ＪＩＴス",
 "start_time": "18:00"
 },
@@ -1339,7 +1339,7 @@
 "match_date": "08/28",
 "opponent": "長崎",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "フクアリ",
 "start_time": "18:00"
 },
@@ -1351,7 +1351,7 @@
 "match_date": "09/04",
 "opponent": "相模原",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -1363,7 +1363,7 @@
 "match_date": "09/11",
 "opponent": "磐田",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -1375,7 +1375,7 @@
 "match_date": "09/18",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -1387,7 +1387,7 @@
 "match_date": "09/25",
 "opponent": "群馬",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -1399,7 +1399,7 @@
 "match_date": "10/03",
 "opponent": "松本",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -1411,7 +1411,7 @@
 "match_date": "10/10",
 "opponent": "町田",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -1423,7 +1423,7 @@
 "match_date": "10/17",
 "opponent": "大宮",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -1435,7 +1435,7 @@
 "match_date": "10/24",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -1447,7 +1447,7 @@
 "match_date": "10/30",
 "opponent": "山口",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -1459,7 +1459,7 @@
 "match_date": "11/03",
 "opponent": "栃木",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "栃木グ",
 "start_time": "未定"
 },
@@ -1471,7 +1471,7 @@
 "match_date": "11/07",
 "opponent": "水戸",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -1483,7 +1483,7 @@
 "match_date": "11/13",
 "opponent": "琉球",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -1495,7 +1495,7 @@
 "match_date": "11/21",
 "opponent": "北九州",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -1507,7 +1507,7 @@
 "match_date": "11/28",
 "opponent": "京都",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -1519,7 +1519,7 @@
 "match_date": "12/05",
 "opponent": "岡山",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 }
@@ -1535,7 +1535,7 @@
 "match_date": "02/28",
 "opponent": "水戸",
 "point": 3,
-"section_no": 1,
+"section_no": "1",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -1547,7 +1547,7 @@
 "match_date": "03/06",
 "opponent": "甲府",
 "point": 0,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -1559,7 +1559,7 @@
 "match_date": "03/21",
 "opponent": "相模原",
 "point": 0,
-"section_no": 4,
+"section_no": "4",
 "stadium": "ギオンス",
 "start_time": "16:03"
 },
@@ -1571,7 +1571,7 @@
 "match_date": "03/24",
 "opponent": "京都",
 "point": 0,
-"section_no": 3,
+"section_no": "3",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:03"
 },
@@ -1583,7 +1583,7 @@
 "match_date": "03/27",
 "opponent": "長崎",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -1595,7 +1595,7 @@
 "match_date": "04/03",
 "opponent": "琉球",
 "point": 1,
-"section_no": 6,
+"section_no": "6",
 "stadium": "タピスタ",
 "start_time": "17:03"
 },
@@ -1607,7 +1607,7 @@
 "match_date": "04/10",
 "opponent": "秋田",
 "point": 1,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -1619,7 +1619,7 @@
 "match_date": "04/17",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 8,
+"section_no": "8",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -1631,7 +1631,7 @@
 "match_date": "04/21",
 "opponent": "磐田",
 "point": 0,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ヤマハ",
 "start_time": "19:03"
 },
@@ -1643,7 +1643,7 @@
 "match_date": "04/25",
 "opponent": "町田",
 "point": 0,
-"section_no": 10,
+"section_no": "10",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -1655,7 +1655,7 @@
 "match_date": "05/02",
 "opponent": "東京Ｖ",
 "point": 1,
-"section_no": 11,
+"section_no": "11",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -1667,7 +1667,7 @@
 "match_date": "05/05",
 "opponent": "新潟",
 "point": 0,
-"section_no": 12,
+"section_no": "12",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -1679,7 +1679,7 @@
 "match_date": "05/09",
 "opponent": "群馬",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "正田スタ",
 "start_time": "15:03"
 },
@@ -1691,7 +1691,7 @@
 "match_date": "05/16",
 "opponent": "岡山",
 "point": 1,
-"section_no": 14,
+"section_no": "14",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -1703,7 +1703,7 @@
 "match_date": "05/23",
 "opponent": "北九州",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -1715,7 +1715,7 @@
 "match_date": "05/29",
 "opponent": "千葉",
 "point": 0,
-"section_no": 16,
+"section_no": "16",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -1727,7 +1727,7 @@
 "match_date": "06/06",
 "opponent": "金沢",
 "point": 0,
-"section_no": 17,
+"section_no": "17",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -1739,7 +1739,7 @@
 "match_date": "06/13",
 "opponent": "栃木",
 "point": 1,
-"section_no": 18,
+"section_no": "18",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:03"
 },
@@ -1751,7 +1751,7 @@
 "match_date": "06/19",
 "opponent": "松本",
 "point": 1,
-"section_no": 19,
+"section_no": "19",
 "stadium": "サンアル",
 "start_time": "18:03"
 },
@@ -1763,7 +1763,7 @@
 "match_date": "06/27",
 "opponent": "山口",
 "point": 3,
-"section_no": 20,
+"section_no": "20",
 "stadium": "みらスタ",
 "start_time": "19:03"
 },
@@ -1775,21 +1775,21 @@
 "match_date": "07/03",
 "opponent": "山形",
 "point": 0,
-"section_no": 21,
+"section_no": "21",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "長崎",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "トラスタ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -1799,7 +1799,7 @@
 "match_date": "07/18",
 "opponent": "琉球",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:00"
 },
@@ -1811,7 +1811,7 @@
 "match_date": "08/09",
 "opponent": "新潟",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "デンカＳ",
 "start_time": "18:00"
 },
@@ -1823,7 +1823,7 @@
 "match_date": "08/14",
 "opponent": "秋田",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:00"
 },
@@ -1835,7 +1835,7 @@
 "match_date": "08/21",
 "opponent": "岡山",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "Ｃスタ",
 "start_time": "19:00"
 },
@@ -1847,7 +1847,7 @@
 "match_date": "08/29",
 "opponent": "松本",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:00"
 },
@@ -1859,7 +1859,7 @@
 "match_date": "09/05",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -1871,7 +1871,7 @@
 "match_date": "09/12",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -1883,7 +1883,7 @@
 "match_date": "09/18",
 "opponent": "甲府",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -1895,7 +1895,7 @@
 "match_date": "09/25",
 "opponent": "相模原",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -1907,7 +1907,7 @@
 "match_date": "10/03",
 "opponent": "栃木",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "カンセキ",
 "start_time": "未定"
 },
@@ -1919,7 +1919,7 @@
 "match_date": "10/09",
 "opponent": "金沢",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -1931,7 +1931,7 @@
 "match_date": "10/17",
 "opponent": "千葉",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -1943,7 +1943,7 @@
 "match_date": "10/23",
 "opponent": "北九州",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -1955,7 +1955,7 @@
 "match_date": "10/30",
 "opponent": "磐田",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -1967,7 +1967,7 @@
 "match_date": "11/03",
 "opponent": "京都",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -1979,7 +1979,7 @@
 "match_date": "11/07",
 "opponent": "山口",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -1991,7 +1991,7 @@
 "match_date": "11/14",
 "opponent": "山形",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -2003,7 +2003,7 @@
 "match_date": "11/21",
 "opponent": "水戸",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -2015,7 +2015,7 @@
 "match_date": "11/28",
 "opponent": "町田",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -2027,7 +2027,7 @@
 "match_date": "12/05",
 "opponent": "群馬",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 }
@@ -2043,7 +2043,7 @@
 "match_date": "02/28",
 "opponent": "松本",
 "point": 1,
-"section_no": 1,
+"section_no": "1",
 "stadium": "みらスタ",
 "start_time": "15:30"
 },
@@ -2055,7 +2055,7 @@
 "match_date": "03/06",
 "opponent": "琉球",
 "point": 0,
-"section_no": 2,
+"section_no": "2",
 "stadium": "タピスタ",
 "start_time": "16:03"
 },
@@ -2067,7 +2067,7 @@
 "match_date": "03/13",
 "opponent": "新潟",
 "point": 0,
-"section_no": 3,
+"section_no": "3",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -2079,7 +2079,7 @@
 "match_date": "03/21",
 "opponent": "岡山",
 "point": 1,
-"section_no": 4,
+"section_no": "4",
 "stadium": "みらスタ",
 "start_time": "16:03"
 },
@@ -2091,7 +2091,7 @@
 "match_date": "03/27",
 "opponent": "磐田",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "エコパ",
 "start_time": "14:03"
 },
@@ -2103,7 +2103,7 @@
 "match_date": "04/04",
 "opponent": "栃木",
 "point": 0,
-"section_no": 6,
+"section_no": "6",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -2115,7 +2115,7 @@
 "match_date": "04/10",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 7,
+"section_no": "7",
 "stadium": "味スタ",
 "start_time": "16:03"
 },
@@ -2127,7 +2127,7 @@
 "match_date": "04/17",
 "opponent": "群馬",
 "point": 3,
-"section_no": 8,
+"section_no": "8",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -2139,7 +2139,7 @@
 "match_date": "04/21",
 "opponent": "北九州",
 "point": 1,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ミクスタ",
 "start_time": "19:03"
 },
@@ -2151,7 +2151,7 @@
 "match_date": "04/25",
 "opponent": "京都",
 "point": 0,
-"section_no": 10,
+"section_no": "10",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -2163,7 +2163,7 @@
 "match_date": "05/02",
 "opponent": "町田",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "Ｇスタ",
 "start_time": "15:03"
 },
@@ -2175,7 +2175,7 @@
 "match_date": "05/05",
 "opponent": "千葉",
 "point": 0,
-"section_no": 12,
+"section_no": "12",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -2187,7 +2187,7 @@
 "match_date": "05/09",
 "opponent": "金沢",
 "point": 3,
-"section_no": 13,
+"section_no": "13",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -2199,7 +2199,7 @@
 "match_date": "05/15",
 "opponent": "相模原",
 "point": 3,
-"section_no": 14,
+"section_no": "14",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -2211,7 +2211,7 @@
 "match_date": "05/19",
 "opponent": "秋田",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "ソユスタ",
 "start_time": "18:33"
 },
@@ -2223,7 +2223,7 @@
 "match_date": "05/29",
 "opponent": "長崎",
 "point": 0,
-"section_no": 16,
+"section_no": "16",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -2235,7 +2235,7 @@
 "match_date": "06/05",
 "opponent": "愛媛",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "みらスタ",
 "start_time": "13:30"
 },
@@ -2247,7 +2247,7 @@
 "match_date": "06/13",
 "opponent": "山形",
 "point": 0,
-"section_no": 18,
+"section_no": "18",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -2259,7 +2259,7 @@
 "match_date": "06/19",
 "opponent": "甲府",
 "point": 1,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ＪＩＴス",
 "start_time": "18:03"
 },
@@ -2271,7 +2271,7 @@
 "match_date": "06/27",
 "opponent": "大宮",
 "point": 0,
-"section_no": 20,
+"section_no": "20",
 "stadium": "みらスタ",
 "start_time": "19:03"
 },
@@ -2283,21 +2283,21 @@
 "match_date": "07/03",
 "opponent": "水戸",
 "point": 1,
-"section_no": 21,
+"section_no": "21",
 "stadium": "Ｋｓスタ",
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "2",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "磐田",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "みらスタ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -2307,7 +2307,7 @@
 "match_date": "07/17",
 "opponent": "秋田",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "みらスタ",
 "start_time": "19:00"
 },
@@ -2319,7 +2319,7 @@
 "match_date": "08/09",
 "opponent": "岡山",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "Ｃスタ",
 "start_time": "19:00"
 },
@@ -2331,7 +2331,7 @@
 "match_date": "08/14",
 "opponent": "金沢",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "みらスタ",
 "start_time": "19:00"
 },
@@ -2343,7 +2343,7 @@
 "match_date": "08/22",
 "opponent": "群馬",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "正田スタ",
 "start_time": "19:00"
 },
@@ -2355,7 +2355,7 @@
 "match_date": "08/28",
 "opponent": "山形",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "みらスタ",
 "start_time": "19:00"
 },
@@ -2367,7 +2367,7 @@
 "match_date": "09/05",
 "opponent": "栃木",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "栃木グ",
 "start_time": "未定"
 },
@@ -2379,7 +2379,7 @@
 "match_date": "09/11",
 "opponent": "町田",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -2391,7 +2391,7 @@
 "match_date": "09/19",
 "opponent": "相模原",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -2403,7 +2403,7 @@
 "match_date": "09/25",
 "opponent": "長崎",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -2415,7 +2415,7 @@
 "match_date": "10/03",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -2427,7 +2427,7 @@
 "match_date": "10/09",
 "opponent": "新潟",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -2439,7 +2439,7 @@
 "match_date": "10/17",
 "opponent": "水戸",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "ＳＶ下関",
 "start_time": "未定"
 },
@@ -2451,7 +2451,7 @@
 "match_date": "10/24",
 "opponent": "京都",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -2463,7 +2463,7 @@
 "match_date": "10/30",
 "opponent": "千葉",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -2475,7 +2475,7 @@
 "match_date": "11/03",
 "opponent": "琉球",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -2487,7 +2487,7 @@
 "match_date": "11/07",
 "opponent": "大宮",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -2499,7 +2499,7 @@
 "match_date": "11/13",
 "opponent": "北九州",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -2511,7 +2511,7 @@
 "match_date": "11/21",
 "opponent": "松本",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -2523,7 +2523,7 @@
 "match_date": "11/28",
 "opponent": "甲府",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -2535,7 +2535,7 @@
 "match_date": "12/05",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ニンスタ",
 "start_time": "未定"
 }
@@ -2551,7 +2551,7 @@
 "match_date": "02/28",
 "opponent": "町田",
 "point": 1,
-"section_no": 1,
+"section_no": "1",
 "stadium": "Ｇスタ",
 "start_time": "14:03"
 },
@@ -2563,7 +2563,7 @@
 "match_date": "03/07",
 "opponent": "東京Ｖ",
 "point": 3,
-"section_no": 2,
+"section_no": "2",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -2575,7 +2575,7 @@
 "match_date": "03/14",
 "opponent": "松本",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -2587,7 +2587,7 @@
 "match_date": "03/21",
 "opponent": "栃木",
 "point": 0,
-"section_no": 4,
+"section_no": "4",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -2599,7 +2599,7 @@
 "match_date": "03/28",
 "opponent": "岡山",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -2611,7 +2611,7 @@
 "match_date": "04/03",
 "opponent": "北九州",
 "point": 1,
-"section_no": 6,
+"section_no": "6",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -2623,7 +2623,7 @@
 "match_date": "04/11",
 "opponent": "新潟",
 "point": 0,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -2635,7 +2635,7 @@
 "match_date": "04/17",
 "opponent": "秋田",
 "point": 1,
-"section_no": 8,
+"section_no": "8",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -2647,7 +2647,7 @@
 "match_date": "04/21",
 "opponent": "長崎",
 "point": 0,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ＮＤスタ",
 "start_time": "19:03"
 },
@@ -2659,7 +2659,7 @@
 "match_date": "04/25",
 "opponent": "磐田",
 "point": 3,
-"section_no": 10,
+"section_no": "10",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -2671,7 +2671,7 @@
 "match_date": "05/01",
 "opponent": "群馬",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -2683,7 +2683,7 @@
 "match_date": "05/05",
 "opponent": "甲府",
 "point": 1,
-"section_no": 12,
+"section_no": "12",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -2695,7 +2695,7 @@
 "match_date": "05/09",
 "opponent": "京都",
 "point": 0,
-"section_no": 13,
+"section_no": "13",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -2707,7 +2707,7 @@
 "match_date": "05/16",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 14,
+"section_no": "14",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -2719,7 +2719,7 @@
 "match_date": "05/22",
 "opponent": "琉球",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "タピスタ",
 "start_time": "18:03"
 },
@@ -2731,7 +2731,7 @@
 "match_date": "05/30",
 "opponent": "相模原",
 "point": 3,
-"section_no": 16,
+"section_no": "16",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -2743,7 +2743,7 @@
 "match_date": "06/06",
 "opponent": "千葉",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -2755,7 +2755,7 @@
 "match_date": "06/13",
 "opponent": "山口",
 "point": 3,
-"section_no": 18,
+"section_no": "18",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -2767,7 +2767,7 @@
 "match_date": "06/20",
 "opponent": "水戸",
 "point": 3,
-"section_no": 19,
+"section_no": "19",
 "stadium": "Ｋｓスタ",
 "start_time": "18:03"
 },
@@ -2779,7 +2779,7 @@
 "match_date": "06/26",
 "opponent": "金沢",
 "point": 3,
-"section_no": 20,
+"section_no": "20",
 "stadium": "ＮＤスタ",
 "start_time": "19:03"
 },
@@ -2791,21 +2791,21 @@
 "match_date": "07/03",
 "opponent": "大宮",
 "point": 3,
-"section_no": 21,
+"section_no": "21",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "0",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "松本",
-"point": 0,
+"point": 3,
 "section_no": 22,
 "stadium": "ＮＤスタ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -2815,7 +2815,7 @@
 "match_date": "07/17",
 "opponent": "磐田",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "ヤマハ",
 "start_time": "19:00"
 },
@@ -2827,7 +2827,7 @@
 "match_date": "08/09",
 "opponent": "千葉",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ＮＤスタ",
 "start_time": "19:00"
 },
@@ -2839,7 +2839,7 @@
 "match_date": "08/14",
 "opponent": "長崎",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "トラスタ",
 "start_time": "19:00"
 },
@@ -2851,7 +2851,7 @@
 "match_date": "08/22",
 "opponent": "琉球",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "ＮＤスタ",
 "start_time": "19:00"
 },
@@ -2863,7 +2863,7 @@
 "match_date": "08/28",
 "opponent": "山口",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "みらスタ",
 "start_time": "19:00"
 },
@@ -2875,7 +2875,7 @@
 "match_date": "09/04",
 "opponent": "水戸",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -2887,7 +2887,7 @@
 "match_date": "09/11",
 "opponent": "新潟",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -2899,7 +2899,7 @@
 "match_date": "09/18",
 "opponent": "京都",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -2911,7 +2911,7 @@
 "match_date": "09/25",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -2923,7 +2923,7 @@
 "match_date": "10/02",
 "opponent": "甲府",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -2935,7 +2935,7 @@
 "match_date": "10/10",
 "opponent": "秋田",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -2947,7 +2947,7 @@
 "match_date": "10/16",
 "opponent": "相模原",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -2959,7 +2959,7 @@
 "match_date": "10/23",
 "opponent": "群馬",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -2971,7 +2971,7 @@
 "match_date": "10/31",
 "opponent": "栃木",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "栃木グ",
 "start_time": "未定"
 },
@@ -2983,7 +2983,7 @@
 "match_date": "11/03",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -2995,7 +2995,7 @@
 "match_date": "11/07",
 "opponent": "岡山",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -3007,7 +3007,7 @@
 "match_date": "11/14",
 "opponent": "大宮",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -3019,7 +3019,7 @@
 "match_date": "11/21",
 "opponent": "町田",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -3031,7 +3031,7 @@
 "match_date": "11/28",
 "opponent": "金沢",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -3043,7 +3043,7 @@
 "match_date": "12/05",
 "opponent": "北九州",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 }
@@ -3059,7 +3059,7 @@
 "match_date": "02/28",
 "opponent": "栃木",
 "point": 3,
-"section_no": 1,
+"section_no": "1",
 "stadium": "カンセキ",
 "start_time": "14:04"
 },
@@ -3071,7 +3071,7 @@
 "match_date": "03/07",
 "opponent": "金沢",
 "point": 0,
-"section_no": 2,
+"section_no": "2",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -3083,7 +3083,7 @@
 "match_date": "03/14",
 "opponent": "相模原",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -3095,7 +3095,7 @@
 "match_date": "03/21",
 "opponent": "山口",
 "point": 1,
-"section_no": 4,
+"section_no": "4",
 "stadium": "みらスタ",
 "start_time": "16:03"
 },
@@ -3107,7 +3107,7 @@
 "match_date": "03/28",
 "opponent": "山形",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -3119,7 +3119,7 @@
 "match_date": "04/04",
 "opponent": "磐田",
 "point": 0,
-"section_no": 6,
+"section_no": "6",
 "stadium": "Ｃスタ",
 "start_time": "13:03"
 },
@@ -3131,7 +3131,7 @@
 "match_date": "04/11",
 "opponent": "愛媛",
 "point": 1,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ニンスタ",
 "start_time": "16:03"
 },
@@ -3143,7 +3143,7 @@
 "match_date": "04/17",
 "opponent": "水戸",
 "point": 0,
-"section_no": 8,
+"section_no": "8",
 "stadium": "Ｃスタ",
 "start_time": "16:03"
 },
@@ -3155,7 +3155,7 @@
 "match_date": "04/21",
 "opponent": "群馬",
 "point": 0,
-"section_no": 9,
+"section_no": "9",
 "stadium": "正田スタ",
 "start_time": "19:03"
 },
@@ -3167,7 +3167,7 @@
 "match_date": "04/25",
 "opponent": "北九州",
 "point": 3,
-"section_no": 10,
+"section_no": "10",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -3179,7 +3179,7 @@
 "match_date": "05/01",
 "opponent": "秋田",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -3191,7 +3191,7 @@
 "match_date": "05/05",
 "opponent": "町田",
 "point": 0,
-"section_no": 12,
+"section_no": "12",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -3203,7 +3203,7 @@
 "match_date": "05/09",
 "opponent": "千葉",
 "point": 0,
-"section_no": 13,
+"section_no": "13",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -3215,7 +3215,7 @@
 "match_date": "05/16",
 "opponent": "大宮",
 "point": 1,
-"section_no": 14,
+"section_no": "14",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -3227,7 +3227,7 @@
 "match_date": "05/23",
 "opponent": "長崎",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -3239,7 +3239,7 @@
 "match_date": "05/30",
 "opponent": "松本",
 "point": 3,
-"section_no": 16,
+"section_no": "16",
 "stadium": "サンアル",
 "start_time": "12:05"
 },
@@ -3251,7 +3251,7 @@
 "match_date": "06/05",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 17,
+"section_no": "17",
 "stadium": "Ｃスタ",
 "start_time": "19:03"
 },
@@ -3263,7 +3263,7 @@
 "match_date": "06/13",
 "opponent": "新潟",
 "point": 3,
-"section_no": 18,
+"section_no": "18",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -3275,7 +3275,7 @@
 "match_date": "06/19",
 "opponent": "琉球",
 "point": 3,
-"section_no": 19,
+"section_no": "19",
 "stadium": "Ｃスタ",
 "start_time": "19:03"
 },
@@ -3287,7 +3287,7 @@
 "match_date": "06/26",
 "opponent": "京都",
 "point": 0,
-"section_no": 20,
+"section_no": "20",
 "stadium": "サンガＳ",
 "start_time": "18:33"
 },
@@ -3299,21 +3299,21 @@
 "match_date": "07/03",
 "opponent": "甲府",
 "point": 0,
-"section_no": 21,
+"section_no": "21",
 "stadium": "Ｃスタ",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "0",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "金沢",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "石川西部",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -3323,7 +3323,7 @@
 "match_date": "07/18",
 "opponent": "群馬",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "Ｃスタ",
 "start_time": "18:00"
 },
@@ -3335,7 +3335,7 @@
 "match_date": "08/09",
 "opponent": "山口",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "Ｃスタ",
 "start_time": "19:00"
 },
@@ -3347,7 +3347,7 @@
 "match_date": "08/14",
 "opponent": "町田",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "Ｇスタ",
 "start_time": "19:00"
 },
@@ -3359,7 +3359,7 @@
 "match_date": "08/21",
 "opponent": "大宮",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "Ｃスタ",
 "start_time": "19:00"
 },
@@ -3371,7 +3371,7 @@
 "match_date": "08/28",
 "opponent": "北九州",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "ミクスタ",
 "start_time": "19:00"
 },
@@ -3383,7 +3383,7 @@
 "match_date": "09/05",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -3395,7 +3395,7 @@
 "match_date": "09/11",
 "opponent": "栃木",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -3407,7 +3407,7 @@
 "match_date": "09/18",
 "opponent": "磐田",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -3419,7 +3419,7 @@
 "match_date": "09/26",
 "opponent": "秋田",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -3431,7 +3431,7 @@
 "match_date": "10/02",
 "opponent": "琉球",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -3443,7 +3443,7 @@
 "match_date": "10/09",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -3455,7 +3455,7 @@
 "match_date": "10/17",
 "opponent": "松本",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -3467,7 +3467,7 @@
 "match_date": "10/24",
 "opponent": "水戸",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -3479,7 +3479,7 @@
 "match_date": "10/31",
 "opponent": "新潟",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -3491,7 +3491,7 @@
 "match_date": "11/03",
 "opponent": "甲府",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -3503,7 +3503,7 @@
 "match_date": "11/07",
 "opponent": "山形",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -3515,7 +3515,7 @@
 "match_date": "11/14",
 "opponent": "相模原",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -3527,7 +3527,7 @@
 "match_date": "11/20",
 "opponent": "京都",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -3539,7 +3539,7 @@
 "match_date": "11/28",
 "opponent": "長崎",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -3551,7 +3551,7 @@
 "match_date": "12/05",
 "opponent": "千葉",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 }
@@ -3567,7 +3567,7 @@
 "match_date": "02/28",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 1,
+"section_no": "1",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -3579,7 +3579,7 @@
 "match_date": "03/07",
 "opponent": "千葉",
 "point": 1,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -3591,7 +3591,7 @@
 "match_date": "03/13",
 "opponent": "長崎",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -3603,7 +3603,7 @@
 "match_date": "03/21",
 "opponent": "甲府",
 "point": 0,
-"section_no": 4,
+"section_no": "4",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -3615,7 +3615,7 @@
 "match_date": "03/28",
 "opponent": "栃木",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "カンセキ",
 "start_time": "14:03"
 },
@@ -3627,7 +3627,7 @@
 "match_date": "04/04",
 "opponent": "群馬",
 "point": 0,
-"section_no": 6,
+"section_no": "6",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -3639,7 +3639,7 @@
 "match_date": "04/11",
 "opponent": "岡山",
 "point": 1,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ニンスタ",
 "start_time": "16:03"
 },
@@ -3651,7 +3651,7 @@
 "match_date": "04/17",
 "opponent": "大宮",
 "point": 3,
-"section_no": 8,
+"section_no": "8",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -3663,7 +3663,7 @@
 "match_date": "04/21",
 "opponent": "松本",
 "point": 3,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ニンスタ",
 "start_time": "19:03"
 },
@@ -3675,7 +3675,7 @@
 "match_date": "04/24",
 "opponent": "新潟",
 "point": 0,
-"section_no": 10,
+"section_no": "10",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -3687,7 +3687,7 @@
 "match_date": "05/01",
 "opponent": "京都",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -3699,7 +3699,7 @@
 "match_date": "05/05",
 "opponent": "磐田",
 "point": 1,
-"section_no": 12,
+"section_no": "12",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -3711,7 +3711,7 @@
 "match_date": "05/08",
 "opponent": "琉球",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ニンスタ",
 "start_time": "18:03"
 },
@@ -3723,7 +3723,7 @@
 "match_date": "05/16",
 "opponent": "山形",
 "point": 0,
-"section_no": 14,
+"section_no": "14",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -3735,7 +3735,7 @@
 "match_date": "05/27",
 "opponent": "相模原",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "ギオンス",
 "start_time": "19:03"
 },
@@ -3747,7 +3747,7 @@
 "match_date": "05/30",
 "opponent": "水戸",
 "point": 0,
-"section_no": 16,
+"section_no": "16",
 "stadium": "ニンスタ",
 "start_time": "17:03"
 },
@@ -3759,7 +3759,7 @@
 "match_date": "06/05",
 "opponent": "山口",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "みらスタ",
 "start_time": "13:30"
 },
@@ -3771,7 +3771,7 @@
 "match_date": "06/13",
 "opponent": "金沢",
 "point": 0,
-"section_no": 18,
+"section_no": "18",
 "stadium": "ニンスタ",
 "start_time": "18:03"
 },
@@ -3783,7 +3783,7 @@
 "match_date": "06/20",
 "opponent": "北九州",
 "point": 3,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ミクスタ",
 "start_time": "19:03"
 },
@@ -3795,7 +3795,7 @@
 "match_date": "06/27",
 "opponent": "町田",
 "point": 0,
-"section_no": 20,
+"section_no": "20",
 "stadium": "Ｇスタ",
 "start_time": "19:03"
 },
@@ -3807,21 +3807,21 @@
 "match_date": "07/04",
 "opponent": "秋田",
 "point": 0,
-"section_no": 21,
+"section_no": "21",
 "stadium": "ニンスタ",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "甲府",
 "point": 0,
 "section_no": 22,
 "stadium": "ＪＩＴス",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -3831,7 +3831,7 @@
 "match_date": "07/18",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "ニンスタ",
 "start_time": "19:00"
 },
@@ -3843,7 +3843,7 @@
 "match_date": "08/09",
 "opponent": "群馬",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "正田スタ",
 "start_time": "19:00"
 },
@@ -3855,7 +3855,7 @@
 "match_date": "08/15",
 "opponent": "北九州",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "ニンスタ",
 "start_time": "19:00"
 },
@@ -3867,7 +3867,7 @@
 "match_date": "08/22",
 "opponent": "松本",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "サンアル",
 "start_time": "18:00"
 },
@@ -3879,7 +3879,7 @@
 "match_date": "08/29",
 "opponent": "栃木",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "ニンスタ",
 "start_time": "19:00"
 },
@@ -3891,7 +3891,7 @@
 "match_date": "09/05",
 "opponent": "岡山",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -3903,7 +3903,7 @@
 "match_date": "09/12",
 "opponent": "大宮",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -3915,7 +3915,7 @@
 "match_date": "09/18",
 "opponent": "千葉",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -3927,7 +3927,7 @@
 "match_date": "09/25",
 "opponent": "山形",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -3939,7 +3939,7 @@
 "match_date": "10/02",
 "opponent": "秋田",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -3951,7 +3951,7 @@
 "match_date": "10/10",
 "opponent": "長崎",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -3963,7 +3963,7 @@
 "match_date": "10/16",
 "opponent": "琉球",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -3975,7 +3975,7 @@
 "match_date": "10/23",
 "opponent": "磐田",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "エコパ",
 "start_time": "未定"
 },
@@ -3987,7 +3987,7 @@
 "match_date": "10/30",
 "opponent": "京都",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -3999,7 +3999,7 @@
 "match_date": "11/03",
 "opponent": "金沢",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -4011,7 +4011,7 @@
 "match_date": "11/07",
 "opponent": "町田",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -4023,7 +4023,7 @@
 "match_date": "11/13",
 "opponent": "新潟",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -4035,7 +4035,7 @@
 "match_date": "11/21",
 "opponent": "相模原",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -4047,7 +4047,7 @@
 "match_date": "11/28",
 "opponent": "水戸",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -4059,7 +4059,7 @@
 "match_date": "12/05",
 "opponent": "山口",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ニンスタ",
 "start_time": "未定"
 }
@@ -4075,7 +4075,7 @@
 "match_date": "02/27",
 "opponent": "北九州",
 "point": 3,
-"section_no": 1,
+"section_no": "1",
 "stadium": "ミクスタ",
 "start_time": "14:05"
 },
@@ -4087,7 +4087,7 @@
 "match_date": "03/06",
 "opponent": "長崎",
 "point": 3,
-"section_no": 2,
+"section_no": "2",
 "stadium": "デンカＳ",
 "start_time": "13:33"
 },
@@ -4099,7 +4099,7 @@
 "match_date": "03/13",
 "opponent": "山口",
 "point": 3,
-"section_no": 3,
+"section_no": "3",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -4111,7 +4111,7 @@
 "match_date": "03/20",
 "opponent": "群馬",
 "point": 3,
-"section_no": 4,
+"section_no": "4",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -4123,7 +4123,7 @@
 "match_date": "03/27",
 "opponent": "東京Ｖ",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -4135,7 +4135,7 @@
 "match_date": "04/04",
 "opponent": "相模原",
 "point": 1,
-"section_no": 6,
+"section_no": "6",
 "stadium": "ギオンス",
 "start_time": "13:03"
 },
@@ -4147,7 +4147,7 @@
 "match_date": "04/11",
 "opponent": "山形",
 "point": 3,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -4159,7 +4159,7 @@
 "match_date": "04/17",
 "opponent": "金沢",
 "point": 3,
-"section_no": 8,
+"section_no": "8",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -4171,7 +4171,7 @@
 "match_date": "04/21",
 "opponent": "栃木",
 "point": 1,
-"section_no": 9,
+"section_no": "9",
 "stadium": "カンセキ",
 "start_time": "19:03"
 },
@@ -4183,7 +4183,7 @@
 "match_date": "04/24",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 10,
+"section_no": "10",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -4195,7 +4195,7 @@
 "match_date": "05/01",
 "opponent": "千葉",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -4207,7 +4207,7 @@
 "match_date": "05/05",
 "opponent": "大宮",
 "point": 3,
-"section_no": 12,
+"section_no": "12",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -4219,7 +4219,7 @@
 "match_date": "05/09",
 "opponent": "松本",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -4231,7 +4231,7 @@
 "match_date": "05/16",
 "opponent": "町田",
 "point": 0,
-"section_no": 14,
+"section_no": "14",
 "stadium": "Ｇスタ",
 "start_time": "15:03"
 },
@@ -4243,7 +4243,7 @@
 "match_date": "05/23",
 "opponent": "京都",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -4255,7 +4255,7 @@
 "match_date": "05/30",
 "opponent": "琉球",
 "point": 3,
-"section_no": 16,
+"section_no": "16",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -4267,7 +4267,7 @@
 "match_date": "06/05",
 "opponent": "甲府",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -4279,7 +4279,7 @@
 "match_date": "06/13",
 "opponent": "岡山",
 "point": 0,
-"section_no": 18,
+"section_no": "18",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -4291,7 +4291,7 @@
 "match_date": "06/21",
 "opponent": "秋田",
 "point": 3,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ソユスタ",
 "start_time": "19:03"
 },
@@ -4303,7 +4303,7 @@
 "match_date": "06/26",
 "opponent": "水戸",
 "point": 1,
-"section_no": 20,
+"section_no": "20",
 "stadium": "デンカＳ",
 "start_time": "18:03"
 },
@@ -4315,21 +4315,21 @@
 "match_date": "07/03",
 "opponent": "磐田",
 "point": 0,
-"section_no": 21,
+"section_no": "21",
 "stadium": "エコパ",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "3",
+"goal_lose": "0",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "栃木",
-"point": 0,
+"point": 3,
 "section_no": 22,
 "stadium": "デンカＳ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -4339,7 +4339,7 @@
 "match_date": "07/17",
 "opponent": "京都",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "サンガＳ",
 "start_time": "18:30"
 },
@@ -4351,7 +4351,7 @@
 "match_date": "08/09",
 "opponent": "大宮",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "デンカＳ",
 "start_time": "18:00"
 },
@@ -4363,7 +4363,7 @@
 "match_date": "08/14",
 "opponent": "千葉",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "フクアリ",
 "start_time": "18:00"
 },
@@ -4375,7 +4375,7 @@
 "match_date": "08/22",
 "opponent": "相模原",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "デンカＳ",
 "start_time": "18:00"
 },
@@ -4387,7 +4387,7 @@
 "match_date": "08/28",
 "opponent": "水戸",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "Ｋｓスタ",
 "start_time": "19:00"
 },
@@ -4399,7 +4399,7 @@
 "match_date": "09/04",
 "opponent": "北九州",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -4411,7 +4411,7 @@
 "match_date": "09/11",
 "opponent": "山形",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -4423,7 +4423,7 @@
 "match_date": "09/19",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -4435,7 +4435,7 @@
 "match_date": "09/25",
 "opponent": "甲府",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -4447,7 +4447,7 @@
 "match_date": "10/03",
 "opponent": "金沢",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -4459,7 +4459,7 @@
 "match_date": "10/09",
 "opponent": "山口",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -4471,7 +4471,7 @@
 "match_date": "10/16",
 "opponent": "長崎",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -4483,7 +4483,7 @@
 "match_date": "10/23",
 "opponent": "秋田",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -4495,7 +4495,7 @@
 "match_date": "10/31",
 "opponent": "岡山",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -4507,7 +4507,7 @@
 "match_date": "11/03",
 "opponent": "磐田",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -4519,7 +4519,7 @@
 "match_date": "11/07",
 "opponent": "松本",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -4531,7 +4531,7 @@
 "match_date": "11/13",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -4543,7 +4543,7 @@
 "match_date": "11/21",
 "opponent": "群馬",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -4555,7 +4555,7 @@
 "match_date": "11/28",
 "opponent": "琉球",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -4567,7 +4567,7 @@
 "match_date": "12/05",
 "opponent": "町田",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "デンカＳ",
 "start_time": "未定"
 }
@@ -4583,7 +4583,7 @@
 "match_date": "02/28",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 1,
+"section_no": "1",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -4595,7 +4595,7 @@
 "match_date": "03/07",
 "opponent": "山形",
 "point": 0,
-"section_no": 2,
+"section_no": "2",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -4607,7 +4607,7 @@
 "match_date": "03/14",
 "opponent": "町田",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "Ｇスタ",
 "start_time": "14:03"
 },
@@ -4619,7 +4619,7 @@
 "match_date": "03/20",
 "opponent": "金沢",
 "point": 0,
-"section_no": 4,
+"section_no": "4",
 "stadium": "味スタ",
 "start_time": "16:03"
 },
@@ -4631,7 +4631,7 @@
 "match_date": "03/27",
 "opponent": "新潟",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -4643,7 +4643,7 @@
 "match_date": "04/04",
 "opponent": "水戸",
 "point": 3,
-"section_no": 6,
+"section_no": "6",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -4655,7 +4655,7 @@
 "match_date": "04/10",
 "opponent": "山口",
 "point": 3,
-"section_no": 7,
+"section_no": "7",
 "stadium": "味スタ",
 "start_time": "16:03"
 },
@@ -4667,7 +4667,7 @@
 "match_date": "04/17",
 "opponent": "琉球",
 "point": 0,
-"section_no": 8,
+"section_no": "8",
 "stadium": "タピスタ",
 "start_time": "17:03"
 },
@@ -4679,7 +4679,7 @@
 "match_date": "04/21",
 "opponent": "京都",
 "point": 0,
-"section_no": 9,
+"section_no": "9",
 "stadium": "味フィ西",
 "start_time": "18:03"
 },
@@ -4691,7 +4691,7 @@
 "match_date": "04/25",
 "opponent": "長崎",
 "point": 1,
-"section_no": 10,
+"section_no": "10",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -4703,7 +4703,7 @@
 "match_date": "05/02",
 "opponent": "大宮",
 "point": 1,
-"section_no": 11,
+"section_no": "11",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -4715,7 +4715,7 @@
 "match_date": "05/05",
 "opponent": "群馬",
 "point": 3,
-"section_no": 12,
+"section_no": "12",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -4727,7 +4727,7 @@
 "match_date": "05/09",
 "opponent": "甲府",
 "point": 0,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -4739,7 +4739,7 @@
 "match_date": "05/16",
 "opponent": "北九州",
 "point": 3,
-"section_no": 14,
+"section_no": "14",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -4751,7 +4751,7 @@
 "match_date": "05/23",
 "opponent": "磐田",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -4763,7 +4763,7 @@
 "match_date": "05/29",
 "opponent": "秋田",
 "point": 3,
-"section_no": 16,
+"section_no": "16",
 "stadium": "味スタ",
 "start_time": "16:03"
 },
@@ -4775,7 +4775,7 @@
 "match_date": "06/05",
 "opponent": "岡山",
 "point": 3,
-"section_no": 17,
+"section_no": "17",
 "stadium": "Ｃスタ",
 "start_time": "19:03"
 },
@@ -4787,7 +4787,7 @@
 "match_date": "06/13",
 "opponent": "千葉",
 "point": 3,
-"section_no": 18,
+"section_no": "18",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -4799,7 +4799,7 @@
 "match_date": "06/20",
 "opponent": "相模原",
 "point": 3,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ギオンス",
 "start_time": "15:03"
 },
@@ -4811,7 +4811,7 @@
 "match_date": "06/26",
 "opponent": "栃木",
 "point": 3,
-"section_no": 20,
+"section_no": "20",
 "stadium": "味スタ",
 "start_time": "18:03"
 },
@@ -4823,21 +4823,21 @@
 "match_date": "07/03",
 "opponent": "松本",
 "point": 0,
-"section_no": 21,
+"section_no": "21",
 "stadium": "サンアル",
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "2",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "群馬",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "正田スタ",
-"start_time": "19:00"
+"start_time": "19:04"
 },
 {
 "goal_get": "",
@@ -4847,7 +4847,7 @@
 "match_date": "07/18",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "ニンスタ",
 "start_time": "19:00"
 },
@@ -4859,7 +4859,7 @@
 "match_date": "08/09",
 "opponent": "水戸",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "Ｋｓスタ",
 "start_time": "19:00"
 },
@@ -4871,7 +4871,7 @@
 "match_date": "08/14",
 "opponent": "磐田",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "ヤマハ",
 "start_time": "19:00"
 },
@@ -4883,7 +4883,7 @@
 "match_date": "08/21",
 "opponent": "栃木",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "栃木グ",
 "start_time": "18:00"
 },
@@ -4895,7 +4895,7 @@
 "match_date": "08/28",
 "opponent": "京都",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "サンガＳ",
 "start_time": "18:30"
 },
@@ -4907,7 +4907,7 @@
 "match_date": "09/05",
 "opponent": "大宮",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -4919,7 +4919,7 @@
 "match_date": "09/11",
 "opponent": "松本",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -4931,7 +4931,7 @@
 "match_date": "09/19",
 "opponent": "新潟",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -4943,7 +4943,7 @@
 "match_date": "09/26",
 "opponent": "町田",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -4955,7 +4955,7 @@
 "match_date": "10/03",
 "opponent": "山口",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -4967,7 +4967,7 @@
 "match_date": "10/09",
 "opponent": "岡山",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -4979,7 +4979,7 @@
 "match_date": "10/16",
 "opponent": "北九州",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -4991,7 +4991,7 @@
 "match_date": "10/24",
 "opponent": "千葉",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -5003,7 +5003,7 @@
 "match_date": "10/30",
 "opponent": "甲府",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -5015,7 +5015,7 @@
 "match_date": "11/03",
 "opponent": "山形",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -5027,7 +5027,7 @@
 "match_date": "11/07",
 "opponent": "長崎",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -5039,7 +5039,7 @@
 "match_date": "11/14",
 "opponent": "金沢",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -5051,7 +5051,7 @@
 "match_date": "11/21",
 "opponent": "琉球",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -5063,7 +5063,7 @@
 "match_date": "11/28",
 "opponent": "秋田",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -5075,7 +5075,7 @@
 "match_date": "12/05",
 "opponent": "相模原",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "味スタ",
 "start_time": "未定"
 }
@@ -5091,7 +5091,7 @@
 "match_date": "02/28",
 "opponent": "山口",
 "point": 1,
-"section_no": 1,
+"section_no": "1",
 "stadium": "みらスタ",
 "start_time": "15:30"
 },
@@ -5103,7 +5103,7 @@
 "match_date": "03/07",
 "opponent": "京都",
 "point": 1,
-"section_no": 2,
+"section_no": "2",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -5115,7 +5115,7 @@
 "match_date": "03/14",
 "opponent": "山形",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -5127,7 +5127,7 @@
 "match_date": "03/21",
 "opponent": "千葉",
 "point": 0,
-"section_no": 4,
+"section_no": "4",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -5139,7 +5139,7 @@
 "match_date": "03/28",
 "opponent": "水戸",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -5151,7 +5151,7 @@
 "match_date": "04/04",
 "opponent": "秋田",
 "point": 3,
-"section_no": 6,
+"section_no": "6",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -5163,7 +5163,7 @@
 "match_date": "04/10",
 "opponent": "磐田",
 "point": 0,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -5175,7 +5175,7 @@
 "match_date": "04/17",
 "opponent": "甲府",
 "point": 1,
-"section_no": 8,
+"section_no": "8",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -5187,7 +5187,7 @@
 "match_date": "04/21",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ニンスタ",
 "start_time": "19:03"
 },
@@ -5199,7 +5199,7 @@
 "match_date": "04/25",
 "opponent": "群馬",
 "point": 3,
-"section_no": 10,
+"section_no": "10",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -5211,7 +5211,7 @@
 "match_date": "05/01",
 "opponent": "北九州",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -5223,7 +5223,7 @@
 "match_date": "05/05",
 "opponent": "相模原",
 "point": 3,
-"section_no": 12,
+"section_no": "12",
 "stadium": "サンアル",
 "start_time": "15:05"
 },
@@ -5235,7 +5235,7 @@
 "match_date": "05/09",
 "opponent": "新潟",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -5247,7 +5247,7 @@
 "match_date": "05/15",
 "opponent": "金沢",
 "point": 1,
-"section_no": 14,
+"section_no": "14",
 "stadium": "サンアル",
 "start_time": "14:04"
 },
@@ -5259,7 +5259,7 @@
 "match_date": "05/23",
 "opponent": "栃木",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "カンセキ",
 "start_time": "14:03"
 },
@@ -5271,7 +5271,7 @@
 "match_date": "05/30",
 "opponent": "岡山",
 "point": 0,
-"section_no": 16,
+"section_no": "16",
 "stadium": "サンアル",
 "start_time": "12:05"
 },
@@ -5283,7 +5283,7 @@
 "match_date": "06/05",
 "opponent": "町田",
 "point": 0,
-"section_no": 17,
+"section_no": "17",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -5295,7 +5295,7 @@
 "match_date": "06/13",
 "opponent": "長崎",
 "point": 0,
-"section_no": 18,
+"section_no": "18",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -5307,7 +5307,7 @@
 "match_date": "06/19",
 "opponent": "大宮",
 "point": 1,
-"section_no": 19,
+"section_no": "19",
 "stadium": "サンアル",
 "start_time": "18:03"
 },
@@ -5319,7 +5319,7 @@
 "match_date": "06/26",
 "opponent": "琉球",
 "point": 0,
-"section_no": 20,
+"section_no": "20",
 "stadium": "タピスタ",
 "start_time": "18:33"
 },
@@ -5331,21 +5331,21 @@
 "match_date": "07/03",
 "opponent": "東京Ｖ",
 "point": 3,
-"section_no": 21,
+"section_no": "21",
 "stadium": "サンアル",
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "1",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "山形",
 "point": 0,
 "section_no": 22,
 "stadium": "ＮＤスタ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -5355,7 +5355,7 @@
 "match_date": "07/17",
 "opponent": "水戸",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "サンアル",
 "start_time": "18:00"
 },
@@ -5367,7 +5367,7 @@
 "match_date": "08/09",
 "opponent": "秋田",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ソユスタ",
 "start_time": "18:30"
 },
@@ -5379,7 +5379,7 @@
 "match_date": "08/14",
 "opponent": "京都",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "サンアル",
 "start_time": "18:00"
 },
@@ -5391,7 +5391,7 @@
 "match_date": "08/22",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "サンアル",
 "start_time": "18:00"
 },
@@ -5403,7 +5403,7 @@
 "match_date": "08/29",
 "opponent": "大宮",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:00"
 },
@@ -5415,7 +5415,7 @@
 "match_date": "09/04",
 "opponent": "磐田",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -5427,7 +5427,7 @@
 "match_date": "09/11",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -5439,7 +5439,7 @@
 "match_date": "09/19",
 "opponent": "金沢",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -5451,7 +5451,7 @@
 "match_date": "09/26",
 "opponent": "北九州",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -5463,7 +5463,7 @@
 "match_date": "10/03",
 "opponent": "千葉",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -5475,7 +5475,7 @@
 "match_date": "10/10",
 "opponent": "栃木",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -5487,7 +5487,7 @@
 "match_date": "10/17",
 "opponent": "岡山",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -5499,7 +5499,7 @@
 "match_date": "10/24",
 "opponent": "琉球",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -5511,7 +5511,7 @@
 "match_date": "10/30",
 "opponent": "群馬",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -5523,7 +5523,7 @@
 "match_date": "11/03",
 "opponent": "町田",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -5535,7 +5535,7 @@
 "match_date": "11/07",
 "opponent": "新潟",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -5547,7 +5547,7 @@
 "match_date": "11/14",
 "opponent": "甲府",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -5559,7 +5559,7 @@
 "match_date": "11/21",
 "opponent": "山口",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -5571,7 +5571,7 @@
 "match_date": "11/28",
 "opponent": "相模原",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -5583,7 +5583,7 @@
 "match_date": "12/05",
 "opponent": "長崎",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "サンアル",
 "start_time": "未定"
 }
@@ -5599,7 +5599,7 @@
 "match_date": "02/28",
 "opponent": "岡山",
 "point": 0,
-"section_no": 1,
+"section_no": "1",
 "stadium": "カンセキ",
 "start_time": "14:04"
 },
@@ -5611,7 +5611,7 @@
 "match_date": "03/07",
 "opponent": "秋田",
 "point": 0,
-"section_no": 2,
+"section_no": "2",
 "stadium": "カンセキ",
 "start_time": "14:03"
 },
@@ -5623,7 +5623,7 @@
 "match_date": "03/14",
 "opponent": "甲府",
 "point": 0,
-"section_no": 3,
+"section_no": "3",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -5635,7 +5635,7 @@
 "match_date": "03/21",
 "opponent": "山形",
 "point": 3,
-"section_no": 4,
+"section_no": "4",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -5647,7 +5647,7 @@
 "match_date": "03/28",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "カンセキ",
 "start_time": "14:03"
 },
@@ -5659,7 +5659,7 @@
 "match_date": "04/04",
 "opponent": "山口",
 "point": 3,
-"section_no": 6,
+"section_no": "6",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -5671,7 +5671,7 @@
 "match_date": "04/11",
 "opponent": "相模原",
 "point": 1,
-"section_no": 7,
+"section_no": "7",
 "stadium": "栃木グ",
 "start_time": "14:03"
 },
@@ -5683,7 +5683,7 @@
 "match_date": "04/17",
 "opponent": "千葉",
 "point": 1,
-"section_no": 8,
+"section_no": "8",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -5695,7 +5695,7 @@
 "match_date": "04/21",
 "opponent": "新潟",
 "point": 1,
-"section_no": 9,
+"section_no": "9",
 "stadium": "カンセキ",
 "start_time": "19:03"
 },
@@ -5707,7 +5707,7 @@
 "match_date": "04/25",
 "opponent": "金沢",
 "point": 1,
-"section_no": 10,
+"section_no": "10",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -5719,7 +5719,7 @@
 "match_date": "05/01",
 "opponent": "磐田",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -5731,7 +5731,7 @@
 "match_date": "05/05",
 "opponent": "北九州",
 "point": 0,
-"section_no": 12,
+"section_no": "12",
 "stadium": "カンセキ",
 "start_time": "16:03"
 },
@@ -5743,7 +5743,7 @@
 "match_date": "05/09",
 "opponent": "水戸",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -5755,7 +5755,7 @@
 "match_date": "05/15",
 "opponent": "琉球",
 "point": 0,
-"section_no": 14,
+"section_no": "14",
 "stadium": "タピスタ",
 "start_time": "18:03"
 },
@@ -5767,7 +5767,7 @@
 "match_date": "05/23",
 "opponent": "松本",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "カンセキ",
 "start_time": "14:03"
 },
@@ -5779,7 +5779,7 @@
 "match_date": "05/29",
 "opponent": "群馬",
 "point": 1,
-"section_no": 16,
+"section_no": "16",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -5791,7 +5791,7 @@
 "match_date": "06/06",
 "opponent": "京都",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "カンセキ",
 "start_time": "14:03"
 },
@@ -5803,7 +5803,7 @@
 "match_date": "06/13",
 "opponent": "大宮",
 "point": 1,
-"section_no": 18,
+"section_no": "18",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:03"
 },
@@ -5815,7 +5815,7 @@
 "match_date": "06/19",
 "opponent": "長崎",
 "point": 0,
-"section_no": 19,
+"section_no": "19",
 "stadium": "カンセキ",
 "start_time": "18:03"
 },
@@ -5827,7 +5827,7 @@
 "match_date": "06/26",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 20,
+"section_no": "20",
 "stadium": "味スタ",
 "start_time": "18:03"
 },
@@ -5839,21 +5839,21 @@
 "match_date": "07/03",
 "opponent": "町田",
 "point": 1,
-"section_no": 21,
+"section_no": "21",
 "stadium": "栃木グ",
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "3",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "新潟",
 "point": 0,
 "section_no": 22,
 "stadium": "デンカＳ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -5863,7 +5863,7 @@
 "match_date": "07/17",
 "opponent": "甲府",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "栃木グ",
 "start_time": "18:00"
 },
@@ -5875,7 +5875,7 @@
 "match_date": "08/09",
 "opponent": "相模原",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ギオンス",
 "start_time": "17:00"
 },
@@ -5887,7 +5887,7 @@
 "match_date": "08/14",
 "opponent": "群馬",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "カンセキ",
 "start_time": "18:00"
 },
@@ -5899,7 +5899,7 @@
 "match_date": "08/21",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "栃木グ",
 "start_time": "18:00"
 },
@@ -5911,7 +5911,7 @@
 "match_date": "08/29",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "ニンスタ",
 "start_time": "19:00"
 },
@@ -5923,7 +5923,7 @@
 "match_date": "09/05",
 "opponent": "山口",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "栃木グ",
 "start_time": "未定"
 },
@@ -5935,7 +5935,7 @@
 "match_date": "09/11",
 "opponent": "岡山",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -5947,7 +5947,7 @@
 "match_date": "09/18",
 "opponent": "水戸",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "カンセキ",
 "start_time": "未定"
 },
@@ -5959,7 +5959,7 @@
 "match_date": "09/25",
 "opponent": "京都",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -5971,7 +5971,7 @@
 "match_date": "10/03",
 "opponent": "大宮",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "カンセキ",
 "start_time": "未定"
 },
@@ -5983,7 +5983,7 @@
 "match_date": "10/10",
 "opponent": "松本",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -5995,7 +5995,7 @@
 "match_date": "10/17",
 "opponent": "磐田",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "カンセキ",
 "start_time": "未定"
 },
@@ -6007,7 +6007,7 @@
 "match_date": "10/24",
 "opponent": "町田",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -6019,7 +6019,7 @@
 "match_date": "10/31",
 "opponent": "山形",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "栃木グ",
 "start_time": "未定"
 },
@@ -6031,7 +6031,7 @@
 "match_date": "11/03",
 "opponent": "千葉",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "栃木グ",
 "start_time": "未定"
 },
@@ -6043,7 +6043,7 @@
 "match_date": "11/07",
 "opponent": "秋田",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -6055,7 +6055,7 @@
 "match_date": "11/13",
 "opponent": "長崎",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -6067,7 +6067,7 @@
 "match_date": "11/21",
 "opponent": "金沢",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "栃木グ",
 "start_time": "未定"
 },
@@ -6079,7 +6079,7 @@
 "match_date": "11/28",
 "opponent": "北九州",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -6091,7 +6091,7 @@
 "match_date": "12/05",
 "opponent": "琉球",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "カンセキ",
 "start_time": "未定"
 }
@@ -6107,7 +6107,7 @@
 "match_date": "02/28",
 "opponent": "大宮",
 "point": 0,
-"section_no": 1,
+"section_no": "1",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -6119,7 +6119,7 @@
 "match_date": "03/06",
 "opponent": "北九州",
 "point": 3,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -6131,7 +6131,7 @@
 "match_date": "03/13",
 "opponent": "磐田",
 "point": 0,
-"section_no": 3,
+"section_no": "3",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -6143,7 +6143,7 @@
 "match_date": "03/21",
 "opponent": "町田",
 "point": 3,
-"section_no": 4,
+"section_no": "4",
 "stadium": "Ｋｓスタ",
 "start_time": "16:03"
 },
@@ -6155,7 +6155,7 @@
 "match_date": "03/28",
 "opponent": "松本",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -6167,7 +6167,7 @@
 "match_date": "04/04",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 6,
+"section_no": "6",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -6179,7 +6179,7 @@
 "match_date": "04/11",
 "opponent": "琉球",
 "point": 0,
-"section_no": 7,
+"section_no": "7",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -6191,7 +6191,7 @@
 "match_date": "04/17",
 "opponent": "岡山",
 "point": 3,
-"section_no": 8,
+"section_no": "8",
 "stadium": "Ｃスタ",
 "start_time": "16:03"
 },
@@ -6203,7 +6203,7 @@
 "match_date": "04/21",
 "opponent": "千葉",
 "point": 0,
-"section_no": 9,
+"section_no": "9",
 "stadium": "Ｋｓスタ",
 "start_time": "19:03"
 },
@@ -6215,7 +6215,7 @@
 "match_date": "04/25",
 "opponent": "秋田",
 "point": 0,
-"section_no": 10,
+"section_no": "10",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -6227,7 +6227,7 @@
 "match_date": "05/02",
 "opponent": "長崎",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -6239,7 +6239,7 @@
 "match_date": "05/05",
 "opponent": "金沢",
 "point": 3,
-"section_no": 12,
+"section_no": "12",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -6251,7 +6251,7 @@
 "match_date": "05/09",
 "opponent": "栃木",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -6263,7 +6263,7 @@
 "match_date": "05/16",
 "opponent": "京都",
 "point": 0,
-"section_no": 14,
+"section_no": "14",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -6275,7 +6275,7 @@
 "match_date": "05/23",
 "opponent": "甲府",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -6287,7 +6287,7 @@
 "match_date": "05/30",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 16,
+"section_no": "16",
 "stadium": "ニンスタ",
 "start_time": "17:03"
 },
@@ -6299,7 +6299,7 @@
 "match_date": "06/04",
 "opponent": "群馬",
 "point": 0,
-"section_no": 17,
+"section_no": "17",
 "stadium": "正田スタ",
 "start_time": "19:03"
 },
@@ -6311,7 +6311,7 @@
 "match_date": "06/13",
 "opponent": "相模原",
 "point": 3,
-"section_no": 18,
+"section_no": "18",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -6323,7 +6323,7 @@
 "match_date": "06/20",
 "opponent": "山形",
 "point": 0,
-"section_no": 19,
+"section_no": "19",
 "stadium": "Ｋｓスタ",
 "start_time": "18:03"
 },
@@ -6335,7 +6335,7 @@
 "match_date": "06/26",
 "opponent": "新潟",
 "point": 1,
-"section_no": 20,
+"section_no": "20",
 "stadium": "デンカＳ",
 "start_time": "18:03"
 },
@@ -6347,21 +6347,21 @@
 "match_date": "07/03",
 "opponent": "山口",
 "point": 1,
-"section_no": 21,
+"section_no": "21",
 "stadium": "Ｋｓスタ",
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "2",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "町田",
 "point": 0,
 "section_no": 22,
 "stadium": "Ｇスタ",
-"start_time": "19:00"
+"start_time": "19:33"
 },
 {
 "goal_get": "",
@@ -6371,7 +6371,7 @@
 "match_date": "07/17",
 "opponent": "松本",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "サンアル",
 "start_time": "18:00"
 },
@@ -6383,7 +6383,7 @@
 "match_date": "08/09",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "Ｋｓスタ",
 "start_time": "19:00"
 },
@@ -6395,7 +6395,7 @@
 "match_date": "08/14",
 "opponent": "琉球",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "タピスタ",
 "start_time": "18:30"
 },
@@ -6407,7 +6407,7 @@
 "match_date": "08/22",
 "opponent": "京都",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "Ｋｓスタ",
 "start_time": "19:00"
 },
@@ -6419,7 +6419,7 @@
 "match_date": "08/28",
 "opponent": "新潟",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "Ｋｓスタ",
 "start_time": "19:00"
 },
@@ -6431,7 +6431,7 @@
 "match_date": "09/04",
 "opponent": "山形",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -6443,7 +6443,7 @@
 "match_date": "09/11",
 "opponent": "秋田",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -6455,7 +6455,7 @@
 "match_date": "09/18",
 "opponent": "栃木",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "カンセキ",
 "start_time": "未定"
 },
@@ -6467,7 +6467,7 @@
 "match_date": "09/26",
 "opponent": "金沢",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -6479,7 +6479,7 @@
 "match_date": "10/03",
 "opponent": "相模原",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -6491,7 +6491,7 @@
 "match_date": "10/10",
 "opponent": "群馬",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -6503,7 +6503,7 @@
 "match_date": "10/17",
 "opponent": "山口",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "ＳＶ下関",
 "start_time": "未定"
 },
@@ -6515,7 +6515,7 @@
 "match_date": "10/24",
 "opponent": "岡山",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -6527,7 +6527,7 @@
 "match_date": "10/30",
 "opponent": "長崎",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -6539,7 +6539,7 @@
 "match_date": "11/03",
 "opponent": "北九州",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -6551,7 +6551,7 @@
 "match_date": "11/07",
 "opponent": "千葉",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -6563,7 +6563,7 @@
 "match_date": "11/14",
 "opponent": "磐田",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -6575,7 +6575,7 @@
 "match_date": "11/21",
 "opponent": "大宮",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -6587,7 +6587,7 @@
 "match_date": "11/28",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -6599,7 +6599,7 @@
 "match_date": "12/05",
 "opponent": "甲府",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 }
@@ -6615,7 +6615,7 @@
 "match_date": "02/28",
 "opponent": "磐田",
 "point": 3,
-"section_no": 1,
+"section_no": "1",
 "stadium": "タピスタ",
 "start_time": "15:03"
 },
@@ -6627,7 +6627,7 @@
 "match_date": "03/06",
 "opponent": "山口",
 "point": 3,
-"section_no": 2,
+"section_no": "2",
 "stadium": "タピスタ",
 "start_time": "16:03"
 },
@@ -6639,7 +6639,7 @@
 "match_date": "03/14",
 "opponent": "群馬",
 "point": 3,
-"section_no": 3,
+"section_no": "3",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -6651,7 +6651,7 @@
 "match_date": "03/20",
 "opponent": "長崎",
 "point": 3,
-"section_no": 4,
+"section_no": "4",
 "stadium": "タピスタ",
 "start_time": "16:03"
 },
@@ -6663,7 +6663,7 @@
 "match_date": "03/27",
 "opponent": "千葉",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -6675,7 +6675,7 @@
 "match_date": "04/03",
 "opponent": "大宮",
 "point": 1,
-"section_no": 6,
+"section_no": "6",
 "stadium": "タピスタ",
 "start_time": "17:03"
 },
@@ -6687,7 +6687,7 @@
 "match_date": "04/11",
 "opponent": "水戸",
 "point": 3,
-"section_no": 7,
+"section_no": "7",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -6699,7 +6699,7 @@
 "match_date": "04/17",
 "opponent": "東京Ｖ",
 "point": 3,
-"section_no": 8,
+"section_no": "8",
 "stadium": "タピスタ",
 "start_time": "17:03"
 },
@@ -6711,7 +6711,7 @@
 "match_date": "04/21",
 "opponent": "町田",
 "point": 0,
-"section_no": 9,
+"section_no": "9",
 "stadium": "Ｇスタ",
 "start_time": "19:03"
 },
@@ -6723,7 +6723,7 @@
 "match_date": "04/25",
 "opponent": "甲府",
 "point": 3,
-"section_no": 10,
+"section_no": "10",
 "stadium": "タピスタ",
 "start_time": "17:03"
 },
@@ -6735,7 +6735,7 @@
 "match_date": "05/01",
 "opponent": "相模原",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ギオンス",
 "start_time": "15:03"
 },
@@ -6747,7 +6747,7 @@
 "match_date": "05/05",
 "opponent": "京都",
 "point": 1,
-"section_no": 12,
+"section_no": "12",
 "stadium": "タピスタ",
 "start_time": "18:03"
 },
@@ -6759,7 +6759,7 @@
 "match_date": "05/08",
 "opponent": "愛媛",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ニンスタ",
 "start_time": "18:03"
 },
@@ -6771,7 +6771,7 @@
 "match_date": "05/15",
 "opponent": "栃木",
 "point": 3,
-"section_no": 14,
+"section_no": "14",
 "stadium": "タピスタ",
 "start_time": "18:03"
 },
@@ -6783,7 +6783,7 @@
 "match_date": "05/22",
 "opponent": "山形",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "タピスタ",
 "start_time": "18:03"
 },
@@ -6795,7 +6795,7 @@
 "match_date": "05/30",
 "opponent": "新潟",
 "point": 0,
-"section_no": 16,
+"section_no": "16",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -6807,7 +6807,7 @@
 "match_date": "06/05",
 "opponent": "秋田",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "ソユスタ",
 "start_time": "15:03"
 },
@@ -6819,7 +6819,7 @@
 "match_date": "06/13",
 "opponent": "北九州",
 "point": 3,
-"section_no": 18,
+"section_no": "18",
 "stadium": "タピスタ",
 "start_time": "19:03"
 },
@@ -6831,7 +6831,7 @@
 "match_date": "06/19",
 "opponent": "岡山",
 "point": 0,
-"section_no": 19,
+"section_no": "19",
 "stadium": "Ｃスタ",
 "start_time": "19:03"
 },
@@ -6843,7 +6843,7 @@
 "match_date": "06/26",
 "opponent": "松本",
 "point": 3,
-"section_no": 20,
+"section_no": "20",
 "stadium": "タピスタ",
 "start_time": "18:33"
 },
@@ -6855,21 +6855,21 @@
 "match_date": "07/03",
 "opponent": "金沢",
 "point": 3,
-"section_no": 21,
+"section_no": "21",
 "stadium": "石川西部",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "1",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "相模原",
 "point": 0,
 "section_no": 22,
 "stadium": "タピスタ",
-"start_time": "18:30"
+"start_time": "18:33"
 },
 {
 "goal_get": "",
@@ -6879,7 +6879,7 @@
 "match_date": "07/18",
 "opponent": "大宮",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:00"
 },
@@ -6891,7 +6891,7 @@
 "match_date": "08/09",
 "opponent": "北九州",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ミクスタ",
 "start_time": "19:00"
 },
@@ -6903,7 +6903,7 @@
 "match_date": "08/14",
 "opponent": "水戸",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "タピスタ",
 "start_time": "18:30"
 },
@@ -6915,7 +6915,7 @@
 "match_date": "08/22",
 "opponent": "山形",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "ＮＤスタ",
 "start_time": "19:00"
 },
@@ -6927,7 +6927,7 @@
 "match_date": "08/28",
 "opponent": "秋田",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "タピスタ",
 "start_time": "18:30"
 },
@@ -6939,7 +6939,7 @@
 "match_date": "09/04",
 "opponent": "長崎",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -6951,7 +6951,7 @@
 "match_date": "09/11",
 "opponent": "京都",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -6963,7 +6963,7 @@
 "match_date": "09/18",
 "opponent": "群馬",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -6975,7 +6975,7 @@
 "match_date": "09/25",
 "opponent": "磐田",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -6987,7 +6987,7 @@
 "match_date": "10/02",
 "opponent": "岡山",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -6999,7 +6999,7 @@
 "match_date": "10/09",
 "opponent": "甲府",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -7011,7 +7011,7 @@
 "match_date": "10/16",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -7023,7 +7023,7 @@
 "match_date": "10/24",
 "opponent": "松本",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -7035,7 +7035,7 @@
 "match_date": "10/30",
 "opponent": "町田",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -7047,7 +7047,7 @@
 "match_date": "11/03",
 "opponent": "山口",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -7059,7 +7059,7 @@
 "match_date": "11/07",
 "opponent": "金沢",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -7071,7 +7071,7 @@
 "match_date": "11/13",
 "opponent": "千葉",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -7083,7 +7083,7 @@
 "match_date": "11/21",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -7095,7 +7095,7 @@
 "match_date": "11/28",
 "opponent": "新潟",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -7107,7 +7107,7 @@
 "match_date": "12/05",
 "opponent": "栃木",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "カンセキ",
 "start_time": "未定"
 }
@@ -7123,7 +7123,7 @@
 "match_date": "02/28",
 "opponent": "千葉",
 "point": 1,
-"section_no": 1,
+"section_no": "1",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -7135,7 +7135,7 @@
 "match_date": "03/06",
 "opponent": "大宮",
 "point": 3,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -7147,7 +7147,7 @@
 "match_date": "03/14",
 "opponent": "栃木",
 "point": 3,
-"section_no": 3,
+"section_no": "3",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -7159,7 +7159,7 @@
 "match_date": "03/21",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 4,
+"section_no": "4",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -7171,7 +7171,7 @@
 "match_date": "03/27",
 "opponent": "町田",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -7183,7 +7183,7 @@
 "match_date": "04/03",
 "opponent": "長崎",
 "point": 0,
-"section_no": 6,
+"section_no": "6",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -7195,7 +7195,7 @@
 "match_date": "04/10",
 "opponent": "北九州",
 "point": 1,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -7207,7 +7207,7 @@
 "match_date": "04/17",
 "opponent": "松本",
 "point": 1,
-"section_no": 8,
+"section_no": "8",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -7219,7 +7219,7 @@
 "match_date": "04/21",
 "opponent": "相模原",
 "point": 3,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ＪＩＴス",
 "start_time": "19:03"
 },
@@ -7231,7 +7231,7 @@
 "match_date": "04/25",
 "opponent": "琉球",
 "point": 0,
-"section_no": 10,
+"section_no": "10",
 "stadium": "タピスタ",
 "start_time": "17:03"
 },
@@ -7243,7 +7243,7 @@
 "match_date": "05/01",
 "opponent": "金沢",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -7255,7 +7255,7 @@
 "match_date": "05/05",
 "opponent": "山形",
 "point": 1,
-"section_no": 12,
+"section_no": "12",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -7267,7 +7267,7 @@
 "match_date": "05/09",
 "opponent": "東京Ｖ",
 "point": 3,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -7279,7 +7279,7 @@
 "match_date": "05/15",
 "opponent": "秋田",
 "point": 3,
-"section_no": 14,
+"section_no": "14",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -7291,7 +7291,7 @@
 "match_date": "05/23",
 "opponent": "水戸",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -7303,7 +7303,7 @@
 "match_date": "05/30",
 "opponent": "京都",
 "point": 1,
-"section_no": 16,
+"section_no": "16",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -7315,7 +7315,7 @@
 "match_date": "06/05",
 "opponent": "新潟",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -7327,7 +7327,7 @@
 "match_date": "06/13",
 "opponent": "磐田",
 "point": 0,
-"section_no": 18,
+"section_no": "18",
 "stadium": "ヤマハ",
 "start_time": "15:03"
 },
@@ -7339,7 +7339,7 @@
 "match_date": "06/19",
 "opponent": "山口",
 "point": 1,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ＪＩＴス",
 "start_time": "18:03"
 },
@@ -7351,7 +7351,7 @@
 "match_date": "06/27",
 "opponent": "群馬",
 "point": 3,
-"section_no": 20,
+"section_no": "20",
 "stadium": "ＪＩＴス",
 "start_time": "18:03"
 },
@@ -7363,21 +7363,21 @@
 "match_date": "07/03",
 "opponent": "岡山",
 "point": 3,
-"section_no": 21,
+"section_no": "21",
 "stadium": "Ｃスタ",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "0",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "愛媛",
-"point": 0,
+"point": 3,
 "section_no": 22,
 "stadium": "ＪＩＴス",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -7387,7 +7387,7 @@
 "match_date": "07/17",
 "opponent": "栃木",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "栃木グ",
 "start_time": "18:00"
 },
@@ -7399,7 +7399,7 @@
 "match_date": "08/09",
 "opponent": "磐田",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ＪＩＴス",
 "start_time": "18:00"
 },
@@ -7411,7 +7411,7 @@
 "match_date": "08/14",
 "opponent": "相模原",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "ギオンス",
 "start_time": "18:00"
 },
@@ -7423,7 +7423,7 @@
 "match_date": "08/21",
 "opponent": "千葉",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "ＪＩＴス",
 "start_time": "18:00"
 },
@@ -7435,7 +7435,7 @@
 "match_date": "08/29",
 "opponent": "町田",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "Ｇスタ",
 "start_time": "19:00"
 },
@@ -7447,7 +7447,7 @@
 "match_date": "09/04",
 "opponent": "京都",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -7459,7 +7459,7 @@
 "match_date": "09/12",
 "opponent": "群馬",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -7471,7 +7471,7 @@
 "match_date": "09/18",
 "opponent": "大宮",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -7483,7 +7483,7 @@
 "match_date": "09/25",
 "opponent": "新潟",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -7495,7 +7495,7 @@
 "match_date": "10/02",
 "opponent": "山形",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -7507,7 +7507,7 @@
 "match_date": "10/09",
 "opponent": "琉球",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -7519,7 +7519,7 @@
 "match_date": "10/17",
 "opponent": "金沢",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -7531,7 +7531,7 @@
 "match_date": "10/23",
 "opponent": "長崎",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -7543,7 +7543,7 @@
 "match_date": "10/30",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -7555,7 +7555,7 @@
 "match_date": "11/03",
 "opponent": "岡山",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -7567,7 +7567,7 @@
 "match_date": "11/07",
 "opponent": "北九州",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -7579,7 +7579,7 @@
 "match_date": "11/14",
 "opponent": "松本",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -7591,7 +7591,7 @@
 "match_date": "11/21",
 "opponent": "秋田",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -7603,7 +7603,7 @@
 "match_date": "11/28",
 "opponent": "山口",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -7615,7 +7615,7 @@
 "match_date": "12/05",
 "opponent": "水戸",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 }
@@ -7631,7 +7631,7 @@
 "match_date": "02/28",
 "opponent": "山形",
 "point": 1,
-"section_no": 1,
+"section_no": "1",
 "stadium": "Ｇスタ",
 "start_time": "14:03"
 },
@@ -7643,7 +7643,7 @@
 "match_date": "03/06",
 "opponent": "磐田",
 "point": 3,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -7655,7 +7655,7 @@
 "match_date": "03/14",
 "opponent": "東京Ｖ",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "Ｇスタ",
 "start_time": "14:03"
 },
@@ -7667,7 +7667,7 @@
 "match_date": "03/21",
 "opponent": "水戸",
 "point": 0,
-"section_no": 4,
+"section_no": "4",
 "stadium": "Ｋｓスタ",
 "start_time": "16:03"
 },
@@ -7679,7 +7679,7 @@
 "match_date": "03/27",
 "opponent": "甲府",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -7691,7 +7691,7 @@
 "match_date": "04/04",
 "opponent": "金沢",
 "point": 0,
-"section_no": 6,
+"section_no": "6",
 "stadium": "Ｇスタ",
 "start_time": "14:03"
 },
@@ -7703,7 +7703,7 @@
 "match_date": "04/11",
 "opponent": "京都",
 "point": 0,
-"section_no": 7,
+"section_no": "7",
 "stadium": "Ｇスタ",
 "start_time": "14:03"
 },
@@ -7715,7 +7715,7 @@
 "match_date": "04/17",
 "opponent": "長崎",
 "point": 3,
-"section_no": 8,
+"section_no": "8",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -7727,7 +7727,7 @@
 "match_date": "04/21",
 "opponent": "琉球",
 "point": 3,
-"section_no": 9,
+"section_no": "9",
 "stadium": "Ｇスタ",
 "start_time": "19:03"
 },
@@ -7739,7 +7739,7 @@
 "match_date": "04/25",
 "opponent": "大宮",
 "point": 3,
-"section_no": 10,
+"section_no": "10",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -7751,7 +7751,7 @@
 "match_date": "05/02",
 "opponent": "山口",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "Ｇスタ",
 "start_time": "15:03"
 },
@@ -7763,7 +7763,7 @@
 "match_date": "05/05",
 "opponent": "岡山",
 "point": 3,
-"section_no": 12,
+"section_no": "12",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -7775,7 +7775,7 @@
 "match_date": "05/09",
 "opponent": "相模原",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ギオンス",
 "start_time": "13:04"
 },
@@ -7787,7 +7787,7 @@
 "match_date": "05/16",
 "opponent": "新潟",
 "point": 3,
-"section_no": 14,
+"section_no": "14",
 "stadium": "Ｇスタ",
 "start_time": "15:03"
 },
@@ -7799,7 +7799,7 @@
 "match_date": "05/23",
 "opponent": "千葉",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -7811,7 +7811,7 @@
 "match_date": "05/30",
 "opponent": "北九州",
 "point": 0,
-"section_no": 16,
+"section_no": "16",
 "stadium": "Ｇスタ",
 "start_time": "15:03"
 },
@@ -7823,7 +7823,7 @@
 "match_date": "06/05",
 "opponent": "松本",
 "point": 3,
-"section_no": 17,
+"section_no": "17",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -7835,7 +7835,7 @@
 "match_date": "06/13",
 "opponent": "秋田",
 "point": 0,
-"section_no": 18,
+"section_no": "18",
 "stadium": "Ｇスタ",
 "start_time": "15:03"
 },
@@ -7847,7 +7847,7 @@
 "match_date": "06/20",
 "opponent": "群馬",
 "point": 3,
-"section_no": 19,
+"section_no": "19",
 "stadium": "正田スタ",
 "start_time": "19:03"
 },
@@ -7859,7 +7859,7 @@
 "match_date": "06/27",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 20,
+"section_no": "20",
 "stadium": "Ｇスタ",
 "start_time": "19:03"
 },
@@ -7871,21 +7871,21 @@
 "match_date": "07/03",
 "opponent": "栃木",
 "point": 1,
-"section_no": 21,
+"section_no": "21",
 "stadium": "栃木グ",
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "1",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "水戸",
-"point": 0,
+"point": 3,
 "section_no": 22,
 "stadium": "Ｇスタ",
-"start_time": "19:00"
+"start_time": "19:33"
 },
 {
 "goal_get": "",
@@ -7895,7 +7895,7 @@
 "match_date": "07/18",
 "opponent": "相模原",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "Ｇスタ",
 "start_time": "19:00"
 },
@@ -7907,7 +7907,7 @@
 "match_date": "08/09",
 "opponent": "京都",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "サンガＳ",
 "start_time": "18:30"
 },
@@ -7919,7 +7919,7 @@
 "match_date": "08/14",
 "opponent": "岡山",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "Ｇスタ",
 "start_time": "19:00"
 },
@@ -7931,7 +7931,7 @@
 "match_date": "08/22",
 "opponent": "北九州",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "ミクスタ",
 "start_time": "19:00"
 },
@@ -7943,7 +7943,7 @@
 "match_date": "08/29",
 "opponent": "甲府",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "Ｇスタ",
 "start_time": "19:00"
 },
@@ -7955,7 +7955,7 @@
 "match_date": "09/04",
 "opponent": "金沢",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -7967,7 +7967,7 @@
 "match_date": "09/11",
 "opponent": "山口",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -7979,7 +7979,7 @@
 "match_date": "09/18",
 "opponent": "長崎",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -7991,7 +7991,7 @@
 "match_date": "09/26",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -8003,7 +8003,7 @@
 "match_date": "10/03",
 "opponent": "磐田",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -8015,7 +8015,7 @@
 "match_date": "10/10",
 "opponent": "千葉",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -8027,7 +8027,7 @@
 "match_date": "10/16",
 "opponent": "秋田",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -8039,7 +8039,7 @@
 "match_date": "10/24",
 "opponent": "栃木",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -8051,7 +8051,7 @@
 "match_date": "10/30",
 "opponent": "琉球",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -8063,7 +8063,7 @@
 "match_date": "11/03",
 "opponent": "松本",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -8075,7 +8075,7 @@
 "match_date": "11/07",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -8087,7 +8087,7 @@
 "match_date": "11/14",
 "opponent": "群馬",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -8099,7 +8099,7 @@
 "match_date": "11/21",
 "opponent": "山形",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -8111,7 +8111,7 @@
 "match_date": "11/28",
 "opponent": "大宮",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -8123,7 +8123,7 @@
 "match_date": "12/05",
 "opponent": "新潟",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "デンカＳ",
 "start_time": "未定"
 }
@@ -8139,7 +8139,7 @@
 "match_date": "02/28",
 "opponent": "京都",
 "point": 0,
-"section_no": 1,
+"section_no": "1",
 "stadium": "ギオンス",
 "start_time": "13:03"
 },
@@ -8151,7 +8151,7 @@
 "match_date": "03/07",
 "opponent": "群馬",
 "point": 1,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ギオンス",
 "start_time": "13:03"
 },
@@ -8163,7 +8163,7 @@
 "match_date": "03/14",
 "opponent": "岡山",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -8175,7 +8175,7 @@
 "match_date": "03/21",
 "opponent": "大宮",
 "point": 3,
-"section_no": 4,
+"section_no": "4",
 "stadium": "ギオンス",
 "start_time": "16:03"
 },
@@ -8187,7 +8187,7 @@
 "match_date": "03/28",
 "opponent": "金沢",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -8199,7 +8199,7 @@
 "match_date": "04/04",
 "opponent": "新潟",
 "point": 1,
-"section_no": 6,
+"section_no": "6",
 "stadium": "ギオンス",
 "start_time": "13:03"
 },
@@ -8211,7 +8211,7 @@
 "match_date": "04/11",
 "opponent": "栃木",
 "point": 1,
-"section_no": 7,
+"section_no": "7",
 "stadium": "栃木グ",
 "start_time": "14:03"
 },
@@ -8223,7 +8223,7 @@
 "match_date": "04/18",
 "opponent": "磐田",
 "point": 0,
-"section_no": 8,
+"section_no": "8",
 "stadium": "ギオンス",
 "start_time": "13:03"
 },
@@ -8235,7 +8235,7 @@
 "match_date": "04/21",
 "opponent": "甲府",
 "point": 0,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ＪＩＴス",
 "start_time": "19:03"
 },
@@ -8247,7 +8247,7 @@
 "match_date": "04/25",
 "opponent": "千葉",
 "point": 3,
-"section_no": 10,
+"section_no": "10",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -8259,7 +8259,7 @@
 "match_date": "05/01",
 "opponent": "琉球",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ギオンス",
 "start_time": "15:03"
 },
@@ -8271,7 +8271,7 @@
 "match_date": "05/05",
 "opponent": "松本",
 "point": 0,
-"section_no": 12,
+"section_no": "12",
 "stadium": "サンアル",
 "start_time": "15:05"
 },
@@ -8283,7 +8283,7 @@
 "match_date": "05/09",
 "opponent": "町田",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ギオンス",
 "start_time": "13:04"
 },
@@ -8295,7 +8295,7 @@
 "match_date": "05/15",
 "opponent": "山口",
 "point": 0,
-"section_no": 14,
+"section_no": "14",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -8307,7 +8307,7 @@
 "match_date": "05/27",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "ギオンス",
 "start_time": "19:03"
 },
@@ -8319,7 +8319,7 @@
 "match_date": "05/30",
 "opponent": "山形",
 "point": 0,
-"section_no": 16,
+"section_no": "16",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -8331,7 +8331,7 @@
 "match_date": "06/05",
 "opponent": "長崎",
 "point": 0,
-"section_no": 17,
+"section_no": "17",
 "stadium": "ギオンス",
 "start_time": "15:03"
 },
@@ -8343,7 +8343,7 @@
 "match_date": "06/13",
 "opponent": "水戸",
 "point": 0,
-"section_no": 18,
+"section_no": "18",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -8355,7 +8355,7 @@
 "match_date": "06/20",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ギオンス",
 "start_time": "15:03"
 },
@@ -8367,7 +8367,7 @@
 "match_date": "06/26",
 "opponent": "秋田",
 "point": 1,
-"section_no": 20,
+"section_no": "20",
 "stadium": "ソユスタ",
 "start_time": "15:03"
 },
@@ -8379,21 +8379,21 @@
 "match_date": "07/03",
 "opponent": "北九州",
 "point": 1,
-"section_no": 21,
+"section_no": "21",
 "stadium": "ギオンス",
 "start_time": "18:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "0",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "琉球",
-"point": 0,
+"point": 3,
 "section_no": 22,
 "stadium": "タピスタ",
-"start_time": "18:30"
+"start_time": "18:33"
 },
 {
 "goal_get": "",
@@ -8403,7 +8403,7 @@
 "match_date": "07/18",
 "opponent": "町田",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "Ｇスタ",
 "start_time": "19:00"
 },
@@ -8415,7 +8415,7 @@
 "match_date": "08/09",
 "opponent": "栃木",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ギオンス",
 "start_time": "17:00"
 },
@@ -8427,7 +8427,7 @@
 "match_date": "08/14",
 "opponent": "甲府",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "ギオンス",
 "start_time": "18:00"
 },
@@ -8439,7 +8439,7 @@
 "match_date": "08/22",
 "opponent": "新潟",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "デンカＳ",
 "start_time": "18:00"
 },
@@ -8451,7 +8451,7 @@
 "match_date": "08/28",
 "opponent": "磐田",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "ヤマハ",
 "start_time": "19:00"
 },
@@ -8463,7 +8463,7 @@
 "match_date": "09/04",
 "opponent": "千葉",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -8475,7 +8475,7 @@
 "match_date": "09/11",
 "opponent": "長崎",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -8487,7 +8487,7 @@
 "match_date": "09/19",
 "opponent": "山口",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -8499,7 +8499,7 @@
 "match_date": "09/25",
 "opponent": "大宮",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -8511,7 +8511,7 @@
 "match_date": "10/03",
 "opponent": "水戸",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -8523,7 +8523,7 @@
 "match_date": "10/10",
 "opponent": "京都",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -8535,7 +8535,7 @@
 "match_date": "10/16",
 "opponent": "山形",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -8547,7 +8547,7 @@
 "match_date": "10/24",
 "opponent": "金沢",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -8559,7 +8559,7 @@
 "match_date": "10/30",
 "opponent": "北九州",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -8571,7 +8571,7 @@
 "match_date": "11/03",
 "opponent": "秋田",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -8583,7 +8583,7 @@
 "match_date": "11/07",
 "opponent": "群馬",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -8595,7 +8595,7 @@
 "match_date": "11/14",
 "opponent": "岡山",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -8607,7 +8607,7 @@
 "match_date": "11/21",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -8619,7 +8619,7 @@
 "match_date": "11/28",
 "opponent": "松本",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -8631,7 +8631,7 @@
 "match_date": "12/05",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "味スタ",
 "start_time": "未定"
 }
@@ -8647,7 +8647,7 @@
 "match_date": "02/28",
 "opponent": "琉球",
 "point": 0,
-"section_no": 1,
+"section_no": "1",
 "stadium": "タピスタ",
 "start_time": "15:03"
 },
@@ -8659,7 +8659,7 @@
 "match_date": "03/06",
 "opponent": "町田",
 "point": 0,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -8671,7 +8671,7 @@
 "match_date": "03/13",
 "opponent": "水戸",
 "point": 3,
-"section_no": 3,
+"section_no": "3",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -8683,7 +8683,7 @@
 "match_date": "03/21",
 "opponent": "京都",
 "point": 3,
-"section_no": 4,
+"section_no": "4",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -8695,7 +8695,7 @@
 "match_date": "03/27",
 "opponent": "山口",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "エコパ",
 "start_time": "14:03"
 },
@@ -8707,7 +8707,7 @@
 "match_date": "04/04",
 "opponent": "岡山",
 "point": 3,
-"section_no": 6,
+"section_no": "6",
 "stadium": "Ｃスタ",
 "start_time": "13:03"
 },
@@ -8719,7 +8719,7 @@
 "match_date": "04/10",
 "opponent": "松本",
 "point": 3,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -8731,7 +8731,7 @@
 "match_date": "04/18",
 "opponent": "相模原",
 "point": 3,
-"section_no": 8,
+"section_no": "8",
 "stadium": "ギオンス",
 "start_time": "13:03"
 },
@@ -8743,7 +8743,7 @@
 "match_date": "04/21",
 "opponent": "大宮",
 "point": 3,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ヤマハ",
 "start_time": "19:03"
 },
@@ -8755,7 +8755,7 @@
 "match_date": "04/25",
 "opponent": "山形",
 "point": 0,
-"section_no": 10,
+"section_no": "10",
 "stadium": "ＮＤスタ",
 "start_time": "14:03"
 },
@@ -8767,7 +8767,7 @@
 "match_date": "05/01",
 "opponent": "栃木",
 "point": 3,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -8779,7 +8779,7 @@
 "match_date": "05/05",
 "opponent": "愛媛",
 "point": 1,
-"section_no": 12,
+"section_no": "12",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -8791,7 +8791,7 @@
 "match_date": "05/09",
 "opponent": "秋田",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -8803,7 +8803,7 @@
 "match_date": "05/15",
 "opponent": "群馬",
 "point": 3,
-"section_no": 14,
+"section_no": "14",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -8815,7 +8815,7 @@
 "match_date": "05/23",
 "opponent": "東京Ｖ",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -8827,7 +8827,7 @@
 "match_date": "05/29",
 "opponent": "金沢",
 "point": 3,
-"section_no": 16,
+"section_no": "16",
 "stadium": "ヤマハ",
 "start_time": "16:03"
 },
@@ -8839,7 +8839,7 @@
 "match_date": "06/05",
 "opponent": "北九州",
 "point": 3,
-"section_no": 17,
+"section_no": "17",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -8851,7 +8851,7 @@
 "match_date": "06/13",
 "opponent": "甲府",
 "point": 3,
-"section_no": 18,
+"section_no": "18",
 "stadium": "ヤマハ",
 "start_time": "15:03"
 },
@@ -8863,7 +8863,7 @@
 "match_date": "06/19",
 "opponent": "千葉",
 "point": 3,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ヤマハ",
 "start_time": "19:03"
 },
@@ -8875,7 +8875,7 @@
 "match_date": "06/26",
 "opponent": "長崎",
 "point": 3,
-"section_no": 20,
+"section_no": "20",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -8887,21 +8887,21 @@
 "match_date": "07/03",
 "opponent": "新潟",
 "point": 3,
-"section_no": 21,
+"section_no": "21",
 "stadium": "エコパ",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "2",
+"has_result": true,
 "is_home": true,
 "match_date": "07/11",
 "opponent": "山口",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "みらスタ",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -8911,7 +8911,7 @@
 "match_date": "07/17",
 "opponent": "山形",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "ヤマハ",
 "start_time": "19:00"
 },
@@ -8923,7 +8923,7 @@
 "match_date": "08/09",
 "opponent": "甲府",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ＪＩＴス",
 "start_time": "18:00"
 },
@@ -8935,7 +8935,7 @@
 "match_date": "08/14",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "ヤマハ",
 "start_time": "19:00"
 },
@@ -8947,7 +8947,7 @@
 "match_date": "08/21",
 "opponent": "金沢",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "石川西部",
 "start_time": "19:00"
 },
@@ -8959,7 +8959,7 @@
 "match_date": "08/28",
 "opponent": "相模原",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "ヤマハ",
 "start_time": "19:00"
 },
@@ -8971,7 +8971,7 @@
 "match_date": "09/04",
 "opponent": "松本",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "サンアル",
 "start_time": "未定"
 },
@@ -8983,7 +8983,7 @@
 "match_date": "09/11",
 "opponent": "千葉",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "フクアリ",
 "start_time": "未定"
 },
@@ -8995,7 +8995,7 @@
 "match_date": "09/18",
 "opponent": "岡山",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -9007,7 +9007,7 @@
 "match_date": "09/25",
 "opponent": "琉球",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -9019,7 +9019,7 @@
 "match_date": "10/03",
 "opponent": "町田",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -9031,7 +9031,7 @@
 "match_date": "10/09",
 "opponent": "北九州",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -9043,7 +9043,7 @@
 "match_date": "10/17",
 "opponent": "栃木",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "カンセキ",
 "start_time": "未定"
 },
@@ -9055,7 +9055,7 @@
 "match_date": "10/23",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "エコパ",
 "start_time": "未定"
 },
@@ -9067,7 +9067,7 @@
 "match_date": "10/30",
 "opponent": "大宮",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -9079,7 +9079,7 @@
 "match_date": "11/03",
 "opponent": "新潟",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -9091,7 +9091,7 @@
 "match_date": "11/07",
 "opponent": "京都",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -9103,7 +9103,7 @@
 "match_date": "11/14",
 "opponent": "水戸",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -9115,7 +9115,7 @@
 "match_date": "11/20",
 "opponent": "長崎",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -9127,7 +9127,7 @@
 "match_date": "11/28",
 "opponent": "群馬",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -9139,7 +9139,7 @@
 "match_date": "12/05",
 "opponent": "秋田",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ヤマハ",
 "start_time": "未定"
 }
@@ -9155,7 +9155,7 @@
 "match_date": "02/28",
 "opponent": "群馬",
 "point": 0,
-"section_no": 1,
+"section_no": "1",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -9167,7 +9167,7 @@
 "match_date": "03/07",
 "opponent": "栃木",
 "point": 3,
-"section_no": 2,
+"section_no": "2",
 "stadium": "カンセキ",
 "start_time": "14:03"
 },
@@ -9179,7 +9179,7 @@
 "match_date": "03/14",
 "opponent": "千葉",
 "point": 3,
-"section_no": 3,
+"section_no": "3",
 "stadium": "フクアリ",
 "start_time": "14:03"
 },
@@ -9191,7 +9191,7 @@
 "match_date": "03/21",
 "opponent": "北九州",
 "point": 1,
-"section_no": 4,
+"section_no": "4",
 "stadium": "ミクスタ",
 "start_time": "14:03"
 },
@@ -9203,7 +9203,7 @@
 "match_date": "03/28",
 "opponent": "京都",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -9215,7 +9215,7 @@
 "match_date": "04/04",
 "opponent": "松本",
 "point": 0,
-"section_no": 6,
+"section_no": "6",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -9227,7 +9227,7 @@
 "match_date": "04/10",
 "opponent": "大宮",
 "point": 1,
-"section_no": 7,
+"section_no": "7",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -9239,7 +9239,7 @@
 "match_date": "04/17",
 "opponent": "山形",
 "point": 1,
-"section_no": 8,
+"section_no": "8",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -9251,7 +9251,7 @@
 "match_date": "04/21",
 "opponent": "金沢",
 "point": 0,
-"section_no": 9,
+"section_no": "9",
 "stadium": "石川西部",
 "start_time": "19:03"
 },
@@ -9263,7 +9263,7 @@
 "match_date": "04/25",
 "opponent": "水戸",
 "point": 3,
-"section_no": 10,
+"section_no": "10",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -9275,7 +9275,7 @@
 "match_date": "05/01",
 "opponent": "岡山",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -9287,7 +9287,7 @@
 "match_date": "05/05",
 "opponent": "長崎",
 "point": 3,
-"section_no": 12,
+"section_no": "12",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -9299,7 +9299,7 @@
 "match_date": "05/09",
 "opponent": "磐田",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ソユスタ",
 "start_time": "13:03"
 },
@@ -9311,7 +9311,7 @@
 "match_date": "05/15",
 "opponent": "甲府",
 "point": 0,
-"section_no": 14,
+"section_no": "14",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -9323,7 +9323,7 @@
 "match_date": "05/19",
 "opponent": "山口",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "ソユスタ",
 "start_time": "18:33"
 },
@@ -9335,7 +9335,7 @@
 "match_date": "05/29",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 16,
+"section_no": "16",
 "stadium": "味スタ",
 "start_time": "16:03"
 },
@@ -9347,7 +9347,7 @@
 "match_date": "06/05",
 "opponent": "琉球",
 "point": 1,
-"section_no": 17,
+"section_no": "17",
 "stadium": "ソユスタ",
 "start_time": "15:03"
 },
@@ -9359,7 +9359,7 @@
 "match_date": "06/13",
 "opponent": "町田",
 "point": 3,
-"section_no": 18,
+"section_no": "18",
 "stadium": "Ｇスタ",
 "start_time": "15:03"
 },
@@ -9371,7 +9371,7 @@
 "match_date": "06/21",
 "opponent": "新潟",
 "point": 0,
-"section_no": 19,
+"section_no": "19",
 "stadium": "ソユスタ",
 "start_time": "19:03"
 },
@@ -9383,7 +9383,7 @@
 "match_date": "06/26",
 "opponent": "相模原",
 "point": 1,
-"section_no": 20,
+"section_no": "20",
 "stadium": "ソユスタ",
 "start_time": "15:03"
 },
@@ -9395,21 +9395,21 @@
 "match_date": "07/04",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 21,
+"section_no": "21",
 "stadium": "ニンスタ",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "1",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "千葉",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "ソユスタ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -9419,7 +9419,7 @@
 "match_date": "07/17",
 "opponent": "山口",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "みらスタ",
 "start_time": "19:00"
 },
@@ -9431,7 +9431,7 @@
 "match_date": "08/09",
 "opponent": "松本",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "ソユスタ",
 "start_time": "18:30"
 },
@@ -9443,7 +9443,7 @@
 "match_date": "08/14",
 "opponent": "大宮",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "ＮＡＣＫ",
 "start_time": "19:00"
 },
@@ -9455,7 +9455,7 @@
 "match_date": "08/22",
 "opponent": "長崎",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "ソユスタ",
 "start_time": "18:30"
 },
@@ -9467,7 +9467,7 @@
 "match_date": "08/28",
 "opponent": "琉球",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "タピスタ",
 "start_time": "18:30"
 },
@@ -9479,7 +9479,7 @@
 "match_date": "09/04",
 "opponent": "群馬",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -9491,7 +9491,7 @@
 "match_date": "09/11",
 "opponent": "水戸",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -9503,7 +9503,7 @@
 "match_date": "09/19",
 "opponent": "北九州",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -9515,7 +9515,7 @@
 "match_date": "09/26",
 "opponent": "岡山",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "Ｃスタ",
 "start_time": "未定"
 },
@@ -9527,7 +9527,7 @@
 "match_date": "10/02",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -9539,7 +9539,7 @@
 "match_date": "10/10",
 "opponent": "山形",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -9551,7 +9551,7 @@
 "match_date": "10/16",
 "opponent": "町田",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -9563,7 +9563,7 @@
 "match_date": "10/23",
 "opponent": "新潟",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "デンカＳ",
 "start_time": "未定"
 },
@@ -9575,7 +9575,7 @@
 "match_date": "10/30",
 "opponent": "金沢",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -9587,7 +9587,7 @@
 "match_date": "11/03",
 "opponent": "相模原",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -9599,7 +9599,7 @@
 "match_date": "11/07",
 "opponent": "栃木",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -9611,7 +9611,7 @@
 "match_date": "11/14",
 "opponent": "京都",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "サンガＳ",
 "start_time": "未定"
 },
@@ -9623,7 +9623,7 @@
 "match_date": "11/21",
 "opponent": "甲府",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -9635,7 +9635,7 @@
 "match_date": "11/28",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -9647,7 +9647,7 @@
 "match_date": "12/05",
 "opponent": "磐田",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ヤマハ",
 "start_time": "未定"
 }
@@ -9663,7 +9663,7 @@
 "match_date": "02/28",
 "opponent": "秋田",
 "point": 3,
-"section_no": 1,
+"section_no": "1",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -9675,7 +9675,7 @@
 "match_date": "03/07",
 "opponent": "相模原",
 "point": 1,
-"section_no": 2,
+"section_no": "2",
 "stadium": "ギオンス",
 "start_time": "13:03"
 },
@@ -9687,7 +9687,7 @@
 "match_date": "03/14",
 "opponent": "琉球",
 "point": 0,
-"section_no": 3,
+"section_no": "3",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -9699,7 +9699,7 @@
 "match_date": "03/20",
 "opponent": "新潟",
 "point": 0,
-"section_no": 4,
+"section_no": "4",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -9711,7 +9711,7 @@
 "match_date": "03/28",
 "opponent": "北九州",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -9723,7 +9723,7 @@
 "match_date": "04/04",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 6,
+"section_no": "6",
 "stadium": "ニンスタ",
 "start_time": "14:03"
 },
@@ -9735,7 +9735,7 @@
 "match_date": "04/10",
 "opponent": "長崎",
 "point": 0,
-"section_no": 7,
+"section_no": "7",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -9747,7 +9747,7 @@
 "match_date": "04/17",
 "opponent": "山口",
 "point": 0,
-"section_no": 8,
+"section_no": "8",
 "stadium": "みらスタ",
 "start_time": "14:03"
 },
@@ -9759,7 +9759,7 @@
 "match_date": "04/21",
 "opponent": "岡山",
 "point": 3,
-"section_no": 9,
+"section_no": "9",
 "stadium": "正田スタ",
 "start_time": "19:03"
 },
@@ -9771,7 +9771,7 @@
 "match_date": "04/25",
 "opponent": "松本",
 "point": 0,
-"section_no": 10,
+"section_no": "10",
 "stadium": "サンアル",
 "start_time": "14:03"
 },
@@ -9783,7 +9783,7 @@
 "match_date": "05/01",
 "opponent": "山形",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -9795,7 +9795,7 @@
 "match_date": "05/05",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 12,
+"section_no": "12",
 "stadium": "味スタ",
 "start_time": "15:03"
 },
@@ -9807,7 +9807,7 @@
 "match_date": "05/09",
 "opponent": "大宮",
 "point": 1,
-"section_no": 13,
+"section_no": "13",
 "stadium": "正田スタ",
 "start_time": "15:03"
 },
@@ -9819,7 +9819,7 @@
 "match_date": "05/15",
 "opponent": "磐田",
 "point": 0,
-"section_no": 14,
+"section_no": "14",
 "stadium": "ヤマハ",
 "start_time": "14:03"
 },
@@ -9831,7 +9831,7 @@
 "match_date": "05/23",
 "opponent": "金沢",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -9843,7 +9843,7 @@
 "match_date": "05/29",
 "opponent": "栃木",
 "point": 1,
-"section_no": 16,
+"section_no": "16",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -9855,7 +9855,7 @@
 "match_date": "06/04",
 "opponent": "水戸",
 "point": 3,
-"section_no": 17,
+"section_no": "17",
 "stadium": "正田スタ",
 "start_time": "19:03"
 },
@@ -9867,7 +9867,7 @@
 "match_date": "06/13",
 "opponent": "京都",
 "point": 1,
-"section_no": 18,
+"section_no": "18",
 "stadium": "サンガＳ",
 "start_time": "14:03"
 },
@@ -9879,7 +9879,7 @@
 "match_date": "06/20",
 "opponent": "町田",
 "point": 0,
-"section_no": 19,
+"section_no": "19",
 "stadium": "正田スタ",
 "start_time": "19:03"
 },
@@ -9891,7 +9891,7 @@
 "match_date": "06/27",
 "opponent": "甲府",
 "point": 0,
-"section_no": 20,
+"section_no": "20",
 "stadium": "ＪＩＴス",
 "start_time": "18:03"
 },
@@ -9903,21 +9903,21 @@
 "match_date": "07/03",
 "opponent": "千葉",
 "point": 0,
-"section_no": 21,
+"section_no": "21",
 "stadium": "フクアリ",
 "start_time": "18:04"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "2",
+"goal_lose": "2",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "東京Ｖ",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "正田スタ",
-"start_time": "19:00"
+"start_time": "19:04"
 },
 {
 "goal_get": "",
@@ -9927,7 +9927,7 @@
 "match_date": "07/18",
 "opponent": "岡山",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "Ｃスタ",
 "start_time": "18:00"
 },
@@ -9939,7 +9939,7 @@
 "match_date": "08/09",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "正田スタ",
 "start_time": "19:00"
 },
@@ -9951,7 +9951,7 @@
 "match_date": "08/14",
 "opponent": "栃木",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "カンセキ",
 "start_time": "18:00"
 },
@@ -9963,7 +9963,7 @@
 "match_date": "08/22",
 "opponent": "山口",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "正田スタ",
 "start_time": "19:00"
 },
@@ -9975,7 +9975,7 @@
 "match_date": "08/29",
 "opponent": "金沢",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "正田スタ",
 "start_time": "19:30"
 },
@@ -9987,7 +9987,7 @@
 "match_date": "09/04",
 "opponent": "秋田",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -9999,7 +9999,7 @@
 "match_date": "09/12",
 "opponent": "甲府",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -10011,7 +10011,7 @@
 "match_date": "09/18",
 "opponent": "琉球",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -10023,7 +10023,7 @@
 "match_date": "09/25",
 "opponent": "千葉",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -10035,7 +10035,7 @@
 "match_date": "10/03",
 "opponent": "北九州",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -10047,7 +10047,7 @@
 "match_date": "10/10",
 "opponent": "水戸",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -10059,7 +10059,7 @@
 "match_date": "10/17",
 "opponent": "京都",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -10071,7 +10071,7 @@
 "match_date": "10/23",
 "opponent": "山形",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "ＮＤスタ",
 "start_time": "未定"
 },
@@ -10083,7 +10083,7 @@
 "match_date": "10/30",
 "opponent": "松本",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -10095,7 +10095,7 @@
 "match_date": "11/03",
 "opponent": "長崎",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -10107,7 +10107,7 @@
 "match_date": "11/07",
 "opponent": "相模原",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -10119,7 +10119,7 @@
 "match_date": "11/14",
 "opponent": "町田",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -10131,7 +10131,7 @@
 "match_date": "11/21",
 "opponent": "新潟",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -10143,7 +10143,7 @@
 "match_date": "11/28",
 "opponent": "磐田",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "正田スタ",
 "start_time": "未定"
 },
@@ -10155,7 +10155,7 @@
 "match_date": "12/05",
 "opponent": "大宮",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 }
@@ -10171,7 +10171,7 @@
 "match_date": "02/27",
 "opponent": "長崎",
 "point": 0,
-"section_no": 1,
+"section_no": "1",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10183,7 +10183,7 @@
 "match_date": "03/07",
 "opponent": "岡山",
 "point": 3,
-"section_no": 2,
+"section_no": "2",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -10195,7 +10195,7 @@
 "match_date": "03/14",
 "opponent": "北九州",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -10207,7 +10207,7 @@
 "match_date": "03/20",
 "opponent": "東京Ｖ",
 "point": 3,
-"section_no": 4,
+"section_no": "4",
 "stadium": "味スタ",
 "start_time": "16:03"
 },
@@ -10219,7 +10219,7 @@
 "match_date": "03/28",
 "opponent": "相模原",
 "point": 3,
-"section_no": 5,
+"section_no": "5",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -10231,7 +10231,7 @@
 "match_date": "04/04",
 "opponent": "町田",
 "point": 3,
-"section_no": 6,
+"section_no": "6",
 "stadium": "Ｇスタ",
 "start_time": "14:03"
 },
@@ -10243,7 +10243,7 @@
 "match_date": "04/11",
 "opponent": "千葉",
 "point": 0,
-"section_no": 7,
+"section_no": "7",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -10255,7 +10255,7 @@
 "match_date": "04/17",
 "opponent": "新潟",
 "point": 0,
-"section_no": 8,
+"section_no": "8",
 "stadium": "デンカＳ",
 "start_time": "14:03"
 },
@@ -10267,7 +10267,7 @@
 "match_date": "04/21",
 "opponent": "秋田",
 "point": 3,
-"section_no": 9,
+"section_no": "9",
 "stadium": "石川西部",
 "start_time": "19:03"
 },
@@ -10279,7 +10279,7 @@
 "match_date": "04/25",
 "opponent": "栃木",
 "point": 1,
-"section_no": 10,
+"section_no": "10",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -10291,7 +10291,7 @@
 "match_date": "05/01",
 "opponent": "甲府",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "ＪＩＴス",
 "start_time": "14:03"
 },
@@ -10303,7 +10303,7 @@
 "match_date": "05/05",
 "opponent": "水戸",
 "point": 0,
-"section_no": 12,
+"section_no": "12",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -10315,7 +10315,7 @@
 "match_date": "05/09",
 "opponent": "山口",
 "point": 0,
-"section_no": 13,
+"section_no": "13",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -10327,7 +10327,7 @@
 "match_date": "05/15",
 "opponent": "松本",
 "point": 1,
-"section_no": 14,
+"section_no": "14",
 "stadium": "サンアル",
 "start_time": "14:04"
 },
@@ -10339,7 +10339,7 @@
 "match_date": "05/23",
 "opponent": "群馬",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -10351,7 +10351,7 @@
 "match_date": "05/29",
 "opponent": "磐田",
 "point": 0,
-"section_no": 16,
+"section_no": "16",
 "stadium": "ヤマハ",
 "start_time": "16:03"
 },
@@ -10363,7 +10363,7 @@
 "match_date": "06/06",
 "opponent": "大宮",
 "point": 3,
-"section_no": 17,
+"section_no": "17",
 "stadium": "石川西部",
 "start_time": "14:03"
 },
@@ -10375,7 +10375,7 @@
 "match_date": "06/13",
 "opponent": "愛媛",
 "point": 3,
-"section_no": 18,
+"section_no": "18",
 "stadium": "ニンスタ",
 "start_time": "18:03"
 },
@@ -10387,7 +10387,7 @@
 "match_date": "06/19",
 "opponent": "京都",
 "point": 0,
-"section_no": 19,
+"section_no": "19",
 "stadium": "石川西部",
 "start_time": "19:03"
 },
@@ -10399,7 +10399,7 @@
 "match_date": "06/26",
 "opponent": "山形",
 "point": 0,
-"section_no": 20,
+"section_no": "20",
 "stadium": "ＮＤスタ",
 "start_time": "19:03"
 },
@@ -10411,21 +10411,21 @@
 "match_date": "07/03",
 "opponent": "琉球",
 "point": 0,
-"section_no": 21,
+"section_no": "21",
 "stadium": "石川西部",
 "start_time": "19:03"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "0",
+"goal_lose": "0",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "岡山",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "石川西部",
-"start_time": "19:00"
+"start_time": "19:03"
 },
 {
 "goal_get": "",
@@ -10435,7 +10435,7 @@
 "match_date": "07/17",
 "opponent": "千葉",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "フクアリ",
 "start_time": "18:00"
 },
@@ -10447,7 +10447,7 @@
 "match_date": "08/09",
 "opponent": "長崎",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "石川西部",
 "start_time": "19:00"
 },
@@ -10459,7 +10459,7 @@
 "match_date": "08/14",
 "opponent": "山口",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "みらスタ",
 "start_time": "19:00"
 },
@@ -10471,7 +10471,7 @@
 "match_date": "08/21",
 "opponent": "磐田",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "石川西部",
 "start_time": "19:00"
 },
@@ -10483,7 +10483,7 @@
 "match_date": "08/29",
 "opponent": "群馬",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "正田スタ",
 "start_time": "19:30"
 },
@@ -10495,7 +10495,7 @@
 "match_date": "09/04",
 "opponent": "町田",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -10507,7 +10507,7 @@
 "match_date": "09/11",
 "opponent": "北九州",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "ミクスタ",
 "start_time": "未定"
 },
@@ -10519,7 +10519,7 @@
 "match_date": "09/19",
 "opponent": "松本",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -10531,7 +10531,7 @@
 "match_date": "09/26",
 "opponent": "水戸",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "Ｋｓスタ",
 "start_time": "未定"
 },
@@ -10543,7 +10543,7 @@
 "match_date": "10/03",
 "opponent": "新潟",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -10555,7 +10555,7 @@
 "match_date": "10/09",
 "opponent": "大宮",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ＮＡＣＫ",
 "start_time": "未定"
 },
@@ -10567,7 +10567,7 @@
 "match_date": "10/17",
 "opponent": "甲府",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -10579,7 +10579,7 @@
 "match_date": "10/24",
 "opponent": "相模原",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "ギオンス",
 "start_time": "未定"
 },
@@ -10591,7 +10591,7 @@
 "match_date": "10/30",
 "opponent": "秋田",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "ソユスタ",
 "start_time": "未定"
 },
@@ -10603,7 +10603,7 @@
 "match_date": "11/03",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -10615,7 +10615,7 @@
 "match_date": "11/07",
 "opponent": "琉球",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "タピスタ",
 "start_time": "未定"
 },
@@ -10627,7 +10627,7 @@
 "match_date": "11/14",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -10639,7 +10639,7 @@
 "match_date": "11/21",
 "opponent": "栃木",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "栃木グ",
 "start_time": "未定"
 },
@@ -10651,7 +10651,7 @@
 "match_date": "11/28",
 "opponent": "山形",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "石川西部",
 "start_time": "未定"
 },
@@ -10663,7 +10663,7 @@
 "match_date": "12/05",
 "opponent": "京都",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "サンガＳ",
 "start_time": "未定"
 }
@@ -10679,7 +10679,7 @@
 "match_date": "02/27",
 "opponent": "金沢",
 "point": 3,
-"section_no": 1,
+"section_no": "1",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10691,7 +10691,7 @@
 "match_date": "03/06",
 "opponent": "新潟",
 "point": 0,
-"section_no": 2,
+"section_no": "2",
 "stadium": "デンカＳ",
 "start_time": "13:33"
 },
@@ -10703,7 +10703,7 @@
 "match_date": "03/13",
 "opponent": "愛媛",
 "point": 1,
-"section_no": 3,
+"section_no": "3",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10715,7 +10715,7 @@
 "match_date": "03/20",
 "opponent": "琉球",
 "point": 0,
-"section_no": 4,
+"section_no": "4",
 "stadium": "タピスタ",
 "start_time": "16:03"
 },
@@ -10727,7 +10727,7 @@
 "match_date": "03/27",
 "opponent": "大宮",
 "point": 0,
-"section_no": 5,
+"section_no": "5",
 "stadium": "ＮＡＣＫ",
 "start_time": "14:03"
 },
@@ -10739,7 +10739,7 @@
 "match_date": "04/03",
 "opponent": "甲府",
 "point": 3,
-"section_no": 6,
+"section_no": "6",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10751,7 +10751,7 @@
 "match_date": "04/10",
 "opponent": "群馬",
 "point": 3,
-"section_no": 7,
+"section_no": "7",
 "stadium": "正田スタ",
 "start_time": "14:03"
 },
@@ -10763,7 +10763,7 @@
 "match_date": "04/17",
 "opponent": "町田",
 "point": 0,
-"section_no": 8,
+"section_no": "8",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10775,7 +10775,7 @@
 "match_date": "04/21",
 "opponent": "山形",
 "point": 3,
-"section_no": 9,
+"section_no": "9",
 "stadium": "ＮＤスタ",
 "start_time": "19:03"
 },
@@ -10787,7 +10787,7 @@
 "match_date": "04/25",
 "opponent": "東京Ｖ",
 "point": 1,
-"section_no": 10,
+"section_no": "10",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10799,7 +10799,7 @@
 "match_date": "05/02",
 "opponent": "水戸",
 "point": 0,
-"section_no": 11,
+"section_no": "11",
 "stadium": "Ｋｓスタ",
 "start_time": "14:03"
 },
@@ -10811,7 +10811,7 @@
 "match_date": "05/05",
 "opponent": "秋田",
 "point": 0,
-"section_no": 12,
+"section_no": "12",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10823,7 +10823,7 @@
 "match_date": "05/09",
 "opponent": "北九州",
 "point": 3,
-"section_no": 13,
+"section_no": "13",
 "stadium": "ミクスタ",
 "start_time": "16:03"
 },
@@ -10835,7 +10835,7 @@
 "match_date": "05/15",
 "opponent": "千葉",
 "point": 1,
-"section_no": 14,
+"section_no": "14",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10847,7 +10847,7 @@
 "match_date": "05/23",
 "opponent": "岡山",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "Ｃスタ",
 "start_time": "14:03"
 },
@@ -10859,7 +10859,7 @@
 "match_date": "05/29",
 "opponent": "山口",
 "point": 3,
-"section_no": 16,
+"section_no": "16",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10871,7 +10871,7 @@
 "match_date": "06/05",
 "opponent": "相模原",
 "point": 3,
-"section_no": 17,
+"section_no": "17",
 "stadium": "ギオンス",
 "start_time": "15:03"
 },
@@ -10883,7 +10883,7 @@
 "match_date": "06/13",
 "opponent": "松本",
 "point": 3,
-"section_no": 18,
+"section_no": "18",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10895,7 +10895,7 @@
 "match_date": "06/19",
 "opponent": "栃木",
 "point": 3,
-"section_no": 19,
+"section_no": "19",
 "stadium": "カンセキ",
 "start_time": "18:03"
 },
@@ -10907,7 +10907,7 @@
 "match_date": "06/26",
 "opponent": "磐田",
 "point": 0,
-"section_no": 20,
+"section_no": "20",
 "stadium": "トラスタ",
 "start_time": "14:03"
 },
@@ -10919,21 +10919,21 @@
 "match_date": "07/03",
 "opponent": "京都",
 "point": 3,
-"section_no": 21,
+"section_no": "21",
 "stadium": "サンガＳ",
 "start_time": "18:33"
 },
 {
-"goal_get": "",
-"goal_lose": "",
-"has_result": false,
+"goal_get": "1",
+"goal_lose": "1",
+"has_result": true,
 "is_home": false,
 "match_date": "07/11",
 "opponent": "大宮",
-"point": 0,
+"point": 1,
 "section_no": 22,
 "stadium": "トラスタ",
-"start_time": "18:00"
+"start_time": "18:03"
 },
 {
 "goal_get": "",
@@ -10943,7 +10943,7 @@
 "match_date": "07/17",
 "opponent": "北九州",
 "point": 0,
-"section_no": 23,
+"section_no": "23",
 "stadium": "トラスタ",
 "start_time": "19:00"
 },
@@ -10955,7 +10955,7 @@
 "match_date": "08/09",
 "opponent": "金沢",
 "point": 0,
-"section_no": 24,
+"section_no": "24",
 "stadium": "石川西部",
 "start_time": "19:00"
 },
@@ -10967,7 +10967,7 @@
 "match_date": "08/14",
 "opponent": "山形",
 "point": 0,
-"section_no": 25,
+"section_no": "25",
 "stadium": "トラスタ",
 "start_time": "19:00"
 },
@@ -10979,7 +10979,7 @@
 "match_date": "08/22",
 "opponent": "秋田",
 "point": 0,
-"section_no": 26,
+"section_no": "26",
 "stadium": "ソユスタ",
 "start_time": "18:30"
 },
@@ -10991,7 +10991,7 @@
 "match_date": "08/28",
 "opponent": "千葉",
 "point": 0,
-"section_no": 27,
+"section_no": "27",
 "stadium": "フクアリ",
 "start_time": "18:00"
 },
@@ -11003,7 +11003,7 @@
 "match_date": "09/04",
 "opponent": "琉球",
 "point": 0,
-"section_no": 28,
+"section_no": "28",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -11015,7 +11015,7 @@
 "match_date": "09/11",
 "opponent": "相模原",
 "point": 0,
-"section_no": 29,
+"section_no": "29",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -11027,7 +11027,7 @@
 "match_date": "09/18",
 "opponent": "町田",
 "point": 0,
-"section_no": 30,
+"section_no": "30",
 "stadium": "Ｇスタ",
 "start_time": "未定"
 },
@@ -11039,7 +11039,7 @@
 "match_date": "09/25",
 "opponent": "山口",
 "point": 0,
-"section_no": 31,
+"section_no": "31",
 "stadium": "みらスタ",
 "start_time": "未定"
 },
@@ -11051,7 +11051,7 @@
 "match_date": "10/02",
 "opponent": "京都",
 "point": 0,
-"section_no": 32,
+"section_no": "32",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -11063,7 +11063,7 @@
 "match_date": "10/10",
 "opponent": "愛媛",
 "point": 0,
-"section_no": 33,
+"section_no": "33",
 "stadium": "ニンスタ",
 "start_time": "未定"
 },
@@ -11075,7 +11075,7 @@
 "match_date": "10/16",
 "opponent": "新潟",
 "point": 0,
-"section_no": 34,
+"section_no": "34",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -11087,7 +11087,7 @@
 "match_date": "10/23",
 "opponent": "甲府",
 "point": 0,
-"section_no": 35,
+"section_no": "35",
 "stadium": "ＪＩＴス",
 "start_time": "未定"
 },
@@ -11099,7 +11099,7 @@
 "match_date": "10/30",
 "opponent": "水戸",
 "point": 0,
-"section_no": 36,
+"section_no": "36",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -11111,7 +11111,7 @@
 "match_date": "11/03",
 "opponent": "群馬",
 "point": 0,
-"section_no": 37,
+"section_no": "37",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -11123,7 +11123,7 @@
 "match_date": "11/07",
 "opponent": "東京Ｖ",
 "point": 0,
-"section_no": 38,
+"section_no": "38",
 "stadium": "味スタ",
 "start_time": "未定"
 },
@@ -11135,7 +11135,7 @@
 "match_date": "11/13",
 "opponent": "栃木",
 "point": 0,
-"section_no": 39,
+"section_no": "39",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -11147,7 +11147,7 @@
 "match_date": "11/20",
 "opponent": "磐田",
 "point": 0,
-"section_no": 40,
+"section_no": "40",
 "stadium": "ヤマハ",
 "start_time": "未定"
 },
@@ -11159,7 +11159,7 @@
 "match_date": "11/28",
 "opponent": "岡山",
 "point": 0,
-"section_no": 41,
+"section_no": "41",
 "stadium": "トラスタ",
 "start_time": "未定"
 },
@@ -11171,7 +11171,7 @@
 "match_date": "12/05",
 "opponent": "松本",
 "point": 0,
-"section_no": 42,
+"section_no": "42",
 "stadium": "サンアル",
 "start_time": "未定"
 }
