@@ -1,3 +1,5 @@
+"""2021 ACLグループステージの試合情報を読み込んでCSV, JSO化
+"""
 import sys
 import re
 import pandas as pd
