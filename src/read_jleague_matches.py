@@ -193,7 +193,7 @@ def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
     all_matches.to_csv(f'{_PREFIX}{category}-{datetime.now().strftime(DATE_FORMAT)}.csv')
 
 
-def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
+def update_all_matches(category: int, force_update: bool=False, ignore_timestamp: bool=False) -> pd.DataFrame:
     """これまでに読み込んだ試合データからの差分をWeb経由で読み込んで、差分を上書きした結果を返す
     該当ファイルが一つもない場合は、全試合のデータをWeb経由で読み込む
     試合データに変化があった場合は、実行日を付けた試合データファイルを保存する
@@ -207,7 +207,7 @@ def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
         return all_matches
 
     current_matches = read_allmatches_csv(latest_file)
-    _start = parse_date_from_filename(latest_file)
+    _start = parse_date_from_filename(latest_file, ignore_timestamp)
     _end = datetime.now()
     print(f'  Check matches finished since {_start}')
     # undecided = get_undecided_section(current_matches)
@@ -255,11 +255,15 @@ def compare_matches(foo_df, bar_df) -> bool:
     return False
 
 
-def parse_date_from_filename(filename: str) -> datetime:
+def parse_date_from_filename(filename: str, ignore_timestamp: bool) -> datetime:
     """試合データファイル名から、取得日時を読みだす
     """
-    # ファイルフォーマットが想定と違った時のことはあまり考えていない
-    #_res = re.search(r'\-(\d{8}).*\.csv', filename)
+    if ignore_timestamp:
+        # ファイルフォーマットが想定と違った時のことはあまり考えていない
+        _res = re.search(r'\-(\d{8}).*\.csv', filename)
+        if _res:
+            return _res[1]
+        # ファイルフォーマットが日時パターンではなかったときは、タイムスタンプで判断
     return datetime.fromtimestamp(os.stat(filename).st_mtime)
 
 
@@ -285,6 +289,8 @@ def make_args() -> argparse.Namespace:
                         help='リーグカテゴリ (数値指定、複数指定時は-で繋ぐ [default: 1-3])')
     parser.add_argument('-f', '--force_update_all', action='store_true',
                         help='差分を考えずにすべての試合データを読み込んで保存')
+    parser.add_argument('-i', '--ignore_timestamp', action='store_true',
+                        help='差分を考えずにすべての試合データを読み込んで保存')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='デバッグ出力を表示')
 
@@ -302,4 +308,4 @@ if __name__ == '__main__':
 
     for _category in parse_range(ARGS.category):
         print(f'Start read J{_category} matches...')
-        dump_team_file(update_all_matches(_category, ARGS.force_update_all), _category)
+        dump_team_file(update_all_matches(_category, ARGS.force_update_all, ARGS.ignore_timestamp), _category)
