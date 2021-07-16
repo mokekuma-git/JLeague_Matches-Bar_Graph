@@ -6,7 +6,9 @@ Make a bar graph of points each team got and will get.
 ## 結果を見る方法
 https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/ を見れば、基本的にその時の最新データを見られるようにしています。
 
-https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/aclgl_points.html お試しですが、ACLのグループリーグも見られるようにしてみました。試行錯誤中です。
+https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/olympic_points.html オリンピックグループステージの得点表も作ってみました。
+
+(https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/aclgl_points.html ACLのグループステージ)
 
 ## 簡単な説明
 ### これは何？
