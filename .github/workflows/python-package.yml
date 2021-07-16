@@ -38,7 +38,7 @@ jobs:
     - name: Update matches json
       run: |
         git pull
-        RESULT=`python src/read_jleague_matches.py`
+        RESULT=`python src/read_jleague_matches.py -i`
         echo $RESULT
         if (git diff --shortstat | grep '[0-9]'); then \
             git add .; \
