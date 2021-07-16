@@ -290,7 +290,7 @@ def make_args() -> argparse.Namespace:
     parser.add_argument('-f', '--force_update_all', action='store_true',
                         help='差分を考えずにすべての試合データを読み込んで保存')
     parser.add_argument('-i', '--ignore_timestamp', action='store_true',
-                        help='差分を考えずにすべての試合データを読み込んで保存')
+                        help='CSVファイルの作成日比較にタイムスタンプを使わない')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='デバッグ出力を表示')
 
