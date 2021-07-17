@@ -101,24 +101,84 @@ function clear_cookies() {
 }
 
 function refresh_match_data() {
-  filename = 'olympic_points.json';
-  read_inputs('json/' + filename);
+  read_inputs('csv/2021_allmatch_result-Olympic_GS.csv');
 }
 
 function read_inputs(filename) {
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', filename);
-  xhr.send();
-  xhr.onload = ()=> {
-    INPUTS = JSON.parse(xhr.responseText);
-    render_bar_graph();
-  };
+  const cachebuster = Math.floor((new Date).getTime() / 1000 / 3600); // 1時間に1度キャッシュクリアというつもり
+  Papa.parse(filename + '?_='+ cachebuster, {
+    header: true,
+    skipEmptyLines: 'greedy',
+	  download: true,
+    complete: function(results) {
+      // console.log(results);
+      INPUTS = parse_csvresults(results.data, results.meta.fields);
+      render_bar_graph();
+    }
+  });
 }
 
-const get_next_char = (value) => (String.fromCharCode(value.charCodeAt(0) + 1));
+// Javascriptではpandasも無いし、手続き的に
+function parse_csvresults(data, fields, default_group=null) {
+  const team_map = {};
+  if (default_group === 'null') default_group = 'DefaultGroup';
+  if (fields.includes('group')) default_group = null;
+  let _i = 0
+  let group = '';
+  data.forEach(function (_match) {
+    _i++;
+    group = default_group || _match.group;
+    // console.log(_i, group, _match.match_date, _match.home_team, _match.away_team);
+    // console.log(_match);
+
+    if (! team_map.hasOwnProperty(group)) team_map[group] = {};
+    if (! team_map[group].hasOwnProperty(_match.home_team)) team_map[group][_match.home_team] = {'df': []};
+    if (! team_map[group].hasOwnProperty(_match.away_team)) team_map[group][_match.away_team] = {'df': []};
+
+    let match_date_str = _match.match_date;
+    const match_date = new Date(_match.match_date);
+    if (! isNaN(match_date))
+      match_date_str = ('0' + (match_date.getMonth() + 1)).slice(-2) + '/' + ('0' + match_date.getDate()).slice(-2);
+    team_map[group][_match.home_team].df.push({
+      'is_home': true,
+      'opponent': _match.away_team,
+      'goal_get': _match.home_goal,
+      'goal_lose': _match.away_goal,
+      'has_result': Boolean(_match.home_goal && _match.away_goal),
+      'point': get_point_from_result(_match.home_goal, _match.away_goal),
+      'match_date': match_date_str,
+      'section_no': _match.section_no,
+      'stadium': _match.stadium,
+      'start_time': _match.start_time
+    });
+    // console.log(team_map[group][_match.home_teame].df.slice(-1)[0]);
+    team_map[group][_match.away_team].df.push({
+      'is_home': false,
+      'opponent': _match.home_team,
+      'goal_get': _match.away_goal,
+      'goal_lose': _match.home_goal,
+      'has_result': Boolean(_match.home_goal && _match.away_goal),
+      'point': get_point_from_result(_match.away_goal, _match.home_goal),
+      'match_date': match_date_str,
+      'section_no': _match.section_no,
+      'stadium': _match.stadium,
+      'start_time': _match.start_time
+    });
+    // console.log(team_map[group][_match.away_teame].df.slice(-1)[0]);
+  });
+  // console.log(team_map);
+  return team_map;
+}
+
+function get_point_from_result(goal_get, goal_lose, has_extra=false, pk_get=null, pk_lose=null) {
+  if (! (goal_get && goal_lose)) return 0;
+  if (goal_get > goal_lose) return 3;
+  if (goal_get < goal_lose) return 0;
+  return 1;
+}
 
 const is_string = (value) => (typeof(value) === 'string' || value instanceof String);
-const is_number = (value) => (typeof(value) === 'number');
+// const is_number = (value) => (typeof(value) === 'number');
 
 const compare_str = (a, b) => (a === b) ? 0 : (a < b) ? -1 : 1;
 function make_html_column(target_team, team_data) {
