@@ -12,7 +12,7 @@ from read_jleague_matches import read_allmatches_csv
 
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31159/{}/'
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
-CSV_FILENAME = '../csv/2021_allmatch_result-ACL_GL.csv'
+CSV_FILENAME = '../docs/csv/2021_allmatch_result-ACL_GL.csv'
 JSON_FILENAME = '../docs/json/aclgl_points.json'
 
 
