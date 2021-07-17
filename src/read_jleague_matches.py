@@ -69,7 +69,7 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
         for _tr in _section.find_all('tr'):
             match_dict = {}
             match_dict['match_date'] = match_date
-            match_dict['section_no'] = section_no
+            match_dict['section_no'] = int(section_no)
             match_dict['match_index_in_section'] = _index
             stadium_td = _tr.find('td', class_='stadium')
             if not stadium_td:
@@ -108,8 +108,7 @@ def read_matches_range(category: int, _range: List[int]=None) -> pd.DataFrame:
     for _i in _range:
         result_list = read_match(category, _i)
         _matches = pd.concat([_matches, pd.DataFrame(result_list)])
-    _matches['section_no'] = _matches['section_no'].astype('int')
-    _matches.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
+    _matches.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
     return _matches
 
 
@@ -178,6 +177,7 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
     all_matches['match_date'] = pd.to_datetime(all_matches['match_date'])
     all_matches['home_goal'] = all_matches['home_goal'].fillna('')
     all_matches['away_goal'] = all_matches['away_goal'].fillna('')
+    all_matches['section_no'] = all_matches['section_no'].astype('int')
     # JSONでNaNをnullとして出力するために、置換
     all_matches = all_matches.where(pd.notnull(all_matches), None)
     return all_matches
@@ -213,7 +213,6 @@ def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
         return current_matches
 
     diff_matches = read_matches_range(category, need_update)
-    diff_matches['section_no'] = diff_matches['section_no'].astype('int')
     old_matches = current_matches[current_matches['section_no'].isin(need_update)]
     old_matches['section_no'] = old_matches['section_no'].astype('int')
     if compare_matches(diff_matches, old_matches):
@@ -286,6 +285,9 @@ def make_args() -> argparse.Namespace:
 
 
 if __name__ == '__main__':
+    import os
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     ARGS = make_args()
     if ARGS.debug:
         PREFERENCE['debug'] = True
