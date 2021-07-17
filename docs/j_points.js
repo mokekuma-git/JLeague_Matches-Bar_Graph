@@ -100,16 +100,10 @@ function clear_cookies() {
 function refresh_match_data() {
   const category = document.getElementById('category').value;
   const season = get_season();
-  if (SEASON_MAP[category].hasOwnProperty(season + 'A')) {
-    // 2シーズンある年の通年データを指定
-    INPUTS = {category: category, matches: {}};
-    read_iputs_multi(category, season, 'A', '-j' + category + '_points.json');
-    return;
-  }
-  let filename = 'j' + category + '_points.json';
-  if (document.querySelector("#season").selectedIndex != 0) filename = season + "-" + filename;
+  let filename = 'match_result-J' + category + '.csv';
+  if (document.querySelector("#season").selectedIndex != 0) filename = season + "_all" + filename;
   // console.log('Read match data: ' + filename);
-  read_inputs('json/' + filename);
+  read_inputs('csv/' + filename, category);
 }
 
 function read_seasonmap() {
@@ -122,30 +116,80 @@ function read_seasonmap() {
   };
 }
 
-function read_inputs(filename) {
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', filename);
-  xhr.send();
-  xhr.onload = ()=> {
-    INPUTS = JSON.parse(xhr.responseText);
-    render_bar_graph();
-  };
-}
-
-function read_iputs_multi(category, year, season_postfix, fileroot) {
-  // 1年複数シーズンを通して読む際
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', 'json/' + year + season_postfix + fileroot);
-  xhr.send();
-  xhr.onload = ()=> {
-    append_inputs(JSON.parse(xhr.responseText));
-    next_postfix = get_next_char(season_postfix);
-    if (SEASON_MAP[category].hasOwnProperty(year + next_postfix)) {
-      read_iputs_multi(category, year, next_postfix, fileroot);
-    } else {
+function read_inputs(filename, category) {
+  Papa.parse(filename, {
+    header: true,
+    skipEmptyLines: 'greedy',
+	  download: true,
+    complete: function(results) {
+      // console.log(results);
+      INPUTS = parse_csvresults(results.data, results.meta.fields, 'matches');
+      INPUTS.category = category; // このパラメータは無くしてKeyを読むようにする
       render_bar_graph();
     }
-  };
+  });
+}
+
+// Javascriptではpandasも無いし、手続き的に
+function parse_csvresults(data, fields, category=null) {
+  const team_map = {};
+  let default_group = null;
+  if (! fields.includes('group')) {
+      default_group = category || 'DefaultGroup';
+  }
+  let _i = 0
+  let group = '';
+  data.forEach(function (_match) {
+    _i++;
+    group = default_group || _match.group;
+    // console.log(_i, group, _match.match_date, _match.home_team, _match.away_team);
+    // console.log(_match);
+
+    if (! (group in team_map)) team_map[group] = {};
+    if (! (_match.home_team in team_map[group])) team_map[group][_match.home_team] = {'df': []};
+    if (! (_match.away_team in team_map[group])) team_map[group][_match.away_team] = {'df': []};
+    // console.log(group, _match.home_team, _match.away_team);
+
+    let match_date_str = _match.match_date;
+    const match_date = new Date(_match.match_date);
+    if (! isNaN(match_date))
+      match_date_str = ('0' + (match_date.getMonth() + 1)).slice(-2) + '/' + ('0' + match_date.getDate()).slice(-2);
+    team_map[group][_match.home_team].df.push({
+      'is_home': true,
+      'opponent': _match.away_team,
+      'goal_get': _match.home_goal,
+      'goal_lose': _match.away_goal,
+      'has_result': Boolean(_match.home_goal && _match.away_goal),
+      'point': get_point_from_result(_match.home_goal, _match.away_goal),
+      'match_date': match_date_str,
+      'section_no': _match.section_no,
+      'stadium': _match.stadium,
+      'start_time': _match.start_time
+    });
+    // console.log(team_map[group][_match.home_teame].df.slice(-1)[0]);
+    team_map[group][_match.away_team].df.push({
+      'is_home': true,
+      'opponent': _match.home_team,
+      'goal_get': _match.away_goal,
+      'goal_lose': _match.home_goal,
+      'has_result': Boolean(_match.home_goal && _match.away_goal),
+      'point': get_point_from_result(_match.away_goal, _match.home_goal),
+      'match_date': match_date_str,
+      'section_no': _match.section_no,
+      'stadium': _match.stadium,
+      'start_time': _match.start_time
+    });
+    // console.log(team_map[group][_match.away_teame].df.slice(-1)[0]);
+  });
+  // console.log(team_map);
+  return team_map;
+}
+
+function get_point_from_result(goal_get, goal_lose, has_extra=false, pk_get=null, pk_lose=null) {
+  if (! (goal_get && goal_lose)) return 0;
+  if (goal_get > goal_lose) return 3;
+  if (goal_get < goal_lose) return 0;
+  return 1;
 }
 
 function append_inputs(next) {
@@ -223,10 +267,15 @@ function make_html_column(target_team, team_data) {
   } else {
     match_sort_key = 'match_date';
   }
-  team_data.df.sort(function(a, b) {
+  team_data.df.sort(function(a, b) {  // 超カッコ悪い もっとうまく比較したい
     v_a = a[match_sort_key];
     v_b = b[match_sort_key];
     if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
+    if (! v_a.match(/^\d\d\/\d\d$/g)) {
+      if (! v_b.match(/^\d\d\/\d\d$/g)) return 0;
+      return 1;
+    }
+    if (! v_b.match(/^\d\d\/\d\d$/g)) return -1;
     return compare_str(v_a, v_b);
   }).forEach(function(_row) {
     let match_date;
