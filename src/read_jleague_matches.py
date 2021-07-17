@@ -262,7 +262,7 @@ def parse_date_from_filename(filename: str, ignore_timestamp: bool) -> datetime:
         # ファイルフォーマットが想定と違った時のことはあまり考えていない
         _res = re.search(r'\-(\d{8}).*\.csv', filename)
         if _res:
-            return _res[1]
+            return datetime.strptime(_res[1], DATE_FORMAT)
         # ファイルフォーマットが日時パターンではなかったときは、タイムスタンプで判断
     return datetime.fromtimestamp(os.stat(filename).st_mtime)
 
