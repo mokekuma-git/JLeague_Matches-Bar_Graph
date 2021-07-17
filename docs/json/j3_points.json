@@ -167,7 +167,7 @@
 "match_date": "07/11",
 "opponent": "長野",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "長野Ｕ",
 "start_time": "19:03"
 },
@@ -507,7 +507,7 @@
 "match_date": "07/11",
 "opponent": "福島",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "あいづ",
 "start_time": "15:03"
 },
@@ -847,7 +847,7 @@
 "match_date": "07/10",
 "opponent": "讃岐",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "プラスタ",
 "start_time": "19:03"
 },
@@ -1187,7 +1187,7 @@
 "match_date": "07/11",
 "opponent": "沼津",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "愛鷹",
 "start_time": "16:03"
 },
@@ -1527,7 +1527,7 @@
 "match_date": "07/10",
 "opponent": "鹿児島",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "白波スタ",
 "start_time": "19:03"
 },
@@ -2207,7 +2207,7 @@
 "match_date": "07/11",
 "opponent": "熊本",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "えがおＳ",
 "start_time": "19:03"
 },
@@ -2547,7 +2547,7 @@
 "match_date": "07/11",
 "opponent": "宮崎",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "愛鷹",
 "start_time": "16:03"
 },
@@ -2887,7 +2887,7 @@
 "match_date": "07/11",
 "opponent": "岩手",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "えがおＳ",
 "start_time": "19:03"
 },
@@ -3227,7 +3227,7 @@
 "match_date": "07/11",
 "opponent": "今治",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "あいづ",
 "start_time": "15:03"
 },
@@ -3567,7 +3567,7 @@
 "match_date": "07/10",
 "opponent": "鳥取",
 "point": 0,
-"section_no": 15,
+"section_no": "15",
 "stadium": "藤枝サ",
 "start_time": "17:03"
 },
@@ -3907,7 +3907,7 @@
 "match_date": "07/10",
 "opponent": "八戸",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "プラスタ",
 "start_time": "19:03"
 },
@@ -4247,7 +4247,7 @@
 "match_date": "07/11",
 "opponent": "YS横浜",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "長野Ｕ",
 "start_time": "19:03"
 },
@@ -4587,7 +4587,7 @@
 "match_date": "07/10",
 "opponent": "藤枝",
 "point": 3,
-"section_no": 15,
+"section_no": "15",
 "stadium": "藤枝サ",
 "start_time": "17:03"
 },
@@ -4927,7 +4927,7 @@
 "match_date": "07/10",
 "opponent": "富山",
 "point": 1,
-"section_no": 15,
+"section_no": "15",
 "stadium": "白波スタ",
 "start_time": "19:03"
 },
