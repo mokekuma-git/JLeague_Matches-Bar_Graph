@@ -117,7 +117,8 @@ function read_seasonmap() {
 }
 
 function read_inputs(filename, category) {
-  Papa.parse(filename, {
+  const cachebuster = Math.floor((new Date).getTime() / 1000/ 3600); // 1時間に1度キャッシュクリアというつもり
+  Papa.parse(filename + "?_="+ cachebuster, {
     header: true,
     skipEmptyLines: 'greedy',
 	  download: true,
@@ -148,7 +149,6 @@ function parse_csvresults(data, fields, category=null) {
     if (! (group in team_map)) team_map[group] = {};
     if (! (_match.home_team in team_map[group])) team_map[group][_match.home_team] = {'df': []};
     if (! (_match.away_team in team_map[group])) team_map[group][_match.away_team] = {'df': []};
-    // console.log(group, _match.home_team, _match.away_team);
 
     let match_date_str = _match.match_date;
     const match_date = new Date(_match.match_date);
@@ -168,7 +168,7 @@ function parse_csvresults(data, fields, category=null) {
     });
     // console.log(team_map[group][_match.home_teame].df.slice(-1)[0]);
     team_map[group][_match.away_team].df.push({
-      'is_home': true,
+      'is_home': false,
       'opponent': _match.home_team,
       'goal_get': _match.away_goal,
       'goal_lose': _match.home_goal,
