@@ -13,7 +13,7 @@ SCHEDULE_URL_FORMAT = 'https://www.jfa.jp/national_team/u24_2021/tokyo_olympic_2
 # 'http://www.jfa.jp/match/acl_2021/group{}/match/schedule.json'
 SCHEDULE_CONTAINER_NAME = 'matchScheduleList'
 SCHEDULE_LIST_NAME = 'matchSchedule'
-CSV_FILENAME = '../csv/2021_allmatch_result-Olympic_GS.csv'
+CSV_FILENAME = '../docs/csv/2021_allmatch_result-Olympic_GS.csv'
 JSON_FILENAME = '../docs/json/olympic_points.json'
 
 

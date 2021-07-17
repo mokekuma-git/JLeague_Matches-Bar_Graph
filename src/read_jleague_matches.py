@@ -12,7 +12,7 @@ import requests
 PREFERENCE = {}
 PREFERENCE['debug'] = False
 DATE_FORMAT = '%Y%m%d'
-_PREFIX = '../csv/match_result-J'
+_PREFIX = '../docs/csv/match_result-J'
 
 # Jリーグ公開の各節試合情報のURL
 SOURCE_URL_FORMAT = 'https://www.jleague.jp/match/section/j{}/{}/'
@@ -124,8 +124,6 @@ def get_match_dates_of_section(all_matches: pd.DataFrame) -> Dict[str, Set[pd.Ti
     開催日未定の試合は無視
     """
     return all_matches.dropna(subset=['match_date']).groupby('section_no').apply(make_kickoff_time)
-#    return all_matches.dropna(
-#        subset=['match_date']).groupby('section_no')['match_date'].apply(set).to_dict()
 
 
 def make_kickoff_time(_subset: pd.DataFrame):
@@ -157,11 +155,9 @@ def get_sections_to_update(all_matches: pd.DataFrame,
 
 def get_latest_allmatches_filename(category: int) -> str:
     """指定されたカテゴリの最新のCSVファイル名を返す
+    ⇒ CSVファイルは常に同一名称に変更 (最新ファイルは毎回上書き)
     """
-    _filelist = sorted(glob(f'../csv/*J{category}*.csv'))
-    if not _filelist:
-        return None
-    return _filelist[-1]
+    return f'{_PREFIX}{category}.csv'
 
 
 def read_latest_allmatches_csv(category: int) -> pd.DataFrame:
@@ -190,10 +186,10 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
 def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
     """試合結果ファイルを実行日を付けた試合データファイルとして保存する
     """
-    all_matches.to_csv(f'{_PREFIX}{category}-{datetime.now().strftime(DATE_FORMAT)}.csv')
+    all_matches.to_csv(f'{_PREFIX}{category}.csv')
 
 
-def update_all_matches(category: int, force_update: bool=False, ignore_timestamp: bool=False) -> pd.DataFrame:
+def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
     """これまでに読み込んだ試合データからの差分をWeb経由で読み込んで、差分を上書きした結果を返す
     該当ファイルが一つもない場合は、全試合のデータをWeb経由で読み込む
     試合データに変化があった場合は、実行日を付けた試合データファイルを保存する
@@ -207,7 +203,7 @@ def update_all_matches(category: int, force_update: bool=False, ignore_timestamp
         return all_matches
 
     current_matches = read_allmatches_csv(latest_file)
-    _start = parse_date_from_filename(latest_file, ignore_timestamp)
+    _start = parse_date_from_filename(latest_file)
     _end = datetime.now()
     print(f'  Check matches finished since {_start}')
     # undecided = get_undecided_section(current_matches)
@@ -255,15 +251,9 @@ def compare_matches(foo_df, bar_df) -> bool:
     return False
 
 
-def parse_date_from_filename(filename: str, ignore_timestamp: bool) -> datetime:
+def parse_date_from_filename(filename: str) -> datetime:
     """試合データファイル名から、取得日時を読みだす
     """
-    if ignore_timestamp:
-        # ファイルフォーマットが想定と違った時のことはあまり考えていない
-        _res = re.search(r'\-(\d{8}).*\.csv', filename)
-        if _res:
-            return datetime.strptime(_res[1], DATE_FORMAT)
-        # ファイルフォーマットが日時パターンではなかったときは、タイムスタンプで判断
     return datetime.fromtimestamp(os.stat(filename).st_mtime)
 
 
@@ -289,8 +279,6 @@ def make_args() -> argparse.Namespace:
                         help='リーグカテゴリ (数値指定、複数指定時は-で繋ぐ [default: 1-3])')
     parser.add_argument('-f', '--force_update_all', action='store_true',
                         help='差分を考えずにすべての試合データを読み込んで保存')
-    parser.add_argument('-i', '--ignore_timestamp', action='store_true',
-                        help='CSVファイルの作成日比較にタイムスタンプを使わない')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='デバッグ出力を表示')
 
@@ -308,4 +296,4 @@ if __name__ == '__main__':
 
     for _category in parse_range(ARGS.category):
         print(f'Start read J{_category} matches...')
-        dump_team_file(update_all_matches(_category, ARGS.force_update_all, ARGS.ignore_timestamp), _category)
+        dump_team_file(update_all_matches(_category, ARGS.force_update_all), _category)
