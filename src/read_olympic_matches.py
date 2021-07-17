@@ -6,7 +6,6 @@ import json
 import requests
 from typing import Dict, Any
 sys.path.append('../src/')
-from make_match_bar_graph import *
 from read_jleague_matches import read_allmatches_csv
 
 SCHEDULE_URL_FORMAT = 'https://www.jfa.jp/national_team/u24_2021/tokyo_olympic_2020/group{}/match/schedule.json'
@@ -97,17 +96,6 @@ def read_match_df(group: str) -> pd.DataFrame:
     return pd.DataFrame(result_list)
 
 
-def dump_groupleague_map(all_matches: pd.DataFrame) -> str:
-    """全チームの試合データをJSON文字列としてダンプする
-    """
-    result_map = {}
-    for _group, grp_matches in all_matches.groupby('group'):
-        result_map[_group] = make_team_map(grp_matches)
-
-    return json.dumps(result_map, indent=0,
-                      cls=NumDFEncoder, ensure_ascii=False, sort_keys=True)
-
-
 if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -118,8 +106,3 @@ if __name__ == '__main__':
         match_df = pd.concat([match_df, read_match_df(group)])
     match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
     match_df.to_csv(CSV_FILENAME)
-    # 敢えて書いて読んで、バラバラに動かした時の挙動を再現、ついでに中間データ保存
-    match_df = read_allmatches_csv(CSV_FILENAME)
-
-    with open(JSON_FILENAME, mode='w') as _fp:
-        _fp.write(dump_groupleague_map(match_df))

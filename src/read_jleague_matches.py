@@ -286,14 +286,10 @@ def make_args() -> argparse.Namespace:
 
 
 if __name__ == '__main__':
-    import os
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    from make_match_bar_graph import dump_team_file
-
     ARGS = make_args()
     if ARGS.debug:
         PREFERENCE['debug'] = True
 
     for _category in parse_range(ARGS.category):
         print(f'Start read J{_category} matches...')
-        dump_team_file(update_all_matches(_category, ARGS.force_update_all), _category)
+        update_all_matches(_category, ARGS.force_update_all)
