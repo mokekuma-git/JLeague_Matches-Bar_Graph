@@ -1,6 +1,7 @@
 """Jリーグ各節の試合情報を読み込み、CSVとして取得、保存
 """
-from datetime import datetime, timedelta
+import os
+from datetime import datetime, time, timedelta
 from typing import List, Set, Dict, Any
 import re
 from glob import glob
@@ -13,6 +14,7 @@ PREFERENCE = {}
 PREFERENCE['debug'] = False
 DATE_FORMAT = '%Y%m%d'
 _PREFIX = '../docs/csv/match_result-J'
+TIMESTAMP_FILE = '../csv/csv_timestamp.csv'
 
 # Jリーグ公開の各節試合情報のURL
 SOURCE_URL_FORMAT = 'https://www.jleague.jp/match/section/j{}/{}/'
@@ -186,7 +188,15 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
 def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
     """試合結果ファイルを実行日を付けた試合データファイルとして保存する
     """
-    all_matches.to_csv(f'{_PREFIX}{category}.csv')
+    filename = f'{_PREFIX}{category}.csv'
+    if os.path.exists(TIMESTAMP_FILE):
+        timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
+    else:
+        timestamp = pd.DataFrame(columns=['date'])
+        timestamp.index.name = 'file'
+    timestamp.loc[filename] = datetime.now()
+    timestamp.to_csv(TIMESTAMP_FILE)
+    all_matches.to_csv(filename)
 
 
 def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
@@ -203,7 +213,7 @@ def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
         return all_matches
 
     current_matches = read_allmatches_csv(latest_file)
-    _start = parse_date_from_filename(latest_file)
+    _start = get_timestamp_from_filename(latest_file)
     _end = datetime.now()
     print(f'  Check matches finished since {_start}')
     # undecided = get_undecided_section(current_matches)
@@ -249,9 +259,14 @@ def compare_matches(foo_df, bar_df) -> bool:
     return False
 
 
-def parse_date_from_filename(filename: str) -> datetime:
+def get_timestamp_from_filename(filename: str) -> datetime:
     """試合データファイル名から、取得日時を読みだす
     """
+    if os.path.exists(TIMESTAMP_FILE):
+        timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
+        if filename in timestamp.index:
+            return timestamp.loc[filename]['date']
+    # TIMESTAMP_FILE そのものが無い、filename の時間が記録されていない時はファイルスタンプから
     return datetime.fromtimestamp(os.stat(filename).st_mtime)
 
 
@@ -284,7 +299,6 @@ def make_args() -> argparse.Namespace:
 
 
 if __name__ == '__main__':
-    import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     ARGS = make_args()
