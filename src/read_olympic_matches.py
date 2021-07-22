@@ -1,6 +1,7 @@
 """2020東京オリンピックサッカーグループステージの試合情報を読み込んでCSV, JSO化
 """
 import sys
+import re
 import pandas as pd
 import json
 import requests
@@ -15,6 +16,7 @@ SCHEDULE_LIST_NAME = 'matchSchedule'
 CSV_FILENAME = '../docs/csv/2021_allmatch_result-Olympic_GS.csv'
 JSON_FILENAME = '../docs/json/olympic_points.json'
 
+SECTION_NO = re.compile(r'.*(\d+).*')
 
 REPLACE_KEY_DICT = {
     'match_date': 'matchDateJpn',
@@ -85,7 +87,8 @@ def read_match_df(group: str) -> pd.DataFrame:
             _row[target_key] = _match_data[org_key]
         for (target_key, org_key) in SCORE_DATA_KEY_LIST.items():
             _row[target_key] = _match_data['score'][org_key]
-        section_no = _row['section_no']
+        section_no = SECTION_NO.match(_row['section_no'])[1]
+        _row['section_no'] = section_no
         if section_no not in match_index_dict:
             match_index_dict[section_no] = 1
         else:
