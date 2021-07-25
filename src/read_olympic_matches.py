@@ -62,11 +62,17 @@ def read_match_df(group: str) -> pd.DataFrame:
          'awayWinFlag': False,  # 未使用
          'homeScore': '',
          'awayScore': '',
-         'homeTeamScore1st': '',  # 未使用
-         'awayTeamScore1st': '',  # 未使用
-         'homeTeamScore2nd': '',  # 未使用
-         'awayTeamScore2nd': '',  # 未使用
-         'exMatch': False
+         'homeTeamScore1st': '',  # 未使用 前半得点
+         'awayTeamScore1st': '',  # 未使用 前半得点
+         'homeTeamScore2nd': '',  # 未使用 後半得点
+         'awayTeamScore2nd': '',  # 未使用 後半得点
+         'exMatch': False,
+         'homeTeamScore1ex': '',  # 未使用 延長前半得点
+         'awayTeamScore1ex': '',  # 未使用 延長前半得点
+         'homeTeamScore2ex': '',  # 未使用 延長後半得点
+         'awayTeamScore2ex': '',  # 未使用 延長後半得点
+         'homePKScore': '',  # 未使用 PK得点
+         'awayPKScore': ''   # 未使用 PK得点
      },
      'scorer': {
          'homeScorer': [],  # 未使用
