@@ -180,6 +180,7 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
     all_matches['home_goal'] = all_matches['home_goal'].fillna('')
     all_matches['away_goal'] = all_matches['away_goal'].fillna('')
     all_matches['section_no'] = all_matches['section_no'].astype('int')
+    all_matches['match_index_in_section'] = all_matches['match_index_in_section'].astype('int')
     # JSONでNaNをnullとして出力するために、置換
     all_matches = all_matches.where(pd.notnull(all_matches), None)
     return all_matches
