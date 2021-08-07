@@ -272,7 +272,18 @@ def get_timestamp_from_filename(filename: str) -> datetime:
     return datetime.fromtimestamp(os.stat(filename).st_mtime)
 
 
-def parse_range(arg: str) -> List[int]:
+def parse_range_list(args: str) -> Set[int]:
+    """引数をパースする
+        数値と、"数値-数値" の形式を受け取り、範囲全体の数値リストに変換
+        1-3 -> [1, 2, 3]
+    """
+    result = set()
+    for arg in args:
+        result |= set(parse_range(arg))
+    return result
+
+
+def parse_range(arg: str) -> Set[int]:
     """引数をパースする
         数値と、"数値-数値" の形式を受け取り、範囲全体の数値リストに変換
         1-3 -> [1, 2, 3]
@@ -290,7 +301,7 @@ def make_args() -> argparse.Namespace:
         description='read_jleague_matches.py\n' + \
                     'Jリーグの各カテゴリの試合情報を読み込んでCSV化し、JSONファイルを作成')
 
-    parser.add_argument('category', default='1-3', nargs='*',
+    parser.add_argument('category', default=['1-3'], nargs='*',
                         help='リーグカテゴリ (数値指定、複数指定時は-で繋ぐ [default: 1-3])')
     parser.add_argument('-f', '--force_update_all', action='store_true',
                         help='差分を考えずにすべての試合データを読み込んで保存')
@@ -307,6 +318,6 @@ if __name__ == '__main__':
     if ARGS.debug:
         PREFERENCE['debug'] = True
 
-    for _category in parse_range(ARGS.category):
+    for _category in parse_range_list(ARGS.category):
         print(f'Start read J{_category} matches...')
         update_all_matches(_category, ARGS.force_update_all)
