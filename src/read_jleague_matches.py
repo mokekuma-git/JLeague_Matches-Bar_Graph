@@ -110,7 +110,8 @@ def read_matches_range(category: int, _range: List[int]=None) -> pd.DataFrame:
     for _i in _range:
         result_list = read_match(category, _i)
         _matches = pd.concat([_matches, pd.DataFrame(result_list)])
-    _matches.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
+    # sortしたりreset_indexした結果を変数に残さないミスは良くやる
+    _matches = _matches.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
     return _matches
 
 
