@@ -215,7 +215,7 @@ def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
         return all_matches
 
     current_matches = read_allmatches_csv(latest_file)
-    _start = get_timestamp_from_filename(latest_file)
+    _start = get_timestamp_from_csv(latest_file)
     _end = datetime.now()
     print(f'  Check matches finished since {_start}')
     # undecided = get_undecided_section(current_matches)
@@ -261,11 +261,12 @@ def compare_matches(foo_df, bar_df) -> bool:
     return False
 
 
-def get_timestamp_from_filename(filename: str) -> datetime:
-    """試合データファイル名から、取得日時を読みだす
+def get_timestamp_from_csv(filename: str) -> datetime:
+    """試合データ更新日CSVから、取得日時を読みだす
     """
     if os.path.exists(TIMESTAMP_FILE):
         timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
+        timestamp = timestamp[~timestamp.index.duplicated(keep="first")]
         if filename in timestamp.index:
             return timestamp.loc[filename]['date']
     # TIMESTAMP_FILE そのものが無い、filename の時間が記録されていない時はファイルスタンプから
