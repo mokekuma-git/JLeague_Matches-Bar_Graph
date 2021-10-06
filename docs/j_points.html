@@ -4,6 +4,7 @@
 <link rel="stylesheet" type="text/css" href="j_points.css">
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.1/papaparse.min.js"></script>
 <script type="text/javascript" src="j_points.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@riversun/sortable-table/lib/sortable-table.js"></script>
 </head>
 <body>
 <span>
@@ -71,5 +72,27 @@
 
 <hr/>
 <a href="https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph">Github公開場所 (説明などもこちら)</a>
+<hr/>
+<div class="sortable-table">
+  <table id="ranktable">
+    <thead>
+    <tr>
+      <th data-id="rank" sortable></th>
+      <th data-id="name" data-header>チーム名</th>
+      <th data-id="all_game" sortable>試合</th>
+      <th data-id="point" sortable>勝点</th>
+      <th data-id="points_per_game" sortable>平均</th>
+      <th data-id="avlbl_pt" sortable>最大</th>
+      <th data-id="win" sortable>勝</th>
+      <th data-id="draw" sortable>分</th>
+      <th data-id="lose" sortable>負</th>
+      <th data-id="goal_get" sortable>得点</th>
+      <th data-id="goal_lose" sortable>失点</th>
+      <th data-id="goal_diff" sortable>点差</th>
+      <th data-id="future_game" sortable>残り</th>
+    </tr>
+    </thead>
+  </table>
+</div>
 </body>
 </html>

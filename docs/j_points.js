@@ -451,6 +451,8 @@ function render_bar_graph() {
   });
   BOX_CON.innerHTML += point_column;
   set_scale(document.getElementById('scale_slider').value, false, false);
+
+  make_ranktable();
 }
 
 function get_sorted_team_list(matches) {
@@ -523,6 +525,44 @@ function make_season_pulldown() {
   document.getElementById('season').innerHTML = options.join('');
 }
 
+/// //////////////////////////////////////////////////////////// 順位表
+function make_ranktable() {
+  const sortableTable = new SortableTable();
+  sortableTable.setTable(document.getElementById('ranktable'));
+  sortableTable.setData(make_rankdata());
+}
+
+function make_rankdata() {
+  const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
+  const team_list = get_sorted_team_list(INPUTS.matches);
+  const datalist = [];
+  let rank = 0;
+  team_list.forEach(function(team_name) {
+    rank++;
+    const team_data = INPUTS.matches[team_name];
+    const all_game = get_team_attr(team_data, 'win', disp) + get_team_attr(team_data, 'draw', disp) + get_team_attr(team_data, 'lose', disp);
+    datalist.push({
+      rank: rank,
+      name: '<div class="' + team_name + '">' + team_name + '</div>',
+      win: get_team_attr(team_data, 'win', disp),
+      draw: get_team_attr(team_data, 'draw', disp),
+      lose: get_team_attr(team_data, 'lose', disp),
+      all_game: all_game,
+      point: get_team_attr(team_data, 'point', disp),
+      points_per_game: (get_team_attr(team_data, 'point', disp) / all_game).toFixed(2),
+      avlbl_pt: get_team_attr(team_data, 'avlbl_pt', disp),
+      goal_get: get_team_attr(team_data, 'goal_get', disp),
+      goal_lose: get_team_attr(team_data, 'goal_get', disp) - get_team_attr(team_data, 'goal_diff', disp),
+      goal_diff: get_team_attr(team_data, 'goal_diff', disp),
+      future_game: team_data.df.length - all_game,
+    });
+  });
+  return datalist;
+}
+function get_team_attr(team_data, attr, disp) {
+  const prefix = disp ? 'disp_' : '';
+  return team_data[prefix + attr];
+}
 /// //////////////////////////////////////////////////////////// 設定変更
 function set_scale_ev(event) {
   set_scale(event.target.value, true, false);
@@ -602,7 +642,7 @@ function set_space(value, cookie_write = true, color_write = true) {
 
 function get_css_rule(selector) {
   let _sheet;
-  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href.endsWith('j_points.css')) {_sheet = sheet;}});
+  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href && sheet.href.endsWith('j_points.css')) {_sheet = sheet;}});
   let _rule;
   Array.from(_sheet.cssRules).forEach(function(rule) {if(rule.selectorText == selector) _rule = rule;});
   return _rule;
