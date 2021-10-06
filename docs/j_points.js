@@ -533,30 +533,35 @@ function make_ranktable() {
 }
 
 function make_rankdata() {
+  const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
   const team_list = get_sorted_team_list(INPUTS.matches);
   const datalist = [];
   let rank = 0;
   team_list.forEach(function(team_name) {
     rank++;
     const team_data = INPUTS.matches[team_name];
-    const all_game = team_data.win + team_data.draw + team_data.lose;
+    const all_game = get_team_attr(team_data, 'win', disp) + get_team_attr(team_data, 'draw', disp) + get_team_attr(team_data, 'lose', disp);
     datalist.push({
       rank: rank,
       name: '<div class="' + team_name + '">' + team_name + '</div>',
-      win: team_data.win,
-      draw: team_data.draw,
-      lose: team_data.lose,
+      win: get_team_attr(team_data, 'win', disp),
+      draw: get_team_attr(team_data, 'draw', disp),
+      lose: get_team_attr(team_data, 'lose', disp),
       all_game: all_game,
-      point: team_data.point,
-      points_per_game: (team_data.point / all_game).toFixed(2),
-      avlbl_pt: team_data.avlbl_pt,
-      goal_get: team_data.goal_get,
-      goal_lose: team_data.goal_get - team_data.goal_diff,
-      goal_diff: team_data.goal_diff,
+      point: get_team_attr(team_data, 'point', disp),
+      points_per_game: (get_team_attr(team_data, 'point', disp) / all_game).toFixed(2),
+      avlbl_pt: get_team_attr(team_data, 'avlbl_pt', disp),
+      goal_get: get_team_attr(team_data, 'goal_get', disp),
+      goal_lose: get_team_attr(team_data, 'goal_get', disp) - get_team_attr(team_data, 'goal_diff', disp),
+      goal_diff: get_team_attr(team_data, 'goal_diff', disp),
       future_game: team_data.df.length - all_game,
     });
   });
   return datalist;
+}
+function get_team_attr(team_data, attr, disp) {
+  const prefix = disp ? 'disp_' : '';
+  return team_data[prefix + attr];
 }
 /// //////////////////////////////////////////////////////////// 設定変更
 function set_scale_ev(event) {
