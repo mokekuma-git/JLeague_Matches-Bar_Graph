@@ -1,6 +1,16 @@
 * {
   box-sizing: border-box;
 }
+
+/**************************************************************** for Rank Table */
+table#ranktable td {
+  border-bottom: solid 2px #777;
+  text-align: right;
+}
+table#ranktable th {
+  border-bottom: solid 2px #222;
+}
+
 .box {
   border-collapse: collapse;
   border:1px solid #333;
