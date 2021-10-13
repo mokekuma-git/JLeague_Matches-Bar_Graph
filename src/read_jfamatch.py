@@ -12,6 +12,7 @@ from typing import Dict, Any
 SCHEDULE_URL = 'URL'
 CSV_FILENAME = 'CSV'
 GROUP_NAMES = 'GROUP'
+MATCHES_IN_SECTION = 'MATCHES_IN_SECTION'
 COMPETITION_CONF = {
     'Olympic': {
         SCHEDULE_URL: 'https://www.jfa.jp/national_team/u24_2021/tokyo_olympic_2020/group{}/match/schedule.json',
@@ -27,6 +28,12 @@ COMPETITION_CONF = {
         SCHEDULE_URL: 'https://www.jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2021/match/schedule.json',
         CSV_FILENAME: '../docs/csv/2021_allmatch_result-PrinceKanto.csv',
         GROUP_NAMES: ['']
+    },
+    'WC2022AFC_F': {
+        SCHEDULE_URL: 'https://www.jfa.jp/national_team/samuraiblue/worldcup2022/final_q/group{}/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/allmatch_result-wc2022afc_final.csv',
+        GROUP_NAMES: ['A', 'B'],
+        MATCHES_IN_SECTION: 3
     }
 }
 
@@ -56,7 +63,7 @@ def read_match_json(_url: str) -> Dict[str, Any]:
     print(f'access {_url}...')
     return json.loads(requests.get(_url).text)
 
-def read_match_df(_url: str) -> pd.DataFrame:
+def read_match_df(_url: str, matches_in_section: int=None) -> pd.DataFrame:
     """各グループの試合リスト情報を自分たちのDataFrame形式で返す
     JFA形式のJSONは、1試合の情報が下記のような内容
     {'matchTypeName': '第1節',
@@ -101,13 +108,19 @@ def read_match_df(_url: str) -> pd.DataFrame:
     # print(match_list)
     result_list = []
     match_index_dict = {}
-    for _match_data in match_list:
+    for (_count, _match_data) in enumerate(match_list):
         _row = {}
         for (target_key, org_key) in REPLACE_KEY_DICT.items():
             _row[target_key] = _match_data[org_key]
         for (target_key, org_key) in SCORE_DATA_KEY_LIST.items():
             _row[target_key] = _match_data['score'][org_key]
-        section_no = SECTION_NO.match(_row['section_no'])[1]
+        _regexp_result = SECTION_NO.match(_row['section_no'])
+        if _regexp_result:
+            section_no = _regexp_result[1]
+        elif matches_in_section is not None: # 節数の記載が無く、節ごとの試合数が分かっている時は計算
+            section_no = int(_count / matches_in_section) + 1
+        else: # 節数不明
+            section_no = 0
         _row['section_no'] = section_no
         if section_no not in match_index_dict:
             match_index_dict[section_no] = 1
@@ -118,12 +131,16 @@ def read_match_df(_url: str) -> pd.DataFrame:
 
     return pd.DataFrame(result_list)
 
+
 def read_group(competition: str) -> None:
     """指定された大会のグループ全体を読み込んでCSV化
     """
     match_df = pd.DataFrame()
     for group in COMPETITION_CONF[competition][GROUP_NAMES]:
-        _df = read_match_df(COMPETITION_CONF[competition][SCHEDULE_URL].format(group))
+        _mis = None
+        if MATCHES_IN_SECTION in COMPETITION_CONF[competition]:
+            _mis = COMPETITION_CONF[competition][MATCHES_IN_SECTION]
+        _df = read_match_df(COMPETITION_CONF[competition][SCHEDULE_URL].format(group), _mis)
         _df['group'] = group
         match_df = pd.concat([match_df, _df])
     match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
