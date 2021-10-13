@@ -2,18 +2,33 @@
 まずは、プリンス関東のデータを読み込む仕様として、今後パラメータ選択でいろいろなカテゴリを読みに行く作りに変更
 年度指定もできるようにする。
 """
-import sys
 import re
 import pandas as pd
 import json
 import requests
+import argparse
 from typing import Dict, Any
-from read_aclgl_matches import CSV_FILENAME
-sys.path.append('../src/')
-from read_jleague_matches import read_allmatches_csv
 
-SCHEDULE_URL = 'https://www.jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2021/match/schedule.json'
-CSV_FILENAME = '../docs/csv/2021_allmatch_result-PrinceKanto.csv'
+SCHEDULE_URL = 'URL'
+CSV_FILENAME = 'CSV'
+GROUP_NAMES = 'GROUP'
+COMPETITION_CONF = {
+    'Olympic': {
+        SCHEDULE_URL: 'https://www.jfa.jp/national_team/u24_2021/tokyo_olympic_2020/group{}/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/2021_allmatch_result-Olympic_GS.csv',
+        GROUP_NAMES: ['A', 'B', 'C', 'D']
+    },
+#    'ACL2021GL': {
+#        SCHEDULE_URL: 'http://www.jfa.jp/match/acl_2021/group{}/match/schedule.json',
+#        CSV_FILENAME: '../docs/csv/2021_allmatch_result-ACL_GL.csv',
+#        GROUP_NAMES: ['G', 'H', 'I', 'J']
+#    }, # A~Fのグループ情報が無い
+    'PrinceKanto': {
+        SCHEDULE_URL: 'https://www.jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2021/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/2021_allmatch_result-PrinceKanto.csv',
+        GROUP_NAMES: ['']
+    }
+}
 
 SCHEDULE_CONTAINER_NAME = 'matchScheduleList'
 SCHEDULE_LIST_NAME = 'matchSchedule'
@@ -103,13 +118,33 @@ def read_match_df(_url: str) -> pd.DataFrame:
 
     return pd.DataFrame(result_list)
 
+def read_group(competition: str) -> None:
+    """指定された大会のグループ全体を読み込んでCSV化
+    """
+    match_df = pd.DataFrame()
+    for group in COMPETITION_CONF[competition][GROUP_NAMES]:
+        _df = read_match_df(COMPETITION_CONF[competition][SCHEDULE_URL].format(group))
+        _df['group'] = group
+        match_df = pd.concat([match_df, _df])
+    match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
+    match_df.to_csv(COMPETITION_CONF[competition][CSV_FILENAME])
+
+
+def make_args() -> argparse.Namespace:
+    """引数チェッカ
+    """
+    parser = argparse.ArgumentParser(
+        description='read_jfamatches.py\n' + \
+                    'JFAで公開される各大会の試合情報を読み込んでCSVを作成')
+
+    parser.add_argument('competition', metavar='COMP', type=str, nargs='?',
+                        help='大会の名前', default='PrinceKanto')
+
+    return parser.parse_args()
+
 
 if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    if '--skip' not in sys.argv:
-        match_df = pd.DataFrame()
-    match_df = pd.concat([match_df, read_match_df(SCHEDULE_URL)])
-    match_df = match_df.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
-    match_df.to_csv(CSV_FILENAME)
+    read_group(make_args().competition)
