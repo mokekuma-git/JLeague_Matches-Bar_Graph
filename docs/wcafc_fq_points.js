@@ -468,10 +468,16 @@ function make_ranktable() {
   table_div.innerHTML = '';
   Object.keys(INPUTS).forEach(function (_group) {
     table_div.innerHTML += create_new_table(_group);
-    let sortableTable = new SortableTable();
-    sortableTable.setTable(document.getElementById('ranktable' + _group));
-    sortableTable.setData(make_rankdata(_group));
   });
+  // ちょっと理由は分からないが、<table></table>の作成と、setDataを分けたら両方sortableになった
+  Object.keys(INPUTS).forEach(function (_group) {
+    create_ranktable_content(_group);
+  });
+}
+function create_ranktable_content(group) {
+  let sortableTable = new SortableTable();
+  sortableTable.setTable(document.getElementById('ranktable' + group));
+  sortableTable.setData(make_rankdata(group));
 }
 
 function create_new_table(group) {
