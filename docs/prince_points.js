@@ -1,31 +1,21 @@
 // TODO: Global変数以外の解決方法は、後で調べる
 let HEIGHT_UNIT;
+let SEASON_MAP;
 let INPUTS;
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 let TARGET_DATE;
 let BOX_CON;
 let COMPARE_DEBUG = false;
 const MATCH_DATE_SET = [];
-let MAX_GRAPH_HEIGHT;
-
-const SHOWN_GROUP = ['A', 'B'];
 
 const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
   team_sort: 'team_sort_key',
   match_sort: 'match_sort_key',
-};
+  cat: 'category',
+  season: 'season'
+}
 
-const TEAM_RENAME_MAP = {
- 'ホンジュラス': 'ホンジュラ',
- 'ニュージーランド': 'ニュージー',
- 'オーストラリア': '豪州',
- 'アルゼンチン': 'アルゼン',
- 'サウジアラビア': 'サウジアラ',
- 'コートジボワール': 'コートジボ'
-};
-
-
-window.addEventListener('load', init, false);
+window.addEventListener('load', read_seasonmap, false);
 
 function init() {
   BOX_CON = document.getElementById('box_container');
@@ -36,6 +26,8 @@ function init() {
   document.getElementById('space_color').addEventListener('change', set_space_ev, false);
   document.getElementById('team_sort_key').addEventListener('change', set_sort_key_ev, false);
   document.getElementById('match_sort_key').addEventListener('change', set_match_sort_key_ev, false);
+  document.getElementById('category').addEventListener('change', set_category_ev, false);
+  document.getElementById('season').addEventListener('change', set_season_ev, false);
   const date_slider = document.getElementById('date_slider')
   date_slider.addEventListener('change', set_date_slider_ev, false);
   document.getElementById('date_slider_up').addEventListener('click', function() {date_slider.value++; set_date_slider_ev()}, false);
@@ -68,6 +60,11 @@ function load_cookies() {
   const match_sort = get_cookie('match_sort');
   if(match_sort) set_pulldown('match_sort', match_sort, false, true, false);
 
+  const cat = get_cookie('cat');
+  if(cat) set_pulldown('cat', cat, false, true, false);
+  // load_cookieの後にはrenderが呼ばれるので、ここではrenderは不要
+  make_season_pulldown();
+
   const scale = get_cookie('scale');
   if(scale) set_scale(scale, false, true);
 }
@@ -84,7 +81,7 @@ function parse_cookies() {
 }
 
 function get_cookie(key) {
-  if(key in COOKIE_OBJ) return COOKIE_OBJ[key];
+  if(COOKIE_OBJ.hasOwnProperty(key)) return COOKIE_OBJ[key];
   return undefined;
 }
 
@@ -101,19 +98,47 @@ function clear_cookies() {
 }
 
 function refresh_match_data() {
-  read_inputs('csv/2021_allmatch_result-Olympic_GS.csv');
+  INPUTS = {'matches': {}};
+  read_inputs(get_csv_files(get_category(), get_season()));
 }
 
-function read_inputs(filename) {
+function get_csv_files(category, season) {
+  if (document.getElementById('season').selectedIndex == 0) return [get_csv_filename(category)];
+  const target_seasons = [2021];
+  if (target_seasons.length == 1) return [get_csv_filename(category, season)];
+  target_seasons.shift(season);
+  target_seasons.sort();
+  const result = [];
+  target_seasons.forEach(function(x) {result.push(get_csv_filename(category, x));});
+  return result;
+}
+
+function get_csv_filename(category, season=null) {
+  if (season) return 'csv/' + season + '_allmatch_result-' + category + '.csv';
+  return 'csv/match_result-' + category + '.csv';
+}
+
+function read_seasonmap() {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', './json/season_map.json');
+  xhr.send();
+  xhr.onload = ()=> {
+    SEASON_MAP = JSON.parse(xhr.responseText);
+    init();
+  };
+}
+
+function read_inputs(filenames) {
   const cachebuster = Math.floor((new Date).getTime() / 1000 / 3600); // 1時間に1度キャッシュクリアというつもり
-  Papa.parse(filename + '?_='+ cachebuster, {
+  Papa.parse(filenames.shift() + '?_='+ cachebuster, {
     header: true,
     skipEmptyLines: 'greedy',
 	  download: true,
     complete: function(results) {
       // console.log(results);
-      INPUTS = parse_csvresults(results.data, results.meta.fields);
-      render_bar_graph();
+      append_inputs(parse_csvresults(results.data, results.meta.fields, 'matches'));
+      if (filenames.length == 0) render_bar_graph();
+      else read_inputs(filenames);
     }
   });
 }
@@ -177,8 +202,45 @@ function get_point_from_result(goal_get, goal_lose, has_extra=false, pk_get=null
   return 1;
 }
 
+function append_inputs(next) {
+  // 複数シーズン表示用に、INPUTSの内容に、nextの試合内容を追加
+  // 追加するmatches以外は、元のINPUTSの内容を引き継ぐ
+  let _length = 0;
+  // 奇数チーム数の時、各節にかならず1試合あるとは限らない
+  // これまでの節数は、INPUTS内の最大のsection_noを調べて返す必要がある
+  Object.keys(INPUTS.matches).forEach(function(team_name) {
+    const match_data = INPUTS.matches[team_name].df;
+    _length = Math.max(_length, parseInt(match_data[match_data.length -1].section_no));
+  });
+  Object.keys(next.matches).forEach(function(team_name) {
+    if (! INPUTS.matches.hasOwnProperty(team_name)) {
+      INPUTS.matches[team_name] = {'df': []};
+    }
+    next.matches[team_name].df.forEach(function(match_data) {
+      match_data.section_no = parseInt(match_data.section_no) + _length;
+      INPUTS.matches[team_name].df.push(match_data);
+    });
+  });
+}
+
+function make_insert_columns(category) {
+  // 各カテゴリの勝ち点列を入れる敷居位置を決定
+  //  昇格チーム (ACL出場チーム)、中間、降格チームの位置に挟む
+  return [];
+}
+
+function get_season() {
+  const season = document.getElementById('season').value;
+  if (season == 'current') return new Date().getYear() + 1900;
+  return season;
+}
+
+function get_category() {
+  return document.getElementById('category').value;
+}
+
 const is_string = (value) => (typeof(value) === 'string' || value instanceof String);
-// const is_number = (value) => (typeof(value) === 'number');
+const is_number = (value) => (typeof(value) === 'number');
 
 const compare_str = (a, b) => (a === b) ? 0 : (a < b) ? -1 : 1;
 function make_html_column(target_team, team_data) {
@@ -214,10 +276,15 @@ function make_html_column(target_team, team_data) {
   } else {
     match_sort_key = 'match_date';
   }
-  team_data.df.sort(function(a, b) {
+  team_data.df.sort(function(a, b) {  // 超カッコ悪い もっとうまく比較したい
     v_a = a[match_sort_key];
     v_b = b[match_sort_key];
     if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
+    if (! v_a.match(/^\d\d\/\d\d$/g)) {
+      if (! v_b.match(/^\d\d\/\d\d$/g)) return 0;
+      return 1;
+    }
+    if (! v_b.match(/^\d\d\/\d\d$/g)) return -1;
     return compare_str(v_a, v_b);
   }).forEach(function(_row) {
     let match_date;
@@ -314,7 +381,7 @@ function append_space_cols(cache, max_avlbl_pt) {
     cache.graph.reverse();
     cache.lose_box.reverse();
   }
-  const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
+  const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team.substr(0, 7)
     + '<span class=" tooltiptext full ' + cache.target_team + '">'
     + '成績情報:<hr/>' + cache.stats
     + '<hr/>敗戦記録:<hr/>'
@@ -322,25 +389,17 @@ function append_space_cols(cache, max_avlbl_pt) {
   return '<div id="' + cache.target_team + '_column">' + team_name + cache.graph.join('') + team_name + '</div>\n\n';
 }
 
-function rename_short_team_name(team_name) {
-  if (team_name in TEAM_RENAME_MAP) return TEAM_RENAME_MAP[team_name];
-  return team_name;
-}
-function rename_short_stadium_name(stadium) {
-  if (stadium.length > 7) return stadium.substring(0, 7);
-  return stadium;
-}
 function make_win_content(_row, match_date) {
-  return match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
+  return match_date + ' ' + _row.opponent.substr(0, 3) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose
-    + '<br/>' + rename_short_stadium_name(_row.stadium);
+    + '<br/>' + _row.stadium.substr(0, 7);
 }
 function make_draw_content(_row, match_date) {
-  return match_date + ' ' + rename_short_team_name(_row.opponent);
+  return match_date + ' ' + _row.opponent.substr(0, 3);
 }
 function make_full_content(_row, match_date) {
-  return '(' + _row.section_no + ') ' + match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
-    + _row.goal_get + '-' + _row.goal_lose + ' ' + rename_short_stadium_name(_row.stadium);
+  return '(' + _row.section_no + ') ' + match_date + ' ' + _row.opponent.substr(0, 3) + '<br/>'
+    + _row.goal_get + '-' + _row.goal_lose + ' ' + _row.stadium.substr(0, 7);
 }
 
 const dgt = (m, n) => ('0000' + m).substr(-n);
@@ -349,7 +408,7 @@ function date_format(_date) {
   return [dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
 }
 
-function make_point_column(max_avlbl_pt, _group) {
+function make_point_column(max_avlbl_pt) {
   // 勝点列を作って返す
   let box_list = []
   Array.from(Array(max_avlbl_pt), (v, k) => k + 1).forEach(function(_i) {
@@ -358,52 +417,38 @@ function make_point_column(max_avlbl_pt, _group) {
   if(['old_bottom', 'first_bottom'].includes(document.getElementById('match_sort_key').value)) {
     box_list.reverse();
   }
-  return '<div class="point_column point' + _group + '"><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
+  return '<div class="point_column"><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
 }
 
 function render_bar_graph() {
   if(! INPUTS) return;
   MATCH_DATE_SET.length = 0; // TODO: 最新情報は、CSVを直接読む形式に変えた時にそちらで計算
   MATCH_DATE_SET.push('01/01');
-  MAX_GRAPH_HEIGHT = 0;
   BOX_CON.innerHTML = '';
   let columns = {};
   let max_avlbl_pt = 0;
-  Object.keys(INPUTS).forEach(function(_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
-    const grp_input = INPUTS[_group]
-
-    Object.keys(grp_input).forEach(function (team_name) {
-        // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
-        columns[team_name] = make_html_column(team_name, grp_input[team_name]);
-        max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
-    });
+  Object.keys(INPUTS.matches).forEach(function (team_name) {
+    // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
+    columns[team_name] = make_html_column(team_name, INPUTS.matches[team_name]);
+    max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
+  });
+  Object.keys(INPUTS.matches).forEach(function (team_name) {
+    columns[team_name].graph = append_space_cols(columns[team_name], max_avlbl_pt);
   });
   MATCH_DATE_SET.sort();
   reset_date_slider(date_format(TARGET_DATE));
-  Object.keys(INPUTS).forEach(function(_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
-    const grp_input = INPUTS[_group]
-    Object.keys(grp_input).forEach(function (team_name) {
-        columns[team_name].graph = append_space_cols(columns[team_name], max_avlbl_pt);
-    });
-    const point_column = make_point_column(max_avlbl_pt, _group);
-    BOX_CON.innerHTML += '<div class="group_label group' +  _group + '">グループ' + _group;
-    BOX_CON.innerHTML += point_column;
-    get_sorted_team_list(grp_input).forEach(function(team_name, index) {
-        BOX_CON.innerHTML += columns[team_name].graph;
-    });
-    BOX_CON.innerHTML += '</div>\n';
+  let insert_point_columns = make_insert_columns(get_category());
+  let point_column = make_point_column(max_avlbl_pt);
+  BOX_CON.innerHTML += point_column;
+  get_sorted_team_list(INPUTS.matches).forEach(function(team_name, index) {
+    if(insert_point_columns.includes(index))
+      BOX_CON.innerHTML += point_column;
+    BOX_CON.innerHTML += columns[team_name].graph;
   });
+  BOX_CON.innerHTML += point_column;
   set_scale(document.getElementById('scale_slider').value, false, false);
-  Object.keys(INPUTS).forEach(function(_group) {
-    set_left_position_to_group_label(_group);
-  });
-}
 
-function set_left_position_to_group_label(_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
-    document.querySelector('.group' + _group).style.left = document.querySelector('.point' + _group).getBoundingClientRect().left  / document.getElementById('scale_slider').value + 'px';
+  make_ranktable();
 }
 
 function get_sorted_team_list(matches) {
@@ -431,14 +476,13 @@ function get_sorted_team_list(matches) {
     if(compare != 0) return compare;
 
     // 総得点で比較 (表示時点か最新かで振り分け)
-    if (sort_key.startsWith("disp_")) {
+    if (sort_key.startsWith('disp_')) {
       compare = matches[b].disp_goal_get - matches[a].disp_goal_get;
       if (COMPARE_DEBUG) console.log('総得点(disp)', a, matches[a].disp_goal_get, b, matches[b].disp_goal_get);
     } else {
       compare = matches[b].goal_get - matches[a].goal_get;
       if (COMPARE_DEBUG) console.log('総得点', a, matches[a].goal_get, b, matches[b].goal_get);
     }
-    // それでも同じなら、そのまま登録順
     return compare;
   });
 }
@@ -462,18 +506,58 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
   slider.value = _i;
 }
 
+function make_season_pulldown() {
+  const category = get_category();
+  const options = [2021];
+  document.getElementById('season').innerHTML = options.join('');
+}
+
+/// //////////////////////////////////////////////////////////// 順位表
+function make_ranktable() {
+  const sortableTable = new SortableTable();
+  sortableTable.setTable(document.getElementById('ranktable'));
+  sortableTable.setData(make_rankdata());
+}
+
+function make_rankdata() {
+  const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
+  const team_list = get_sorted_team_list(INPUTS.matches);
+  const datalist = [];
+  let rank = 0;
+  team_list.forEach(function(team_name) {
+    rank++;
+    const team_data = INPUTS.matches[team_name];
+    const all_game = get_team_attr(team_data, 'win', disp) + get_team_attr(team_data, 'draw', disp) + get_team_attr(team_data, 'lose', disp);
+    datalist.push({
+      rank: rank,
+      name: '<div class="' + team_name + '">' + team_name + '</div>',
+      win: get_team_attr(team_data, 'win', disp),
+      draw: get_team_attr(team_data, 'draw', disp),
+      lose: get_team_attr(team_data, 'lose', disp),
+      all_game: all_game,
+      point: get_team_attr(team_data, 'point', disp),
+      points_per_game: (get_team_attr(team_data, 'point', disp) / all_game).toFixed(2),
+      avlbl_pt: get_team_attr(team_data, 'avlbl_pt', disp),
+      goal_get: get_team_attr(team_data, 'goal_get', disp),
+      goal_lose: get_team_attr(team_data, 'goal_get', disp) - get_team_attr(team_data, 'goal_diff', disp),
+      goal_diff: get_team_attr(team_data, 'goal_diff', disp),
+      future_game: team_data.df.length - all_game,
+    });
+  });
+  return datalist;
+}
+function get_team_attr(team_data, attr, disp) {
+  const prefix = disp ? 'disp_' : '';
+  return team_data[prefix + attr];
+}
 /// //////////////////////////////////////////////////////////// 設定変更
 function set_scale_ev(event) {
   set_scale(event.target.value, true, false);
 }
 function set_scale(scale, cookie_write = true, slider_write = true) {
-  BOX_CON.style.transform = "scale(" + scale + ")";
-  MAX_GRAPH_HEIGHT = 0;
-  document.querySelectorAll('.point_column').forEach(function(p_col) {
-    const current_height = p_col.clientHeight * scale;
-    MAX_GRAPH_HEIGHT = Math.max(MAX_GRAPH_HEIGHT, current_height);
-    BOX_CON.style.height = MAX_GRAPH_HEIGHT;
-  })
+  BOX_CON.style.transform = 'scale(' + scale + ')';
+  const p_col = document.querySelector('.point_column');
+  if(p_col) BOX_CON.style.height = p_col.clientHeight * scale;
   document.getElementById('current_scale').innerHTML = scale;
   if(cookie_write) set_cookie('scale', scale);
   if(slider_write) document.getElementById('scale_slider').value = scale;
@@ -485,11 +569,22 @@ function set_sort_key_ev(event) {
 function set_match_sort_key_ev(event) {
   set_pulldown('match_sort', event.target.value, true, false);
 }
+function set_category_ev(event) {
+  make_season_pulldown();
+  refresh_match_data();
+  set_pulldown('cat', event.target.value, true, false, false);
+}
+function set_season_ev(event) {
+  reset_target_date();
+  refresh_match_data();
+  // set_pulldown('season', event.target.value, true, false, false); // COOKIE保存は後回し
+}
 function set_pulldown(key, value, cookie_write = true, pulldown_write = true, call_render = true) {
   if(cookie_write) set_cookie(key, value);
   if(pulldown_write) {
     const select = document.getElementById(TARGET_ITEM_ID[key]);
-    select.selectedIndex = select.querySelector('option[value="' + value + '"]').index;
+    const selectedItem = select.querySelector('option[value="' + value + '"]');
+    if(selectedItem) select.selectedIndex = selectedItem.index;
   }
   if(call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
 }
@@ -505,7 +600,8 @@ function reset_date_slider_ev(event) {
   render_bar_graph();
 }
 function reset_target_date() {
-  TARGET_DATE = date_format(new Date());
+  if(document.getElementById('season').selectedIndex == 0) TARGET_DATE = date_format(new Date());
+  else TARGET_DATE = '12/31';
 }
 /// //////////////////////////////////////////////////////////// 背景調整用
 function set_future_opacity_ev(event) {
@@ -534,7 +630,7 @@ function set_space(value, cookie_write = true, color_write = true) {
 
 function get_css_rule(selector) {
   let _sheet;
-  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href.endsWith('olympic_points.css')) {_sheet = sheet;}});
+  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href && sheet.href.endsWith('j_points.css')) {_sheet = sheet;}});
   let _rule;
   Array.from(_sheet.cssRules).forEach(function(rule) {if(rule.selectorText == selector) _rule = rule;});
   return _rule;

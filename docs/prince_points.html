@@ -1,9 +1,10 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<link rel="stylesheet" type="text/css" href="olympic_points.css">
+<link rel="stylesheet" type="text/css" href="j_points.css">
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.1/papaparse.min.js"></script>
-<script type="text/javascript" src="wcafc_fq_points.js"></script>
+<script type="text/javascript" src="prince_points.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@riversun/sortable-table/lib/sortable-table.js"></script>
 </head>
 <body>
 <span>
@@ -25,17 +26,19 @@
   <label for="match_sort_key">試合上下順</label>
 </span>&nbsp;
 <span>
-  <label for="group">対象グループ (現在は全部のみ)</label>
+  <select id="category" name="category">
+    <option value="PrinceKanto" selected="true">プリンス関東</option>
+    <option value="PrincePremierE">プレミア東</option>
+    <option value="PrincePremierW">プレミア西</option>
+  </select>
+  <label for="category">対象カテゴリ</label>
 </span>&nbsp;
-<!--
-    過去のシーズンは、やらなくていいよね……
 <span>
   <select id="season" name="season">
     <option value="current" selected="true">現在</option>
     </select>
   <label for="season">対象シーズン</label>
 </span>&nbsp;
--->
 <br/>
 <span>
   <span id='pre_date_slider'></span>
@@ -68,7 +71,28 @@
 </span>
 
 <hr/>
-
 <a href="https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph">Github公開場所 (説明などもこちら)</a>
+<hr/>
+<div class="sortable-table">
+  <table id="ranktable">
+    <thead>
+    <tr>
+      <th data-id="rank" sortable></th>
+      <th data-id="name" data-header>チーム名</th>
+      <th data-id="all_game" sortable>試合</th>
+      <th data-id="point" sortable>勝点</th>
+      <th data-id="points_per_game" sortable>平均</th>
+      <th data-id="avlbl_pt" sortable>最大</th>
+      <th data-id="win" sortable>勝</th>
+      <th data-id="draw" sortable>分</th>
+      <th data-id="lose" sortable>負</th>
+      <th data-id="goal_get" sortable>得点</th>
+      <th data-id="goal_lose" sortable>失点</th>
+      <th data-id="goal_diff" sortable>点差</th>
+      <th data-id="future_game" sortable>残り</th>
+    </tr>
+    </thead>
+  </table>
+</div>
 </body>
 </html>
