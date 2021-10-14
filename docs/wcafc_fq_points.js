@@ -367,33 +367,29 @@ function render_bar_graph() {
   MAX_GRAPH_HEIGHT = 0;
   BOX_CON.innerHTML = '';
   let columns = {};
-  let max_avlbl_pt = 0;
   Object.keys(INPUTS).forEach(function(_group) {
     if(! SHOWN_GROUP.includes(_group)) return;
     const grp_input = INPUTS[_group]
-
+    let max_avlbl_pt = 0;
     Object.keys(grp_input).forEach(function (team_name) {
-        // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
-        columns[team_name] = make_html_column(team_name, grp_input[team_name]);
-        max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
+      // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
+      // MATCH_DATE_SETも作成
+      columns[team_name] = make_html_column(team_name, grp_input[team_name]);
+      max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
     });
-  });
-  MATCH_DATE_SET.sort();
-  reset_date_slider(date_format(TARGET_DATE));
-  Object.keys(INPUTS).forEach(function(_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
-    const grp_input = INPUTS[_group]
     Object.keys(grp_input).forEach(function (team_name) {
-        columns[team_name].graph = append_space_cols(columns[team_name], max_avlbl_pt);
+      columns[team_name].graph = append_space_cols(columns[team_name], max_avlbl_pt);
     });
     const point_column = make_point_column(max_avlbl_pt, _group);
     BOX_CON.innerHTML += '<div class="group_label group' +  _group + '">グループ' + _group;
     BOX_CON.innerHTML += point_column;
     get_sorted_team_list(grp_input).forEach(function(team_name, index) {
-        BOX_CON.innerHTML += columns[team_name].graph;
+      BOX_CON.innerHTML += columns[team_name].graph;
     });
     BOX_CON.innerHTML += '</div>\n';
   });
+  MATCH_DATE_SET.sort();
+  reset_date_slider(date_format(TARGET_DATE));
   set_scale(document.getElementById('scale_slider').value, false, false);
   Object.keys(INPUTS).forEach(function(_group) {
     set_left_position_to_group_label(_group);
@@ -403,8 +399,8 @@ function render_bar_graph() {
 }
 
 function set_left_position_to_group_label(_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
-    document.querySelector('.group' + _group).style.left = document.querySelector('.point' + _group).getBoundingClientRect().left  / document.getElementById('scale_slider').value + 'px';
+  if(! SHOWN_GROUP.includes(_group)) return;
+  document.querySelector('.group' + _group).style.left = document.querySelector('.point' + _group).getBoundingClientRect().left  / document.getElementById('scale_slider').value + 'px';
 }
 
 function get_sorted_team_list(matches) {
