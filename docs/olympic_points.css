@@ -146,7 +146,7 @@ p {
   background-color: yellow;
 }
 .韓国 {
-  color: white;
+  color: black;
   background-color: red;
 }
 .アルゼンチン {
@@ -180,4 +180,36 @@ p {
 .ブラジル {
   color: darkblue;
   background-color: yellow;
+}
+.オマーン {
+  color: white;
+  background-color: red;
+}
+.中国 {
+  color: white;
+  background-color: red;
+}
+.ベトナム {
+  color: yellow;
+  background-color: darkred;
+}
+.イラン {
+  color: white;
+  background-color: crimson;
+}
+.イラク {
+  color: white;
+  background-color: darkgreen;
+}
+.レバノン {
+  color: white;
+  background-color: red;
+}
+.UAE {
+  color: white;
+  background-color: darkred;
+}
+.シリア {
+  color: white;
+  background-color: orangered;
 }
