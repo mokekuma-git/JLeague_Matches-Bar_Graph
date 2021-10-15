@@ -127,6 +127,14 @@ def read_match_df(_url: str, matches_in_section: int=None) -> pd.DataFrame:
         else:
             match_index_dict[section_no] += 1
         _row['match_index_in_section'] = match_index_dict[section_no]
+
+        # U18高円宮杯プリンス関東リーグでの中止情報は、なぜか 'venueFullName' に入っていたので暫定対応
+        if '【中止】' in _match_data['venueFullName']:
+            print('Cancel Game## ' + _match_data['venueFullName'])
+            _row['status'] = '中止'
+        else:
+            print('No Cancel## ' + _match_data['venueFullName'])
+
         result_list.append(_row)
 
     return pd.DataFrame(result_list)
@@ -143,6 +151,7 @@ def read_group(competition: str) -> None:
         _df = read_match_df(COMPETITION_CONF[competition][SCHEDULE_URL].format(group), _mis)
         _df['group'] = group
         match_df = pd.concat([match_df, _df])
+    print(match_df['status'])
     match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
     match_df.to_csv(COMPETITION_CONF[competition][CSV_FILENAME])
 
