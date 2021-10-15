@@ -103,19 +103,14 @@ function refresh_match_data() {
 }
 
 function get_csv_files(category, season) {
-  if (document.getElementById('season').selectedIndex == 0) return [get_csv_filename(category)];
   const target_seasons = [2021];
-  if (target_seasons.length == 1) return [get_csv_filename(category, season)];
-  target_seasons.shift(season);
-  target_seasons.sort();
   const result = [];
   target_seasons.forEach(function(x) {result.push(get_csv_filename(category, x));});
   return result;
 }
 
 function get_csv_filename(category, season=null) {
-  if (season) return 'csv/' + season + '_allmatch_result-' + category + '.csv';
-  return 'csv/match_result-' + category + '.csv';
+  return 'csv/' + season + '_allmatch_result-' + category + '.csv';
 }
 
 function read_seasonmap() {
@@ -147,11 +142,12 @@ function read_inputs(filenames) {
 function parse_csvresults(data, fields, default_group=null) {
   const team_map = {};
   if (default_group === 'null') default_group = 'DefaultGroup';
-  if (fields.includes('group')) default_group = null;
+  if (fields.includes('group')) default_group = null; // グループ列がCSVデータに含まれている時はそちらを使う
   let _i = 0
   let group = '';
   data.forEach(function (_match) {
     _i++;
+    if (_match.status == '中止') return;
     group = default_group || _match.group;
     // console.log(_i, group, _match.match_date, _match.home_team, _match.away_team);
     // console.log(_match);
@@ -212,11 +208,11 @@ function append_inputs(next) {
     const match_data = INPUTS.matches[team_name].df;
     _length = Math.max(_length, parseInt(match_data[match_data.length -1].section_no));
   });
-  Object.keys(next.matches).forEach(function(team_name) {
+  Object.keys(next['']).forEach(function(team_name) {
     if (! INPUTS.matches.hasOwnProperty(team_name)) {
       INPUTS.matches[team_name] = {'df': []};
     }
-    next.matches[team_name].df.forEach(function(match_data) {
+    next[''][team_name].df.forEach(function(match_data) {
       match_data.section_no = parseInt(match_data.section_no) + _length;
       INPUTS.matches[team_name].df.push(match_data);
     });
