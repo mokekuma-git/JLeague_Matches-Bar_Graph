@@ -127,6 +127,11 @@ def read_match_df(_url: str, matches_in_section: int=None) -> pd.DataFrame:
         else:
             match_index_dict[section_no] += 1
         _row['match_index_in_section'] = match_index_dict[section_no]
+
+        # U18高円宮杯プリンス関東リーグでの中止情報は、なぜか 'venueFullName' に入っていたので暫定対応
+        if '【中止】' in _match_data['venueFullName']:
+            _row['status'] = '中止'
+
         result_list.append(_row)
 
     return pd.DataFrame(result_list)
