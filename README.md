@@ -94,10 +94,10 @@ J2, J3のデータもそろえています。
 
 ### どこ情報よ
 Jリーグのデータは、Jリーグのサイトで公開される https://www.jleague.jp/match/section/j1/1/ などから取得しています。  
-変換した結果はこちらです。https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph/blob/main/docs/json/j1_points.json (ほか、J2, J3も)
+変換した結果はこちらです。https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph/blob/main/docs/csv/match_result-J1.csv (ほか、J2, J3も)
 
 ACLのデータは、Yahoo スポーツナビさんのhttps://soccer.yahoo.co.jp/jleague/category/acl/schedule/ から取得しています。  
-こちらの変換結果は、これです。 https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph/blob/main/docs/json/aclgl_points.json
+こちらの変換結果は、これです。 https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph/blob/main/docs/csv/2021_allmatch_result-ACL_GL.csv
 
 取得頻度は、各節の試合終了後にスクリプトで取得しています。  
 データ化、公開してくださる皆様に感謝します。  
@@ -114,11 +114,10 @@ https://jalanjalansepakbola.hatenadiary.com/entry/2016/04/11/165521
 
 
 ## 自分の環境で動かす方法
-docs に置いている、j_points.css  j_points.js j_points.html とjsonディレクトリのファイルをダウンロードして、
-同じディレクトリに置いて、Chromeなどのブラウザで開く (JSONを読むようにしたので、HTTPでないとダメかも (サーバが要る？))
+docs に置いている、j_points.css  j_points.js j_points.html とcsvディレクトリのファイルをダウンロードして、
+同じディレクトリに置いて、Chromeなどのブラウザで開く (CSVを読むようにしたので、HTTPでないとダメかも (サーバが要る？))
 
 これらdocsに置いている例は、なるべく最新のものにするつもりですが、今のところ自動的にアップデートするようにはしていないので、最新のものを確認したい場合は、ご自身でこのプロジェクトを clone して、以下のスクリプトを実行してください (pythonとその他requirements.txtで示すライブラリが必要)
 ```
 python3 src/read_jleague_matches.py
 ```
-
