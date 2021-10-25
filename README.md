@@ -8,6 +8,8 @@ https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/ を見れば、基本�
 
 https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/olympic_points.html オリンピックグループステージの得点表も作ってみました。
 
+https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/wcafc_fq_points.html W杯2022アジア最終予選
+
 (https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/aclgl_points.html ACLのグループステージ)
 
 ## 簡単な説明
