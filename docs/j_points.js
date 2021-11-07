@@ -6,6 +6,7 @@ let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 let TARGET_DATE;
 let BOX_CON;
 let COMPARE_DEBUG = false;
+let RELEGATION_DEBUG = false;
 const MATCH_DATE_SET = [];
 
 const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
@@ -273,6 +274,8 @@ function make_html_column(target_team, team_data) {
   team_data.disp_win = 0; // 最新の勝利数
   team_data.disp_lose = 0; // 最新の敗北数
   team_data.disp_draw = 0; // 最新の引分数
+  team_data.rest_games = {}; // 最新の残り試合・対戦相手
+  team_data.disp_rest_games = {}; // 表示時の残り試合・対戦相手
 
   let match_sort_key;
   if(['first_bottom', 'last_bottom'].includes(document.getElementById('match_sort_key').value)) {
@@ -306,6 +309,10 @@ function make_html_column(target_team, team_data) {
       // 試合が無いので、勝点、得失点差は不変、最大勝ち点は⁺3
       team_data.avlbl_pt += 3;
       team_data.disp_avlbl_pt += 3;
+      if (team_data.rest_games.hasOwnProperty(_row.opponent)) team_data.rest_games[_row.opponent]++;
+      else team_data.rest_games[_row.opponent] = 1;
+      if (team_data.disp_rest_games.hasOwnProperty(_row.opponent)) team_data.disp_rest_games[_row.opponent]++;
+      else team_data.disp_rest_games[_row.opponent] = 1;
     } else {
       // 試合があるので、実際の勝ち点、最大勝ち点、得失点は実際の記録通り
       team_data.point += _row.point;
@@ -331,6 +338,8 @@ function make_html_column(target_team, team_data) {
         box_height = 3;
         // 表示対象ではないので、表示時点のdisp_は勝点、得失点差は不変、最大勝ち点は⁺3
         team_data.disp_avlbl_pt += 3;
+        if (team_data.disp_rest_games.hasOwnProperty(_row.opponent)) team_data.disp_rest_games[_row.opponent]++;
+        else team_data.disp_rest_games[_row.opponent] = 1;
       }
     }
 
@@ -534,34 +543,87 @@ function make_ranktable() {
 
 function make_rankdata() {
   const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
+  const _pre = disp ? 'disp_' : '';
   const team_list = get_sorted_team_list(INPUTS.matches);
   const datalist = [];
+  const relegation_num = SEASON_MAP[get_category()][get_season()][2];
+  // const promotion_num = SEASON_MAP[get_category()][get_season()][1];
+  const remaining_line = get_remaining_line(relegation_num, _pre);
+
   let rank = 0;
   team_list.forEach(function(team_name) {
     rank++;
     const team_data = INPUTS.matches[team_name];
-    const all_game = get_team_attr(team_data, 'win', disp) + get_team_attr(team_data, 'draw', disp) + get_team_attr(team_data, 'lose', disp);
-    datalist.push({
+    const tmp_data = {
       rank: rank,
       name: '<div class="' + team_name + '">' + team_name + '</div>',
       win: get_team_attr(team_data, 'win', disp),
       draw: get_team_attr(team_data, 'draw', disp),
       lose: get_team_attr(team_data, 'lose', disp),
-      all_game: all_game,
       point: get_team_attr(team_data, 'point', disp),
-      points_per_game: (get_team_attr(team_data, 'point', disp) / all_game).toFixed(2),
       avlbl_pt: get_team_attr(team_data, 'avlbl_pt', disp),
       goal_get: get_team_attr(team_data, 'goal_get', disp),
-      goal_lose: get_team_attr(team_data, 'goal_get', disp) - get_team_attr(team_data, 'goal_diff', disp),
       goal_diff: get_team_attr(team_data, 'goal_diff', disp),
-      future_game: team_data.df.length - all_game,
-    });
+    }
+    tmp_data.goal_lose = tmp_data.goal_get - tmp_data.goal_diff;
+    tmp_data.all_game = tmp_data.win + tmp_data.draw + tmp_data.lose;
+    tmp_data.points_per_game = (tmp_data.point / tmp_data.all_game).toFixed(2);
+    tmp_data.future_game = team_data.df.length - tmp_data.all_game;
+    const remaining = tmp_data.point - remaining_line;
+    const self_relegation = tmp_data.avlbl_pt - get_self_relegation_line(relegation_num, team_name, _pre);
+    tmp_data.remaining = (remaining >= 0) ? '確定' : (self_relegation >= 0) ? '自力' : '他力';
+    datalist.push(tmp_data);
   });
   return datalist;
 }
 function get_team_attr(team_data, attr, disp) {
   const prefix = disp ? 'disp_' : '';
   return team_data[prefix + attr];
+}
+function make_point_cache() {
+  // 勝ち点関係データをキャッシュしたobjectを返す (残留争いに得失点差情報は不要)
+  const cache = {};
+  Object.keys(INPUTS.matches).forEach(function(team_name) {
+    const team_data = INPUTS.matches[team_name];  
+    cache[team_name] = {
+      point: team_data.point,
+      avlbl_pt: team_data.avlbl_pt,
+      disp_point: team_data.disp_point,
+      disp_avlbl_pt: team_data.disp_avlbl_pt,
+      rest_games: team_data.rest_games,
+      disp_rest_games: team_data.disp_rest_games
+    };
+  });
+  return cache;
+}
+function get_point_sorted_team_list(_key='point', point_map=null) {
+  // 残留、昇格ラインなどのために、_keyでソートしたチーム名リストを返す (得失点差は無視)
+  // 勝ち点マップを渡さない場合は、現在のテーブル表記に用いるマップを使用
+  // 自力残留計算の場合は、残り試合対象のチームの最大勝ち点を引いたマップを渡して使う
+  if (point_map == null) point_map = INPUTS.matches;
+  return Object.keys(point_map).sort(function(a, b) {return point_map[b][_key] - point_map[a][_key]});
+}
+function get_remaining_line(relegation_num, _pre) {
+  // 残留ラインを返す。この値以上の勝ち点を持っているチームは、残留確定。 
+  let avlbl_pt = _pre + 'avlbl_pt'
+  const avlbl_pt_sorted = get_point_sorted_team_list(avlbl_pt);
+  return INPUTS.matches[avlbl_pt_sorted[avlbl_pt_sorted.length - relegation_num]][avlbl_pt] + 1;
+}
+function get_self_relegation_line(relegation_num, team_name, _pre) {
+  // 自力残留ラインを返す。この値以下の最大勝ち点しかないチームは、降格確定。 
+  const avlbl_pt = _pre + 'avlbl_pt';
+  point_cache = make_point_cache();
+  delete point_cache[team_name];
+  let rest_games = INPUTS.matches[team_name][_pre + 'rest_games'];
+  Object.keys(rest_games).forEach(function (opponent) { // 自力計算では、残り試合の対戦相手はすべて負け前提
+    point_cache[opponent][avlbl_pt] -= 3 * rest_games[opponent]; // 残り試合数×3点分、最大勝ち点を減らす
+  });
+  const point_sorted = get_point_sorted_team_list(avlbl_pt, point_cache);
+  // 自力で全部勝った時に、残留チーム数分のチームよりavlbl_ptで上に立てれば、残留可能性はある
+  // if (RELEGATION_DEBUG) console.log(point_sorted, point_cache);
+  if (RELEGATION_DEBUG) console.log(team_name + ' 残留比較対象チーム: ' + point_sorted[point_sorted.length - relegation_num]);
+  if (RELEGATION_DEBUG) point_sorted.forEach(function(opponent) {console.log(opponent, point_cache[opponent][avlbl_pt]);})
+  return point_cache[point_sorted[point_sorted.length - relegation_num]][avlbl_pt];
 }
 /// //////////////////////////////////////////////////////////// 設定変更
 function set_scale_ev(event) {
