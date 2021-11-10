@@ -546,9 +546,6 @@ function make_rankdata() {
   const _pre = disp ? 'disp_' : '';
   const team_list = get_sorted_team_list(INPUTS.matches);
   const datalist = [];
-  const relegation_num = SEASON_MAP[get_category()][get_season()][2];
-  // const promotion_num = SEASON_MAP[get_category()][get_season()][1];
-  const remaining_line = get_remaining_line(relegation_num, _pre);
 
   let rank = 0;
   team_list.forEach(function(team_name) {
@@ -569,9 +566,18 @@ function make_rankdata() {
     tmp_data.all_game = tmp_data.win + tmp_data.draw + tmp_data.lose;
     tmp_data.points_per_game = (tmp_data.point / tmp_data.all_game).toFixed(2);
     tmp_data.future_game = team_data.df.length - tmp_data.all_game;
-    const remaining = tmp_data.point - remaining_line;
-    const self_relegation = tmp_data.avlbl_pt - get_self_relegation_line(relegation_num, team_name, _pre);
-    tmp_data.remaining = (remaining >= 0) ? '確定' : (self_relegation >= 0) ? '自力' : '他力';
+
+    // 残留計算
+    const relegation_num = SEASON_MAP[get_category()][get_season()][2];
+    // const promotion_rank = SEASON_MAP[get_category()][get_season()][1];
+    if (relegation_num > 0) {
+      const remaining_line = get_remaining_line(relegation_num, _pre);
+      const remaining = tmp_data.point - remaining_line;
+      const self_relegation = tmp_data.avlbl_pt - get_self_relegation_line(relegation_num, team_name, _pre);
+      tmp_data.remaining = (remaining >= 0) ? '確定' : (self_relegation >= 0) ? '自力' : '他力';
+    } else {
+      tmp_data.remaining = 'なし';
+    }
     datalist.push(tmp_data);
   });
   return datalist;
