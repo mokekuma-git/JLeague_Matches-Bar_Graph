@@ -552,8 +552,8 @@ function make_rankdata() {
   // const promotion_rank = SEASON_MAP[get_category()][get_season()][1];
   const silver_line = get_possible_line(1, _pre);
   const champion_line = get_safety_line(1, _pre);
-  const relegation_line = get_possible_line(relegation_rank, _pre);
-  const keepleague_line = get_safety_line(relegation_rank, _pre);
+  const relegation_line = (relegation_num > 0) ? get_possible_line(relegation_rank, _pre) : undefined;
+  const keepleague_line = (relegation_num > 0) ? get_safety_line(relegation_rank, _pre) : undefined;
   const promotion_line = get_safety_line(promotion_num, _pre);
   const nonpromot_line = get_possible_line(promotion_num, _pre);
 
