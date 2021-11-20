@@ -572,10 +572,12 @@ function make_rankdata() {
     const relegation_rank = (all_team_num - relegation_num);
     // const promotion_rank = SEASON_MAP[get_category()][get_season()][1];
     if (relegation_num > 0) {
-      const remaining_line = get_safty_line(relegation_rank, _pre);
+      const remaining_line = get_safety_line(relegation_rank, _pre);
+      const relegation_line = get_possible_line(relegation_rank, _pre);
       const remaining = tmp_data.point - remaining_line;
+      const relegation = tmp_data.avlbl_pt - relegation_line;
       const self_relegation = tmp_data.avlbl_pt - get_self_possible_line(relegation_rank, team_name, _pre);
-      tmp_data.remaining = (remaining >= 0) ? '確定' : (self_relegation >= 0) ? '自力' : '他力';
+      tmp_data.remaining = (remaining >= 0) ? '確定' : (relegation < 0) ? '降格' : (self_relegation >= 0) ? '自力' : '他力';
     } else {
       tmp_data.remaining = 'なし';
     }
@@ -610,20 +612,22 @@ function get_point_sorted_team_list(_key='point', point_map=null) {
   if (point_map == null) point_map = INPUTS.matches;
   return Object.keys(point_map).sort(function(a, b) {return point_map[b][_key] - point_map[a][_key]});
 }
-function get_safty_line(rank, _pre='') {
+function get_safety_line(rank, _pre='') {
   // 現時点でrankの順位を確実にクリア可能な勝ち点を返す。
   // この値以上の勝ち点を持っているチームは、rank以上確定。 
   // 入力のrankは1-based、順位配列のindexは0-basedであることに注意
   let avlbl_pt = _pre + 'avlbl_pt'
   const avlbl_pt_sorted = get_point_sorted_team_list(avlbl_pt);
-  return INPUTS.matches[avlbl_pt_sorted[rank + 1]][avlbl_pt] + 1;
+  if (RELEGATION_DEBUG) console.log(avlbl_pt_sorted[rank], INPUTS.matches[avlbl_pt_sorted[rank]]);
+  return INPUTS.matches[avlbl_pt_sorted[rank]][avlbl_pt] + 1;
 }
 function get_possible_line(rank, team_name, _pre='') {
   // 現時点でrankの順位の可能性がある勝ち点を返す。
   // この値以下の最大勝ち点しかないチームは、rankの順位になれる可能性はない
   const point = _pre + 'point';
   const point_sorted = get_point_sorted_team_list(point);
-  return INPUTS.matches[point_sorted[rank + 1]][avlbl_pt] + 1;
+  if (RELEGATION_DEBUG) console.log(point_sorted[rank - 1], INPUTS.matches[point_sorted[rank + 1]]);
+  return INPUTS.matches[point_sorted[rank - 1]][point];
 }
 function get_self_possible_line(rank, team_name, _pre='') {
   // 現時点でrankの順位の可能性がある勝ち点を返す。
