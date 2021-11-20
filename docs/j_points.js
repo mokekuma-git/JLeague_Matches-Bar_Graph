@@ -581,13 +581,13 @@ function make_rankdata() {
     const silver = tmp_data.avlbl_pt - silver_line;
     const champion = tmp_data.point - champion_line;
     const self_champion = tmp_data.avlbl_pt - get_self_possible_line(1, team_name, _pre);
-    tmp_data.champion = (champion > 0) ? '確定' : (silver < 0) ? 'なし' : (self_champion >= 0) ? '自力' : '他力';
+    tmp_data.champion = (champion >= 0) ? '確定' : (silver < 0) ? 'なし' : (self_champion >= 0) ? '自力' : '他力';
     // 昇格計算
     if (promotion_num > 0) {
       const remaining = tmp_data.avlbl_pt - nonpromot_line;
       const promotion = tmp_data.point - promotion_line;
       const self_promotion = tmp_data.avlbl_pt - get_self_possible_line(promotion_num, team_name, _pre);
-      tmp_data.promotion = (promotion > 0) ? '確定' : (remaining < 0) ? 'なし' : (self_promotion >= 0) ? '自力' : '他力';
+      tmp_data.promotion = (promotion >= 0) ? '確定' : (remaining < 0) ? 'なし' : (self_promotion >= 0) ? '自力' : '他力';
     }
     // 残留計算
     if (relegation_num > 0) {
@@ -633,18 +633,19 @@ function get_safety_line(rank, _pre='') {
   // 現時点でrankの順位を確実にクリア可能な勝ち点を返す。
   // この値以上の勝ち点を持っているチームは、rank以上確定。 
   // 入力のrankは1-based、順位配列のindexは0-basedであることに注意
-  let avlbl_pt = _pre + 'avlbl_pt'
+  const avlbl_pt = _pre + 'avlbl_pt'
   const avlbl_pt_sorted = get_point_sorted_team_list(avlbl_pt);
-  if (RELEGATION_DEBUG) console.log(avlbl_pt_sorted[rank], INPUTS.matches[avlbl_pt_sorted[rank]]);
+  if (RELEGATION_DEBUG) console.log(avlbl_pt_sorted[rank], INPUTS.matches[avlbl_pt_sorted[rank]], avlbl_pt);
   return INPUTS.matches[avlbl_pt_sorted[rank]][avlbl_pt] + 1;
 }
-function get_possible_line(rank, team_name, _pre='') {
+function get_possible_line(rank, _pre='') {
   // 現時点でrankの順位の可能性がある勝ち点を返す。
   // この値以下の最大勝ち点しかないチームは、rankの順位になれる可能性はない
+  rank--; // 0オリジンの rank 位チームに合わせる
   const point = _pre + 'point';
   const point_sorted = get_point_sorted_team_list(point);
-  if (RELEGATION_DEBUG) console.log(point_sorted[rank - 1], INPUTS.matches[point_sorted[rank + 1]]);
-  return INPUTS.matches[point_sorted[rank - 1]][point];
+  if (RELEGATION_DEBUG) console.log(point_sorted[rank], INPUTS.matches[point_sorted[rank]], point);
+  return INPUTS.matches[point_sorted[rank]][point];
 }
 function get_self_possible_line(rank, team_name, _pre='') {
   // 現時点でrankの順位の可能性がある勝ち点を返す。
