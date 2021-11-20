@@ -543,19 +543,18 @@ function make_ranktable() {
 
 function make_rankdata() {
   const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
-  const _pre = disp ? 'disp_' : '';
   const team_list = get_sorted_team_list(INPUTS.matches);
   const datalist = [];
 
   const [all_team_num, promotion_num, relegation_num] = SEASON_MAP[get_category()][get_season()];
   const relegation_rank = (all_team_num - relegation_num);
   // const promotion_rank = SEASON_MAP[get_category()][get_season()][1];
-  const silver_line = get_possible_line(1, _pre);
-  const champion_line = get_safety_line(1, _pre);
-  const relegation_line = (relegation_num > 0) ? get_possible_line(relegation_rank, _pre) : undefined;
-  const keepleague_line = (relegation_num > 0) ? get_safety_line(relegation_rank, _pre) : undefined;
-  const promotion_line = get_safety_line(promotion_num, _pre);
-  const nonpromot_line = get_possible_line(promotion_num, _pre);
+  const silver_line = get_possible_line(1, disp);
+  const champion_line = get_safety_line(1, disp);
+  const relegation_line = (relegation_num > 0) ? get_possible_line(relegation_rank, disp) : undefined;
+  const keepleague_line = (relegation_num > 0) ? get_safety_line(relegation_rank, disp) : undefined;
+  const promotion_line = get_safety_line(promotion_num, disp);
+  const nonpromot_line = get_possible_line(promotion_num, disp);
 
   let rank = 0;
   team_list.forEach(function(team_name) {
@@ -574,26 +573,26 @@ function make_rankdata() {
     }
     tmp_data.goal_lose = tmp_data.goal_get - tmp_data.goal_diff;
     tmp_data.all_game = tmp_data.win + tmp_data.draw + tmp_data.lose;
-    tmp_data.points_per_game = (tmp_data.point / tmp_data.all_game).toFixed(2);
+    tmp_data.points_per_game = ((tmp_data.point == 0) ? 0 : (tmp_data.point / tmp_data.all_game)).toFixed(2);
     tmp_data.future_game = team_data.df.length - tmp_data.all_game;
 
     // 優勝計算
     const silver = tmp_data.avlbl_pt - silver_line;
     const champion = tmp_data.point - champion_line;
-    const self_champion = tmp_data.avlbl_pt - get_self_possible_line(1, team_name, _pre);
+    const self_champion = tmp_data.avlbl_pt - get_self_possible_line(1, team_name, disp);
     tmp_data.champion = (champion >= 0) ? '確定' : (silver < 0) ? 'なし' : (self_champion >= 0) ? '自力' : '他力';
     // 昇格計算
     if (promotion_num > 0) {
       const remaining = tmp_data.avlbl_pt - nonpromot_line;
       const promotion = tmp_data.point - promotion_line;
-      const self_promotion = tmp_data.avlbl_pt - get_self_possible_line(promotion_num, team_name, _pre);
+      const self_promotion = tmp_data.avlbl_pt - get_self_possible_line(promotion_num, team_name, disp);
       tmp_data.promotion = (promotion >= 0) ? '確定' : (remaining < 0) ? 'なし' : (self_promotion >= 0) ? '自力' : '他力';
     }
     // 残留計算
     if (relegation_num > 0) {
       const keepleague = tmp_data.point - keepleague_line;
       const relegation = tmp_data.avlbl_pt - relegation_line;
-      const self_relegation = tmp_data.avlbl_pt - get_self_possible_line(relegation_rank, team_name, _pre);
+      const self_relegation = tmp_data.avlbl_pt - get_self_possible_line(relegation_rank, team_name, disp);
       tmp_data.relegation = (keepleague >= 0) ? '確定' : (relegation < 0) ? '降格' : (self_relegation >= 0) ? '自力' : '他力';
     } else {
       tmp_data.relegation = 'なし';
@@ -629,28 +628,28 @@ function get_point_sorted_team_list(_key='point', point_map=null) {
   if (point_map == null) point_map = INPUTS.matches;
   return Object.keys(point_map).sort(function(a, b) {return point_map[b][_key] - point_map[a][_key]});
 }
-function get_safety_line(rank, _pre='') {
+function get_safety_line(rank, disp=True) {
   // 現時点でrankの順位を確実にクリア可能な勝ち点を返す。
   // この値以上の勝ち点を持っているチームは、rank以上確定。 
   // 入力のrankは1-based、順位配列のindexは0-basedであることに注意
-  const avlbl_pt = _pre + 'avlbl_pt'
+  const avlbl_pt = disp ? 'disp_avlbl_pt' : 'avlbl_pt'
   const avlbl_pt_sorted = get_point_sorted_team_list(avlbl_pt);
   if (RELEGATION_DEBUG) console.log(avlbl_pt_sorted[rank], INPUTS.matches[avlbl_pt_sorted[rank]], avlbl_pt);
   return INPUTS.matches[avlbl_pt_sorted[rank]][avlbl_pt] + 1;
 }
-function get_possible_line(rank, _pre='') {
+function get_possible_line(rank, disp=True) {
   // 現時点でrankの順位の可能性がある勝ち点を返す。
   // この値以下の最大勝ち点しかないチームは、rankの順位になれる可能性はない
   rank--; // 0オリジンの rank 位チームに合わせる
-  const point = _pre + 'point';
+  const point = disp ? 'disp_point' : 'point';
   const point_sorted = get_point_sorted_team_list(point);
   if (RELEGATION_DEBUG) console.log(point_sorted[rank], INPUTS.matches[point_sorted[rank]], point);
   return INPUTS.matches[point_sorted[rank]][point];
 }
-function get_self_possible_line(rank, team_name, _pre='') {
+function get_self_possible_line(rank, team_name, disp=True) {
   // 現時点でrankの順位の可能性がある勝ち点を返す。
   // この値以下の最大勝ち点しかないチームは、rankの順位になれる可能性はない
-  const avlbl_pt = _pre + 'avlbl_pt';
+  const avlbl_pt = disp ? 'disp_avlbl_pt' : 'avlbl_pt'
   // 入力のrankは1-based、順位配列のindexは0-basedであることに注意
   rank--; // 両方0-basedへ
   point_cache = make_point_cache();
@@ -659,7 +658,7 @@ function get_self_possible_line(rank, team_name, _pre='') {
 
   delete point_cache[team_name];
   const point_sorted = get_point_sorted_team_list(avlbl_pt, point_cache);
-  let rest_games = INPUTS.matches[team_name][_pre + 'rest_games'];
+  let rest_games = INPUTS.matches[team_name][disp ? 'disp_rest_games' : 'rest_games'];
   Object.keys(rest_games).forEach(function (opponent) { // 自力計算では、残り試合の対戦相手はすべて負け前提
     point_cache[opponent][avlbl_pt] -= 3 * rest_games[opponent]; // 残り試合数×3点分、最大勝ち点を減らす
   });
