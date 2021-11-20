@@ -568,13 +568,16 @@ function make_rankdata() {
     tmp_data.future_game = team_data.df.length - tmp_data.all_game;
 
     // 残留計算
-    const relegation_num = SEASON_MAP[get_category()][get_season()][2];
+    const [all_team_num, promotion_num, relegation_num] = SEASON_MAP[get_category()][get_season()];
+    const relegation_rank = (all_team_num - relegation_num);
     // const promotion_rank = SEASON_MAP[get_category()][get_season()][1];
     if (relegation_num > 0) {
-      const remaining_line = get_remaining_line(relegation_num, _pre);
+      const remaining_line = get_safety_line(relegation_rank, _pre);
+      const relegation_line = get_possible_line(relegation_rank, _pre);
       const remaining = tmp_data.point - remaining_line;
-      const self_relegation = tmp_data.avlbl_pt - get_self_relegation_line(relegation_num, team_name, _pre);
-      tmp_data.remaining = (remaining >= 0) ? '確定' : (self_relegation >= 0) ? '自力' : '他力';
+      const relegation = tmp_data.avlbl_pt - relegation_line;
+      const self_relegation = tmp_data.avlbl_pt - get_self_possible_line(relegation_rank, team_name, _pre);
+      tmp_data.remaining = (remaining >= 0) ? '確定' : (relegation < 0) ? '降格' : (self_relegation >= 0) ? '自力' : '他力';
     } else {
       tmp_data.remaining = 'なし';
     }
@@ -609,27 +612,45 @@ function get_point_sorted_team_list(_key='point', point_map=null) {
   if (point_map == null) point_map = INPUTS.matches;
   return Object.keys(point_map).sort(function(a, b) {return point_map[b][_key] - point_map[a][_key]});
 }
-function get_remaining_line(relegation_num, _pre) {
-  // 残留ラインを返す。この値以上の勝ち点を持っているチームは、残留確定。 
+function get_safety_line(rank, _pre='') {
+  // 現時点でrankの順位を確実にクリア可能な勝ち点を返す。
+  // この値以上の勝ち点を持っているチームは、rank以上確定。 
+  // 入力のrankは1-based、順位配列のindexは0-basedであることに注意
   let avlbl_pt = _pre + 'avlbl_pt'
   const avlbl_pt_sorted = get_point_sorted_team_list(avlbl_pt);
-  return INPUTS.matches[avlbl_pt_sorted[avlbl_pt_sorted.length - relegation_num]][avlbl_pt] + 1;
+  if (RELEGATION_DEBUG) console.log(avlbl_pt_sorted[rank], INPUTS.matches[avlbl_pt_sorted[rank]]);
+  return INPUTS.matches[avlbl_pt_sorted[rank]][avlbl_pt] + 1;
 }
-function get_self_relegation_line(relegation_num, team_name, _pre) {
-  // 自力残留ラインを返す。この値以下の最大勝ち点しかないチームは、降格確定。 
+function get_possible_line(rank, team_name, _pre='') {
+  // 現時点でrankの順位の可能性がある勝ち点を返す。
+  // この値以下の最大勝ち点しかないチームは、rankの順位になれる可能性はない
+  const point = _pre + 'point';
+  const point_sorted = get_point_sorted_team_list(point);
+  if (RELEGATION_DEBUG) console.log(point_sorted[rank - 1], INPUTS.matches[point_sorted[rank + 1]]);
+  return INPUTS.matches[point_sorted[rank - 1]][point];
+}
+function get_self_possible_line(rank, team_name, _pre='') {
+  // 現時点でrankの順位の可能性がある勝ち点を返す。
+  // この値以下の最大勝ち点しかないチームは、rankの順位になれる可能性はない
   const avlbl_pt = _pre + 'avlbl_pt';
+  // 入力のrankは1-based、順位配列のindexは0-basedであることに注意
+  rank--; // 両方0-basedへ
   point_cache = make_point_cache();
+  const avlbl_pt_list = Object.keys(point_cache).map(function(x){return point_cache[x].avlbl_pt;}).sort().reverse();
+  const self_rank = avlbl_pt_list.indexOf(point_cache[team_name].avlbl_pt);  // チームの最大勝ち点的な順位を得る
+
   delete point_cache[team_name];
+  const point_sorted = get_point_sorted_team_list(avlbl_pt, point_cache);
   let rest_games = INPUTS.matches[team_name][_pre + 'rest_games'];
   Object.keys(rest_games).forEach(function (opponent) { // 自力計算では、残り試合の対戦相手はすべて負け前提
     point_cache[opponent][avlbl_pt] -= 3 * rest_games[opponent]; // 残り試合数×3点分、最大勝ち点を減らす
   });
-  const point_sorted = get_point_sorted_team_list(avlbl_pt, point_cache);
   // 自力で全部勝った時に、残留チーム数分のチームよりavlbl_ptで上に立てれば、残留可能性はある
+  if (RELEGATION_DEBUG) console.log('self_rank, rank: ', self_rank, rank);
   // if (RELEGATION_DEBUG) console.log(point_sorted, point_cache);
-  if (RELEGATION_DEBUG) console.log(team_name + ' 残留比較対象チーム: ' + point_sorted[point_sorted.length - relegation_num]);
+  if (RELEGATION_DEBUG) console.log(team_name + ' 残留比較対象チーム: ' + point_sorted[rank]);
   if (RELEGATION_DEBUG) point_sorted.forEach(function(opponent) {console.log(opponent, point_cache[opponent][avlbl_pt]);})
-  return point_cache[point_sorted[point_sorted.length - relegation_num]][avlbl_pt];
+  return point_cache[point_sorted[rank]][avlbl_pt];
 }
 /// //////////////////////////////////////////////////////////// 設定変更
 function set_scale_ev(event) {
