@@ -595,7 +595,7 @@ function make_rankdata() {
       const self_relegation = tmp_data.avlbl_pt - get_self_possible_line(relegation_rank, team_name, disp);
       tmp_data.relegation = (keepleague >= 0) ? '確定' : (relegation < 0) ? '降格' : (self_relegation >= 0) ? '自力' : '他力';
     } else {
-      tmp_data.relegation = 'なし';
+      tmp_data.relegation = '確定';
     }
     datalist.push(tmp_data);
   });
