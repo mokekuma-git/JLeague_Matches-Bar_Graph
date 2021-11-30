@@ -542,6 +542,12 @@ function make_ranktable(group) {
   sortableTable.setData(make_rankdata(group));
 }
 
+function get_all_restgame() {
+  return Object.values(INPUTS['matches']).reduce(function(res, curr) {
+    // console.log(res);
+    return (res + Object.keys(curr['rest_games']).length);
+  }, 0);  
+}
 function make_rankdata(group) {
   const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
   const team_list = get_sorted_team_list(INPUTS[group]);
@@ -556,6 +562,7 @@ function make_rankdata(group) {
   const keepleague_line = (relegation_num > 0) ? get_safety_line(relegation_rank, disp, group) : undefined;
   const promotion_line = get_safety_line(promotion_num, disp, group);
   const nonpromot_line = get_possible_line(promotion_num, disp, group);
+  const all_game_finished = (get_all_restgame() == 0);
 
   let rank = 0;
   team_list.forEach(function(team_name) {
@@ -577,26 +584,32 @@ function make_rankdata(group) {
     tmp_data.points_per_game = ((tmp_data.point == 0) ? 0 : (tmp_data.point / tmp_data.all_game)).toFixed(2);
     tmp_data.future_game = team_data.df.length - tmp_data.all_game;
 
-    // 優勝計算
-    const silver = tmp_data.avlbl_pt - silver_line;
-    const champion = tmp_data.point - champion_line;
-    const self_champion = tmp_data.avlbl_pt - get_self_possible_line(1, team_name, disp, group);
-    tmp_data.champion = (champion >= 0) ? '確定' : (silver < 0) ? 'なし' : (self_champion >= 0) ? '自力' : '他力';
-    // 昇格計算
-    if (promotion_num > 0) {
-      const remaining = tmp_data.avlbl_pt - nonpromot_line;
-      const promotion = tmp_data.point - promotion_line;
-      const self_promotion = tmp_data.avlbl_pt - get_self_possible_line(promotion_num, team_name, disp, group);
-      tmp_data.promotion = (promotion >= 0) ? '確定' : (remaining < 0) ? 'なし' : (self_promotion >= 0) ? '自力' : '他力';
-    }
-    // 残留計算
-    if (relegation_num > 0) {
-      const keepleague = tmp_data.point - keepleague_line;
-      const relegation = tmp_data.avlbl_pt - relegation_line;
-      const self_relegation = tmp_data.avlbl_pt - get_self_possible_line(relegation_rank, team_name, disp, group);
-      tmp_data.relegation = (keepleague >= 0) ? '確定' : (relegation < 0) ? '降格' : (self_relegation >= 0) ? '自力' : '他力';
+    if (all_game_finished) {
+      tmp_data.champion = (rank <= 1) ? '確定' : 'なし';
+      tmp_data.promotion = (rank <= promotion_num) ? '確定' : 'なし';
+      tmp_data.relegation = (rank <= relegation_rank) ? '確定' : '降格';
     } else {
-      tmp_data.relegation = '確定';
+      // 優勝計算
+      const silver = tmp_data.avlbl_pt - silver_line;
+      const champion = tmp_data.point - champion_line;
+      const self_champion = tmp_data.avlbl_pt - get_self_possible_line(1, team_name, disp, group);
+      tmp_data.champion = (champion >= 0) ? '確定' : (silver < 0) ? 'なし' : (self_champion >= 0) ? '自力' : '他力';
+      // 昇格計算
+      if (promotion_num > 0) {
+        const remaining = tmp_data.avlbl_pt - nonpromot_line;
+        const promotion = tmp_data.point - promotion_line;
+        const self_promotion = tmp_data.avlbl_pt - get_self_possible_line(promotion_num, team_name, disp, group);
+        tmp_data.promotion = (promotion >= 0) ? '確定' : (remaining < 0) ? 'なし' : (self_promotion >= 0) ? '自力' : '他力';
+      }
+      // 残留計算
+      if (relegation_num > 0) {
+        const keepleague = tmp_data.point - keepleague_line;
+        const relegation = tmp_data.avlbl_pt - relegation_line;
+        const self_relegation = tmp_data.avlbl_pt - get_self_possible_line(relegation_rank, team_name, disp, group);
+        tmp_data.relegation = (keepleague >= 0) ? '確定' : (relegation < 0) ? '降格' : (self_relegation >= 0) ? '自力' : '他力';
+      } else {
+        tmp_data.relegation = '確定';
+      }
     }
     datalist.push(tmp_data);
   });
