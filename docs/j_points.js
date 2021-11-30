@@ -138,7 +138,7 @@ function read_inputs(filenames) {
 	  download: true,
     complete: function(results) {
       // console.log(results);
-      append_inputs(parse_csvresults(results.data, results.meta.fields, 'matches'));
+      append_inputs(parse_csvresults(results.data, results.meta.fields, 'matches'), 'matches');
       if (filenames.length == 0) render_bar_graph();
       else read_inputs(filenames);
     }
@@ -204,23 +204,23 @@ function get_point_from_result(goal_get, goal_lose, has_extra=false, pk_get=null
   return 1;
 }
 
-function append_inputs(next) {
+function append_inputs(next, group) {
   // 複数シーズン表示用に、INPUTSの内容に、nextの試合内容を追加
   // 追加するmatches以外は、元のINPUTSの内容を引き継ぐ
   let _length = 0;
   // 奇数チーム数の時、各節にかならず1試合あるとは限らない
   // これまでの節数は、INPUTS内の最大のsection_noを調べて返す必要がある
-  Object.keys(INPUTS.matches).forEach(function(team_name) {
-    const match_data = INPUTS.matches[team_name].df;
+  Object.keys(INPUTS[group]).forEach(function(team_name) {
+    const match_data = INPUTS[group][team_name].df;
     _length = Math.max(_length, parseInt(match_data[match_data.length -1].section_no));
   });
-  Object.keys(next.matches).forEach(function(team_name) {
-    if (! INPUTS.matches.hasOwnProperty(team_name)) {
-      INPUTS.matches[team_name] = {'df': []};
+  Object.keys(next[group]).forEach(function(team_name) {
+    if (! INPUTS[group].hasOwnProperty(team_name)) {
+      INPUTS[group][team_name] = {'df': []};
     }
-    next.matches[team_name].df.forEach(function(match_data) {
+    next[group][team_name].df.forEach(function(match_data) {
       match_data.section_no = parseInt(match_data.section_no) + _length;
-      INPUTS.matches[team_name].df.push(match_data);
+      INPUTS[group][team_name].df.push(match_data);
     });
   });
 }
@@ -439,13 +439,14 @@ function render_bar_graph() {
   MATCH_DATE_SET.push('01/01');
   BOX_CON.innerHTML = '';
   let columns = {};
+  const grp_input = INPUTS['matches']
   let max_avlbl_pt = 0;
-  Object.keys(INPUTS.matches).forEach(function (team_name) {
+  Object.keys(grp_input).forEach(function (team_name) {
     // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
-    columns[team_name] = make_html_column(team_name, INPUTS.matches[team_name]);
+    columns[team_name] = make_html_column(team_name, grp_input[team_name]);
     max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
   });
-  Object.keys(INPUTS.matches).forEach(function (team_name) {
+  Object.keys(grp_input).forEach(function (team_name) {
     columns[team_name].graph = append_space_cols(columns[team_name], max_avlbl_pt);
   });
   MATCH_DATE_SET.sort();
@@ -453,7 +454,7 @@ function render_bar_graph() {
   let insert_point_columns = make_insert_columns(get_category());
   let point_column = make_point_column(max_avlbl_pt);
   BOX_CON.innerHTML += point_column;
-  get_sorted_team_list(INPUTS.matches).forEach(function(team_name, index) {
+  get_sorted_team_list(grp_input).forEach(function(team_name, index) {
     if(insert_point_columns.includes(index))
       BOX_CON.innerHTML += point_column;
     BOX_CON.innerHTML += columns[team_name].graph;
@@ -461,7 +462,7 @@ function render_bar_graph() {
   BOX_CON.innerHTML += point_column;
   set_scale(document.getElementById('scale_slider').value, false, false);
 
-  make_ranktable();
+  make_ranktable('matches');
 }
 
 function get_sorted_team_list(matches) {
@@ -535,32 +536,31 @@ function make_season_pulldown() {
 }
 
 /// //////////////////////////////////////////////////////////// 順位表
-function make_ranktable() {
+function make_ranktable(group) {
   const sortableTable = new SortableTable();
   sortableTable.setTable(document.getElementById('ranktable'));
-  sortableTable.setData(make_rankdata());
+  sortableTable.setData(make_rankdata(group));
 }
 
-function make_rankdata() {
+function make_rankdata(group) {
   const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
-  const _pre = disp ? 'disp_' : '';
-  const team_list = get_sorted_team_list(INPUTS.matches);
+  const team_list = get_sorted_team_list(INPUTS[group]);
   const datalist = [];
 
   const [all_team_num, promotion_num, relegation_num] = SEASON_MAP[get_category()][get_season()];
   const relegation_rank = (all_team_num - relegation_num);
   // const promotion_rank = SEASON_MAP[get_category()][get_season()][1];
-  const silver_line = get_possible_line(1, _pre);
-  const champion_line = get_safety_line(1, _pre);
-  const relegation_line = get_possible_line(relegation_rank, _pre);
-  const keepleague_line = get_safety_line(relegation_rank, _pre);
-  const promotion_line = get_safety_line(promotion_num, _pre);
-  const nonpromot_line = get_possible_line(promotion_num, _pre);
+  const silver_line = get_possible_line(1, disp, group);
+  const champion_line = get_safety_line(1, disp, group);
+  const relegation_line = (relegation_num > 0) ? get_possible_line(relegation_rank, disp, group) : undefined;
+  const keepleague_line = (relegation_num > 0) ? get_safety_line(relegation_rank, disp, group) : undefined;
+  const promotion_line = get_safety_line(promotion_num, disp, group);
+  const nonpromot_line = get_possible_line(promotion_num, disp, group);
 
   let rank = 0;
   team_list.forEach(function(team_name) {
     rank++;
-    const team_data = INPUTS.matches[team_name];
+    const team_data = INPUTS[group][team_name];
     const tmp_data = {
       rank: rank,
       name: '<div class="' + team_name + '">' + team_name + '</div>',
@@ -574,29 +574,29 @@ function make_rankdata() {
     }
     tmp_data.goal_lose = tmp_data.goal_get - tmp_data.goal_diff;
     tmp_data.all_game = tmp_data.win + tmp_data.draw + tmp_data.lose;
-    tmp_data.points_per_game = (tmp_data.point / tmp_data.all_game).toFixed(2);
+    tmp_data.points_per_game = ((tmp_data.point == 0) ? 0 : (tmp_data.point / tmp_data.all_game)).toFixed(2);
     tmp_data.future_game = team_data.df.length - tmp_data.all_game;
 
     // 優勝計算
     const silver = tmp_data.avlbl_pt - silver_line;
     const champion = tmp_data.point - champion_line;
-    const self_champion = tmp_data.avlbl_pt - get_self_possible_line(1, team_name, _pre);
-    tmp_data.champion = (champion > 0) ? '確定' : (silver < 0) ? 'なし' : (self_champion >= 0) ? '自力' : '他力';
+    const self_champion = tmp_data.avlbl_pt - get_self_possible_line(1, team_name, disp, group);
+    tmp_data.champion = (champion >= 0) ? '確定' : (silver < 0) ? 'なし' : (self_champion >= 0) ? '自力' : '他力';
     // 昇格計算
     if (promotion_num > 0) {
       const remaining = tmp_data.avlbl_pt - nonpromot_line;
       const promotion = tmp_data.point - promotion_line;
-      const self_promotion = tmp_data.avlbl_pt - get_self_possible_line(promotion_num, team_name, _pre);
-      tmp_data.promotion = (promotion > 0) ? '確定' : (remaining < 0) ? 'なし' : (self_promotion >= 0) ? '自力' : '他力';
+      const self_promotion = tmp_data.avlbl_pt - get_self_possible_line(promotion_num, team_name, disp, group);
+      tmp_data.promotion = (promotion >= 0) ? '確定' : (remaining < 0) ? 'なし' : (self_promotion >= 0) ? '自力' : '他力';
     }
     // 残留計算
     if (relegation_num > 0) {
       const keepleague = tmp_data.point - keepleague_line;
       const relegation = tmp_data.avlbl_pt - relegation_line;
-      const self_relegation = tmp_data.avlbl_pt - get_self_possible_line(relegation_rank, team_name, _pre);
+      const self_relegation = tmp_data.avlbl_pt - get_self_possible_line(relegation_rank, team_name, disp, group);
       tmp_data.relegation = (keepleague >= 0) ? '確定' : (relegation < 0) ? '降格' : (self_relegation >= 0) ? '自力' : '他力';
     } else {
-      tmp_data.relegation = 'なし';
+      tmp_data.relegation = '確定';
     }
     datalist.push(tmp_data);
   });
@@ -606,11 +606,11 @@ function get_team_attr(team_data, attr, disp) {
   const prefix = disp ? 'disp_' : '';
   return team_data[prefix + attr];
 }
-function make_point_cache() {
+function make_point_cache(group) {
   // 勝ち点関係データをキャッシュしたobjectを返す (残留争いに得失点差情報は不要)
   const cache = {};
-  Object.keys(INPUTS.matches).forEach(function(team_name) {
-    const team_data = INPUTS.matches[team_name];  
+  Object.keys(INPUTS[group]).forEach(function(team_name) {
+    const team_data = INPUTS[group][team_name];
     cache[team_name] = {
       point: team_data.point,
       avlbl_pt: team_data.avlbl_pt,
@@ -622,43 +622,44 @@ function make_point_cache() {
   });
   return cache;
 }
-function get_point_sorted_team_list(_key='point', point_map=null) {
+function get_point_sorted_team_list(_key='point', group, point_map=null) {
   // 残留、昇格ラインなどのために、_keyでソートしたチーム名リストを返す (得失点差は無視)
   // 勝ち点マップを渡さない場合は、現在のテーブル表記に用いるマップを使用
   // 自力残留計算の場合は、残り試合対象のチームの最大勝ち点を引いたマップを渡して使う
-  if (point_map == null) point_map = INPUTS.matches;
+  if (point_map == null) point_map = INPUTS[group];
   return Object.keys(point_map).sort(function(a, b) {return point_map[b][_key] - point_map[a][_key]});
 }
-function get_safety_line(rank, _pre='') {
+function get_safety_line(rank, disp=True, group) {
   // 現時点でrankの順位を確実にクリア可能な勝ち点を返す。
-  // この値以上の勝ち点を持っているチームは、rank以上確定。 
+  // この値以上の勝ち点を持っているチームは、rank以上確定。
   // 入力のrankは1-based、順位配列のindexは0-basedであることに注意
-  let avlbl_pt = _pre + 'avlbl_pt'
-  const avlbl_pt_sorted = get_point_sorted_team_list(avlbl_pt);
-  if (RELEGATION_DEBUG) console.log(avlbl_pt_sorted[rank], INPUTS.matches[avlbl_pt_sorted[rank]]);
-  return INPUTS.matches[avlbl_pt_sorted[rank]][avlbl_pt] + 1;
+  const avlbl_pt = disp ? 'disp_avlbl_pt' : 'avlbl_pt'
+  const avlbl_pt_sorted = get_point_sorted_team_list(avlbl_pt, group);
+  if (RELEGATION_DEBUG) console.log(avlbl_pt_sorted[rank], INPUTS[group][avlbl_pt_sorted[rank]], avlbl_pt);
+  return INPUTS[group][avlbl_pt_sorted[rank]][avlbl_pt] + 1;
 }
-function get_possible_line(rank, team_name, _pre='') {
+function get_possible_line(rank, disp=True, group) {
   // 現時点でrankの順位の可能性がある勝ち点を返す。
   // この値以下の最大勝ち点しかないチームは、rankの順位になれる可能性はない
-  const point = _pre + 'point';
-  const point_sorted = get_point_sorted_team_list(point);
-  if (RELEGATION_DEBUG) console.log(point_sorted[rank - 1], INPUTS.matches[point_sorted[rank + 1]]);
-  return INPUTS.matches[point_sorted[rank - 1]][point];
+  rank--; // 0オリジンの rank 位チームに合わせる
+  const point = disp ? 'disp_point' : 'point';
+  const point_sorted = get_point_sorted_team_list(point, group);
+  if (RELEGATION_DEBUG) console.log(point_sorted[rank], INPUTS[group][point_sorted[rank]], point);
+  return INPUTS[group][point_sorted[rank]][point];
 }
-function get_self_possible_line(rank, team_name, _pre='') {
+function get_self_possible_line(rank, team_name, disp=True, group) {
   // 現時点でrankの順位の可能性がある勝ち点を返す。
   // この値以下の最大勝ち点しかないチームは、rankの順位になれる可能性はない
-  const avlbl_pt = _pre + 'avlbl_pt';
+  const avlbl_pt = disp ? 'disp_avlbl_pt' : 'avlbl_pt'
   // 入力のrankは1-based、順位配列のindexは0-basedであることに注意
   rank--; // 両方0-basedへ
-  point_cache = make_point_cache();
+  point_cache = make_point_cache(group);
   const avlbl_pt_list = Object.keys(point_cache).map(function(x){return point_cache[x].avlbl_pt;}).sort().reverse();
   const self_rank = avlbl_pt_list.indexOf(point_cache[team_name].avlbl_pt);  // チームの最大勝ち点的な順位を得る
 
   delete point_cache[team_name];
-  const point_sorted = get_point_sorted_team_list(avlbl_pt, point_cache);
-  let rest_games = INPUTS.matches[team_name][_pre + 'rest_games'];
+  const point_sorted = get_point_sorted_team_list(avlbl_pt, group, point_cache);
+  let rest_games = INPUTS[group][team_name][disp ? 'disp_rest_games' : 'rest_games'];
   Object.keys(rest_games).forEach(function (opponent) { // 自力計算では、残り試合の対戦相手はすべて負け前提
     point_cache[opponent][avlbl_pt] -= 3 * rest_games[opponent]; // 残り試合数×3点分、最大勝ち点を減らす
   });
