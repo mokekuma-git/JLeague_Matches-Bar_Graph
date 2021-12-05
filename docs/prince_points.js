@@ -147,7 +147,7 @@ function parse_csvresults(data, fields, default_group=null) {
   let group = '';
   data.forEach(function (_match) {
     _i++;
-    if (_match.status == '中止') return;
+    if (_match.status == '試合中止') return;
     group = default_group || _match.group;
     // console.log(_i, group, _match.match_date, _match.home_team, _match.away_team);
     // console.log(_match);
@@ -330,16 +330,16 @@ function make_html_column(target_team, team_data) {
     // INNER_HTMLにHTML直書きはダサい？ コンポーネントごと追加していくスタイルにすべきか
     if(box_height == 3) {
       if(future) {
-        box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
+        box_html = '<div class="tall box"><div class="future bg ' + remove_dot(target_team) + '"></div><p class="tooltip">'
           + make_win_content(_row, match_date)
-          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
+          + '<span class="tooltiptext ' + remove_dot(target_team) + '">(' + _row.section_no + ')</span></p></div>\n';
       } else {
-        box_html = '<div class="tall box"><p class="tooltip ' + target_team + '">' + make_win_content(_row, match_date)
-          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
+        box_html = '<div class="tall box"><p class="tooltip ' + remove_dot(target_team) + '">' + make_win_content(_row, match_date)
+          + '<span class="tooltiptext ' + remove_dot(target_team) + '">(' + _row.section_no + ')</span></p></div>\n';
       }
     } else if(box_height == 1) {
-      box_html = '<div class="short box"><p class="tooltip ' + target_team + '">'
-        + make_draw_content(_row, match_date) + '<span class="tooltiptext full ' + target_team + '">'
+      box_html = '<div class="short box"><p class="tooltip ' + remove_dot(target_team) + '">'
+        + make_draw_content(_row, match_date) + '<span class="tooltiptext full ' + remove_dot(target_team) + '">'
         + make_full_content(_row, match_date) + '</span></p></div>';
       // _row.goal_get + '-' + _row.goal_lose + '<br/>';
     } else if(box_height == 0) {
@@ -349,6 +349,17 @@ function make_html_column(target_team, team_data) {
   });
   const stats = make_team_stats(team_data);
   return {graph: box_list, avlbl_pt: team_data.disp_avlbl_pt, target_team: target_team, lose_box: lose_box, stats: stats};
+}
+
+function remove_dot(team_name) {
+  // スタイルシートのクラス名に使うため、チーム名から '.' を削る
+  // チーム名に空白スペースがある場合、その後ろを削ることにしている
+  // '京都サンガF.C. U-18' -> '京都サンガFC'
+  let removed = team_name;
+  if(team_name.indexOf(' ') > 0) removed = removed.substring(0, team_name.indexOf(' '))
+  removed = removed.replaceAll('\.', '');
+  // console.log('"' + team_name + '" -> "' + removed + '"');
+  return removed;
 }
 
 function make_team_stats(team_data) {
@@ -377,8 +388,8 @@ function append_space_cols(cache, max_avlbl_pt) {
     cache.graph.reverse();
     cache.lose_box.reverse();
   }
-  const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team.substr(0, 7)
-    + '<span class=" tooltiptext full ' + cache.target_team + '">'
+  const team_name = '<div class="short box tooltip ' + remove_dot(cache.target_team) + '">' + cache.target_team.substr(0, 7)
+    + '<span class=" tooltiptext full ' + remove_dot(cache.target_team) + '">'
     + '成績情報:<hr/>' + cache.stats
     + '<hr/>敗戦記録:<hr/>'
     + cache.lose_box.join('<hr/>') + '</span></div>\n';
@@ -526,7 +537,7 @@ function make_rankdata() {
     const all_game = get_team_attr(team_data, 'win', disp) + get_team_attr(team_data, 'draw', disp) + get_team_attr(team_data, 'lose', disp);
     datalist.push({
       rank: rank,
-      name: '<div class="' + team_name + '">' + team_name + '</div>',
+      name: '<div class="' + remove_dot(team_name) + '">' + team_name + '</div>',
       win: get_team_attr(team_data, 'win', disp),
       draw: get_team_attr(team_data, 'draw', disp),
       lose: get_team_attr(team_data, 'lose', disp),

@@ -29,6 +29,16 @@ COMPETITION_CONF = {
         CSV_FILENAME: '../docs/csv/2021_allmatch_result-PrinceKanto.csv',
         GROUP_NAMES: ['']
     },
+    'PrincePremierE': {
+        SCHEDULE_URL: 'https://www.jfa.jp/match/takamado_jfa_u18_premier2021/east/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/2021_allmatch_result-PrincePremierE.csv',
+        GROUP_NAMES: ['']
+    },
+    'PrincePremierW': {
+        SCHEDULE_URL: 'https://www.jfa.jp/match/takamado_jfa_u18_premier2021/west/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/2021_allmatch_result-PrincePremierW.csv',
+        GROUP_NAMES: ['']
+    },
     'WC2022AFC_F': {
         SCHEDULE_URL: 'https://www.jfa.jp/national_team/samuraiblue/worldcup2022/final_q/group{}/match/schedule.json',
         CSV_FILENAME: '../docs/csv/allmatch_result-wc2022afc_final.csv',
@@ -131,7 +141,7 @@ def read_match_df(_url: str, matches_in_section: int=None) -> pd.DataFrame:
         # U18高円宮杯プリンス関東リーグでの中止情報は、なぜか 'venueFullName' に入っていたので暫定対応
         if '【中止】' in _match_data['venueFullName']:
             print('Cancel Game## ' + _match_data['venueFullName'])
-            _row['status'] = '中止'
+            _row['status'] = '試合中止'
         else:
             print('No Cancel## ' + _match_data['venueFullName'])
 
