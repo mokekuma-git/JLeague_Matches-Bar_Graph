@@ -10,6 +10,8 @@ https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/olympic_points.html オ
 
 https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/wcafc_fq_points.html W杯2022アジア最終予選
 
+https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/prince_points.html プリンス関東、プリンスプレミアEAST, WEST
+
 (https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/aclgl_points.html ACLのグループステージ)
 
 ## 簡単な説明
