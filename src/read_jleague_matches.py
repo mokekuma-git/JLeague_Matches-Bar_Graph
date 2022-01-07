@@ -13,7 +13,8 @@ import requests
 PREFERENCE = {}
 PREFERENCE['debug'] = False
 DATE_FORMAT = '%Y%m%d'
-_PREFIX = '../docs/csv/match_result-J'
+SEASON=2022
+CSVFILE_FORMAT = '../docs/csv/{}_allmatch_result-J{}.csv'
 TIMESTAMP_FILE = '../csv/csv_timestamp.csv'
 
 # Jリーグ公開の各節試合情報のURL
@@ -159,7 +160,7 @@ def get_latest_allmatches_filename(category: int) -> str:
     """指定されたカテゴリの最新のCSVファイル名を返す
     ⇒ CSVファイルは常に同一名称に変更 (最新ファイルは毎回上書き)
     """
-    return f'{_PREFIX}{category}.csv'
+    return CSVFILE_FORMAT.format(SEASON, category)
 
 
 def read_latest_allmatches_csv(category: int) -> pd.DataFrame:
@@ -190,7 +191,7 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
 def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
     """試合結果ファイルを実行日を付けた試合データファイルとして保存する
     """
-    filename = f'{_PREFIX}{category}.csv'
+    filename = get_latest_allmatches_filename(category)
     if os.path.exists(TIMESTAMP_FILE):
         timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
     else:
