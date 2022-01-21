@@ -250,7 +250,12 @@
   color: #004471;
   background-color: #65aadd;
 }
-
+.いわき {
+  background: -moz-linear-gradient(top left, #DA0036 40%, #010C44 40%, #010C44 60%, #DA0036 60%);
+  background: -webkit-linear-gradient(top left, #DA0036 40%, #010C44 40%, #010C44 60%, #DA0036 60%);
+  background: linear-gradient(to bottom right, #DA0036 40%, #010C44 40%, #010C44 60%, #DA0036 60%);
+  color: white;
+}
 
 /**************************************************************** Lost Team style definition */
 .横浜Ｆ {
