@@ -17,9 +17,9 @@
 15,2021/11/16,6,14:00,サイダ(レバノン)／Saida International Stadium,レバノン,UAE,試合終了,16,0,1,False,1,A
 16,2021/11/16,6,18:00,アンマン(ヨルダン)／King Abdullah II Stadium,シリア,イラン,試合終了,17,0,3,False,2,A
 17,2021/11/16,6,18:00,ドーハ(カタール)／Thani Bin Jassim Stadium,イラク,韓国,試合終了,18,0,3,False,3,A
-18,2022/01/27,7,19:00,ドバイ(UAE)／Al Maktoum Stadium,UAE,シリア,,19,,,False,1,A
-19,2022/01/27,7,14:00,サイダ(レバノン)／Saida Municipal Stadium,レバノン,韓国,,20,,,False,2,A
-20,2022/01/27,7,18:00,テヘラン(イラン)／Azadi Stadium,イラン,イラク,,21,,,False,3,A
+18,2022/01/27,7,19:00,ドバイ(UAE)／Al Maktoum Stadium,UAE,シリア,試合終了,19,2,0,False,1,A
+19,2022/01/27,7,14:00,サイダ(レバノン)／Saida Municipal Stadium,レバノン,韓国,試合終了,20,0,1,False,2,A
+20,2022/01/27,7,18:00,テヘラン(イラン)／Azadi Stadium,イラン,イラク,試合終了,21,1,0,False,3,A
 21,2022/02/01,8,14:00,サイダ(レバノン)／Saida Municipal Stadium,レバノン,イラク,,22,,,False,1,A
 22,2022/02/01,8,18:00,ドバイ(UAE)／Rashid Stadium,シリア,韓国,,23,,,False,2,A
 23,2022/02/01,8,18:00,テヘラン(イラン)／Azadi Stadium,イラン,UAE,,24,,,False,3,A
@@ -47,7 +47,7 @@
 45,2021/11/16,6,19:00,ハノイ(ベトナム)／My Dinh National Stadium,ベトナム,サウジアラビア,試合終了,16,0,1,False,1,B
 46,2021/11/16,6,20:00,マスカット(オマーン)／Sultan Qaboos Stadium,オマーン,日本,試合終了,17,0,1,False,2,B
 47,2021/11/16,6,19:00,シャルジャ(UAE)／Sharjah Stadium,中国,オーストラリア,試合終了,18,1,1,False,3,B
-48,2022/01/27,7,20:15,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,オマーン,,19,,,False,1,B
+48,2022/01/27,7,20:15,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,オマーン,試合終了,19,1,0,False,1,B
 49,2022/01/27,7,20:10,メルボルン(オーストラリア)／AAMI Park,オーストラリア,ベトナム,試合終了,20,4,0,False,2,B
 50,2022/01/27,7,19:00,埼玉／埼玉スタジアム2002,日本,中国,試合終了,21,2,0,False,3,B
 51,2022/02/01,8,19:00,ハノイ(ベトナム)／My Dinh National Stadium,ベトナム,中国,,22,,,False,1,B
