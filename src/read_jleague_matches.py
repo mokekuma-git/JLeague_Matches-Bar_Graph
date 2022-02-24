@@ -196,6 +196,12 @@ def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
     filename = get_latest_allmatches_filename(category)
     if os.path.exists(TIMESTAMP_FILE):
         timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
+        timestamp['date'] = timestamp['date'].apply(
+            lambda x: x.tz_localize(LOCAL_TZ) if x.tz is None else x.tz_convert(LOCAL_TZ))
+            # タイムゾーン記述がない時間はLOCAL_TZ (東京時間) と解釈
+            # +09:00 などの記述から付くタイムゾーンはpytz.FixedOffset(540)で、
+            # pytz.timezone('Asia/Tokyo')で得られる<DstTzInfo 'Asia/Tokyo' JST+9:00:00 STD>
+            # とは異なるので、tz_convertを使って変換しないと代入時にpandasがWarningを出す
     else:
         timestamp = pd.DataFrame(columns=['date'])
         timestamp.index.name = 'file'
