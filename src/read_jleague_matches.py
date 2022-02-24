@@ -1,10 +1,10 @@
 """Jリーグ各節の試合情報を読み込み、CSVとして取得、保存
 """
 import os
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
+import pytz
 from typing import List, Set, Dict, Any
 import re
-from glob import glob
 import argparse
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -13,6 +13,7 @@ import requests
 PREFERENCE = {}
 PREFERENCE['debug'] = False
 DATE_FORMAT = '%Y%m%d'
+LOCAL_TZ = pytz.timezone('Asia/Tokyo')
 SEASON=2022
 CSVFILE_FORMAT = '../docs/csv/{}_allmatch_result-J{}.csv'
 TIMESTAMP_FILE = '../csv/csv_timestamp.csv'
@@ -197,7 +198,7 @@ def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
     else:
         timestamp = pd.DataFrame(columns=['date'])
         timestamp.index.name = 'file'
-    timestamp.loc[filename] = datetime.now()
+    timestamp.loc[filename] = datetime.now().astimezone(LOCAL_TZ)
     timestamp.to_csv(TIMESTAMP_FILE)
     all_matches.to_csv(filename)
 
@@ -217,7 +218,7 @@ def update_all_matches(category: int, force_update: bool=False) -> pd.DataFrame:
 
     current_matches = read_allmatches_csv(latest_file)
     _start = get_timestamp_from_csv(latest_file)
-    _end = datetime.now()
+    _end = datetime.now().astimezone(LOCAL_TZ)
     print(f'  Check matches finished since {_start}')
     # undecided = get_undecided_section(current_matches)
     need_update = get_sections_to_update(current_matches, _start, _end)
