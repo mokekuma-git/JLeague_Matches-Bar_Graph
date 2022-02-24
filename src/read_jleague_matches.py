@@ -138,6 +138,7 @@ def make_kickoff_time(_subset: pd.DataFrame):
     """
     start_time = _subset['start_time'].str.replace('未定', '00:00')
     result = pd.to_datetime(_subset['match_date'].dt.strftime('%Y/%m/%d ') + start_time) + timedelta(hours=2)
+    result = result.dt.tz_localize(LOCAL_TZ)
     return set(result)
 
 
