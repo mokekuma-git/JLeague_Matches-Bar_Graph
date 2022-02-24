@@ -276,7 +276,6 @@ on:
     - cron: '15 12 28 8 *'
     - cron: '45 12 28 8 *'
 
-
 jobs:
   build:
 
@@ -287,15 +286,18 @@ jobs:
         python-version: [3.9]
 
     steps:
-    - name: Set git config
-      run: |
-        git pull
-        git config --global user.name "mokekuma-git"
-        git config --global user.email "mokekuma.git@gmail.com"
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Set git config
+      run: |
+        git config --global user.name "mokekuma-git"
+        git config --global user.email "mokekuma.git@gmail.com"
+    - name: git checkout
+      uses: actions/checkout@v2
+      with:
+        ref: main
     - name: Install Python dependencies
       uses: py-actions/py-dependency-install@v2
       with:
