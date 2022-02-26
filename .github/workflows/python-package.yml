@@ -302,7 +302,7 @@ jobs:
         path: "requirements.txt"
     - name: Update matches json
       run: |
-        DATE=`date +'%m/%d %H:%M'`
+        DATE=`TZ=JST-9 date +'%m/%d %H:%M'`
         python src/read_jleague_matches.py
         if (git diff --shortstat | grep '[0-9]'); then \
             git add .; \
