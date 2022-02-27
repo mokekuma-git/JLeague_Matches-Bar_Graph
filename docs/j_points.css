@@ -107,16 +107,22 @@ p {
   z-index: 1;
 }
 
-.full {
+.fullW {
   width: 180px;
 }
-.half {
+.halfW {
   width: 90px;
 }
 .live {
-  border-color: red;
-  border-width: thick;
+  border: 5px dashed red;
 }
+/*
+.live_border {
+  background-color: white;
+  border-top: 5px dashed red;
+}
+*/
+
 /* Show the tooltip text when you mouse over the tooltip container */
 .tooltip:hover .tooltiptext {
   visibility: visible;

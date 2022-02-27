@@ -372,7 +372,7 @@ function make_html_column(target_team, team_data) {
       if(future) {
         box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
           + make_win_content(_row, match_date)
-          + '<span class="tooltiptext half ' + target_team
+          + '<span class="tooltiptext ' + target_team
           + '">(' + _row.section_no + ')</span></p></div>\n';
           + ((_row.status != '') ? '<br/>' + _row.status : '')
           + '</span></p></div>\n';
@@ -380,7 +380,7 @@ function make_html_column(target_team, team_data) {
         box_html = '<div class="tall box'
           + (_row.live ? ' live' : '') + '"><p class="tooltip '
           + target_team + '">' + make_win_content(_row, match_date)
-          + '<span class="tooltiptext half ' + target_team + '">(' + _row.section_no + ')'
+          + '<span class="tooltiptext halfW ' + target_team + '">(' + _row.section_no + ')'
           + ((_row.status != '') ? '<br/>' + _row.status : '')
           + '</span></p></div>\n';
       }
@@ -388,12 +388,16 @@ function make_html_column(target_team, team_data) {
       box_html = '<div class="short box'
         + (_row.live ? ' live' : '')
         + '"><p class="tooltip ' + target_team + '">'
-        + make_draw_content(_row, match_date) + '<span class="tooltiptext full ' + target_team + '">'
+        + make_draw_content(_row, match_date) + '<span class="tooltiptext fullW ' + target_team + '">'
         + make_full_content(_row, match_date)
         + ((_row.status != '') ? '<br/>' + _row.status : '')
         + '</span></p></div>';
     } else if(box_height == 0) {
-      lose_box.push(make_full_content(_row, match_date));
+      var lose_content = make_full_content(_row, match_date);
+      if (_row.live) {
+        lose_content = '<div class="live">' + lose_content + '<br/>' + _row.status + '</div>';
+      }
+      lose_box.push(lose_content);
     }
     box_list.push(box_html);
   });
@@ -428,11 +432,21 @@ function append_space_cols(cache, max_avlbl_pt) {
     cache.lose_box.reverse();
   }
   const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
-    + '<span class=" tooltiptext full ' + cache.target_team + '">'
+    + '<span class=" tooltiptext fullW ' + cache.target_team + '">'
     + '成績情報:<hr/>' + cache.stats
     + '<hr/>敗戦記録:<hr/>'
-    + cache.lose_box.join('<hr/>') + '</span></div>\n';
+    + join_lose_box(cache.lose_box) + '</span></div>\n';
   return '<div id="' + cache.target_team + '_column">' + team_name + cache.graph.join('') + team_name + '</div>\n\n';
+}
+function join_lose_box(lose_box) {
+  // なかなか負けている試合のライブ強調がうまく行かなかったので、上段を強調しようとしたが、
+  // わりあい強調できてきたので、いったん保留
+  // if(lose_box.length > 0 && lose_box[lose_box.length - 1].indexOf('<div class="live">') >= 0) {
+  //   console.log(lose_box);
+  //   var last_live = lose_box.pop();
+  //   return lose_box.join('<hr/>') + '<hr class="live_border"/>' + last_live;
+  // }
+  return lose_box.join('<hr/>');
 }
 
 function make_win_content(_row, match_date) {
