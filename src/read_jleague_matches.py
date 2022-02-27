@@ -85,6 +85,10 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
             match_dict['away_goal'] = _tr.find('td', class_='point leftside').text.strip()
             match_dict['away_team'] = _tr.find('td', class_='clubName leftside').text.strip()
             # str_match_date = (match_date.strftime("%Y/%m/%d") if match_date else '未定')
+
+            _status = _tr.find('td', class_='status')
+            match_dict['status'] = _status.text.strip().replace('\n', '') if _status is not None else '不明'
+
             if PREFERENCE['debug']:
                 print(match_dict)
             result_list.append(match_dict)
