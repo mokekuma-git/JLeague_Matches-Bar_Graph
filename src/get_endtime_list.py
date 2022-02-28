@@ -1,4 +1,10 @@
+"""read_jleague_matches.pyで読んだリーグのスケジュールから試合時間を取り出し、Workflowで使うcron形式の並びにそろえる。
+
+githubのworkflowはUTCで時間を扱うので、その分修正。
+"""
+
 from datetime import timedelta
+
 import pandas as pd
 
 _df = []

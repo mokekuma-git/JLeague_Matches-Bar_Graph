@@ -3,11 +3,11 @@
 年度指定もできるようにする。
 """
 import re
-import pandas as pd
 import json
-import requests
 import argparse
 from typing import Dict, Any
+import pandas as pd
+import requests
 
 SCHEDULE_URL = 'URL'
 CSV_FILENAME = 'CSV'
@@ -19,11 +19,11 @@ COMPETITION_CONF = {
         CSV_FILENAME: '../docs/csv/2021_allmatch_result-Olympic_GS.csv',
         GROUP_NAMES: ['A', 'B', 'C', 'D']
     },
-#    'ACL2021GL': {
-#        SCHEDULE_URL: 'http://www.jfa.jp/match/acl_2021/group{}/match/schedule.json',
-#        CSV_FILENAME: '../docs/csv/2021_allmatch_result-ACL_GL.csv',
-#        GROUP_NAMES: ['G', 'H', 'I', 'J']
-#    }, # A~Fのグループ情報が無い
+    # 'ACL2021GL': {
+    #     SCHEDULE_URL: 'http://www.jfa.jp/match/acl_2021/group{}/match/schedule.json',
+    #     CSV_FILENAME: '../docs/csv/2021_allmatch_result-ACL_GL.csv',
+    #     GROUP_NAMES: ['G', 'H', 'I', 'J']
+    # }, # A~Fのグループ情報が無い
     'PrinceKanto': {
         SCHEDULE_URL: 'https://www.jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2021/match/schedule.json',
         CSV_FILENAME: '../docs/csv/2021_allmatch_result-PrinceKanto.csv',
@@ -67,13 +67,15 @@ SCORE_DATA_KEY_LIST = {
     'extraTime': 'exMatch'
 }
 
+
 def read_match_json(_url: str) -> Dict[str, Any]:
     """指定したURLの試合リスト情報をjfaのJSON形式で返す
     """
     print(f'access {_url}...')
     return json.loads(requests.get(_url).text)
 
-def read_match_df(_url: str, matches_in_section: int=None) -> pd.DataFrame:
+
+def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
     """各グループの試合リスト情報を自分たちのDataFrame形式で返す
     JFA形式のJSONは、1試合の情報が下記のような内容
     {'matchTypeName': '第1節',
@@ -127,9 +129,9 @@ def read_match_df(_url: str, matches_in_section: int=None) -> pd.DataFrame:
         _regexp_result = SECTION_NO.match(_row['section_no'])
         if _regexp_result:
             section_no = _regexp_result[1]
-        elif matches_in_section is not None: # 節数の記載が無く、節ごとの試合数が分かっている時は計算
+        elif matches_in_section is not None:  # 節数の記載が無く、節ごとの試合数が分かっている時は計算
             section_no = int(_count / matches_in_section) + 1
-        else: # 節数不明
+        else:  # 節数不明
             section_no = 0
         _row['section_no'] = section_no
         if section_no not in match_index_dict:
@@ -170,7 +172,7 @@ def make_args() -> argparse.Namespace:
     """引数チェッカ
     """
     parser = argparse.ArgumentParser(
-        description='read_jfamatches.py\n' + \
+        description='read_jfamatches.py\n'
                     'JFAで公開される各大会の試合情報を読み込んでCSVを作成')
 
     parser.add_argument('competition', metavar='COMP', type=str, nargs='?',

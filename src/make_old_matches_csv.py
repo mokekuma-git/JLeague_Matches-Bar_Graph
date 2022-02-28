@@ -2,9 +2,7 @@
 """
 from typing import Dict
 from glob import glob
-import re
 import pandas as pd
-from read_jleague_matches import read_allmatches_csv
 
 LEAGUE_NAME = [['Ｊ１', 'Ｊ１ １ｓｔ', 'Ｊ１ ２ｎｄ', 'Ｊ１ サントリー', 'Ｊ１ ＮＩＣＯＳ'], ['Ｊ２'], ['Ｊ３']]
 SEASON_SUFFIX = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -55,20 +53,22 @@ def make_each_csv(filename: str, category: int) -> Dict[str, pd.DataFrame]:
         season_start = {}
         for _name in season_names:
             season_start[_name] = matches[matches['大会'] == _name]['試合日'].iat[0]
-        #print(season_start)
-        for (_i, _season) in enumerate(sorted(season_start.items(), key=lambda x:x[1])):
+        # print(season_start)
+        for (_i, _season) in enumerate(sorted(season_start.items(), key=lambda x: x[1])):
             season_dict[str(year) + SEASON_SUFFIX[_i]] = _season[0]
     else:
         season_dict[str(year)] = season_names[0]
     print(season_dict)
 
-    matches['match_date'] = matches['年度'].astype(str) + '/' + matches['試合日'].str.replace(r'\(.+\)', '', regex=True)
-    matches['section_no'] = matches['節'].str.replace('第', '', regex=False).replace('節.*', '', regex=True).astype('int')
+    matches['match_date'] = matches['年度'].astype(str) + \
+        '/' + matches['試合日'].str.replace(r'\(.+\)', '', regex=True)
+    matches['section_no'] = matches['節'].str.replace('第', '', regex=False) \
+        .replace('節.*', '', regex=True).astype('int')
     matches = matches.rename(columns=RENAME_DICT)
     matches['home_goal'] = matches['スコア'].str.replace(r'\-.*$', '', regex=True)
     matches['away_goal'] = matches['スコア'].str.replace(r'^\d+\-', '', regex=True)
     columns_list = COLUMNS_LIST.copy()
-    if year <= 1998: # 1998年まではPKのルールがあった
+    if year <= 1998:  # 1998年まではPKのルールがあった
         matches['away_goal'] = matches['away_goal'].str.replace(r'\(PK.*', '', regex=True)
         matches['home_pk'] = matches['スコア'].str.extract(r'\(PK(\d+)\-', expand=False)
         matches['home_pk'].fillna('')
@@ -93,5 +93,5 @@ def make_each_csv(filename: str, category: int) -> Dict[str, pd.DataFrame]:
 if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    for category in [1, 2, 3]:
-        make_old_matches_csv(category)
+    for _category in [1, 2, 3]:
+        make_old_matches_csv(_category)

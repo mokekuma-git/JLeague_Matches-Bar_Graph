@@ -2,12 +2,10 @@
 """
 import sys
 import re
-import pandas as pd
 from typing import Dict, Any, List
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-sys.path.append('../src/')
-from read_jleague_matches import read_allmatches_csv
 
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31159/{}/'
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
@@ -42,12 +40,12 @@ def parse_match_result_data(text: str) -> Dict[str, str]:
     # 3-1 のようにスペースが無いテキストが来てもOKなように
     text = text.replace('-', ' - ')
     result_list = text.split()
-    if len(result_list) <= 3: # "- 試合前" スタイル
+    if len(result_list) <= 3:  # "- 試合前" スタイル
         home_goal = ''
         away_goal = ''
         # result_list[0] は '-'
         match_status = result_list[1]
-    else: # "3 - 1\n試合終了" スタイル
+    else:  # "3 - 1\n試合終了" スタイル
         home_goal = result_list[0]
         # result_list[2] は '-'
         away_goal = result_list[2]
@@ -77,7 +75,7 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
             # 日時 (4/16（金）\n4:00)
             match_dict.update(parse_match_date_data(td_list[0].text))
             # 節 (第3節)
-            match_dict['section_no'] = re.search('\d+', td_list[1].text)[0]
+            match_dict['section_no'] = re.search(r'\d+', td_list[1].text)[0]
             # ホームチーム (アルヒラル)
             match_dict['home_team'] = td_list[2].text.strip()
             # 試合結果 (2 - 2\n試合終了)
@@ -103,5 +101,6 @@ if __name__ == '__main__':
         for section in SECTION_ID_LIST:
             match_df = pd.concat([match_df, pd.DataFrame(read_match(section))])
 
-        match_df = match_df.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
+        match_df = match_df.sort_values(['section_no', 'match_index_in_section']) \
+            .reset_index(drop=True)
         match_df.to_csv(CSV_FILENAME)
