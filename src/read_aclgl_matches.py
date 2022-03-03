@@ -1,13 +1,15 @@
-"""2021 ACLグループステージの試合情報を読み込んでCSV, JSO化
-"""
-import sys
+"""2021 ACLグループステージの試合情報を読み込んでCSV, JSO化"""
 import re
-import pandas as pd
-from typing import Dict, Any, List
-import requests
+import sys
+from typing import Any
+from typing import Dict
+from typing import List
+
 from bs4 import BeautifulSoup
-sys.path.append('../src/')
-from read_jleague_matches import read_allmatches_csv
+
+import pandas as pd
+
+import requests
 
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31159/{}/'
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
@@ -17,6 +19,7 @@ JSON_FILENAME = '../docs/json/aclgl_points.json'
 
 def read_match(section_id: str) -> List[Dict[str, Any]]:
     """スポーツナビサイトから指定された節の各グループの試合リスト情報を読んで返す
+
     1節～6節は、それぞれSECTION_ID_LISTに対応
     """
     _url = ACL_MATCH_URL.format(section_id)
@@ -26,7 +29,8 @@ def read_match(section_id: str) -> List[Dict[str, Any]]:
 
 
 def parse_match_date_data(text: str) -> Dict[str, str]:
-    """ "日付(改行)時間" (4/16（金）\n4:00 など) を日付と時間に分けて返す
+    r"""与えられた "日付(改行)時間" (4/16（金）\n4:00 など) を日付と時間に分けて返す
+
     フォーマットは、match_date, start_timeをキーとしたDict形式
     """
     (match_date, start_time) = text.split()
@@ -36,18 +40,19 @@ def parse_match_date_data(text: str) -> Dict[str, str]:
 
 
 def parse_match_result_data(text: str) -> Dict[str, str]:
-    """ 勝敗結果データ ("3 - 1\n試合終了" や "- 試合前" など) をゴール数と状態に分けて返す
+    r"""勝敗結果データ ("3 - 1\n試合終了" や "- 試合前" など) をゴール数と状態に分けて返す
+
     フォーマットは、home_goal, away_goal, statusをキーとしたDict形式
     """
     # 3-1 のようにスペースが無いテキストが来てもOKなように
     text = text.replace('-', ' - ')
     result_list = text.split()
-    if len(result_list) <= 3: # "- 試合前" スタイル
+    if len(result_list) <= 3:  # "- 試合前" スタイル
         home_goal = ''
         away_goal = ''
         # result_list[0] は '-'
         match_status = result_list[1]
-    else: # "3 - 1\n試合終了" スタイル
+    else:  # "3 - 1\n試合終了" スタイル
         home_goal = result_list[0]
         # result_list[2] は '-'
         away_goal = result_list[2]
@@ -57,8 +62,7 @@ def parse_match_result_data(text: str) -> Dict[str, str]:
 
 
 def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
-    """各グループの試合リスト情報をHTML内容から読み取る
-    """
+    """各グループの試合リスト情報をHTML内容から読み取る"""
     result_list = []
 
     match_groups = soup.find_all('section', class_='sc-modCommon01')
@@ -77,7 +81,7 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
             # 日時 (4/16（金）\n4:00)
             match_dict.update(parse_match_date_data(td_list[0].text))
             # 節 (第3節)
-            match_dict['section_no'] = re.search('\d+', td_list[1].text)[0]
+            match_dict['section_no'] = re.search(r'\d+', td_list[1].text)[0]
             # ホームチーム (アルヒラル)
             match_dict['home_team'] = td_list[2].text.strip()
             # 試合結果 (2 - 2\n試合終了)
@@ -103,5 +107,6 @@ if __name__ == '__main__':
         for section in SECTION_ID_LIST:
             match_df = pd.concat([match_df, pd.DataFrame(read_match(section))])
 
-        match_df = match_df.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
+        match_df = match_df.sort_values(['section_no', 'match_index_in_section']) \
+            .reset_index(drop=True)
         match_df.to_csv(CSV_FILENAME)
