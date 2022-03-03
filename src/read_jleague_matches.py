@@ -1,13 +1,20 @@
-"""Jリーグ各節の試合情報を読み込み、CSVとして取得、保存
-"""
-import os
-from datetime import datetime, timedelta
-import re
+"""Jリーグ各節の試合情報を読み込み、CSVとして取得、保存"""
 import argparse
-from typing import List, Set, Dict, Any
-import pytz
-import pandas as pd
+from datetime import datetime
+from datetime import timedelta
+import os
+import re
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Set
+
 from bs4 import BeautifulSoup
+
+import pandas as pd
+
+import pytz
+
 import requests
 
 PREFERENCE = {}
@@ -26,8 +33,7 @@ STANDING_URL_FORMAT = 'https://www.jleague.jp/standings/j{}/'
 
 
 def read_teams(category: int):
-    """各カテゴリのチームリストを返す
-    """
+    """各カテゴリのチームリストを返す"""
     _url = STANDING_URL_FORMAT.format(category)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url).text, 'lxml')
@@ -35,8 +41,7 @@ def read_teams(category: int):
 
 
 def read_teams_from_web(soup: BeautifulSoup, category: int) -> List[str]:
-    """Jリーグの順位情報からチームリストを読み込んで返す
-    """
+    """Jリーグの順位情報からチームリストを読み込んで返す"""
     standings = soup.find('table', class_=f'J{category}table')
     if not standings:
         print(f'Can\'t find J{category} teams...')
@@ -46,8 +51,7 @@ def read_teams_from_web(soup: BeautifulSoup, category: int) -> List[str]:
 
 
 def read_match(category: int, sec: int) -> pd.DataFrame:
-    """指定されたカテゴリの指定された1つの節をデータをWebから読み込む
-    """
+    """指定されたカテゴリの指定された1つの節をデータをWebから読み込む"""
     _url = SOURCE_URL_FORMAT.format(category, sec)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url).text, 'lxml')
@@ -55,8 +59,7 @@ def read_match(category: int, sec: int) -> pd.DataFrame:
 
 
 def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
-    """Jリーグの各節の試合情報リストから内容を読み込んで返す
-    """
+    """Jリーグの各節の試合情報リストから内容を読み込んで返す"""
     result_list = []
 
     match_sections = soup.find_all('section', class_='matchlistWrap')
@@ -99,14 +102,12 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
 
 
 def read_all_matches(category: int) -> pd.DataFrame:
-    """指定されたカテゴリの全て試合をWeb経由で読み込む
-    """
+    """指定されたカテゴリの全て試合をWeb経由で読み込む"""
     return read_matches_range(category)
 
 
 def read_matches_range(category: int, _range: List[int] = None) -> pd.DataFrame:
-    """指定されたカテゴリの指定された節リストのデータをWebから読み込む
-    """
+    """指定されたカテゴリの指定された節リストのデータをWebから読み込む"""
     _matches = pd.DataFrame()
     if not _range:
         teams_count = len(read_teams(category))
@@ -124,13 +125,13 @@ def read_matches_range(category: int, _range: List[int] = None) -> pd.DataFrame:
 
 
 def get_undecided_section(all_matches: pd.DataFrame) -> Set[str]:
-    """開催日未定の節を返す
-    """
+    """開催日未定の節を返す"""
     return set(all_matches[all_matches['match_date'].isnull()]['section_no'])
 
 
 def get_match_dates_of_section(all_matches: pd.DataFrame) -> Dict[str, Set[pd.Timestamp]]:
     """各節の開催日リストを返す
+
     開催日未定の試合は無視
     """
     return all_matches.dropna(subset=['match_date']).groupby('section_no').apply(make_kickoff_time)
@@ -138,6 +139,7 @@ def get_match_dates_of_section(all_matches: pd.DataFrame) -> Dict[str, Set[pd.Ti
 
 def make_kickoff_time(_subset: pd.DataFrame):
     """与えられた試合データから、キックオフ時間を作成し、その2時間後 (試合終了時間想定) のセットを返す
+
     与えられる試合データは同一節のものと想定
     試合開始時間未定の場合は 00:00 キックオフと考える
     同一時間を複数返さないようにするためのセット化を実施
@@ -151,8 +153,7 @@ def make_kickoff_time(_subset: pd.DataFrame):
 
 def get_sections_to_update(all_matches: pd.DataFrame,
                            _start: pd.Timestamp, _end: pd.Timestamp) -> Set[str]:
-    """startからendまでの対象期間に、試合が終了した節のセットを返す
-    """
+    """startからendまでの対象期間に、試合が終了した節のセットを返す"""
     target_sec = set()
     for (_sec, _dates) in get_match_dates_of_section(all_matches).items():
         for _date in _dates:
@@ -167,13 +168,15 @@ def get_sections_to_update(all_matches: pd.DataFrame,
 
 def get_latest_allmatches_filename(category: int) -> str:
     """指定されたカテゴリの最新のCSVファイル名を返す
-    ⇒ CSVファイルは常に同一名称に変更 (最新ファイルは毎回上書き)
+
+    CSVファイルは常に同一名称に変更 (最新ファイルは毎回上書き)
     """
     return CSVFILE_FORMAT.format(SEASON, category)
 
 
 def read_latest_allmatches_csv(category: int) -> pd.DataFrame:
     """指定されたカテゴリの最新のCSVファイルを読み込んでDataFrameで返す
+
     該当ファイルが一つもない場合はエラー
     """
     return read_allmatches_csv(get_latest_allmatches_filename(category))
@@ -181,6 +184,8 @@ def read_latest_allmatches_csv(category: int) -> pd.DataFrame:
 
 def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
     """read_jleague_matches.py が書き出した結果のCSVファイルを読み込んでDataFrame構造を再現
+
+    Arguments:
         matches_file: 読み込むファイル名
     """
     print('match file "' + matches_file + '" reading.')
@@ -198,8 +203,7 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
 
 
 def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
-    """試合結果ファイルを実行日を付けた試合データファイルとして保存する
-    """
+    """試合結果ファイルを実行日を付けた試合データファイルとして保存する"""
     filename = get_latest_allmatches_filename(category)
     if os.path.exists(TIMESTAMP_FILE):
         timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
@@ -219,6 +223,7 @@ def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
 
 def update_all_matches(category: int, force_update: bool = False) -> pd.DataFrame:
     """これまでに読み込んだ試合データからの差分をWeb経由で読み込んで、差分を上書きした結果を返す
+
     該当ファイルが一つもない場合は、全試合のデータをWeb経由で読み込む
     試合データに変化があった場合は、実行日を付けた試合データファイルを保存する
     """
@@ -244,16 +249,15 @@ def update_all_matches(category: int, force_update: bool = False) -> pd.DataFram
     old_matches = current[current['section_no'].isin(need_update)]
     if compare_matches(diff_matches, old_matches):
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \
-                                .sort_values(['section_no', 'match_index_in_section']) \
-                                .reset_index(drop=True)
+                        .sort_values(['section_no', 'match_index_in_section']) \
+                        .reset_index(drop=True)
         store_all_matches(new_matches, category)
         return new_matches
     return None
 
 
 def compare_matches(foo_df, bar_df) -> bool:
-    """試合情報を比較
-    """
+    """試合情報を比較"""
     _foo = foo_df.drop(columns=['match_index_in_section'])
     _bar = bar_df.drop(columns=['match_index_in_section'])
     _foo = _foo.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
@@ -279,8 +283,7 @@ def compare_matches(foo_df, bar_df) -> bool:
 
 
 def get_timestamp_from_csv(filename: str) -> datetime:
-    """試合データ更新日CSVから、取得日時を読みだす
-    """
+    """試合データ更新日CSVから、取得日時を読みだす"""
     if os.path.exists(TIMESTAMP_FILE):
         timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
         timestamp = timestamp[~timestamp.index.duplicated(keep="first")]
@@ -291,9 +294,10 @@ def get_timestamp_from_csv(filename: str) -> datetime:
 
 
 def parse_range_list(args: str) -> Set[int]:
-    """引数をパースする
-        数値と、"数値-数値" の形式を受け取り、範囲全体の数値リストに変換
-        1-3 -> [1, 2, 3]
+    """引数リストをパースする
+
+    数値と、"数値-数値" の形式のリストを受け取り、全要素の和集合を作成する
+    1-3 5 7-10 -> [1, 2, 3, 5, 7, 8, 9, 10]
     """
     result = set()
     for arg in args:
@@ -303,8 +307,9 @@ def parse_range_list(args: str) -> Set[int]:
 
 def parse_range(arg: str) -> Set[int]:
     """引数をパースする
-        数値と、"数値-数値" の形式を受け取り、範囲全体の数値リストに変換
-        1-3 -> [1, 2, 3]
+
+    数値と、"数値-数値" の形式を受け取り、範囲全体の数値リストに変換
+    1-3 -> [1, 2, 3]
     """
     match = re.match(r'(\d)\-(\d)', arg)
     if match:
@@ -313,8 +318,7 @@ def parse_range(arg: str) -> Set[int]:
 
 
 def make_args() -> argparse.Namespace:
-    """引数チェッカ
-    """
+    """引数チェッカ"""
     parser = argparse.ArgumentParser(
         description='read_jleague_matches.py\n'
                     'Jリーグの各カテゴリの試合情報を読み込んでCSV化し、JSONファイルを作成')

@@ -1,15 +1,18 @@
-"""Jリーグデータサイトから、各年の全試合データを取得して保存
-"""
+"""Jリーグデータサイトから、各年の全試合データを取得して保存"""
 import re
-import pandas as pd
-import requests
+
 from bs4 import BeautifulSoup
+
+import pandas as pd
+
+import requests
 
 MATCH_CARD_ID = re.compile(r'/SFMS02/\?match_card_id=(\d+)')
 
 
 def read_href(td_tag) -> str:
     """取得した試合結果を表すtdタグ内容から、リンク先のhrefを取得し、match_card_idを返す
+
     リンクが設定されていない時は、Noneを返す
     """
     a_tag = td_tag.find('a')
@@ -22,6 +25,7 @@ def read_href(td_tag) -> str:
 
 def store_year_data(_year: int) -> None:
     """与えられた年のJリーグ試合データを取得し、DataFrame化してファイル保存
+
     試合結果列にaタグでリンクが張られていた場合は、試合IDを読み取って列に加える
     """
     print(_year)

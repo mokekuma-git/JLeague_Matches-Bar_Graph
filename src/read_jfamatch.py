@@ -1,12 +1,16 @@
 """JFAが公開する試合情報を読み込んでCSV化
+
 まずは、プリンス関東のデータを読み込む仕様として、今後パラメータ選択でいろいろなカテゴリを読みに行く作りに変更
 年度指定もできるようにする。
 """
-import re
-import json
 import argparse
-from typing import Dict, Any
+import json
+import re
+from typing import Any
+from typing import Dict
+
 import pandas as pd
+
 import requests
 
 SCHEDULE_URL = 'URL'
@@ -69,14 +73,14 @@ SCORE_DATA_KEY_LIST = {
 
 
 def read_match_json(_url: str) -> Dict[str, Any]:
-    """指定したURLの試合リスト情報をjfaのJSON形式で返す
-    """
+    """指定したURLの試合リスト情報をjfaのJSON形式で返す"""
     print(f'access {_url}...')
     return json.loads(requests.get(_url).text)
 
 
 def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
     """各グループの試合リスト情報を自分たちのDataFrame形式で返す
+
     JFA形式のJSONは、1試合の情報が下記のような内容
     {'matchTypeName': '第1節',
      'matchNumber': '1',  # どうやら、Competitionで通しの番号
@@ -153,8 +157,7 @@ def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
 
 
 def read_group(competition: str) -> None:
-    """指定された大会のグループ全体を読み込んでCSV化
-    """
+    """指定された大会のグループ全体を読み込んでCSV化"""
     match_df = pd.DataFrame()
     for group in COMPETITION_CONF[competition][GROUP_NAMES]:
         _mis = None
@@ -169,8 +172,7 @@ def read_group(competition: str) -> None:
 
 
 def make_args() -> argparse.Namespace:
-    """引数チェッカ
-    """
+    """引数チェッカ"""
     parser = argparse.ArgumentParser(
         description='read_jfamatches.py\n'
                     'JFAで公開される各大会の試合情報を読み込んでCSVを作成')

@@ -1,7 +1,7 @@
-"""過去のJリーグデータを元に、2020年以前の勝敗データをJSON化して保存
-"""
-from typing import Dict
+"""過去のJリーグデータを元に、2020年以前の勝敗データをJSON化して保存"""
 from glob import glob
+from typing import Dict
+
 import pandas as pd
 
 LEAGUE_NAME = [['Ｊ１', 'Ｊ１ １ｓｔ', 'Ｊ１ ２ｎｄ', 'Ｊ１ サントリー', 'Ｊ１ ＮＩＣＯＳ'], ['Ｊ２'], ['Ｊ３']]
@@ -19,8 +19,7 @@ COLUMNS_LIST = ['match_date', 'section_no', 'match_index_in_section', 'start_tim
 
 
 def make_old_matches_csv(category: int) -> None:
-    """指定カテゴリの1993年から指定年度の試合結果をこのライブラリ用のCSVに変換
-    """
+    """指定カテゴリの1993年から指定年度の試合結果をこのライブラリ用のCSVに変換"""
     # all_season = pd.DataFrame()
     for filename in glob('../csv/[12][09][0129][0-9].csv'):
         df_dict = make_each_csv(filename, category)
@@ -37,7 +36,8 @@ def make_old_matches_csv(category: int) -> None:
 
 def make_each_csv(filename: str, category: int) -> Dict[str, pd.DataFrame]:
     """指定カテゴリ、指定年度の試合結果をこのライブラリ用のCSVに変換
-        二期になっていた場合、各期に分割、CSV化
+
+    二期になっていた場合、各期に分割、CSV化
     """
     _df = pd.read_csv(filename, index_col=0)
     matches = _df[_df['大会'].isin(LEAGUE_NAME[category - 1])].reset_index(drop=True)
