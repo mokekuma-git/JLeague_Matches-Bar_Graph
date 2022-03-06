@@ -158,7 +158,7 @@ def get_sections_to_update(all_matches: pd.DataFrame,
         for _start in _dates:
             _end = _start + timedelta(hours=2)
             if _lastupdate <= _end and _start <= _now:
-                print(f'add "{_sec}" for match at {_start} {_end} between {_lastupdate} - {_now}')
+                print(f'add "{_sec}" (for match at {_start}-{_end}) between {_lastupdate} - {_now}')
                 target_sec.add(_sec)
     target_sec = list(target_sec)
     target_sec.sort()
