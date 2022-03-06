@@ -290,6 +290,6 @@ jobs:
         python src/read_jleague_matches.py
         if (git diff --shortstat | grep '[0-9]'); then \
             git add .; \
-            git commit -m "Make new csv & json (append games on $DATE)"; \
+            git commit -m "Make new csv (append games on $DATE)"; \
             git push origin HEAD; \
         fi
