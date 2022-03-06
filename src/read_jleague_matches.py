@@ -24,7 +24,7 @@ DATE_FORMAT = '%Y%m%d'
 LOCAL_TZ = pytz.timezone('Asia/Tokyo')
 SEASON = 2022
 CSVFILE_FORMAT = '../docs/csv/{}_allmatch_result-J{}.csv'
-TIMESTAMP_FILE = '../csv/csv_timestamp.csv'
+TIMESTAMP_FILE = '../docs/csv/csv_timestamp.csv'
 
 # Jリーグ公開の各節試合情報のURL
 SOURCE_URL_FORMAT = 'https://www.jleague.jp/match/section/j{}/{}/'
