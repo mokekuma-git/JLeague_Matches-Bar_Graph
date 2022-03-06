@@ -151,14 +151,14 @@ def make_kickoff_time(_subset: pd.DataFrame):
 
 
 def get_sections_to_update(all_matches: pd.DataFrame,
-                           _start: pd.Timestamp, _end: pd.Timestamp) -> Set[str]:
+                           _lastupdate: pd.Timestamp, _now: pd.Timestamp) -> Set[str]:
     """startからendまでの対象期間に、試合が終了した節のセットを返す"""
     target_sec = set()
     for (_sec, _dates) in get_match_dates_of_section(all_matches).items():
-        for _date in _dates:
-            # print(f'compare "{_sec}" for match on {_date}' + f' between {_start} - {_end}')
-            if _start <= _date <= _end:
-                print(f'add "{_sec}" for match on {_date}' + f' between {_start} - {_end}')
+        for _start in _dates:
+            _end = _start + timedelta(hours=2)
+            if _lastupdate <= _end and _start <= _now:
+                print(f'add "{_sec}" for match at {_start} {_end} between {_lastupdate} - {_now}')
                 target_sec.add(_sec)
     target_sec = list(target_sec)
     target_sec.sort()
@@ -235,11 +235,11 @@ def update_all_matches(category: int, force_update: bool = False) -> pd.DataFram
         return all_matches
 
     current = read_allmatches_csv(latest_file)
-    _start = get_timestamp_from_csv(latest_file)
-    _end = datetime.now().astimezone(LOCAL_TZ)
-    print(f'  Check matches finished since {_start}')
+    _lastupdate = get_timestamp_from_csv(latest_file)
+    _now = datetime.now().astimezone(LOCAL_TZ)
+    print(f'  Check matches finished since {_lastupdate}')
     # undecided = get_undecided_section(current)
-    need_update = get_sections_to_update(current, _start, _end)
+    need_update = get_sections_to_update(current, _lastupdate, _now)
 
     if not need_update:
         return current
