@@ -1,6 +1,7 @@
 // TODO: Global変数以外の解決方法は、後で調べる
 let HEIGHT_UNIT;
 let SEASON_MAP;
+let TIMESTAMPS = {};
 let INPUTS;
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 let TARGET_DATE;
@@ -100,6 +101,7 @@ function clear_cookies() {
 
 function refresh_match_data() {
   INPUTS = {'matches': {}};
+  read_timestamp();
   read_inputs(get_csv_files(get_category(), get_season()));
 }
 
@@ -120,6 +122,18 @@ function get_csv_filename(category, season=null) {
   return 'csv/match_result-J' + category + '.csv';
 }
 
+function read_timestamp() {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', './csv/csv_timestamp.csv');
+  xhr.send();
+  xhr.onload = ()=> {
+    const result = Papa.parse(xhr.responseText, {header: true, delimiter: ',', skipEmptyLines: 'greedy'});
+    result.data.forEach(function(x) {
+      const datetime = new Date(x['date']);
+      TIMESTAMPS[x['file'].replace('../docs/', '')] = date_format(datetime) + ' ' + time_format(datetime);});
+  };
+}
+
 function read_seasonmap() {
   const xhr = new XMLHttpRequest();
   xhr.open('GET', './json/season_map.json');
@@ -131,14 +145,16 @@ function read_seasonmap() {
 }
 
 function read_inputs(filenames) {
-  const cachebuster = Math.floor((new Date).getTime() / 1000 / 3600); // 1時間に1度キャッシュクリアというつもり
-  Papa.parse(filenames.shift() + '?_='+ cachebuster, {
+  const cachebuster = Math.floor((new Date).getTime() / 1000 / 300); // 5分に1度キャッシュクリアというつもり
+  let filename = filenames.shift();
+  Papa.parse(filename + '?_='+ cachebuster, {
     header: true,
     skipEmptyLines: 'greedy',
 	  download: true,
     complete: function(results) {
       // console.log(results);
       append_inputs(parse_csvresults(results.data, results.meta.fields, 'matches'), 'matches');
+      document.getElementById('data_timestamp').innerHTML = (TIMESTAMPS[filename]);
       if (filenames.length == 0) render_bar_graph();
       else read_inputs(filenames);
     }
@@ -466,6 +482,10 @@ const dgt = (m, n) => ('0000' + m).substr(-n);
 function date_format(_date) {
   if(is_string(_date)) return _date;
   return [dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
+}
+function time_format(_date) {
+  if(is_string(_date)) return '';
+  return [dgt((_date.getHours()), 2), dgt(_date.getMinutes(), 2), dgt(_date.getSeconds(), 2)].join(':');
 }
 
 function make_point_column(max_avlbl_pt) {
