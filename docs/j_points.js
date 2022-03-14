@@ -310,9 +310,11 @@ function make_html_column(target_team, team_data) {
   team_data.win = 0; // 最新の勝利数
   team_data.lose = 0; // 最新の敗北数
   team_data.draw = 0; // 最新の引分数
-  team_data.disp_win = 0; // 最新の勝利数
-  team_data.disp_lose = 0; // 最新の敗北数
-  team_data.disp_draw = 0; // 最新の引分数
+  team_data.all_game = 0; // 最新の終了済み試合数
+  team_data.disp_win = 0; // 表示時の勝利数
+  team_data.disp_lose = 0; // 表示時の敗北数
+  team_data.disp_draw = 0; // 表示時のの引分数
+  team_data.disp_all_game = 0; // 表示時の終了済み試合数
   team_data.rest_games = {}; // 最新の残り試合・対戦相手
   team_data.disp_rest_games = {}; // 表示時の残り試合・対戦相手
 
@@ -356,6 +358,7 @@ function make_html_column(target_team, team_data) {
       // 試合があるので、実際の勝ち点、最大勝ち点、得失点は実際の記録通り
       team_data.point += _row.point;
       team_data.avlbl_pt += _row.point;
+      team_data.all_game += 1;
       if (_row.point > 1) team_data.win += 1;
       else if (_row.point == 1) team_data.draw += 1;
       else if (_row.point == 0) team_data.lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
@@ -368,6 +371,7 @@ function make_html_column(target_team, team_data) {
         if (_row.point > 1) team_data.disp_win += 1;
         else if (_row.point == 1) team_data.disp_draw += 1;
         else if (_row.point == 0) team_data.disp_lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
+        team_data.disp_all_game += 1;
         team_data.disp_point += _row.point;
         team_data.disp_avlbl_pt += _row.point;
         team_data.disp_goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
@@ -380,6 +384,8 @@ function make_html_column(target_team, team_data) {
         if (team_data.disp_rest_games.hasOwnProperty(_row.opponent)) team_data.disp_rest_games[_row.opponent]++;
         else team_data.disp_rest_games[_row.opponent] = 1;
       }
+      team_data.avrg_pt = (team_data.point == 0) ? 0 : (team_data.point / team_data.all_game);
+      team_data.disp_avrg_pt = (team_data.disp_point == 0) ? 0 : (team_data.disp_point / team_data.disp_all_game);
     }
 
     let box_html;
@@ -643,12 +649,12 @@ function make_rankdata(group) {
       lose: get_team_attr(team_data, 'lose', disp),
       point: get_team_attr(team_data, 'point', disp),
       avlbl_pt: get_team_attr(team_data, 'avlbl_pt', disp),
+      avrg_pt: get_team_attr(team_data, 'avrg_pt', disp).toFixed(2),
+      all_game: get_team_attr(team_data, 'all_game', disp),
       goal_get: get_team_attr(team_data, 'goal_get', disp),
       goal_diff: get_team_attr(team_data, 'goal_diff', disp),
     }
     tmp_data.goal_lose = tmp_data.goal_get - tmp_data.goal_diff;
-    tmp_data.all_game = tmp_data.win + tmp_data.draw + tmp_data.lose;
-    tmp_data.points_per_game = ((tmp_data.point == 0) ? 0 : (tmp_data.point / tmp_data.all_game)).toFixed(2);
     tmp_data.future_game = team_data.df.length - tmp_data.all_game;
 
     if (all_game_finished) {
