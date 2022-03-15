@@ -11,9 +11,9 @@ import pandas as pd
 
 import requests
 
-ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31159/{}/'
+ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
-CSV_FILENAME = '../docs/csv/2021_allmatch_result-ACL_GL.csv'
+CSV_FILENAME = '../docs/csv/2022_allmatch_result-ACL_GL.csv'
 JSON_FILENAME = '../docs/json/aclgl_points.json'
 
 
@@ -34,8 +34,11 @@ def parse_match_date_data(text: str) -> Dict[str, str]:
     フォーマットは、match_date, start_timeをキーとしたDict形式
     """
     (match_date, start_time) = text.split()
-    match_date = pd.to_datetime('2021/' + match_date[:match_date.index('（')]).date()
-    start_time = pd.to_datetime(start_time).time()
+    match_date = pd.to_datetime('2022/' + match_date[:match_date.index('（')]).date()
+    try:
+        start_time = pd.to_datetime(start_time).time()
+    except:
+        start_time = pd.to_datetime('00:00').time()
     return {'match_date': match_date, 'start_time': start_time}
 
 
