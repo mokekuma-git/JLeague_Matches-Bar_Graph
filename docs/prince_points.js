@@ -103,7 +103,7 @@ function refresh_match_data() {
 }
 
 function get_csv_files(category, season) {
-  const target_seasons = [2021];
+  const target_seasons = [season];
   const result = [];
   target_seasons.forEach(function(x) {result.push(get_csv_filename(category, x));});
   return result;
@@ -515,7 +515,10 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
 
 function make_season_pulldown() {
   const category = get_category();
-  const options = [2021];
+  const options = [];
+  ['2022', '2021'].forEach(function (x) {
+      options.push('<option value="' + x + '">' + x + "</option>\n");
+    });
   document.getElementById('season').innerHTML = options.join('');
 }
 
