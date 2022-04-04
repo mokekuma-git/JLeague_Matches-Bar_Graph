@@ -283,7 +283,7 @@
   background: -webkit-linear-gradient(left, darkgreen 70%, black);
   background: linear-gradient(to right, darkgreen 70%, black);
 }
-.三菱養和SCユース	{
+.三菱養和SCユース, .三菱養和サッカークラブユース {
   color: white;
   background-color: #D30E17;
 }
@@ -331,4 +331,12 @@
 .履正社高校 {
   color: yellow;
   background-color: red;
+}
+.西武台高校 {
+  color: blue;
+  background-color: yellow;
+}
+.鹿島学園高校 {
+  color: yellow;
+  background-color: blue;
 }
