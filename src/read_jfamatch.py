@@ -29,7 +29,7 @@ COMPETITION_CONF = {
     #     GROUP_NAMES: ['G', 'H', 'I', 'J']
     # }, # A~Fのグループ情報が無い
     'PrinceKanto': {
-        SCHEDULE_URL: 'https://www.jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2022/match/schedule.json',
+        SCHEDULE_URL: 'https://jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2022/kanto1/match/schedule.json',
         CSV_FILENAME: '../docs/csv/2022_allmatch_result-PrinceKanto.csv',
         GROUP_NAMES: ['']
     },
