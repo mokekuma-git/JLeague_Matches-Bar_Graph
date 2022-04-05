@@ -131,6 +131,7 @@ function read_timestamp() {
     result.data.forEach(function(x) {
       const datetime = new Date(x['date']);
       TIMESTAMPS[x['file'].replace('../docs/', '')] = date_format(datetime) + ' ' + time_format(datetime);});
+    write_timestamp();
   };
 }
 
@@ -154,11 +155,16 @@ function read_inputs(filenames) {
     complete: function(results) {
       // console.log(results);
       append_inputs(parse_csvresults(results.data, results.meta.fields, 'matches'), 'matches');
-      document.getElementById('data_timestamp').innerHTML = (TIMESTAMPS[filename]);
+      write_timestamp(filename);
       if (filenames.length == 0) render_bar_graph();
       else read_inputs(filenames);
     }
   });
+}
+
+function write_timestamp(filename) {
+  if (filename === undefined) filename = get_csv_files(get_category(), get_season())[0];
+  document.getElementById('data_timestamp').innerHTML = (TIMESTAMPS[filename]);
 }
 
 function make_staus_attr(match) {
