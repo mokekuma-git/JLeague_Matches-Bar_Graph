@@ -129,7 +129,7 @@ function read_timestamp() {
   xhr.onload = ()=> {
     const result = Papa.parse(xhr.responseText, {header: true, delimiter: ',', skipEmptyLines: 'greedy'});
     result.data.forEach(function(x) {
-      const kickoff_time = new Date(x['date'].replace(/-/g, '/'));  // iOS Safari向けに 2022/04/09 スタイルへ
+      const kickoff_time = new Date(x['date'].replace(' ', 'T'));  // iOS Safari向けに 2022/04/09 スタイルへ
       TIMESTAMPS[x['file'].replace('../docs/', '')] = date_format(kickoff_time) + ' ' + time_format(kickoff_time);});
     write_timestamp();
   };
