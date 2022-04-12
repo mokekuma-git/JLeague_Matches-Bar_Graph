@@ -14,7 +14,6 @@ import requests
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
 CSV_FILENAME = '../docs/csv/2022_allmatch_result-ACL_GL.csv'
-JSON_FILENAME = '../docs/json/aclgl_points.json'
 
 
 def read_match(section_id: str) -> List[Dict[str, Any]]:
