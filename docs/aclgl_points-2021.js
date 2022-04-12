@@ -16,19 +16,14 @@ const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
 };
 
 const TEAM_RENAME_MAP = {
-  'ユナイテッドシティ': 'UnitC',
-  'タンピネス': 'タンピ',
-  'ポートFC': 'ポート',
-  'チェンライU': 'チェン',
-  'ラーチャブリー': 'ラチャ',
-  'ベトテル': 'Viettel',
-  'パトゥムユナイテッド': 'パトゥ',
-  '全北現代': '全北',
-  'ホアンアインザライ': 'ホアン',
-  '山東泰山': '山東',
-  'セーラーズ': 'セーラ',
-  'メルボルンシティ': 'メルボ',
-  'シドニーFC': 'シドニ',
+ 'ユナイテッドシティ': 'UnitC',
+ 'タンピネス': 'タンピ',
+ 'ポートFC': 'ポート',
+ 'チェンライU': 'チェン',
+ 'ラーチャブリー': 'ラチャ',
+ 'ベトテル': 'Viettel',
+ 'パトゥムユナイテッド': 'パトゥ',
+ '全北現代': '全北'
 };
 
 
@@ -108,84 +103,24 @@ function clear_cookies() {
 }
 
 function refresh_match_data() {
-  read_inputs('csv/2022_allmatch_result-ACL_GL.csv');
+  filename = 'aclgl_points.json';
+  read_inputs('json/' + filename);
 }
 
 function read_inputs(filename) {
-  const cachebuster = Math.floor((new Date).getTime() / 1000 / 3600); // 1時間に1度キャッシュクリアというつもり
-  Papa.parse(filename + '?_='+ cachebuster, {
-    header: true,
-    skipEmptyLines: 'greedy',
-	  download: true,
-    complete: function(results) {
-      // console.log(results);
-      INPUTS = parse_csvresults(results.data, results.meta.fields);
-      render_bar_graph();
-    }
-  });
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', filename);
+  xhr.send();
+  xhr.onload = ()=> {
+    INPUTS = JSON.parse(xhr.responseText);
+    render_bar_graph();
+  };
 }
 
-// Javascriptではpandasも無いし、手続き的に
-function parse_csvresults(data, fields, default_group=null) {
-  const team_map = {};
-  if (default_group === 'null') default_group = 'DefaultGroup';
-  if (fields.includes('group')) default_group = null;
-  let _i = 0
-  let group = '';
-  data.forEach(function (_match) {
-    _i++;
-    group = default_group || _match.group;
-    // console.log(_i, group, _match.match_date, _match.home_team, _match.away_team);
-    // console.log(_match);
-
-    if (! team_map.hasOwnProperty(group)) team_map[group] = {};
-    if (! team_map[group].hasOwnProperty(_match.home_team)) team_map[group][_match.home_team] = {'df': []};
-    if (! team_map[group].hasOwnProperty(_match.away_team)) team_map[group][_match.away_team] = {'df': []};
-
-    let match_date_str = _match.match_date;
-    const match_date = new Date(_match.match_date);
-    if (! isNaN(match_date))
-      match_date_str = [match_date.getYear() + 1900, dgt(match_date.getMonth() + 1, 2), dgt(match_date.getDate(), 2)].join('/');
-    team_map[group][_match.home_team].df.push({
-      'is_home': true,
-      'opponent': _match.away_team,
-      'goal_get': _match.home_goal,
-      'goal_lose': _match.away_goal,
-      'has_result': Boolean(_match.home_goal && _match.away_goal),
-      'point': get_point_from_result(_match.home_goal, _match.away_goal),
-      'match_date': match_date_str,
-      'section_no': _match.section_no,
-      'stadium': _match.stadium,
-      'start_time': _match.start_time
-    });
-    // console.log(team_map[group][_match.home_teame].df.slice(-1)[0]);
-    team_map[group][_match.away_team].df.push({
-      'is_home': false,
-      'opponent': _match.home_team,
-      'goal_get': _match.away_goal,
-      'goal_lose': _match.home_goal,
-      'has_result': Boolean(_match.home_goal && _match.away_goal),
-      'point': get_point_from_result(_match.away_goal, _match.home_goal),
-      'match_date': match_date_str,
-      'section_no': _match.section_no,
-      'stadium': _match.stadium,
-      'start_time': _match.start_time
-    });
-    // console.log(team_map[group][_match.away_teame].df.slice(-1)[0]);
-  });
-  // console.log(team_map);
-  return team_map;
-}
-
-function get_point_from_result(goal_get, goal_lose, has_extra=false, pk_get=null, pk_lose=null) {
-  if (! (goal_get && goal_lose)) return 0;
-  if (goal_get > goal_lose) return 3;
-  if (goal_get < goal_lose) return 0;
-  return 1;
-}
+const get_next_char = (value) => (String.fromCharCode(value.charCodeAt(0) + 1));
 
 const is_string = (value) => (typeof(value) === 'string' || value instanceof String);
-// const is_number = (value) => (typeof(value) === 'number');
+const is_number = (value) => (typeof(value) === 'number');
 
 const compare_str = (a, b) => (a === b) ? 0 : (a < b) ? -1 : 1;
 function make_html_column(target_team, team_data) {
@@ -283,7 +218,7 @@ function make_html_column(target_team, team_data) {
       }
     } else if(box_height == 1) {
       box_html = '<div class="short box"><p class="tooltip ' + target_team + '">'
-        + make_draw_content(_row, match_date) + '<span class="tooltiptext full@ ' + target_team + '">'
+        + make_draw_content(_row, match_date) + '<span class="tooltiptext full ' + target_team + '">'
         + make_full_content(_row, match_date) + '</span></p></div>';
       // _row.goal_get + '-' + _row.goal_lose + '<br/>';
     } else if(box_height == 0) {
@@ -322,7 +257,7 @@ function append_space_cols(cache, max_avlbl_pt) {
     cache.lose_box.reverse();
   }
   const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
-    + '<span class=" tooltiptext fullW ' + cache.target_team + '">'
+    + '<span class=" tooltiptext full ' + cache.target_team + '">'
     + '成績情報:<hr/>' + cache.stats
     + '<hr/>敗戦記録:<hr/>'
     + cache.lose_box.join('<hr/>') + '</span></div>\n';
@@ -338,25 +273,22 @@ function rename_short_stadium_name(stadium) {
   return stadium;
 }
 function make_win_content(_row, match_date) {
-  return date_only(match_date) + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
+  return match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose
     + '<br/>' + rename_short_stadium_name(_row.stadium);
 }
 function make_draw_content(_row, match_date) {
-  return date_only(match_date) + ' ' + rename_short_team_name(_row.opponent);
+  return match_date + ' ' + rename_short_team_name(_row.opponent);
 }
 function make_full_content(_row, match_date) {
-  return '(' + _row.section_no + ') ' + date_only(match_date) + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
+  return '(' + _row.section_no + ') ' + match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose + ' ' + rename_short_stadium_name(_row.stadium);
 }
 
 const dgt = (m, n) => ('0000' + m).substr(-n);
 function date_format(_date) {
   if(is_string(_date)) return _date;
-  return [_date.getYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
-}
-function date_only(_date_str) {
-  return _date_str.replace(/^\d{4}\//, '');
+  return [dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
 }
 
 function make_point_column(max_avlbl_pt, _group) {
@@ -374,44 +306,46 @@ function make_point_column(max_avlbl_pt, _group) {
 function render_bar_graph() {
   if(! INPUTS) return;
   MATCH_DATE_SET.length = 0; // TODO: 最新情報は、CSVを直接読む形式に変えた時にそちらで計算
-  MATCH_DATE_SET.push('1970/01/01');
+  MATCH_DATE_SET.push('01/01');
   MAX_GRAPH_HEIGHT = 0;
   BOX_CON.innerHTML = '';
   let columns = {};
+  let max_avlbl_pt = 0;
   Object.keys(INPUTS).forEach(function(_group) {
     if(! SHOWN_GROUP.includes(_group)) return;
     const grp_input = INPUTS[_group]
-    let max_avlbl_pt = 0;
+
     Object.keys(grp_input).forEach(function (team_name) {
-      // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
-      // MATCH_DATE_SETも作成
-      columns[team_name] = make_html_column(team_name, grp_input[team_name]);
-      max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
+        // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
+        columns[team_name] = make_html_column(team_name, grp_input[team_name]);
+        max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
     });
+  });
+  MATCH_DATE_SET.sort();
+  reset_date_slider(date_format(TARGET_DATE));
+  Object.keys(INPUTS).forEach(function(_group) {
+    if(! SHOWN_GROUP.includes(_group)) return;
+    const grp_input = INPUTS[_group]
     Object.keys(grp_input).forEach(function (team_name) {
-      columns[team_name].graph = append_space_cols(columns[team_name], max_avlbl_pt);
+        columns[team_name].graph = append_space_cols(columns[team_name], max_avlbl_pt);
     });
     const point_column = make_point_column(max_avlbl_pt, _group);
     BOX_CON.innerHTML += '<div class="group_label group' +  _group + '">グループ' + _group;
     BOX_CON.innerHTML += point_column;
     get_sorted_team_list(grp_input).forEach(function(team_name, index) {
-      BOX_CON.innerHTML += columns[team_name].graph;
+        BOX_CON.innerHTML += columns[team_name].graph;
     });
     BOX_CON.innerHTML += '</div>\n';
   });
-  MATCH_DATE_SET.sort();
-  reset_date_slider(date_format(TARGET_DATE));
   set_scale(document.getElementById('scale_slider').value, false, false);
   Object.keys(INPUTS).forEach(function(_group) {
     set_left_position_to_group_label(_group);
   });
-
-  make_ranktable();
 }
 
 function set_left_position_to_group_label(_group) {
-  if(! SHOWN_GROUP.includes(_group)) return;
-  document.querySelector('.group' + _group).style.left = document.querySelector('.point' + _group).getBoundingClientRect().left  / document.getElementById('scale_slider').value + 'px';
+    if(! SHOWN_GROUP.includes(_group)) return;
+    document.querySelector('.group' + _group).style.left = document.querySelector('.point' + _group).getBoundingClientRect().left  / document.getElementById('scale_slider').value + 'px';
 }
 
 function get_sorted_team_list(matches) {
@@ -469,76 +403,7 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
   }
   slider.value = _i;
 }
-/// //////////////////////////////////////////////////////////// 順位表
-function make_ranktable() {
-  const table_div = document.getElementById('ranktables');
-  table_div.innerHTML = '';
-  Object.keys(INPUTS).forEach(function (_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
-    table_div.innerHTML += create_new_table(_group);
-  });
-  // ちょっと理由は分からないが、<table></table>の作成と、setDataを分けたら両方sortableになった
-  Object.keys(INPUTS).forEach(function (_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
-    create_ranktable_content(_group);
-  });
-}
-function create_ranktable_content(group) {
-  let sortableTable = new SortableTable();
-  sortableTable.setTable(document.getElementById('ranktable' + group));
-  sortableTable.setData(make_rankdata(group));
-}
 
-function create_new_table(group) {
-  return [
-    '<table id="ranktable' + group + '">',
-    (group ? '  <caption>Group ' + group + '</caption>' : '') + '<thead><tr>',
-    '  <th data-id="rank" sortable></th>',
-    '  <th data-id="name" data-header>チーム名</th>',
-    '  <th data-id="all_game" sortable>試合</th>',
-    '  <th data-id="point" sortable>勝点</th>',
-    '  <th data-id="points_per_game" sortable>平均</th>',
-    '  <th data-id="avlbl_pt" sortable>最大</th>',
-    '  <th data-id="win" sortable>勝</th>',
-    '  <th data-id="draw" sortable>分</th>',
-    '  <th data-id="lose" sortable>負</th>',
-    '  <th data-id="goal_get" sortable>得点</th>',
-    '  <th data-id="goal_lose" sortable>失点</th>',
-    '  <th data-id="goal_diff" sortable>点差</th>',
-    '  <th data-id="future_game" sortable>残り</th>',
-    '</tr></thead></table>'].join('\n')
-}
-function make_rankdata(group) {
-  const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
-  const team_list = get_sorted_team_list(INPUTS[group]);
-  const datalist = [];
-  let rank = 0;
-  team_list.forEach(function(team_name) {
-    rank++;
-    const team_data = INPUTS[group][team_name];
-    const all_game = get_team_attr(team_data, 'win', disp) + get_team_attr(team_data, 'draw', disp) + get_team_attr(team_data, 'lose', disp);
-    datalist.push({
-      rank: rank,
-      name: '<div class="' + team_name + '">' + team_name + '</div>',
-      win: get_team_attr(team_data, 'win', disp),
-      draw: get_team_attr(team_data, 'draw', disp),
-      lose: get_team_attr(team_data, 'lose', disp),
-      all_game: all_game,
-      point: get_team_attr(team_data, 'point', disp),
-      points_per_game: (get_team_attr(team_data, 'point', disp) / all_game).toFixed(2),
-      avlbl_pt: get_team_attr(team_data, 'avlbl_pt', disp),
-      goal_get: get_team_attr(team_data, 'goal_get', disp),
-      goal_lose: get_team_attr(team_data, 'goal_get', disp) - get_team_attr(team_data, 'goal_diff', disp),
-      goal_diff: get_team_attr(team_data, 'goal_diff', disp),
-      future_game: team_data.df.length - all_game,
-    });
-  });
-  return datalist;
-}
-function get_team_attr(team_data, attr, disp) {
-  const prefix = disp ? 'disp_' : '';
-  return team_data[prefix + attr];
-}
 /// //////////////////////////////////////////////////////////// 設定変更
 function set_scale_ev(event) {
   set_scale(event.target.value, true, false);
@@ -611,7 +476,7 @@ function set_space(value, cookie_write = true, color_write = true) {
 
 function get_css_rule(selector) {
   let _sheet;
-  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href && sheet.href.endsWith('j_points.css')) {_sheet = sheet;}});
+  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href.endsWith('aclgl_points.css')) {_sheet = sheet;}});
   let _rule;
   Array.from(_sheet.cssRules).forEach(function(rule) {if(rule.selectorText == selector) _rule = rule;});
   return _rule;

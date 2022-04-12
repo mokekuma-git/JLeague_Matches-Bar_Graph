@@ -51,7 +51,7 @@
   color: black;
   background-color: #faa0bf;
 }
-.川崎Ｆ, .川崎フロンターレU-18 {
+.川崎Ｆ, .川崎F, .川崎フロンターレU-18 {
   color: white;
   background: -moz-linear-gradient(left, #198cca 60%, #000000);
   background: -webkit-linear-gradient(left, #198cca 60%, #000000);
@@ -267,8 +267,71 @@
   background-color: white;
 }
 
-
-/**************************************************************** Lost Team style definition */
+/**************************************************************** ACL Team style definition */
+.大邱, .傑志, .JDT, .蔚山 {
+  color: white;
+  background-color: #00205b;
+}
+.ユナイテッドシティ {
+  background-color: #fff100;
+}
+.タンピネス {
+  color: white;
+  background-color: #501010;
+}
+.ポートFC, .チェンライU, .ラーチャブリー {
+  color: white;
+  background-color: #f18900;
+}
+.浦項 {
+  color: black;
+  background-color: #7399d1;
+}
+.ベトテル, .広州FC {
+  color: white;
+  background-color: #e50012;
+}
+.北京FC, .パトゥムユナイテッド, .全北現代 {
+    color: white;
+    background-color: #009844;
+  }
+.カヤFC {
+  color: yellow;
+  background-color: black;
+}
+.セーラーズ {
+  color: #E57623;
+  background: -moz-linear-gradient(top left, #000084, #000084, #478EF7);
+  background: -webkit-linear-gradient(top left, #000084, #000084, #478EF7);
+  background: linear-gradient(to bottom right, #000084, #000084, #478EF7);
+}
+.山東泰山 {
+  color: white;
+  background: -moz-linear-gradient(top left, #FF6020, #FF752D, #FF8030);
+  background: -webkit-linear-gradient(top left, #FF6020, #FF752D, #FF8030);
+  background: linear-gradient(to bottom right, #FF6020, #FF752D, #FF8030);
+}
+.メルボルンシティ {
+  color: black;
+  background: -moz-linear-gradient(top left, #7FB9E8, #7FB9E8, #FFFFFF);
+  background: -webkit-linear-gradient(top left, #7FB9E8, #7FB9E8, #FFFFFF);
+  background: linear-gradient(to bottom right, #7FB9E8, #7FB9E8, #FFFFFF);
+}
+.全南 {
+  color: black;
+  background: -moz-linear-gradient(left, #FFED00 80%, #000000);
+  background: -webkit-linear-gradient(left, #FFED00 80%, #000000);
+  background: linear-gradient(to right, #FFED00 80%, #000000);
+}
+.ホアンアインザライ {
+  color: blue;
+  background-color: yellow;
+}
+.シドニーFC {
+  color: black;
+  background-color: #52AEE3;
+}
+/**************************************************************** Youth Team style definition */
 .前橋育英高校	{
   color: black;
   background-color: yellow;

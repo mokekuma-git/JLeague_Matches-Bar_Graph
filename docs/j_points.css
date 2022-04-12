@@ -17,6 +17,7 @@ table#ranktable th {
   font-weight: 700;
   position: relative;
   text-align: center;
+  white-space: nowrap;
 }
 .short {
   height: 25px;
