@@ -16,7 +16,7 @@ const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
 };
 
 const TEAM_RENAME_MAP = {
-  'ユナイテッドシティ': 'UnitC',
+  'ユナイテッドシティ': 'UCFC',
   'タンピネス': 'タンピ',
   'ポートFC': 'ポート',
   'チェンライU': 'チェン',
