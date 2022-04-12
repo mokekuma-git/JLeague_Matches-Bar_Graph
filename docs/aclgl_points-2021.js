@@ -431,7 +431,8 @@ function set_pulldown(key, value, cookie_write = true, pulldown_write = true, ca
   if(cookie_write) set_cookie(key, value);
   if(pulldown_write) {
     const select = document.getElementById(TARGET_ITEM_ID[key]);
-    select.selectedIndex = select.querySelector('option[value="' + value + '"]').index;
+    const target = select.querySelector('option[value="' + value + '"]');
+    if(target) select.selectedIndex = target.index;
   }
   if(call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
 }
