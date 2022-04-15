@@ -1,21 +1,35 @@
 // TODO: Global変数以外の解決方法は、後で調べる
-let HEIGHT_UNIT;
+let INPUTS; // League match data
 let SEASON_MAP;
-let TIMESTAMPS = {};
-let INPUTS;
-let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
+let TIMESTAMPS = {}; // Timestamps of latest league data
+
+// Common HTML variables
+let HEIGHT_UNIT;
+let MAX_GRAPH_HEIGHT;
+let BOX_CON; // Box Container: Main Bar Graph Container
+
+// Date managing variables
 let TARGET_DATE;
-let BOX_CON;
-let COMPARE_DEBUG = false;
-let RELEGATION_DEBUG = false;
 const MATCH_DATE_SET = [];
 
+// Debug params
+let COMPARE_DEBUG = false;
+let RELEGATION_DEBUG = false;
+
+// Cookie variables
+let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
   team_sort: 'team_sort_key',
   match_sort: 'match_sort_key',
-  cat: 'category',
-  season: 'season'
-}
+};
+
+
+// League parameters
+//const SHOWN_GROUP = [];
+//
+//const TEAM_RENAME_MAP = {
+//};
+
 
 window.addEventListener('load', read_seasonmap, false);
 
@@ -206,7 +220,7 @@ function parse_csvresults(data, fields, default_group=null) {
     let match_date_str = _match.match_date;
     const match_date = new Date(_match.match_date);
     if (! isNaN(match_date))
-      match_date_str = ('0' + (match_date.getMonth() + 1)).slice(-2) + '/' + ('0' + match_date.getDate()).slice(-2);
+      match_date_str = [match_date.getYear() + 1900, dgt(match_date.getMonth() + 1, 2), dgt(match_date.getDate(), 2)].join('/');
     team_map[group][_match.home_team].df.push({
       'is_home': true,
       'opponent': _match.away_team,
@@ -334,11 +348,11 @@ function make_html_column(target_team, team_data) {
     v_a = a[match_sort_key];
     v_b = b[match_sort_key];
     if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
-    if (! v_a.match(/^\d\d\/\d\d$/g)) {
-      if (! v_b.match(/^\d\d\/\d\d$/g)) return 0;
+    if (! v_a.match(/\d\d\/\d\d$/g)) {
+      if (! v_b.match(/\d\d\/\d\d$/g)) return 0;
       return 1;
     }
-    if (! v_b.match(/^\d\d\/\d\d$/g)) return -1;
+    if (! v_b.match(/\d\d\/\d\d$/g)) return -1;
     return compare_str(v_a, v_b);
   }).forEach(function(_row) {
     let match_date;
@@ -390,8 +404,6 @@ function make_html_column(target_team, team_data) {
         if (team_data.disp_rest_games.hasOwnProperty(_row.opponent)) team_data.disp_rest_games[_row.opponent]++;
         else team_data.disp_rest_games[_row.opponent] = 1;
       }
-      team_data.avrg_pt = (team_data.point == 0) ? 0 : (team_data.point / team_data.all_game);
-      team_data.disp_avrg_pt = (team_data.disp_point == 0) ? 0 : (team_data.disp_point / team_data.disp_all_game);
     }
 
     let box_html;
@@ -429,6 +441,8 @@ function make_html_column(target_team, team_data) {
     }
     box_list.push(box_html);
   });
+  team_data.avrg_pt = (team_data.point == 0) ? 0 : (team_data.point / team_data.all_game);
+  team_data.disp_avrg_pt = (team_data.disp_point == 0) ? 0 : (team_data.disp_point / team_data.disp_all_game);
   const stats = make_team_stats(team_data);
   return {graph: box_list, avlbl_pt: team_data.disp_avlbl_pt, target_team: target_team, lose_box: lose_box, stats: stats};
 }
@@ -478,15 +492,15 @@ function join_lose_box(lose_box) {
 }
 
 function make_win_content(_row, match_date) {
-  return match_date + ' ' + _row.opponent + '<br/>'
+  return date_only(match_date) + ' ' + _row.opponent + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose
     + '<br/>' + _row.stadium;
 }
 function make_draw_content(_row, match_date) {
-  return match_date + ' ' + _row.opponent;
+  return date_only(match_date) + ' ' + _row.opponent;
 }
 function make_full_content(_row, match_date) {
-  return '(' + _row.section_no + ') ' + match_date + ' ' + _row.opponent + '<br/>'
+  return '(' + _row.section_no + ') ' + date_only(match_date) + ' ' + _row.opponent + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose + ' ' + _row.stadium;
 }
 
@@ -498,6 +512,9 @@ function date_format(_date) {
 function time_format(_date) {
   if(is_string(_date)) return '';
   return [dgt((_date.getHours()), 2), dgt(_date.getMinutes(), 2), dgt(_date.getSeconds(), 2)].join(':');
+}
+function date_only(_date_str) {
+  return _date_str.replace(/^\d{4}\//, '');
 }
 
 function make_point_column(max_avlbl_pt) {
@@ -515,7 +532,7 @@ function make_point_column(max_avlbl_pt) {
 function render_bar_graph() {
   if(! INPUTS) return;
   MATCH_DATE_SET.length = 0; // TODO: 最新情報は、CSVを直接読む形式に変えた時にそちらで計算
-  MATCH_DATE_SET.push('01/01');
+  MATCH_DATE_SET.push('1970/01/01');
   BOX_CON.innerHTML = '';
   let columns = {};
   const grp_input = INPUTS['matches']
@@ -795,8 +812,10 @@ function set_pulldown(key, value, cookie_write = true, pulldown_write = true, ca
   if(cookie_write) set_cookie(key, value);
   if(pulldown_write) {
     const select = document.getElementById(TARGET_ITEM_ID[key]);
-    const target = select.querySelector('option[value="' + value + '"]');
-    if(target) select.selectedIndex = target.index;
+    if(select) {
+      const target = select.querySelector('option[value="' + value + '"]');
+      if(target) select.selectedIndex = target.index;
+    }
   }
   if(call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
 }

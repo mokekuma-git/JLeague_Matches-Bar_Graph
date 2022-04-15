@@ -1,29 +1,38 @@
 // TODO: Global変数以外の解決方法は、後で調べる
+let INPUTS; // League match data
+
+// Common HTML variables
 let HEIGHT_UNIT;
-let INPUTS;
-let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
-let TARGET_DATE;
-let BOX_CON;
-let COMPARE_DEBUG = false;
-const MATCH_DATE_SET = [];
 let MAX_GRAPH_HEIGHT;
+let BOX_CON; // Box Container: Main Bar Graph Container
 
-const SHOWN_GROUP = ['F', 'G', 'H', 'I', 'J'];
+// Date managing variables
+let TARGET_DATE;
+const MATCH_DATE_SET = [];
 
+// Debug params
+let COMPARE_DEBUG = false;
+
+// Cookie variables
+let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
   team_sort: 'team_sort_key',
   match_sort: 'match_sort_key',
 };
 
+
+// League parameters
+const SHOWN_GROUP = ['F', 'G', 'H', 'I', 'J'];
+
 const TEAM_RENAME_MAP = {
- 'ユナイテッドシティ': 'UnitC',
- 'タンピネス': 'タンピ',
- 'ポートFC': 'ポート',
- 'チェンライU': 'チェン',
- 'ラーチャブリー': 'ラチャ',
- 'ベトテル': 'Viettel',
- 'パトゥムユナイテッド': 'パトゥ',
- '全北現代': '全北'
+  'ユナイテッドシティ': 'UnitC',
+  'タンピネス': 'タンピ',
+  'ポートFC': 'ポート',
+  'チェンライU': 'チェン',
+  'ラーチャブリー': 'ラチャ',
+  'ベトテル': 'Viettel',
+  'パトゥムユナイテッド': 'パトゥ',
+  '全北現代': '全北'
 };
 
 
@@ -431,8 +440,10 @@ function set_pulldown(key, value, cookie_write = true, pulldown_write = true, ca
   if(cookie_write) set_cookie(key, value);
   if(pulldown_write) {
     const select = document.getElementById(TARGET_ITEM_ID[key]);
-    const target = select.querySelector('option[value="' + value + '"]');
-    if(target) select.selectedIndex = target.index;
+    if(select) {
+      const target = select.querySelector('option[value="' + value + '"]');
+      if(target) select.selectedIndex = target.index;
+    }
   }
   if(call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
 }
