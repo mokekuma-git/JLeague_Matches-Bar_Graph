@@ -280,15 +280,15 @@ function make_html_column(target_team, team_data) {
     v_a = a[match_sort_key];
     v_b = b[match_sort_key];
     if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
-    if (! v_a.match(/^\d\d\/\d\d$/g)) {
-      if (! v_b.match(/^\d\d\/\d\d$/g)) return 0;
+    if (! v_a.match(/\d\d\/\d\d$/g)) {
+      if (! v_b.match(/\d\d\/\d\d$/g)) return 0;
       return 1;
     }
-    if (! v_b.match(/^\d\d\/\d\d$/g)) return -1;
+    if (! v_b.match(/\d\d\/\d\d$/g)) return -1;
     return compare_str(v_a, v_b);
   }).forEach(function(_row) {
     let match_date;
-    if(is_string(_row.match_date)) {
+    if(is_string(_row.match_date) && _row.match_date.match(/\d\d\/\d\d$/g)) {
       match_date = _row.match_date;
       if (!MATCH_DATE_SET.includes(match_date)) MATCH_DATE_SET.push(match_date)
     } else {
@@ -405,22 +405,25 @@ function append_space_cols(cache, max_avlbl_pt) {
 }
 
 function make_win_content(_row, match_date) {
-  return match_date + ' ' + _row.opponent.substr(0, 3) + '<br/>'
+  return date_only(match_date) + ' ' + _row.opponent.substr(0, 3) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose
     + '<br/>' + _row.stadium.substr(0, 7);
 }
 function make_draw_content(_row, match_date) {
-  return match_date + ' ' + _row.opponent.substr(0, 3);
+  return date_only(match_date) + ' ' + _row.opponent.substr(0, 3);
 }
 function make_full_content(_row, match_date) {
-  return '(' + _row.section_no + ') ' + match_date + ' ' + _row.opponent.substr(0, 3) + '<br/>'
+  return '(' + _row.section_no + ') ' + date_only(match_date) + ' ' + _row.opponent.substr(0, 3) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose + ' ' + _row.stadium.substr(0, 7);
 }
 
 const dgt = (m, n) => ('0000' + m).substr(-n);
 function date_format(_date) {
   if(is_string(_date)) return _date;
-  return [dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
+  return [_date.getYear() + 1900, dgt(_date.getMonth() + 1, 2), dgt(_date.getDate(), 2)].join('/');
+}
+function date_only(_date_str) {
+  return _date_str.replace(/^\d{4}\//, '');
 }
 
 function make_point_column(max_avlbl_pt) {

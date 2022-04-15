@@ -26,14 +26,19 @@ const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
 const SHOWN_GROUP = ['F', 'G', 'H', 'I', 'J'];
 
 const TEAM_RENAME_MAP = {
-  'ユナイテッドシティ': 'UnitC',
+  'ユナイテッドシティ': 'UCFC',
   'タンピネス': 'タンピ',
   'ポートFC': 'ポート',
   'チェンライU': 'チェン',
   'ラーチャブリー': 'ラチャ',
   'ベトテル': 'Viettel',
   'パトゥムユナイテッド': 'パトゥ',
-  '全北現代': '全北'
+  '全北現代': '全北',
+  'ホアンアインザライ': 'ホアン',
+  '山東泰山': '山東',
+  'セーラーズ': 'セーラ',
+  'メルボルンシティ': 'メルボ',
+  'シドニーFC': 'シドニ',
 };
 
 
@@ -491,7 +496,7 @@ function make_ranktable() {
     if(! SHOWN_GROUP.includes(_group)) return;
     table_div.innerHTML += create_new_table(_group);
   });
-  table_div.innerHTML += '<hr/><br/>' + create_new_table('2nd-Teams', '2位グループ (4位チーム抜き)');
+  table_div.innerHTML += '<hr/><br/>' + create_new_table('2nd-Teams', '2位グループ比較 (4位チーム抜き)');
   // ちょっと理由は分からないが、<table></table>の作成と、setDataを分けたら両方sortableになった
   const seconds_table = [];
   Object.keys(INPUTS).forEach(function (_group) {
