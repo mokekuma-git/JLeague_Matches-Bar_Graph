@@ -12,7 +12,7 @@ const MATCH_DATE_SET = [];
 
 // Debug params
 let COMPARE_DEBUG = false;
-let SECOND_RANKDATA_DEBUG = true;
+let SECOND_RANKDATA_DEBUG = false;
 
 // Cookie variables
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
