@@ -1,21 +1,35 @@
 // TODO: Global変数以外の解決方法は、後で調べる
-let HEIGHT_UNIT;
+let INPUTS; // League match data
 let SEASON_MAP;
-let TIMESTAMPS = {};
-let INPUTS;
-let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
+let TIMESTAMPS = {}; // Timestamps of latest league data
+
+// Common HTML variables
+let HEIGHT_UNIT;
+let MAX_GRAPH_HEIGHT;
+let BOX_CON; // Box Container: Main Bar Graph Container
+
+// Date managing variables
 let TARGET_DATE;
-let BOX_CON;
-let COMPARE_DEBUG = false;
-let RELEGATION_DEBUG = false;
 const MATCH_DATE_SET = [];
 
+// Debug params
+let COMPARE_DEBUG = false;
+let RELEGATION_DEBUG = false;
+
+// Cookie variables
+let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
 const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
   team_sort: 'team_sort_key',
   match_sort: 'match_sort_key',
-  cat: 'category',
-  season: 'season'
-}
+};
+
+
+// League parameters
+//const SHOWN_GROUP = [];
+//
+//const TEAM_RENAME_MAP = {
+//};
+
 
 window.addEventListener('load', read_seasonmap, false);
 
