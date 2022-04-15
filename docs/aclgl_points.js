@@ -12,6 +12,7 @@ const MATCH_DATE_SET = [];
 
 // Debug params
 let COMPARE_DEBUG = false;
+let SECOND_RANKDATA_DEBUG = true;
 
 // Cookie variables
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
@@ -215,9 +216,13 @@ function make_html_column(target_team, team_data) {
   team_data.win = 0; // 最新の勝利数
   team_data.lose = 0; // 最新の敗北数
   team_data.draw = 0; // 最新の引分数
-  team_data.disp_win = 0; // 最新の勝利数
-  team_data.disp_lose = 0; // 最新の敗北数
-  team_data.disp_draw = 0; // 最新の引分数
+  team_data.all_game = 0; // 最新の終了済み試合数
+  team_data.disp_win = 0; // 表示時の勝利数
+  team_data.disp_lose = 0; // 表示時の敗北数
+  team_data.disp_draw = 0; // 表示時のの引分数
+  team_data.disp_all_game = 0; // 表示時の終了済み試合数
+  team_data.rest_games = {}; // 最新の残り試合・対戦相手
+  team_data.disp_rest_games = {}; // 表示時の残り試合・対戦相手
 
   let match_sort_key;
   if(['first_bottom', 'last_bottom'].includes(document.getElementById('match_sort_key').value)) {
@@ -250,9 +255,11 @@ function make_html_column(target_team, team_data) {
       // 試合があるので、実際の勝ち点、最大勝ち点、得失点は実際の記録通り
       team_data.point += _row.point;
       team_data.avlbl_pt += _row.point;
+      team_data.all_game += 1;
       if (_row.point > 1) team_data.win += 1;
       else if (_row.point == 1) team_data.draw += 1;
       else if (_row.point == 0) team_data.lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
+      team_data.disp_all_game += 1;
       team_data.goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
       team_data.goal_get += parseInt(_row.goal_get);
       if(match_date <= TARGET_DATE) {
@@ -262,6 +269,7 @@ function make_html_column(target_team, team_data) {
         if (_row.point > 1) team_data.disp_win += 1;
         else if (_row.point == 1) team_data.disp_draw += 1;
         else if (_row.point == 0) team_data.disp_lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
+        team_data.disp_all_game += 1;
         team_data.disp_point += _row.point;
         team_data.disp_avlbl_pt += _row.point;
         team_data.disp_goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
@@ -295,6 +303,8 @@ function make_html_column(target_team, team_data) {
     }
     box_list.push(box_html);
   });
+  team_data.avrg_pt = (team_data.point == 0) ? 0 : (team_data.point / team_data.all_game);
+  team_data.disp_avrg_pt = (team_data.disp_point == 0) ? 0 : (team_data.disp_point / team_data.disp_all_game);
   const stats = make_team_stats(team_data);
   return {graph: box_list, avlbl_pt: team_data.disp_avlbl_pt, target_team: target_team, lose_box: lose_box, stats: stats};
 }
@@ -481,16 +491,17 @@ function make_ranktable() {
     if(! SHOWN_GROUP.includes(_group)) return;
     table_div.innerHTML += create_new_table(_group);
   });
-  table_div.innerHTML += '<hr/><br/>' + create_new_table('2nd-Teams', '2位グループ');
+  table_div.innerHTML += '<hr/><br/>' + create_new_table('2nd-Teams', '2位グループ (4位チーム抜き)');
   // ちょっと理由は分からないが、<table></table>の作成と、setDataを分けたら両方sortableになった
   const seconds_table = [];
   Object.keys(INPUTS).forEach(function (_group) {
     if(! SHOWN_GROUP.includes(_group)) return;
-    const rankdata = render_ranktable_content(_group);
-    const second_team = Object.assign(rankdata[1]);
+    render_ranktable_content(_group);
+    const second_team = rameke_2nd_rankdata_without_4th(_group);
     second_team['rank'] = _group;
     seconds_table.push(second_team);
   });
+
   let sort_key = document.getElementById('team_sort_key').value;
   if (sort_key.startsWith('disp_')) sort_key = sort_key.substring(5);
   seconds_table.sort(function(a, b) {return b[sort_key] - a[sort_key];});
@@ -501,9 +512,7 @@ function make_ranktable() {
 function render_ranktable_content(group) {
   const sortableTable = new SortableTable();
   sortableTable.setTable(document.getElementById('ranktable' + group));
-  const rankdata = make_rankdata(group);
-  sortableTable.setData(rankdata);
-  return rankdata;
+  sortableTable.setData(make_rankdata(group));
 }
 
 function create_new_table(group, groupName=null) {
@@ -515,7 +524,7 @@ function create_new_table(group, groupName=null) {
     '  <th data-id="name" data-header>チーム名</th>',
     '  <th data-id="all_game" sortable>試合</th>',
     '  <th data-id="point" sortable>勝点</th>',
-    '  <th data-id="points_per_game" sortable>平均</th>',
+    '  <th data-id="avrg_pt" sortable>平均</th>',
     '  <th data-id="avlbl_pt" sortable>最大</th>',
     '  <th data-id="win" sortable>勝</th>',
     '  <th data-id="draw" sortable>分</th>',
@@ -543,7 +552,7 @@ function make_rankdata(group) {
       lose: get_team_attr(team_data, 'lose', disp),
       all_game: all_game,
       point: get_team_attr(team_data, 'point', disp),
-      points_per_game: (get_team_attr(team_data, 'point', disp) / all_game).toFixed(2),
+      avrg_pt: get_team_attr(team_data, 'avrg_pt', disp).toFixed(2),
       avlbl_pt: get_team_attr(team_data, 'avlbl_pt', disp),
       goal_get: get_team_attr(team_data, 'goal_get', disp),
       goal_lose: get_team_attr(team_data, 'goal_get', disp) - get_team_attr(team_data, 'goal_diff', disp),
@@ -556,6 +565,48 @@ function make_rankdata(group) {
 function get_team_attr(team_data, attr, disp) {
   const prefix = disp ? 'disp_' : '';
   return team_data[prefix + attr];
+}
+
+function rameke_2nd_rankdata_without_4th(group) {
+  const team_list = get_sorted_team_list(INPUTS[group]);
+  const matchdata = [];
+  const ignore_team = (team_list.length <= 3) ? null : team_list[3];
+  if (SECOND_RANKDATA_DEBUG) console.log('Group ' + group + ' Ignore team: ' + ignore_team);
+  INPUTS[group][team_list[1]].df.forEach(function(match) {
+    if (!(ignore_team) || match.opponent != ignore_team) matchdata.push(match);
+  });
+
+  return remake_rankdata_from_matchdata(team_list[1], matchdata);
+}
+function remake_rankdata_from_matchdata(team_name, matchdata) {
+  const rankdata = {
+    win: 0,
+    draw: 0,
+    lose: 0,
+    all_game: 0,
+    future_game: 0,
+    goal_get: 0,
+    goal_lose: 0
+  };
+  rankdata.name = '<div class="' + team_name + '">' + team_name + '</div>';
+  matchdata.forEach(function(_match) {
+    if (_match.goal_get && _match.goal_lose) {
+      rankdata.all_game += 1;
+      rankdata.goal_get += parseInt(_match.goal_get);
+      rankdata.goal_lose += parseInt(_match.goal_lose);
+      if (_match.goal_get > _match.goal_lose) rankdata.win += 1;
+      else if (_match.goal_get < _match.goal_lose) rankdata.lose += 1;
+      else rankdata.draw += 1;
+    } else {
+      rankdata.future_game += 1;
+    }
+  });
+  rankdata.goal_diff = rankdata.goal_get - rankdata.goal_lose;
+  rankdata.point = rankdata.win * 3 + rankdata.draw;
+  rankdata.avrg_pt = ((rankdata.all_game == 0) ? 0 : rankdata.point / rankdata.all_game).toFixed(2);
+  rankdata.avlbl_pt = rankdata.point + rankdata.future_game * 3;
+
+  return rankdata;
 }
 /// //////////////////////////////////////////////////////////// 設定変更
 function set_scale_ev(event) {

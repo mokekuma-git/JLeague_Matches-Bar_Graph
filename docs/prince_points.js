@@ -159,7 +159,7 @@ function parse_csvresults(data, fields, default_group=null) {
     let match_date_str = _match.match_date;
     const match_date = new Date(_match.match_date);
     if (! isNaN(match_date))
-      match_date_str = ('0' + (match_date.getMonth() + 1)).slice(-2) + '/' + ('0' + match_date.getDate()).slice(-2);
+      match_date_str = [match_date.getYear() + 1900, dgt(match_date.getMonth() + 1, 2), dgt(match_date.getDate(), 2)].join('/');
     team_map[group][_match.home_team].df.push({
       'is_home': true,
       'opponent': _match.away_team,
@@ -262,9 +262,13 @@ function make_html_column(target_team, team_data) {
   team_data.win = 0; // 最新の勝利数
   team_data.lose = 0; // 最新の敗北数
   team_data.draw = 0; // 最新の引分数
-  team_data.disp_win = 0; // 最新の勝利数
-  team_data.disp_lose = 0; // 最新の敗北数
-  team_data.disp_draw = 0; // 最新の引分数
+  team_data.all_game = 0; // 最新の終了済み試合数
+  team_data.disp_win = 0; // 表示時の勝利数
+  team_data.disp_lose = 0; // 表示時の敗北数
+  team_data.disp_draw = 0; // 表示時のの引分数
+  team_data.disp_all_game = 0; // 表示時の終了済み試合数
+  team_data.rest_games = {}; // 最新の残り試合・対戦相手
+  team_data.disp_rest_games = {}; // 表示時の残り試合・対戦相手
 
   let match_sort_key;
   if(['first_bottom', 'last_bottom'].includes(document.getElementById('match_sort_key').value)) {
@@ -302,9 +306,11 @@ function make_html_column(target_team, team_data) {
       // 試合があるので、実際の勝ち点、最大勝ち点、得失点は実際の記録通り
       team_data.point += _row.point;
       team_data.avlbl_pt += _row.point;
+      team_data.all_game += 1;
       if (_row.point > 1) team_data.win += 1;
       else if (_row.point == 1) team_data.draw += 1;
       else if (_row.point == 0) team_data.lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
+      team_data.disp_all_game += 1;
       team_data.goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
       team_data.goal_get += parseInt(_row.goal_get);
       if(match_date <= TARGET_DATE) {
@@ -347,6 +353,8 @@ function make_html_column(target_team, team_data) {
     }
     box_list.push(box_html);
   });
+  team_data.avrg_pt = (team_data.point == 0) ? 0 : (team_data.point / team_data.all_game);
+  team_data.disp_avrg_pt = (team_data.disp_point == 0) ? 0 : (team_data.disp_point / team_data.disp_all_game);
   const stats = make_team_stats(team_data);
   return {graph: box_list, avlbl_pt: team_data.disp_avlbl_pt, target_team: target_team, lose_box: lose_box, stats: stats};
 }
@@ -546,7 +554,7 @@ function make_rankdata() {
       lose: get_team_attr(team_data, 'lose', disp),
       all_game: all_game,
       point: get_team_attr(team_data, 'point', disp),
-      points_per_game: (get_team_attr(team_data, 'point', disp) / all_game).toFixed(2),
+      avrg_pt: get_team_attr(team_data, 'avrg_pt', disp).toFixed(2),
       avlbl_pt: get_team_attr(team_data, 'avlbl_pt', disp),
       goal_get: get_team_attr(team_data, 'goal_get', disp),
       goal_lose: get_team_attr(team_data, 'goal_get', disp) - get_team_attr(team_data, 'goal_diff', disp),
