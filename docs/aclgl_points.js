@@ -481,22 +481,36 @@ function make_ranktable() {
     if(! SHOWN_GROUP.includes(_group)) return;
     table_div.innerHTML += create_new_table(_group);
   });
+  table_div.innerHTML += '<hr/><br/>' + create_new_table('2nd-Teams', '2位グループ');
   // ちょっと理由は分からないが、<table></table>の作成と、setDataを分けたら両方sortableになった
+  const seconds_table = [];
   Object.keys(INPUTS).forEach(function (_group) {
     if(! SHOWN_GROUP.includes(_group)) return;
-    create_ranktable_content(_group);
+    const rankdata = render_ranktable_content(_group);
+    const second_team = Object.assign(rankdata[1]);
+    second_team['rank'] = _group;
+    seconds_table.push(second_team);
   });
+  let sort_key = document.getElementById('team_sort_key').value;
+  if (sort_key.startsWith('disp_')) sort_key = sort_key.substring(5);
+  seconds_table.sort(function(a, b) {return b[sort_key] - a[sort_key];});
+  const sortableTable = new SortableTable();
+  sortableTable.setTable(document.getElementById('ranktable' + '2nd-Teams'));
+  sortableTable.setData(seconds_table);
 }
-function create_ranktable_content(group) {
-  let sortableTable = new SortableTable();
+function render_ranktable_content(group) {
+  const sortableTable = new SortableTable();
   sortableTable.setTable(document.getElementById('ranktable' + group));
-  sortableTable.setData(make_rankdata(group));
+  const rankdata = make_rankdata(group);
+  sortableTable.setData(rankdata);
+  return rankdata;
 }
 
-function create_new_table(group) {
+function create_new_table(group, groupName=null) {
+  if (! groupName) groupName = 'Group ' + group;
   return [
-    '<table id="ranktable' + group + '">',
-    (group ? '  <caption>Group ' + group + '</caption>' : '') + '<thead><tr>',
+    '<table id="ranktable' + group + '" class="ranktable">',
+    (group ? '  <caption>' + groupName + '</caption>' : '') + '<thead><tr>',
     '  <th data-id="rank" sortable></th>',
     '  <th data-id="name" data-header>チーム名</th>',
     '  <th data-id="all_game" sortable>試合</th>',
@@ -570,7 +584,10 @@ function set_pulldown(key, value, cookie_write = true, pulldown_write = true, ca
   if(cookie_write) set_cookie(key, value);
   if(pulldown_write) {
     const select = document.getElementById(TARGET_ITEM_ID[key]);
-    select.selectedIndex = select.querySelector('option[value="' + value + '"]').index;
+    if(select) {
+      const target = select.querySelector('option[value="' + value + '"]');
+      if(target) select.selectedIndex = target.index;
+    }
   }
   if(call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
 }
