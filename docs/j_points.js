@@ -493,7 +493,7 @@ function make_full_content(_row, match_date) {
 const dgt = (m, n) => ('0000' + m).substr(-n);
 function date_format(_date) {
   if(is_string(_date)) return _date;
-  return [dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
+  return [_date.getYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
 }
 function time_format(_date) {
   if(is_string(_date)) return '';
