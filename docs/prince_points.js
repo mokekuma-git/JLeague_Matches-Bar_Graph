@@ -158,8 +158,7 @@ function parse_csvresults(data, fields, default_group=null) {
 
     let match_date_str = _match.match_date;
     const match_date = new Date(_match.match_date);
-    if (! isNaN(match_date))
-      match_date_str = [match_date.getYear() + 1900, dgt(match_date.getMonth() + 1, 2), dgt(match_date.getDate(), 2)].join('/');
+    if (! isNaN(match_date)) match_date_str = date_format(match_date);
     team_map[group][_match.home_team].df.push({
       'is_home': true,
       'opponent': _match.away_team,

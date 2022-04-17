@@ -282,15 +282,15 @@ function rename_short_stadium_name(stadium) {
   return stadium;
 }
 function make_win_content(_row, match_date) {
-  return match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
+  return date_only(match_date) + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose
     + '<br/>' + rename_short_stadium_name(_row.stadium);
 }
 function make_draw_content(_row, match_date) {
-  return match_date + ' ' + rename_short_team_name(_row.opponent);
+  return date_only(match_date) + ' ' + rename_short_team_name(_row.opponent);
 }
 function make_full_content(_row, match_date) {
-  return '(' + _row.section_no + ') ' + match_date + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
+  return '(' + _row.section_no + ') ' + date_only(match_date) + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose + ' ' + rename_short_stadium_name(_row.stadium);
 }
 
@@ -298,6 +298,9 @@ const dgt = (m, n) => ('0000' + m).substr(-n);
 function date_format(_date) {
   if(is_string(_date)) return _date;
   return [_date.getYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
+}
+function date_only(_date_str) {
+  return _date_str.replace(/^\d{4}\//, '');
 }
 
 function make_point_column(max_avlbl_pt, _group) {
