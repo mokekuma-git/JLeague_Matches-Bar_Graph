@@ -32,6 +32,8 @@ th, td, tr {
   width: 40px;
 }
 .space {
+  background-color: black;
+  color: white;
   width: 140px;
 }
 p {
