@@ -11,7 +11,7 @@ import pandas as pd
 
 import requests
 
-from read_jleague_matches import update_if_diff, update_timestamp
+from read_jleague_matches import PREFERENCE, update_if_diff
 
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
@@ -33,14 +33,16 @@ def parse_match_date_data(text: str) -> Dict[str, str]:
     r"""与えられた "日付(改行)時間" (4/16（金）\n4:00 など) を日付と時間に分けて返す
 
     フォーマットは、match_date, start_timeをキーとしたDict形式
+    Validationのため、一度datetimeに変換するが、返すのは文字列
     """
     (match_date, start_time) = text.split()
+    # TODO: 年指定を固定値なのは、どうにかする
     match_date = pd.to_datetime('2022/' + match_date[:match_date.index('（')]).date()
     try:
         start_time = pd.to_datetime(start_time).time()
     except:
         start_time = pd.to_datetime('00:00').time()
-    return {'match_date': match_date, 'start_time': start_time}
+    return {'match_date': str(match_date), 'start_time': str(start_time)}
 
 
 def parse_match_result_data(text: str) -> Dict[str, str]:
@@ -105,12 +107,13 @@ if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    if '--skip' not in sys.argv:
-        # Yahooが日本チーム以外の反映が遅いので、手動の時はこちらでWeb読み込みをスキップ
-        match_df = pd.DataFrame()
-        for section in SECTION_ID_LIST:
-            match_df = pd.concat([match_df, pd.DataFrame(read_match(section))])
+    if '--debug' in sys.argv:
+        PREFERENCE['debug'] = True
 
-        match_df = match_df.sort_values(['section_no', 'match_index_in_section']) \
-            .reset_index(drop=True)
-        update_if_diff(match_df, CSV_FILENAME)
+    match_df = pd.DataFrame()
+    for section in SECTION_ID_LIST:
+        match_df = pd.concat([match_df, pd.DataFrame(read_match(section))])
+
+    match_df = match_df.sort_values(['section_no', 'match_index_in_section']) \
+        .reset_index(drop=True)
+    update_if_diff(match_df, CSV_FILENAME)

@@ -280,8 +280,9 @@ def compare_matches(foo_df, bar_df) -> bool:
         if PREFERENCE['debug']:
             for (_index, col_list) in _diff.items():
                 print(_index, col_list)
-                print(_foo.loc[_index])
-                print(_bar.loc[_index])
+                for col_name in col_list:
+                    print(_foo.loc[_index, col_name], type(_foo.loc[_index, col_name]))
+                    print(_bar.loc[_index, col_name], type(_bar.loc[_index, col_name]))
         return True
     return False
 
@@ -289,12 +290,14 @@ def compare_matches(foo_df, bar_df) -> bool:
 def update_if_diff(match_df: pd.DataFrame, filename: str) -> bool:
     """試合DataFrameとファイル名を受け取り、中身に差分があれば更新する"""
     old_df = pd.read_csv(filename, index_col=0, dtype=str, na_values='')
-    if compare_matches(old_df, match_df):
+    if compare_matches(match_df, old_df):
         print(f'Update {filename}')
         match_df.to_csv(filename)
         update_timestamp(filename)
+        return True
     else:
         print(f'No chnges found in {filename}')
+        return False
 
 
 def get_timestamp_from_csv(filename: str) -> datetime:
