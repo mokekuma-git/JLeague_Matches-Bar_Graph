@@ -153,6 +153,8 @@ def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
         else:
             print('No Cancel## ' + _match_data['venueFullName'])
 
+        _row['extraTime'] = str(_row['extraTime'])  # 旧CSVとの比較用に文字列化
+
         result_list.append(_row)
 
     return pd.DataFrame(result_list)
@@ -181,6 +183,8 @@ def make_args() -> argparse.Namespace:
 
     parser.add_argument('competition', metavar='COMP', type=str, nargs='?',
                         help='大会の名前' + str(list(COMPETITION_CONF.keys())), default='PrinceKanto')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='デバッグ出力を表示')
 
     return parser.parse_args()
 
@@ -189,8 +193,8 @@ if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    import sys
-    if '--debug' in sys.argv:
+    ARGS = make_args()
+    if ARGS.debug:
         PREFERENCE['debug'] = True
 
-    read_group(make_args().competition)
+    read_group(ARGS.competition)
