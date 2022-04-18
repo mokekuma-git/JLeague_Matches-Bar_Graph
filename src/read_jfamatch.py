@@ -6,12 +6,15 @@
 import argparse
 import json
 import re
+from turtle import update
 from typing import Any
 from typing import Dict
 
 import pandas as pd
 
 import requests
+
+from read_jleague_matches import update_if_diff
 
 SCHEDULE_URL = 'URL'
 CSV_FILENAME = 'CSV'
@@ -168,7 +171,7 @@ def read_group(competition: str) -> None:
         match_df = pd.concat([match_df, _df])
     print(match_df['status'])
     match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
-    match_df.to_csv(COMPETITION_CONF[competition][CSV_FILENAME])
+    update_if_diff(match_df, COMPETITION_CONF[competition][CSV_FILENAME])
 
 
 def make_args() -> argparse.Namespace:

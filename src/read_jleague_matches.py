@@ -204,6 +204,12 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
 def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
     """試合結果ファイルを実行日を付けた試合データファイルとして保存する"""
     filename = get_latest_allmatches_filename(category)
+    update_timestamp(filename)
+    all_matches.to_csv(filename)
+
+
+def update_timestamp(filename: str) -> None:
+    """与えられたfilenameのタイムスタンプ日時を現時刻に更新する"""
     if os.path.exists(TIMESTAMP_FILE):
         timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
         timestamp['date'] = timestamp['date'].apply(
@@ -217,7 +223,6 @@ def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
         timestamp.index.name = 'file'
     timestamp.loc[filename] = datetime.now().astimezone(LOCAL_TZ)
     timestamp.to_csv(TIMESTAMP_FILE)
-    all_matches.to_csv(filename)
 
 
 def update_all_matches(category: int, force_update: bool = False) -> pd.DataFrame:
@@ -279,6 +284,17 @@ def compare_matches(foo_df, bar_df) -> bool:
                 print(_bar.loc[_index])
         return True
     return False
+
+
+def update_if_diff(match_df: pd.DataFrame, filename: str) -> bool:
+    """試合DataFrameとファイル名を受け取り、中身に差分があれば更新する"""
+    old_df = pd.read_csv(filename, index_col=0, dtype=str, na_values='')
+    if compare_matches(old_df, match_df):
+        print(f'Update {filename}')
+        match_df.to_csv(filename)
+        update_timestamp(filename)
+    else:
+        print(f'No chnges found in {filename}')
 
 
 def get_timestamp_from_csv(filename: str) -> datetime:

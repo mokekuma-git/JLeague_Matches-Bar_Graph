@@ -11,6 +11,8 @@ import pandas as pd
 
 import requests
 
+from read_jleague_matches import update_if_diff, update_timestamp
+
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
 CSV_FILENAME = '../docs/csv/2022_allmatch_result-ACL_GL.csv'
@@ -111,4 +113,4 @@ if __name__ == '__main__':
 
         match_df = match_df.sort_values(['section_no', 'match_index_in_section']) \
             .reset_index(drop=True)
-        match_df.to_csv(CSV_FILENAME)
+        update_if_diff(match_df, CSV_FILENAME)
