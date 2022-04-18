@@ -6,7 +6,6 @@
 import argparse
 import json
 import re
-from turtle import update
 from typing import Any
 from typing import Dict
 
@@ -14,7 +13,7 @@ import pandas as pd
 
 import requests
 
-from read_jleague_matches import update_if_diff
+from read_jleague_matches import PREFERENCE, update_if_diff
 
 SCHEDULE_URL = 'URL'
 CSV_FILENAME = 'CSV'
@@ -189,5 +188,9 @@ def make_args() -> argparse.Namespace:
 if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+    import sys
+    if '--debug' in sys.argv:
+        PREFERENCE['debug'] = True
 
     read_group(make_args().competition)
