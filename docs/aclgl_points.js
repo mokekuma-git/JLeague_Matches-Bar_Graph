@@ -263,7 +263,6 @@ function make_html_column(target_team, team_data) {
       if (_row.point > 1) team_data.win += 1;
       else if (_row.point == 1) team_data.draw += 1;
       else if (_row.point == 0) team_data.lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
-      team_data.disp_all_game += 1;
       team_data.goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
       team_data.goal_get += parseInt(_row.goal_get);
       if(match_date <= TARGET_DATE) {
