@@ -348,11 +348,10 @@ function append_space_cols(cache, max_avlbl_pt) {
 
 function rename_short_team_name(team_name) {
   if (team_name in TEAM_RENAME_MAP) return TEAM_RENAME_MAP[team_name];
-  return team_name;
+  return team_name.substring(0, 4);
 }
 function rename_short_stadium_name(stadium) {
-  if (stadium.length > 7) return stadium.substring(0, 7);
-  return stadium;
+  return stadium.substring(0, 7);
 }
 function make_win_content(_row, match_date) {
   return date_only(match_date) + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
