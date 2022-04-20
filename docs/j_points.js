@@ -411,17 +411,14 @@ function make_html_column(target_team, team_data) {
       if(future) {
         box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
           + make_win_content(_row, match_date)
-          + '<span class="tooltiptext ' + target_team
-          + '">(' + _row.section_no + ')</span></p></div>\n';
-          + ((_row.status != '') ? '<br/>' + _row.status : '')
-          + '</span></p></div>\n';
+          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
+          + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       } else {
         box_html = '<div class="tall box'
           + (_row.live ? ' live' : '') + '"><p class="tooltip '
           + target_team + '">' + make_win_content(_row, match_date)
-          + '<span class="tooltiptext halfW ' + target_team + '">(' + _row.section_no + ')'
-          + ((_row.status != '') ? '<br/>' + _row.status : '')
-          + '</span></p></div>\n';
+          + '<span class="tooltiptext halfW ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
+          + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       }
     } else if(box_height == 1) {
       box_html = '<div class="short box'
@@ -429,12 +426,12 @@ function make_html_column(target_team, team_data) {
         + '"><p class="tooltip ' + target_team + '">'
         + make_draw_content(_row, match_date) + '<span class="tooltiptext fullW ' + target_team + '">'
         + make_full_content(_row, match_date)
-        + ((_row.status != '') ? '<br/>' + _row.status : '')
+        + ((_row.status) ? '<br/>' + _row.status : '')
         + '</span></p></div>';
     } else if(box_height == 0) {
       var lose_content = make_full_content(_row, match_date);
       if (_row.live) {
-        lose_content = '<div class="live">' + lose_content + '<br/>' + _row.status + '</div>';
+        lose_content = '<div class="live">' + lose_content + ((_row.status) ? '<br/>' + _row.status : '') + '</div>';
       }
       lose_box.push(lose_content);
     }
@@ -499,7 +496,8 @@ function make_draw_content(_row, match_date) {
   return date_only(match_date) + ' ' + _row.opponent;
 }
 function make_full_content(_row, match_date) {
-  return '(' + _row.section_no + ') ' + date_only(match_date) + ' ' + _row.opponent + '<br/>'
+  return '(' + _row.section_no + ') ' + time_format(_row.start_time) + '<br/>'
+    + date_only(match_date) + ' ' + _row.opponent + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose + ' ' + _row.stadium;
 }
 
@@ -509,7 +507,7 @@ function date_format(_date) {
   return [_date.getYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
 }
 function time_format(_date) {
-  if(is_string(_date)) return '';
+  if(is_string(_date)) return _date.replace(/(\d\d:\d\d):\d\d/, "$1");
   return [dgt((_date.getHours()), 2), dgt(_date.getMinutes(), 2), dgt(_date.getSeconds(), 2)].join(':');
 }
 function date_only(_date_str) {

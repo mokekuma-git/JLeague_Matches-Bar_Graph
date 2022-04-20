@@ -335,20 +335,31 @@ function make_html_column(target_team, team_data) {
     // INNER_HTMLにHTML直書きはダサい？ コンポーネントごと追加していくスタイルにすべきか
     if(box_height == 3) {
       if(future) {
-        box_html = '<div class="tall box"><div class="future bg ' + remove_dot(target_team) + '"></div><p class="tooltip">'
+        box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
           + make_win_content(_row, match_date)
-          + '<span class="tooltiptext halfW ' + remove_dot(target_team) + '">(' + _row.section_no + ')</span></p></div>\n';
+          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
+          + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       } else {
-        box_html = '<div class="tall box"><p class="tooltip ' + remove_dot(target_team) + '">' + make_win_content(_row, match_date)
-          + '<span class="tooltiptext ' + remove_dot(target_team) + '">(' + _row.section_no + ')</span></p></div>\n';
+        box_html = '<div class="tall box'
+          + (_row.live ? ' live' : '') + '"><p class="tooltip '
+          + target_team + '">' + make_win_content(_row, match_date)
+          + '<span class="tooltiptext halfW ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
+          + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       }
     } else if(box_height == 1) {
-      box_html = '<div class="short box"><p class="tooltip ' + remove_dot(target_team) + '">'
-        + make_draw_content(_row, match_date) + '<span class="tooltiptext fullW ' + remove_dot(target_team) + '">'
-        + make_full_content(_row, match_date) + '</span></p></div>';
-      // _row.goal_get + '-' + _row.goal_lose + '<br/>';
+      box_html = '<div class="short box'
+        + (_row.live ? ' live' : '')
+        + '"><p class="tooltip ' + target_team + '">'
+        + make_draw_content(_row, match_date) + '<span class="tooltiptext fullW ' + target_team + '">'
+        + make_full_content(_row, match_date)
+        + ((_row.status) ? '<br/>' + _row.status : '')
+        + '</span></p></div>';
     } else if(box_height == 0) {
-      lose_box.push(make_full_content(_row, match_date));
+      var lose_content = make_full_content(_row, match_date);
+      if (_row.live) {
+        lose_content = '<div class="live">' + lose_content + ((_row.status) ? '<br/>' + _row.status : '') + '</div>';
+      }
+      lose_box.push(lose_content);
     }
     box_list.push(box_html);
   });
@@ -412,7 +423,8 @@ function make_draw_content(_row, match_date) {
   return date_only(match_date) + ' ' + _row.opponent.substr(0, 3);
 }
 function make_full_content(_row, match_date) {
-  return '(' + _row.section_no + ') ' + date_only(match_date) + ' ' + _row.opponent.substr(0, 3) + '<br/>'
+  return '(' + _row.section_no + ') ' + time_format(_row.start_time) + '<br/>'
+    + date_only(match_date) + ' ' + _row.opponent.substr(0, 3) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose + ' ' + _row.stadium.substr(0, 7);
 }
 
@@ -420,6 +432,10 @@ const dgt = (m, n) => ('0000' + m).substr(-n);
 function date_format(_date) {
   if(is_string(_date)) return _date;
   return [_date.getYear() + 1900, dgt(_date.getMonth() + 1, 2), dgt(_date.getDate(), 2)].join('/');
+}
+function time_format(_date) {
+  if(is_string(_date)) return _date.replace(/(\d\d:\d\d):\d\d/, "$1");
+  return [dgt((_date.getHours()), 2), dgt(_date.getMinutes(), 2), dgt(_date.getSeconds(), 2)].join(':');
 }
 function date_only(_date_str) {
   return _date_str.replace(/^\d{4}\//, '');

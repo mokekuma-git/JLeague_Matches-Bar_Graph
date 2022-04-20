@@ -220,10 +220,12 @@ function make_html_column(target_team, team_data) {
       if(future) {
         box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
           + make_win_content(_row, match_date)
-          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
+          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ') '
+          + time_format(_row.start_time) + '</span></p></div>\n';
       } else {
         box_html = '<div class="tall box"><p class="tooltip ' + target_team + '">' + make_win_content(_row, match_date)
-          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ')</span></p></div>\n';
+          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ') '
+          + time_format(_row.start_time) + '</span></p></div>\n';
       }
     } else if(box_height == 1) {
       box_html = '<div class="short box"><p class="tooltip ' + target_team + '">'
@@ -290,7 +292,8 @@ function make_draw_content(_row, match_date) {
   return date_only(match_date) + ' ' + rename_short_team_name(_row.opponent);
 }
 function make_full_content(_row, match_date) {
-  return '(' + _row.section_no + ') ' + date_only(match_date) + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
+  return '(' + _row.section_no + ') ' + time_format(_row.start_time) + '<br/>'
+    + date_only(match_date) + ' ' + rename_short_team_name(_row.opponent) + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose + ' ' + rename_short_stadium_name(_row.stadium);
 }
 
@@ -298,6 +301,10 @@ const dgt = (m, n) => ('0000' + m).substr(-n);
 function date_format(_date) {
   if(is_string(_date)) return _date;
   return [_date.getYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
+}
+function time_format(_date) {
+  if(is_string(_date)) return _date.replace(/(\d\d:\d\d):\d\d/, "$1");
+  return [dgt((_date.getHours()), 2), dgt(_date.getMinutes(), 2), dgt(_date.getSeconds(), 2)].join(':');
 }
 function date_only(_date_str) {
   return _date_str.replace(/^\d{4}\//, '');

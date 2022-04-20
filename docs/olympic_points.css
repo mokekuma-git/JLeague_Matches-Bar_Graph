@@ -18,6 +18,7 @@ th, td, tr {
   font-weight: 700;
   position: relative;
   text-align: center;
+  white-space: nowrap;
 }
 .short {
   height: 25px;
@@ -44,6 +45,7 @@ p {
   margin: auto;
   top: 0;
   bottom: 0;
+  white-space: nowrap;
 }
 .bg {
   height: 100%;
