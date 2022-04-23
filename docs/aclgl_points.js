@@ -265,6 +265,11 @@ function make_html_column(target_team, team_data) {
     v_a = a[match_sort_key];
     v_b = b[match_sort_key];
     if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
+    if (! v_a.match(/\d\d\/\d\d$/)) {
+      if (! v_b.match(/\d\d\/\d\d$/)) return 0;
+      return 1;
+    }
+    if (! v_b.match(/\d\d\/\d\d$/)) return -1;
     return compare_str(v_a, v_b);
   }).forEach(function(_row) {
     let match_date;

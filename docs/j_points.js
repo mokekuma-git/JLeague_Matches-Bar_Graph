@@ -131,9 +131,8 @@ function get_csv_files(category, season) {
   return result;
 }
 
-function get_csv_filename(category, season=null) {
-  if (season) return 'csv/' + season + '_allmatch_result-J' + category + '.csv';
-  return 'csv/match_result-J' + category + '.csv';
+function get_csv_filename(category, season) {
+  return 'csv/' + season + '_allmatch_result-J' + category + '.csv';
 }
 
 function read_timestamp() {
@@ -303,7 +302,7 @@ function get_category() {
 }
 
 const is_string = (value) => (typeof(value) === 'string' || value instanceof String);
-const is_number = (value) => (typeof(value) === 'number');
+// const is_number = (value) => (typeof(value) === 'number');
 
 const compare_str = (a, b) => (a === b) ? 0 : (a < b) ? -1 : 1;
 function make_html_column(target_team, team_data) {
@@ -347,11 +346,11 @@ function make_html_column(target_team, team_data) {
     v_a = a[match_sort_key];
     v_b = b[match_sort_key];
     if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
-    if (! v_a.match(/\d\d\/\d\d$/g)) {
-      if (! v_b.match(/\d\d\/\d\d$/g)) return 0;
+    if (! v_a.match(/\d\d\/\d\d$/)) {
+      if (! v_b.match(/\d\d\/\d\d$/)) return 0;
       return 1;
     }
-    if (! v_b.match(/\d\d\/\d\d$/g)) return -1;
+    if (! v_b.match(/\d\d\/\d\d$/)) return -1;
     return compare_str(v_a, v_b);
   }).forEach(function(_row) {
     let match_date;
@@ -828,8 +827,7 @@ function reset_date_slider_ev(event) {
   render_bar_graph();
 }
 function reset_target_date() {
-  if(document.getElementById('season').selectedIndex == 0) TARGET_DATE = date_format(new Date());
-  else TARGET_DATE = '12/31';
+  TARGET_DATE = date_format(new Date());
 }
 /// //////////////////////////////////////////////////////////// 背景調整用
 function set_future_opacity_ev(event) {
