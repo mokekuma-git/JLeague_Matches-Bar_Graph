@@ -104,7 +104,7 @@ function parse_cookies() {
 }
 
 function get_cookie(key) {
-  if(key in COOKIE_OBJ) return COOKIE_OBJ[key];
+  if(COOKIE_OBJ.hasOwnProperty(key)) return COOKIE_OBJ[key];
   return undefined;
 }
 
@@ -376,7 +376,7 @@ function append_space_cols(cache, max_avlbl_pt) {
 }
 
 function rename_short_team_name(team_name) {
-  if (team_name in TEAM_RENAME_MAP) return TEAM_RENAME_MAP[team_name];
+  if (TEAM_RENAME_MAP.hasOwnProperty(team_name)) return TEAM_RENAME_MAP[team_name];
   return team_name.substring(0, 4);
 }
 function rename_short_stadium_name(stadium) {

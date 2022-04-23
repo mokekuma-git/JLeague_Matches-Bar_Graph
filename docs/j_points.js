@@ -122,7 +122,7 @@ function refresh_match_data() {
 function get_csv_files(category, season) {
   // if (document.getElementById('season').selectedIndex == 0) return [get_csv_filename(category)];
   const target_seasons = [];
-  Object.keys(SEASON_MAP[1]).forEach(function(x) {if (x.startsWith(season)) target_seasons.push(x);});
+  Object.keys(SEASON_MAP[category]).forEach(function(x) {if (x.startsWith(season)) target_seasons.push(x);});
   if (target_seasons.length == 1) return [get_csv_filename(category, season)];
   target_seasons.shift(season);
   target_seasons.sort();
