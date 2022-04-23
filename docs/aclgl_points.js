@@ -13,6 +13,7 @@ const MATCH_DATE_SET = [];
 // Debug params
 let COMPARE_DEBUG = false;
 let SECOND_RANKDATA_DEBUG = false;
+let DELETE_TEAM_DEBUG = false;
 
 // Cookie variables
 let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
@@ -60,6 +61,8 @@ function init() {
   document.getElementById('reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
   document.getElementById('reset_cookie').addEventListener('click', function(){clear_cookies(); load_cookies();}, false);
   document.getElementById('scale_slider').addEventListener('change', set_scale_ev, false);
+
+  document.getElementById('toggle_4th_team_display').addEventListener('click', toggle_4th_team_display, false);
 
   // デフォルト値の読み込み
   HEIGHT_UNIT = parseInt(get_css_rule('.short').style.height);
@@ -119,6 +122,33 @@ function clear_cookies() {
 
 function refresh_match_data() {
   read_inputs('csv/2022_allmatch_result-ACL_GL.csv');
+}
+
+function toggle_4th_team_display() {
+  const fourth_team_list = [];
+  SHOWN_GROUP.forEach(function(group){
+    const team_list = get_sorted_team_list(INPUTS[group]);
+    if(team_list.length >= 4) fourth_team_list[group] = team_list[3];
+  });
+  if (DELETE_TEAM_DEBUG) console.log(fourth_team_list);
+  if (Object.keys(fourth_team_list).length == 0) refresh_match_data();
+  else delete_team_data(fourth_team_list);
+}
+
+function delete_team_data(delete_team_list) {
+  if (DELETE_TEAM_DEBUG) {
+    console.log('delete 4th team data');
+    console.log(delete_team_list);
+  }
+  Object.keys(delete_team_list).forEach(function(group) {
+    if (DELETE_TEAM_DEBUG) console.log(group, delete_team_list[group]);
+    delete INPUTS[group][delete_team_list[group]];
+    Object.keys(INPUTS[group]).forEach(function(team) {
+      INPUTS[group][team].df = INPUTS[group][team].df.filter(gamedata => gamedata.opponent != delete_team_list[group]);
+      if (DELETE_TEAM_DEBUG) console.log(team, INPUTS[group][team].df);
+    });
+  });
+  render_bar_graph();
 }
 
 function read_inputs(filename) {
