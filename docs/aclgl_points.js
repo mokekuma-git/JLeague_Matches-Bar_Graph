@@ -136,10 +136,7 @@ function toggle_4th_team_display() {
 }
 
 function delete_team_data(delete_team_list) {
-  if (DELETE_TEAM_DEBUG) {
-    console.log('delete 4th team data');
-    console.log(delete_team_list);
-  }
+  if (DELETE_TEAM_DEBUG) console.log('delete 4th team data', delete_team_list);
   Object.keys(delete_team_list).forEach(function(group) {
     if (DELETE_TEAM_DEBUG) console.log(group, delete_team_list[group]);
     delete INPUTS[group][delete_team_list[group]];
