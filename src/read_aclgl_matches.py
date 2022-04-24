@@ -64,7 +64,7 @@ def parse_match_result_data(text: str) -> Dict[str, str]:
         away_goal = result_list[2]
         match_status = result_list[3]
 
-    return {'home_goal': home_goal, 'away_goal': away_goal, 'match_status': match_status}
+    return {'home_goal': home_goal, 'away_goal': away_goal, 'status': match_status}
 
 
 def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:

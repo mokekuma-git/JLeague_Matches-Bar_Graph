@@ -162,6 +162,32 @@ function read_inputs(filename) {
   });
 }
 
+function write_timestamp(filename) {
+  if (filename === undefined) filename = get_csv_files(get_category(), get_season())[0];
+  document.getElementById('data_timestamp').innerHTML = (TIMESTAMPS[filename]);
+}
+
+function make_staus_attr(match) {
+  if (! match.hasOwnProperty('status')) {
+    return '';
+  }
+  if (match.status == 'ＶＳ') { // Jリーグ公式の試合前は、この表示
+    return '開始前';
+  }
+  return match.status.replace('速報中', '');
+}
+function make_live_attr(match) {
+  if (! match.hasOwnProperty('status')) {
+    return false;
+  }
+  if (match.status.indexOf('速報中') >= 0) { // Jリーグ公式の試合中は、この表示
+    return true;
+  }
+  if (match.status == '試合前' || match.status == '試合終了')
+    return false;
+  return true;
+}
+
 // Javascriptではpandasも無いし、手続き的に
 function parse_csvresults(data, fields, default_group=null) {
   const team_map = {};
@@ -192,7 +218,9 @@ function parse_csvresults(data, fields, default_group=null) {
       'match_date': match_date_str,
       'section_no': _match.section_no,
       'stadium': _match.stadium,
-      'start_time': _match.start_time
+      'start_time': _match.start_time,
+      'status': make_staus_attr(_match),
+      'live': make_live_attr(_match)
     });
     // console.log(team_map[group][_match.home_teame].df.slice(-1)[0]);
     team_map[group][_match.away_team].df.push({
@@ -205,7 +233,9 @@ function parse_csvresults(data, fields, default_group=null) {
       'match_date': match_date_str,
       'section_no': _match.section_no,
       'stadium': _match.stadium,
-      'start_time': _match.start_time
+      'start_time': _match.start_time,
+      'status': make_staus_attr(_match),
+      'live': make_live_attr(_match)
     });
     // console.log(team_map[group][_match.away_teame].df.slice(-1)[0]);
   });
@@ -323,20 +353,29 @@ function make_html_column(target_team, team_data) {
       if(future) {
         box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
           + make_win_content(_row, match_date)
-          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ') '
-          + time_format(_row.start_time) + '</span></p></div>\n';
+          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
+          + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       } else {
-        box_html = '<div class="tall box"><p class="tooltip ' + target_team + '">' + make_win_content(_row, match_date)
-          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ') '
-          + time_format(_row.start_time) + '</span></p></div>\n';
+        box_html = '<div class="tall box'
+          + (_row.live ? ' live' : '') + '"><p class="tooltip '
+          + target_team + '">' + make_win_content(_row, match_date)
+          + '<span class="tooltiptext halfW ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
+          + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       }
     } else if(box_height == 1) {
-      box_html = '<div class="short box"><p class="tooltip ' + target_team + '">'
-        + make_draw_content(_row, match_date) + '<span class="tooltiptext full@ ' + target_team + '">'
-        + make_full_content(_row, match_date) + '</span></p></div>';
-      // _row.goal_get + '-' + _row.goal_lose + '<br/>';
+      box_html = '<div class="short box'
+        + (_row.live ? ' live' : '')
+        + '"><p class="tooltip ' + target_team + '">'
+        + make_draw_content(_row, match_date) + '<span class="tooltiptext fullW ' + target_team + '">'
+        + make_full_content(_row, match_date)
+        + ((_row.status) ? '<br/>' + _row.status : '')
+        + '</span></p></div>';
     } else if(box_height == 0) {
-      lose_box.push(make_full_content(_row, match_date));
+      var lose_content = make_full_content(_row, match_date);
+      if (_row.live) {
+        lose_content = '<div class="live">' + lose_content + ((_row.status) ? '<br/>' + _row.status : '') + '</div>';
+      }
+      lose_box.push(lose_content);
     }
     box_list.push(box_html);
   });
