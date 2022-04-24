@@ -142,8 +142,8 @@ function read_timestamp() {
   xhr.onload = ()=> {
     const result = Papa.parse(xhr.responseText, {header: true, delimiter: ',', skipEmptyLines: 'greedy'});
     result.data.forEach(function(x) {
-      const kickoff_time = new Date(x['date'].replace(' ', 'T'));  // iOS Safari向けに 2022/04/09 スタイルへ
-      TIMESTAMPS[x['file'].replace('../docs/', '')] = date_format(kickoff_time) + ' ' + time_format(kickoff_time);});
+      const filetime = new Date(x['date'].replace(' ', 'T'));  // iOS Safari向けにISO 8601スタイルへ
+      TIMESTAMPS[x['file'].replace('../docs/', '')] = date_format(filetime) + ' ' + time_format(filetime);});
     write_timestamp();
   };
 }
@@ -346,7 +346,7 @@ function make_html_column(target_team, team_data) {
     v_a = a[match_sort_key];
     v_b = b[match_sort_key];
     if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
-    if (! v_a.match(/\d\d\/\d\d$/)) {
+    if (! v_a.match(/\d\d\/\d\d$/)) {  // 日付っぽい文字列とそうでないものでは、前者優先
       if (! v_b.match(/\d\d\/\d\d$/)) return 0;
       return 1;
     }
