@@ -1,5 +1,6 @@
 // TODO: Global変数以外の解決方法は、後で調べる
 let INPUTS; // League match data
+let TEAM_LIST;
 let SEASON_MAP;
 let TIMESTAMPS = {}; // Timestamps of latest league data
 
@@ -356,9 +357,11 @@ function make_html_column(target_team, team_data) {
     let match_date;
     if(is_string(_row.match_date)) {
       match_date = _row.match_date;
-      if (!MATCH_DATE_SET.includes(match_date)) MATCH_DATE_SET.push(match_date)
+      if (match_date == '') match_date = '未定';
+      else if (match_date < '1970/01/01') console.log('Unexpected date: ' + match_date, _row);
+      if (!MATCH_DATE_SET.includes(match_date) && match_date != '未定') MATCH_DATE_SET.push(match_date)
     } else {
-      match_date = (_row.match_date) ? _row.match_date : '未定 ';
+      match_date = (_row.match_date) ? _row.match_date : '未定';
     }
 
     let future;
@@ -529,12 +532,14 @@ function make_point_column(max_avlbl_pt) {
 }
 
 function render_bar_graph() {
+  const _group = 'matches';  
   if(! INPUTS) return;
   MATCH_DATE_SET.length = 0; // TODO: 最新情報は、CSVを直接読む形式に変えた時にそちらで計算
   MATCH_DATE_SET.push('1970/01/01');
   BOX_CON.innerHTML = '';
+  TEAM_LIST = {};
   let columns = {};
-  const grp_input = INPUTS['matches']
+  const grp_input = INPUTS[_group];
   let max_avlbl_pt = 0;
   Object.keys(grp_input).forEach(function (team_name) {
     // 各チームの積み上げグラフ (spaceは未追加) を作って、中間状態を受け取る
@@ -546,10 +551,11 @@ function render_bar_graph() {
   });
   MATCH_DATE_SET.sort();
   reset_date_slider(date_format(TARGET_DATE));
-  let insert_point_columns = make_insert_columns(get_category());
-  let point_column = make_point_column(max_avlbl_pt);
+  const insert_point_columns = make_insert_columns(get_category());
+  const point_column = make_point_column(max_avlbl_pt);
   BOX_CON.innerHTML += point_column;
-  get_sorted_team_list(grp_input).forEach(function(team_name, index) {
+  TEAM_LIST[_group] = get_sorted_team_list(grp_input);
+  TEAM_LIST[_group].forEach(function(team_name, index) {
     if(insert_point_columns.includes(index))
       BOX_CON.innerHTML += point_column;
     BOX_CON.innerHTML += columns[team_name].graph;
@@ -557,49 +563,37 @@ function render_bar_graph() {
   BOX_CON.innerHTML += point_column;
   set_scale(document.getElementById('scale_slider').value, false, false);
 
-  make_ranktable('matches');
+  make_ranktable(_group);
 }
 
-function get_sorted_team_list(matches) {
+// Team Sort
+function get_sorted_team_list(teams) {
   const sort_key = document.getElementById('team_sort_key').value;
-  return Object.keys(matches).sort(function(a, b) {
+  const disp = sort_key.startsWith('disp_');
+  const disp_str = (disp ? 'disp' : 'latest'); // Debug表示用
+  return Object.keys(teams).sort(function(a, b) {
     // team_sort_keyで指定された勝ち点で比較
-    let compare = matches[b][sort_key] - matches[a][sort_key];
-    if (COMPARE_DEBUG) console.log('勝点', sort_key, a, matches[a][sort_key], b, matches[b][sort_key]);
-    if(compare != 0) return compare;
+    let compare = calc_compare(a, teams[a][sort_key], b, teams[b][sort_key], '勝点' + sort_key);
+    if (compare != 0) return compare;
     if (sort_key.endsWith('avlbl_pt')) { // 最大勝ち点が同じときは、既に取った勝ち点を次点で比較
       let sub_key = sort_key.replace('avlbl_pt', 'point');
-      compare = matches[b][sub_key] - matches[a][sub_key];
-      if (COMPARE_DEBUG) console.log('(通常の)勝点', sub_key, a, matches[a][sub_key], b, matches[b][sub_key]);
-      if(compare != 0) return compare;
+      compare = calc_compare(a, teams[a][sub_key], b, teams[b][sub_key], '(通常の)勝点' + sub_key);
+      if (compare != 0) return compare;
     }
 
     // 得失点差で比較 (表示時点か最新かで振り分け)
-    if(sort_key.startsWith('disp_')) {
-      compare = matches[b].disp_goal_diff - matches[a].disp_goal_diff;
-      if (COMPARE_DEBUG) console.log('得失点(disp)', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
-    } else {
-      compare = matches[b].goal_diff - matches[a].goal_diff;
-      if (COMPARE_DEBUG) console.log('得失点', a, matches[a].goal_diff, b, matches[b].goal_diff);
-    }
-    if(compare != 0) return compare;
-
-    // 総得点で比較 (表示時点か最新かで振り分け)
-    if (sort_key.startsWith('disp_')) {
-      compare = matches[b].disp_goal_get - matches[a].disp_goal_get;
-      if (COMPARE_DEBUG) console.log('総得点(disp)', a, matches[a].disp_goal_get, b, matches[b].disp_goal_get);
-    } else {
-      compare = matches[b].goal_get - matches[a].goal_get;
-      if (COMPARE_DEBUG) console.log('総得点', a, matches[a].goal_get, b, matches[b].goal_get);
-    }
+    compare = calc_compare(a, get_team_attr(teams[a], 'goal_diff', disp), b, get_team_attr(teams[b], 'goal_diff', disp), '得失点' + disp_str);
     if (compare != 0) return compare;
 
-    // それでも同じなら、前年の順位を元にソート
-    const pre_season = SEASON_MAP[get_category()][get_season()][3];
-    if (! pre_season) return 0; // 前年データが入っていなければ、差分無しとして返す
-    if (COMPARE_DEBUG) console.log('前年順位', a, pre_season.indexOf(a), b, pre_season.indexOf(b));
-    return pre_season.indexOf(a) - pre_season.indexOf(b);
+    // 総得点で比較 (表示時点か最新かで振り分け)
+    compare = calc_compare(a, get_team_attr(teams[a], 'goal_get', disp), b, get_team_attr(teams[b], 'goal_get', disp), '総得点' + disp_str);
+    // それでも同じなら、そのまま登録順 (return 0)
+    return compare;
   });
+}
+function calc_compare(a, val_a, b, val_b, criteria) { // 比較値を出す際に、Flagに応じてデバッグ出力を実施
+  if (COMPARE_DEBUG) console.log(criteria, a, val_a, b, val_b);
+  return val_b - val_a;
 }
 
 function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
@@ -645,7 +639,6 @@ function get_all_restgame() {
 }
 function make_rankdata(group) {
   const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
-  const team_list = get_sorted_team_list(INPUTS[group]);
   const datalist = [];
 
   const [all_team_num, promotion_num, relegation_num] = SEASON_MAP[get_category()][get_season()];
@@ -660,7 +653,7 @@ function make_rankdata(group) {
   const all_game_finished = (get_all_restgame() == 0);
 
   let rank = 0;
-  team_list.forEach(function(team_name) {
+  TEAM_LIST[group].forEach(function(team_name) {
     rank++;
     const team_data = INPUTS[group][team_name];
     const tmp_data = {

@@ -1,5 +1,6 @@
 // TODO: Global変数以外の解決方法は、後で調べる
 let INPUTS; // League match data
+let TEAM_LIST;
 
 // Common HTML variables
 let HEIGHT_UNIT;
@@ -71,7 +72,7 @@ function init() {
 function load_cookies() {
   COOKIE_OBJ = parse_cookies();
   const opacity = get_cookie('opacity');
-  if(opacity) {
+  if (opacity) {
     set_future_opacity(opacity, false, true);
   } else { // cookieにopacity設定がなければ、CSSのデフォルト値を設定
     const _rule = get_css_rule('.future');
@@ -80,16 +81,16 @@ function load_cookies() {
   }
 
   const space = get_cookie('space');
-  if(space) set_space(space, false, true);
+  if (space) set_space(space, false, true);
 
   const team_sort = get_cookie('team_sort');
-  if(team_sort) set_pulldown('team_sort', team_sort, false, true, false);
+  if (team_sort) set_pulldown('team_sort', team_sort, false, true, false);
 
   const match_sort = get_cookie('match_sort');
-  if(match_sort) set_pulldown('match_sort', match_sort, false, true, false);
+  if (match_sort) set_pulldown('match_sort', match_sort, false, true, false);
 
   const scale = get_cookie('scale');
-  if(scale) set_scale(scale, false, true);
+  if (scale) set_scale(scale, false, true);
 }
 
 function parse_cookies() {
@@ -104,7 +105,7 @@ function parse_cookies() {
 }
 
 function get_cookie(key) {
-  if(COOKIE_OBJ.hasOwnProperty(key)) return COOKIE_OBJ[key];
+  if (COOKIE_OBJ.hasOwnProperty(key)) return COOKIE_OBJ[key];
   return undefined;
 }
 
@@ -127,8 +128,8 @@ function refresh_match_data() {
 function toggle_4th_team_display() {
   const fourth_team_list = [];
   SHOWN_GROUP.forEach(function(group){
-    const team_list = get_sorted_team_list(INPUTS[group]);
-    if(team_list.length >= 4) fourth_team_list[group] = team_list[3];
+    const team_list = TEAM_LIST[group];
+    if (team_list.length >= 4) fourth_team_list[group] = team_list[3];
   });
   if (DELETE_TEAM_DEBUG) console.log(fourth_team_list);
   if (Object.keys(fourth_team_list).length == 0) refresh_match_data();
@@ -286,7 +287,7 @@ function make_html_column(target_team, team_data) {
   team_data.disp_rest_games = {}; // 表示時の残り試合・対戦相手
 
   let match_sort_key;
-  if(['first_bottom', 'last_bottom'].includes(document.getElementById('match_sort_key').value)) {
+  if (['first_bottom', 'last_bottom'].includes(document.getElementById('match_sort_key').value)) {
     match_sort_key = 'section_no';
   } else {
     match_sort_key = 'match_date';
@@ -294,7 +295,7 @@ function make_html_column(target_team, team_data) {
   team_data.df.sort(function(a, b) {
     v_a = a[match_sort_key];
     v_b = b[match_sort_key];
-    if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
+    if (match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
     if (! v_a.match(/\d\d\/\d\d$/)) {
       if (! v_b.match(/\d\d\/\d\d$/)) return 0;
       return 1;
@@ -305,13 +306,15 @@ function make_html_column(target_team, team_data) {
     let match_date;
     if(is_string(_row.match_date)) {
       match_date = _row.match_date;
-      if (!MATCH_DATE_SET.includes(match_date)) MATCH_DATE_SET.push(match_date)
+      if (match_date == '') match_date = '未定';
+      else if (match_date < '1970/01/01') console.log('Unexpected date: ' + match_date, _row);
+      if (!MATCH_DATE_SET.includes(match_date) && match_date != '未定') MATCH_DATE_SET.push(match_date)
     } else {
-      match_date = (_row.match_date) ? _row.match_date : '未定 ';
+      match_date = (_row.match_date) ? _row.match_date : '未定';
     }
 
     let future;
-    if(! _row.has_result) {
+    if (! _row.has_result) {
       future = true;
       box_height = 3;
       // 試合が無いので、勝点、得失点差は不変、最大勝ち点は⁺3
@@ -327,7 +330,7 @@ function make_html_column(target_team, team_data) {
       else if (_row.point == 0) team_data.lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
       team_data.goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
       team_data.goal_get += parseInt(_row.goal_get);
-      if(match_date <= TARGET_DATE) {
+      if (match_date <= TARGET_DATE) {
         future = false;
         box_height = _row.point;
         // 表示対象なので、表示時点のdisp_も実際と同じ
@@ -349,8 +352,8 @@ function make_html_column(target_team, team_data) {
 
     let box_html;
     // INNER_HTMLにHTML直書きはダサい？ コンポーネントごと追加していくスタイルにすべきか
-    if(box_height == 3) {
-      if(future) {
+    if (box_height == 3) {
+      if (future) {
         box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
           + make_win_content(_row, match_date)
           + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
@@ -362,7 +365,7 @@ function make_html_column(target_team, team_data) {
           + '<span class="tooltiptext halfW ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
           + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       }
-    } else if(box_height == 1) {
+    } else if (box_height == 1) {
       box_html = '<div class="short box'
         + (_row.live ? ' live' : '')
         + '"><p class="tooltip ' + target_team + '">'
@@ -370,7 +373,7 @@ function make_html_column(target_team, team_data) {
         + make_full_content(_row, match_date)
         + ((_row.status) ? '<br/>' + _row.status : '')
         + '</span></p></div>';
-    } else if(box_height == 0) {
+    } else if (box_height == 0) {
       var lose_content = make_full_content(_row, match_date);
       if (_row.live) {
         lose_content = '<div class="live">' + lose_content + ((_row.status) ? '<br/>' + _row.status : '') + '</div>';
@@ -388,7 +391,7 @@ function make_html_column(target_team, team_data) {
 function make_team_stats(team_data) {
   let _pre = '';
   let _stats_type = '最新の状態';
-  if(document.getElementById('team_sort_key').value.startsWith('disp_')) {
+  if (document.getElementById('team_sort_key').value.startsWith('disp_')) {
     _pre = 'disp_';
     _stats_type = '表示時の状態';
   }
@@ -404,10 +407,10 @@ function append_space_cols(cache, max_avlbl_pt) {
   // 上の make_html_column の各チームの中間状態と、全チームで最大の「シーズン最大勝ち点(avlbl_pt)」を受け取る
   //
   const space_cols = max_avlbl_pt - cache.avlbl_pt; // 最大勝ち点は、スライダーで変わるので毎回計算することに修正
-  if(space_cols) {
+  if (space_cols) {
     cache.graph.push('<div class="space box" style="height:' + HEIGHT_UNIT * space_cols + 'px">(' + space_cols + ')</div>');
   }
-  if(['old_bottom', 'first_bottom'].includes(document.getElementById('match_sort_key').value)) {
+  if (['old_bottom', 'first_bottom'].includes(document.getElementById('match_sort_key').value)) {
     cache.graph.reverse();
     cache.lose_box.reverse();
   }
@@ -445,11 +448,11 @@ function dgt(m, n) {
   return longstr.substring(longstr.length - n);
 }
 function date_format(_date) {
-  if(is_string(_date)) return _date;
+  if (is_string(_date)) return _date;
   return [_date.getYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
 }
 function time_format(_date) {
-  if(is_string(_date)) return _date.replace(/(\d\d:\d\d):\d\d/, "$1");
+  if (is_string(_date)) return _date.replace(/(\d\d:\d\d):\d\d/, "$1");
   return [dgt((_date.getHours()), 2), dgt(_date.getMinutes(), 2), dgt(_date.getSeconds(), 2)].join(':');
 }
 function date_only(_date_str) {
@@ -462,21 +465,22 @@ function make_point_column(max_avlbl_pt, _group) {
   Array.from(Array(max_avlbl_pt), (v, k) => k + 1).forEach(function(_i) {
     box_list.push('<div class="point box">' + _i + '</div>')
   });
-  if(['old_bottom', 'first_bottom'].includes(document.getElementById('match_sort_key').value)) {
+  if (['old_bottom', 'first_bottom'].includes(document.getElementById('match_sort_key').value)) {
     box_list.reverse();
   }
   return '<div class="point_column point' + _group + '"><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
 }
 
 function render_bar_graph() {
-  if(! INPUTS) return;
+  if (! INPUTS) return;
   MATCH_DATE_SET.length = 0; // TODO: 最新情報は、CSVを直接読む形式に変えた時にそちらで計算
   MATCH_DATE_SET.push('1970/01/01');
   MAX_GRAPH_HEIGHT = 0;
   BOX_CON.innerHTML = '';
+  TEAM_LIST = {};
   let columns = {};
   Object.keys(INPUTS).forEach(function(_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
+    if (! SHOWN_GROUP.includes(_group)) return;
     const grp_input = INPUTS[_group]
     let max_avlbl_pt = 0;
     Object.keys(grp_input).forEach(function (team_name) {
@@ -491,9 +495,8 @@ function render_bar_graph() {
     const point_column = make_point_column(max_avlbl_pt, _group);
     BOX_CON.innerHTML += '<div class="group_label group' +  _group + '">グループ' + _group;
     BOX_CON.innerHTML += point_column;
-    get_sorted_team_list(grp_input).forEach(function(team_name, index) {
-      BOX_CON.innerHTML += columns[team_name].graph;
-    });
+    TEAM_LIST[_group] = get_sorted_team_list(grp_input);
+    TEAM_LIST[_group].forEach(function(team_name) {BOX_CON.innerHTML += columns[team_name].graph;});
     BOX_CON.innerHTML += '</div>\n';
   });
   MATCH_DATE_SET.sort();
@@ -507,7 +510,7 @@ function render_bar_graph() {
 }
 
 function set_left_position_to_group_label(_group) {
-  if(! SHOWN_GROUP.includes(_group)) return;
+  if (! SHOWN_GROUP.includes(_group)) return;
   document.querySelector('.group' + _group).style.left = document.querySelector('.point' + _group).getBoundingClientRect().left  / document.getElementById('scale_slider').value + 'px';
 }
 
@@ -515,74 +518,63 @@ function set_left_position_to_group_label(_group) {
 function get_sorted_team_list(teams) {
   const sort_key = document.getElementById('team_sort_key').value;
   const disp = sort_key.startsWith('disp_');
+  const disp_str = (disp ? 'disp' : 'latest'); // Debug表示用
   return Object.keys(teams).sort(function(a, b) {
     // team_sort_keyで指定された勝ち点で比較
-    let compare = teams[b][sort_key] - teams[a][sort_key];
-    if (COMPARE_DEBUG) console.log('勝点', sort_key, a, teams[a][sort_key], b, teams[b][sort_key]);
-    if(compare != 0) return compare;
+    let compare = calc_compare(a, teams[a][sort_key], b, teams[b][sort_key], '勝点' + sort_key);
+    if (compare != 0) return compare;
     if (sort_key.endsWith('avlbl_pt')) { // 最大勝ち点が同じときは、既に取った勝ち点を次点で比較
       let sub_key = sort_key.replace('avlbl_pt', 'point');
-      compare = teams[b][sub_key] - teams[a][sub_key];
-      if (COMPARE_DEBUG) console.log('(通常の)勝点', sub_key, a, teams[a][sub_key], b, teams[b][sub_key]);
-      if(compare != 0) return compare;
+      compare = calc_compare(a, teams[a][sub_key], b, teams[b][sub_key], '(通常の)勝点' + sub_key);
+      if (compare != 0) return compare;
     }
 
     // ACLグループリーグは、当該チーム対戦成績が先
     // TODO: 3チーム以上同勝ち点の時の実装ができていない
     const a_matches = teams[a].df.filter(gamedata => gamedata.opponent==b);
     const b_matches = teams[b].df.filter(gamedata => gamedata.opponent==a);
-    compare = sum_point(b_matches, disp) - sum_point(a_matches, disp);
-    if (COMPARE_DEBUG) console.log('当該チーム間勝点', (disp ? 'disp' : 'latest'), a, sum_point(a_matches, disp), b, sum_point(b_matches, disp));
-    if(compare != 0) return compare;
-    const diff_gget = goalget_point(b_matches, disp) - goalget_point(a_matches, disp);
-    compare = diff_gget - goallose_point(b_matches, disp) + goallose_point(a_matches, disp);
-    if (COMPARE_DEBUG) console.log('当該チーム間得失点差', (disp ? 'disp' : 'latest'), a, goalget_point(a_matches, disp) - goallose_point(a_matches, disp),
-      b, goalget_point(b_matches, disp) - goallose_point(b_matches, disp));
-    if(compare != 0) return compare;
-    if (COMPARE_DEBUG) console.log('当該チーム間得失点差', (disp ? 'disp' : 'latest'), a, goalget_point(a_matches, disp), b, goalget_point(b_matches, disp));
-    if(diff_gget != 0) return diff_gget; // 当該チーム間総得点比較
+    compare = calc_compare(a, sum_point(a_matches, disp), b, sum_point(b_matches, disp), '当該チーム間勝点' + disp_str);
+    if (compare != 0) return compare;
+    compare = calc_compare(a, goalget_point(a_matches, disp) - goallose_point(a_matches, disp),
+      b, goalget_point(b_matches, disp) - goallose_point(b_matches, disp), '当該チーム間得失点差' + disp_str);
+    if (compare != 0) return compare;
+    compare = calc_compare(a, goalget_point(a_matches, disp), b, goalget_point(b_matches, disp), '当該チーム間得失点差' + disp_str);
+    if (compare != 0) return compare; // 当該チーム間総得点比較
 
     // 得失点差で比較 (表示時点か最新かで振り分け)
-    if(disp) {
-      compare = teams[b].disp_goal_diff - teams[a].disp_goal_diff;
-      if (COMPARE_DEBUG) console.log('得失点(disp)', a, teams[a].disp_goal_diff, b, teams[b].disp_goal_diff);
-    } else {
-      compare = teams[b].goal_diff - teams[a].goal_diff;
-      if (COMPARE_DEBUG) console.log('得失点', a, teams[a].goal_diff, b, teams[b].goal_diff);
-    }
-    if(compare != 0) return compare;
+    compare = calc_compare(a, get_team_attr(teams[a], 'goal_diff', disp), b, get_team_attr(teams[b], 'goal_diff', disp), '得失点' + disp_str);
+    if (compare != 0) return compare;
 
     // 総得点で比較 (表示時点か最新かで振り分け)
-    if (disp) {
-      compare = teams[b].disp_goal_get - teams[a].disp_goal_get;
-      if (COMPARE_DEBUG) console.log('総得点(disp)', a, teams[a].disp_goal_get, b, teams[b].disp_goal_get);
-    } else {
-      compare = teams[b].goal_get - teams[a].goal_get;
-      if (COMPARE_DEBUG) console.log('総得点', a, teams[a].goal_get, b, teams[b].goal_get);
-    }
-    // それでも同じなら、そのまま登録順
+    compare = calc_compare(a, get_team_attr(teams[a], 'goal_get', disp), b, get_team_attr(teams[b], 'goal_get', disp), '総得点' + disp_str);
+    // それでも同じなら、そのまま登録順 (return 0)
     return compare;
   });
 }
-// 試合データからの集計
+function calc_compare(a, val_a, b, val_b, criteria) { // 比較値を出す際に、Flagに応じてデバッグ出力を実施
+  if (COMPARE_DEBUG) console.log(criteria, a, val_a, b, val_b);
+  return val_b - val_a;
+}
+// 試合データ INPUTS[group][team].df からの集計
+// dispではない (最新数値比較) なら全データを集計し、dispの時は TARGET_DATE より前の試合だけ集計
 const sum_point = (matches, disp) => matches.filter(x => !disp || x.match_date <= TARGET_DATE).reduce((sum, x) => sum += x.point, 0);
 const goalget_point = (matches, disp) => matches.filter(x => !disp || x.match_date <= TARGET_DATE).reduce((sum, x) => sum += parseInt(x.goal_get), 0);
 const goallose_point = (matches, disp) => matches.filter(x => !disp || x.match_date <= TARGET_DATE).reduce((sum, x) => sum += parseInt(x.goal_lose), 0);
 
 function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
-  if(!MATCH_DATE_SET) return;
+  if (!MATCH_DATE_SET) return;
   const slider = document.getElementById('date_slider');
   slider.max = MATCH_DATE_SET.length - 1;
   document.getElementById('pre_date_slider').innerHTML = '開幕前';
   document.getElementById('post_date_slider').innerHTML = MATCH_DATE_SET[MATCH_DATE_SET.length - 1];
   document.getElementById('target_date').innerHTML = (target_date === MATCH_DATE_SET[0]) ? '開幕前' : target_date;
-  if(target_date === MATCH_DATE_SET[0]) {
+  if (target_date === MATCH_DATE_SET[0]) {
     slider.value = 0;
     return;
   }
   let _i = 0;
   for(; _i < MATCH_DATE_SET.length; _i++) {
-    if(MATCH_DATE_SET[_i + 1] <= target_date) continue;
+    if (MATCH_DATE_SET[_i + 1] <= target_date) continue;
     break;
   }
   slider.value = _i;
@@ -592,14 +584,14 @@ function make_ranktable() {
   const table_div = document.getElementById('ranktables');
   table_div.innerHTML = '';
   Object.keys(INPUTS).forEach(function (_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
+    if (! SHOWN_GROUP.includes(_group)) return;
     table_div.innerHTML += create_new_table(_group);
   });
   table_div.innerHTML += '<hr/><br/>' + create_new_table('2nd-Teams', '2位グループ比較 (4位チーム抜き)');
   // ちょっと理由は分からないが、<table></table>の作成と、setDataを分けたら両方sortableになった
   const seconds_table = [];
   Object.keys(INPUTS).forEach(function (_group) {
-    if(! SHOWN_GROUP.includes(_group)) return;
+    if (! SHOWN_GROUP.includes(_group)) return;
     render_ranktable_content(_group);
     const second_team = rameke_2nd_rankdata_without_4th(_group);
     second_team['rank'] = _group;
@@ -641,7 +633,7 @@ function create_new_table(group, groupName=null) {
 }
 function make_rankdata(group) {
   const disp = document.getElementById('team_sort_key').value.startsWith('disp_');
-  const team_list = get_sorted_team_list(INPUTS[group]);
+  const team_list = TEAM_LIST[group];
   const datalist = [];
   let rank = 0;
   team_list.forEach(function(team_name) {
@@ -672,7 +664,7 @@ function get_team_attr(team_data, attr, disp) {
 }
 
 function rameke_2nd_rankdata_without_4th(group) {
-  const team_list = get_sorted_team_list(INPUTS[group]);
+  const team_list = TEAM_LIST[group];
   const matchdata = [];
   const ignore_team = (team_list.length <= 3) ? null : team_list[3];
   if (SECOND_RANKDATA_DEBUG) console.log('Group ' + group + ' Ignore team: ' + ignore_team);
@@ -725,8 +717,8 @@ function set_scale(scale, cookie_write = true, slider_write = true) {
     BOX_CON.style.height = MAX_GRAPH_HEIGHT;
   })
   document.getElementById('current_scale').innerHTML = scale;
-  if(cookie_write) set_cookie('scale', scale);
-  if(slider_write) document.getElementById('scale_slider').value = scale;
+  if (cookie_write) set_cookie('scale', scale);
+  if (slider_write) document.getElementById('scale_slider').value = scale;
 }
 
 function set_sort_key_ev(event) {
@@ -736,15 +728,15 @@ function set_match_sort_key_ev(event) {
   set_pulldown('match_sort', event.target.value, true, false);
 }
 function set_pulldown(key, value, cookie_write = true, pulldown_write = true, call_render = true) {
-  if(cookie_write) set_cookie(key, value);
-  if(pulldown_write) {
+  if (cookie_write) set_cookie(key, value);
+  if (pulldown_write) {
     const select = document.getElementById(TARGET_ITEM_ID[key]);
-    if(select) {
+    if (select) {
       const target = select.querySelector('option[value="' + value + '"]');
-      if(target) select.selectedIndex = target.index;
+      if (target) select.selectedIndex = target.index;
     }
   }
-  if(call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
+  if (call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
 }
 
 function set_date_slider_ev(event) { // Cookieで制御しないし、数値リセットは別コマンドなので、シンプルに
@@ -769,8 +761,8 @@ function set_future_opacity(value, cookie_write = true, slider_write = true) {
   _rule = get_css_rule('.future')
   _rule.style.opacity = value;
   document.getElementById('current_opacity').innerHTML = value;
-  if(cookie_write) set_cookie('opacity', value);
-  if(slider_write) document.getElementById('future_opacity').value = value;
+  if (cookie_write) set_cookie('opacity', value);
+  if (slider_write) document.getElementById('future_opacity').value = value;
 }
 
 function set_space_ev(event) {
@@ -781,15 +773,15 @@ function set_space(value, cookie_write = true, color_write = true) {
   _rule = get_css_rule('.space')
   _rule.style.backgroundColor = value;
   _rule.style.color = getBright(value, RGB_MOD) > 0.5 ? 'black' : 'white';
-  if(cookie_write) set_cookie('space', value);
-  if(color_write) document.getElementById('space_color').value = value;
+  if (cookie_write) set_cookie('space', value);
+  if (color_write) document.getElementById('space_color').value = value;
 }
 
 function get_css_rule(selector) {
   let _sheet;
-  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href && sheet.href.endsWith('j_points.css')) {_sheet = sheet;}});
+  Array.from(document.styleSheets).forEach(function(sheet) {if (sheet.href && sheet.href.endsWith('j_points.css')) {_sheet = sheet;}});
   let _rule;
-  Array.from(_sheet.cssRules).forEach(function(rule) {if(rule.selectorText == selector) _rule = rule;});
+  Array.from(_sheet.cssRules).forEach(function(rule) {if (rule.selectorText == selector) _rule = rule;});
   return _rule;
 }
 
