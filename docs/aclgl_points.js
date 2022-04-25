@@ -510,11 +510,11 @@ function set_left_position_to_group_label(_group) {
   if(! SHOWN_GROUP.includes(_group)) return;
   document.querySelector('.group' + _group).style.left = document.querySelector('.point' + _group).getBoundingClientRect().left  / document.getElementById('scale_slider').value + 'px';
 }
-const sum_point = (matches) => matches.reduce((sum, gamedata) => sum += gamedata.point, 0);
-const goalget_point = (matches) => matches.reduce((sum, gamedata) => sum += parseInt(gamedata.goal_get), 0);
-const goallose_point = (matches) => matches.reduce((sum, gamedata) => sum += parseInt(gamedata.goal_lose), 0);
+
+// Team Sort
 function get_sorted_team_list(teams) {
   const sort_key = document.getElementById('team_sort_key').value;
+  const disp = sort_key.startsWith('disp_');
   return Object.keys(teams).sort(function(a, b) {
     // team_sort_keyで指定された勝ち点で比較
     let compare = teams[b][sort_key] - teams[a][sort_key];
@@ -531,19 +531,19 @@ function get_sorted_team_list(teams) {
     // TODO: 3チーム以上同勝ち点の時の実装ができていない
     const a_matches = teams[a].df.filter(gamedata => gamedata.opponent==b);
     const b_matches = teams[b].df.filter(gamedata => gamedata.opponent==a);
-    compare = sum_point(b_matches) - sum_point(a_matches);
-    if (COMPARE_DEBUG) console.log('当該チーム間勝点', a, sum_point(a_matches), b, sum_point(b_matches));
+    compare = sum_point(b_matches, disp) - sum_point(a_matches, disp);
+    if (COMPARE_DEBUG) console.log('当該チーム間勝点', (disp ? 'disp' : 'latest'), a, sum_point(a_matches, disp), b, sum_point(b_matches, disp));
     if(compare != 0) return compare;
-    const diff_gget = goalget_point(b_matches) - goalget_point(a_matches);
-    compare = diff_gget - goallose_point(b_matches) + goallose_point(a_matches);
-    if (COMPARE_DEBUG) console.log('当該チーム間得失点差', a, goalget_point(a_matches) - goallose_point(a_matches),
-      b, goalget_point(b_matches) - goallose_point(b_matches));
+    const diff_gget = goalget_point(b_matches, disp) - goalget_point(a_matches, disp);
+    compare = diff_gget - goallose_point(b_matches, disp) + goallose_point(a_matches, disp);
+    if (COMPARE_DEBUG) console.log('当該チーム間得失点差', (disp ? 'disp' : 'latest'), a, goalget_point(a_matches, disp) - goallose_point(a_matches, disp),
+      b, goalget_point(b_matches, disp) - goallose_point(b_matches, disp));
     if(compare != 0) return compare;
-    if (COMPARE_DEBUG) console.log('当該チーム間得失点差', a, goalget_point(a_matches), b, goalget_point(b_matches));
+    if (COMPARE_DEBUG) console.log('当該チーム間得失点差', (disp ? 'disp' : 'latest'), a, goalget_point(a_matches, disp), b, goalget_point(b_matches, disp));
     if(diff_gget != 0) return diff_gget; // 当該チーム間総得点比較
 
     // 得失点差で比較 (表示時点か最新かで振り分け)
-    if(sort_key.startsWith('disp_')) {
+    if(disp) {
       compare = teams[b].disp_goal_diff - teams[a].disp_goal_diff;
       if (COMPARE_DEBUG) console.log('得失点(disp)', a, teams[a].disp_goal_diff, b, teams[b].disp_goal_diff);
     } else {
@@ -553,7 +553,7 @@ function get_sorted_team_list(teams) {
     if(compare != 0) return compare;
 
     // 総得点で比較 (表示時点か最新かで振り分け)
-    if (sort_key.startsWith("disp_")) {
+    if (disp) {
       compare = teams[b].disp_goal_get - teams[a].disp_goal_get;
       if (COMPARE_DEBUG) console.log('総得点(disp)', a, teams[a].disp_goal_get, b, teams[b].disp_goal_get);
     } else {
@@ -564,6 +564,10 @@ function get_sorted_team_list(teams) {
     return compare;
   });
 }
+// 試合データからの集計
+const sum_point = (matches, disp) => matches.filter(x => !disp || x.match_date <= TARGET_DATE).reduce((sum, x) => sum += x.point, 0);
+const goalget_point = (matches, disp) => matches.filter(x => !disp || x.match_date <= TARGET_DATE).reduce((sum, x) => sum += parseInt(x.goal_get), 0);
+const goallose_point = (matches, disp) => matches.filter(x => !disp || x.match_date <= TARGET_DATE).reduce((sum, x) => sum += parseInt(x.goal_lose), 0);
 
 function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
   if(!MATCH_DATE_SET) return;
