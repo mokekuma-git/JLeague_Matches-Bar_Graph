@@ -440,7 +440,10 @@ function make_full_content(_row, match_date) {
     + _row.goal_get + '-' + _row.goal_lose + ' ' + rename_short_stadium_name(_row.stadium);
 }
 
-const dgt = (m, n) => ('0000' + m).substr(-n);
+function dgt(m, n) {
+  const longstr = ('0000' + m);
+  return longstr.substring(longstr.length - n);
+}
 function date_format(_date) {
   if(is_string(_date)) return _date;
   return [_date.getYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
@@ -507,38 +510,55 @@ function set_left_position_to_group_label(_group) {
   if(! SHOWN_GROUP.includes(_group)) return;
   document.querySelector('.group' + _group).style.left = document.querySelector('.point' + _group).getBoundingClientRect().left  / document.getElementById('scale_slider').value + 'px';
 }
-
-function get_sorted_team_list(matches) {
+const sum_point = (matches) => matches.reduce((sum, gamedata) => sum += gamedata.point, 0);
+const goalget_point = (matches) => matches.reduce((sum, gamedata) => sum += parseInt(gamedata.goal_get), 0);
+const goallose_point = (matches) => matches.reduce((sum, gamedata) => sum += parseInt(gamedata.goal_lose), 0);
+function get_sorted_team_list(teams) {
   const sort_key = document.getElementById('team_sort_key').value;
-  return Object.keys(matches).sort(function(a, b) {
+  return Object.keys(teams).sort(function(a, b) {
     // team_sort_keyで指定された勝ち点で比較
-    let compare = matches[b][sort_key] - matches[a][sort_key];
-    if (COMPARE_DEBUG) console.log('勝点', sort_key, a, matches[a][sort_key], b, matches[b][sort_key]);
+    let compare = teams[b][sort_key] - teams[a][sort_key];
+    if (COMPARE_DEBUG) console.log('勝点', sort_key, a, teams[a][sort_key], b, teams[b][sort_key]);
     if(compare != 0) return compare;
     if (sort_key.endsWith('avlbl_pt')) { // 最大勝ち点が同じときは、既に取った勝ち点を次点で比較
       let sub_key = sort_key.replace('avlbl_pt', 'point');
-      compare = matches[b][sub_key] - matches[a][sub_key];
-      if (COMPARE_DEBUG) console.log('(通常の)勝点', sub_key, a, matches[a][sub_key], b, matches[b][sub_key]);
+      compare = teams[b][sub_key] - teams[a][sub_key];
+      if (COMPARE_DEBUG) console.log('(通常の)勝点', sub_key, a, teams[a][sub_key], b, teams[b][sub_key]);
       if(compare != 0) return compare;
     }
 
+    // ACLグループリーグは、当該チーム対戦成績が先
+    // TODO: 3チーム以上同勝ち点の時の実装ができていない
+    const a_matches = teams[a].df.filter(gamedata => gamedata.opponent==b);
+    const b_matches = teams[b].df.filter(gamedata => gamedata.opponent==a);
+    compare = sum_point(b_matches) - sum_point(a_matches);
+    if (COMPARE_DEBUG) console.log('当該チーム間勝点', a, sum_point(a_matches), b, sum_point(b_matches));
+    if(compare != 0) return compare;
+    const diff_gget = goalget_point(b_matches) - goalget_point(a_matches);
+    compare = diff_gget - goallose_point(b_matches) + goallose_point(a_matches);
+    if (COMPARE_DEBUG) console.log('当該チーム間得失点差', a, goalget_point(a_matches) - goallose_point(a_matches),
+      b, goalget_point(b_matches) - goallose_point(b_matches));
+    if(compare != 0) return compare;
+    if (COMPARE_DEBUG) console.log('当該チーム間得失点差', a, goalget_point(a_matches), b, goalget_point(b_matches));
+    if(diff_gget != 0) return diff_gget; // 当該チーム間総得点比較
+
     // 得失点差で比較 (表示時点か最新かで振り分け)
     if(sort_key.startsWith('disp_')) {
-      compare = matches[b].disp_goal_diff - matches[a].disp_goal_diff;
-      if (COMPARE_DEBUG) console.log('得失点(disp)', a, matches[a].disp_goal_diff, b, matches[b].disp_goal_diff);
+      compare = teams[b].disp_goal_diff - teams[a].disp_goal_diff;
+      if (COMPARE_DEBUG) console.log('得失点(disp)', a, teams[a].disp_goal_diff, b, teams[b].disp_goal_diff);
     } else {
-      compare = matches[b].goal_diff - matches[a].goal_diff;
-      if (COMPARE_DEBUG) console.log('得失点', a, matches[a].goal_diff, b, matches[b].goal_diff);
+      compare = teams[b].goal_diff - teams[a].goal_diff;
+      if (COMPARE_DEBUG) console.log('得失点', a, teams[a].goal_diff, b, teams[b].goal_diff);
     }
     if(compare != 0) return compare;
 
     // 総得点で比較 (表示時点か最新かで振り分け)
     if (sort_key.startsWith("disp_")) {
-      compare = matches[b].disp_goal_get - matches[a].disp_goal_get;
-      if (COMPARE_DEBUG) console.log('総得点(disp)', a, matches[a].disp_goal_get, b, matches[b].disp_goal_get);
+      compare = teams[b].disp_goal_get - teams[a].disp_goal_get;
+      if (COMPARE_DEBUG) console.log('総得点(disp)', a, teams[a].disp_goal_get, b, teams[b].disp_goal_get);
     } else {
-      compare = matches[b].goal_get - matches[a].goal_get;
-      if (COMPARE_DEBUG) console.log('総得点', a, matches[a].goal_get, b, matches[b].goal_get);
+      compare = teams[b].goal_get - teams[a].goal_get;
+      if (COMPARE_DEBUG) console.log('総得点', a, teams[a].goal_get, b, teams[b].goal_get);
     }
     // それでも同じなら、そのまま登録順
     return compare;

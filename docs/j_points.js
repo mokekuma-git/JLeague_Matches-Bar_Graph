@@ -500,7 +500,10 @@ function make_full_content(_row, match_date) {
     + _row.goal_get + '-' + _row.goal_lose + ' ' + _row.stadium;
 }
 
-const dgt = (m, n) => ('0000' + m).substr(-n);
+function dgt(m, n) {
+  const longstr = ('0000' + m);
+  return longstr.substring(longstr.length - n);
+}
 function date_format(_date) {
   if(is_string(_date)) return _date;
   return [_date.getYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
