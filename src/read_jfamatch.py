@@ -162,6 +162,10 @@ def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
 
 def read_group(competition: str) -> None:
     """指定された大会のグループ全体を読み込んでCSV化"""
+    if competition not in COMPETITION_CONF:
+        print(f'Unknown competion: "{competition}"\n{list(COMPETITION_CONF.keys())}')
+        return
+
     match_df = pd.DataFrame()
     for group in COMPETITION_CONF[competition][GROUP_NAMES]:
         _mis = None
