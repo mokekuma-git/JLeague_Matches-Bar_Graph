@@ -335,22 +335,22 @@ function make_html_column(target_team, team_data) {
     // INNER_HTMLにHTML直書きはダサい？ コンポーネントごと追加していくスタイルにすべきか
     if(box_height == 3) {
       if(future) {
-        box_html = '<div class="tall box"><div class="future bg ' + target_team + '"></div><p class="tooltip">'
+        box_html = '<div class="tall box"><div class="future bg ' + remove_dot(target_team) + '"></div><p class="tooltip">'
           + make_win_content(_row, match_date)
-          + '<span class="tooltiptext ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
+          + '<span class="tooltiptext ' + remove_dot(target_team) + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
           + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       } else {
         box_html = '<div class="tall box'
           + (_row.live ? ' live' : '') + '"><p class="tooltip '
-          + target_team + '">' + make_win_content(_row, match_date)
-          + '<span class="tooltiptext halfW ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
+          + remove_dot(target_team) + '">' + make_win_content(_row, match_date)
+          + '<span class="tooltiptext halfW ' + remove_dot(target_team) + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
           + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       }
     } else if(box_height == 1) {
       box_html = '<div class="short box'
         + (_row.live ? ' live' : '')
-        + '"><p class="tooltip ' + target_team + '">'
-        + make_draw_content(_row, match_date) + '<span class="tooltiptext fullW ' + target_team + '">'
+        + '"><p class="tooltip ' + remove_dot(target_team) + '">'
+        + make_draw_content(_row, match_date) + '<span class="tooltiptext fullW ' + remove_dot(target_team) + '">'
         + make_full_content(_row, match_date)
         + ((_row.status) ? '<br/>' + _row.status : '')
         + '</span></p></div>';
