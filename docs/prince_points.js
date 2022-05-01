@@ -638,8 +638,7 @@ function reset_date_slider_ev(event) {
   render_bar_graph();
 }
 function reset_target_date() {
-  if(document.getElementById('season').selectedIndex == 0) TARGET_DATE = date_format(new Date());
-  else TARGET_DATE = '12/31';
+  TARGET_DATE = date_format(new Date());
 }
 /// //////////////////////////////////////////////////////////// 背景調整用
 function set_future_opacity_ev(event) {
