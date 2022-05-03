@@ -225,7 +225,8 @@ def update_timestamp(filename: str) -> None:
     timestamp.to_csv(TIMESTAMP_FILE)
 
 
-def update_all_matches(category: int, force_update: bool = False) -> pd.DataFrame:
+def update_all_matches(category: int, force_update: bool = False,
+                       need_update:Set[int] = None) -> pd.DataFrame:
     """これまでに読み込んだ試合データからの差分をWeb経由で読み込んで、差分を上書きした結果を返す
 
     該当ファイルが一つもない場合は、全試合のデータをWeb経由で読み込む
@@ -240,14 +241,16 @@ def update_all_matches(category: int, force_update: bool = False) -> pd.DataFram
         return all_matches
 
     current = read_allmatches_csv(latest_file)
-    _lastupdate = get_timestamp_from_csv(latest_file)
-    _now = datetime.now().astimezone(LOCAL_TZ)
-    print(f'  Check matches finished since {_lastupdate}')
-    # undecided = get_undecided_section(current)
-    need_update = get_sections_to_update(current, _lastupdate, _now)
+    if not need_update:  # アップデート対象節を指定されていない場合、自動チェック
+        _lastupdate = get_timestamp_from_csv(latest_file)
+        _now = datetime.now().astimezone(LOCAL_TZ)
+        print(f'  Check matches finished since {_lastupdate}')
+        # undecided = get_undecided_section(current)
+        need_update = get_sections_to_update(current, _lastupdate, _now)
 
-    if not need_update:
-        return current
+        # チェックしてもアップデートが必要な節が無ければ、最新の状態を返す
+        if not need_update:
+            return current
 
     diff_matches = read_matches_range(category, need_update)
     old_matches = current[current['section_no'].isin(need_update)]
@@ -311,16 +314,25 @@ def get_timestamp_from_csv(filename: str) -> datetime:
     return datetime.fromtimestamp(os.stat(filename).st_mtime)
 
 
+def parse_range_csv(args: str) -> Set[int]:
+    """カンマで区切られた数値引数リストをパースする
+    
+    カンマで区切られた数値と、"数値-数値" の形式のリストを受け取り、全要素の和集合を作成する
+    '1-3,5,7-10' -> [1, 2, 3, 5, 7, 8, 9, 10]
+    """
+    return parse_range_list(args.split(','))
+
+
 def parse_range_list(args: str) -> Set[int]:
     """引数リストをパースする
 
     数値と、"数値-数値" の形式のリストを受け取り、全要素の和集合を作成する
-    1-3 5 7-10 -> [1, 2, 3, 5, 7, 8, 9, 10]
+    ['1-3', '5', '7-10'] -> [1, 2, 3, 5, 7, 8, 9, 10]
     """
     result = set()
     for arg in args:
         result |= set(parse_range(arg))
-    return result
+    return sorted(result)
 
 
 def parse_range(arg: str) -> Set[int]:
@@ -329,7 +341,7 @@ def parse_range(arg: str) -> Set[int]:
     数値と、"数値-数値" の形式を受け取り、範囲全体の数値リストに変換
     1-3 -> [1, 2, 3]
     """
-    match = re.match(r'(\d)\-(\d)', arg)
+    match = re.match(r'(\d+)\-(\d+)', arg)
     if match:
         return list(range(int(match[1]), int(match[2]) + 1))
     return [int(arg)]
@@ -345,6 +357,8 @@ def make_args() -> argparse.Namespace:
                         help='リーグカテゴリ (数値指定、複数指定時は-で繋ぐ [default: 1-3])')
     parser.add_argument('-f', '--force_update_all', action='store_true',
                         help='差分を考えずにすべての試合データを読み込んで保存')
+    parser.add_argument('-s', '--sections', type=parse_range_csv,
+                        help='更新する節を指定する (カンマで区切られた数値指定、範囲指定は-で繋ぐ ex) 1,10-15,20)')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='デバッグ出力を表示')
 
@@ -360,4 +374,5 @@ if __name__ == '__main__':
 
     for _category in parse_range_list(ARGS.category):
         print(f'Start read J{_category} matches...')
-        update_all_matches(_category, ARGS.force_update_all)
+
+        update_all_matches(_category, force_update=ARGS.force_update_all, need_update=ARGS.sections)
