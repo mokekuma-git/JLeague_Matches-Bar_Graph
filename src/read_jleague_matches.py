@@ -230,7 +230,9 @@ def update_all_matches(category: int, force_update: bool = False,
     """これまでに読み込んだ試合データからの差分をWeb経由で読み込んで、差分を上書きした結果を返す
 
     該当ファイルが一つもない場合は、全試合のデータをWeb経由で読み込む
-    試合データに変化があった場合は、実行日を付けた試合データファイルを保存する
+    更新対象の節をneed_updateオプションで指定した場合は、その節の内容を更新
+    need_update指定がない場合は、対象ファイルの更新日から現在までに開始した試合のみ更新
+    試合データに変化があった場合に実行日を付けた試合データファイルを保存する
     """
     latest_file = get_latest_allmatches_filename(category)
 
