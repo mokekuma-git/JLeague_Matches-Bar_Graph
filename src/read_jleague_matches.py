@@ -152,7 +152,7 @@ def make_kickoff_time(_subset: pd.DataFrame):
 
 def get_sections_to_update(all_matches: pd.DataFrame,
                            _lastupdate: pd.Timestamp, _now: pd.Timestamp) -> Set[str]:
-    """startからendまでの対象期間に、試合が終了した節のセットを返す"""
+    """startからendまでの対象期間に、試合が開始した節のセットを返す"""
     target_sec = set()
     for (_sec, _dates) in get_match_dates_of_section(all_matches).items():
         for _start in _dates:
