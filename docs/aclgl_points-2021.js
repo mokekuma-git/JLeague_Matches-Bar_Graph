@@ -498,7 +498,7 @@ function set_space(value, cookie_write = true, color_write = true) {
 
 function get_css_rule(selector) {
   let _sheet;
-  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href.endsWith('aclgl_points.css')) {_sheet = sheet;}});
+  Array.from(document.styleSheets).forEach(function(sheet) {if(sheet.href.endsWith('j_points.css')) {_sheet = sheet;}});
   let _rule;
   Array.from(_sheet.cssRules).forEach(function(rule) {if(rule.selectorText == selector) _rule = rule;});
   return _rule;
