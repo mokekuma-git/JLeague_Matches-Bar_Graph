@@ -294,15 +294,23 @@ def compare_matches(foo_df, bar_df) -> bool:
 
 def update_if_diff(match_df: pd.DataFrame, filename: str) -> bool:
     """試合DataFrameとファイル名を受け取り、中身に差分があれば更新する"""
+    if not os.path.exists(filename):
+        update_csv(match_df, filename)
+        return True
+
     old_df = pd.read_csv(filename, index_col=0, dtype=str, na_values='')
     if compare_matches(match_df, old_df):
-        print(f'Update {filename}')
-        match_df.to_csv(filename)
-        update_timestamp(filename)
+        update_csv(match_df, filename)
         return True
-    else:
-        print(f'No chnges found in {filename}')
-        return False
+    print(f'No chnges found in {filename}')
+    return False
+
+
+def update_csv(match_df: pd.DataFrame, filename: str) -> None:
+    """試合DataFrameとファイル名を受け取り、CSVファイルを作成・更新する"""
+    print(f'Update {filename}')
+    match_df.to_csv(filename)
+    update_timestamp(filename)
 
 
 def get_timestamp_from_csv(filename: str) -> datetime:
