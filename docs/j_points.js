@@ -484,7 +484,7 @@ function append_space_cols(cache, rank, max_avlbl_pt) {
 function get_rank_class(rank) {
   // 順位に応じた順位表示のCSSクラスを返す
   const [all_team_num, promotion_num, relegation_num, _last_ranks, defined_rank_class] = SEASON_MAP[get_category()][get_season()];
-  if (defined_rank_class.hasOwnProperty(String(rank))) return defined_rank_class[String(rank)];
+  if (defined_rank_class && defined_rank_class.hasOwnProperty(String(rank))) return defined_rank_class[String(rank)];
   if (rank <= promotion_num) return 'promoted';
   if (rank > all_team_num - relegation_num) return 'relegated';
   return '';
