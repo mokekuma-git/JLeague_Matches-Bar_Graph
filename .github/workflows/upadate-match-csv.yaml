@@ -267,7 +267,7 @@ jobs:
     - name: Update matches json
       run: |
         DATE=`TZ=JST-9 date +'%m/%d %H:%M'`
-        python src/read_jleague_matches.py
+        bash scripts/call_update_csv.sh
         if (git diff --shortstat | grep '[0-9]'); then \
             git add .; \
             git commit -m "Make new csv (append games on $DATE)"; \
