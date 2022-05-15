@@ -4,7 +4,7 @@ RUNNING_HOUR=`ZONE="JST" date "+%H"`
 
 echo $RUNNING_HOUR
 
-if [$RUNNING_HOUR -eq 1]; then
+if [ $RUNNING_HOUR -eq 1 ]; then
   # 日ごと深夜自動実行 ⇒ 全CSVのアップデートを実行
   python src/read_jleague_matches.py
   python src/read_jfamatch.py PrincePremierE
