@@ -460,9 +460,11 @@ function make_team_stats(team_data) {
   + '得失点差: ' + team_data[_pre + 'goal_diff'];
 }
 
-function append_space_cols(cache, max_avlbl_pt) {
+function append_space_cols(cache, rank, max_avlbl_pt) {
   // 上の make_html_column の各チームの中間状態と、全チームで最大の「シーズン最大勝ち点(avlbl_pt)」を受け取る
-  //
+  // cache: チーム勝ち点積み上げグラフ
+  // rank: チーム順位
+  // max_avlbl_pt: リーグ全体での最大勝ち点の最大値
   const space_cols = max_avlbl_pt - cache.avlbl_pt; // 最大勝ち点は、スライダーで変わるので毎回計算することに修正
   if(space_cols) {
     cache.graph.push('<div class="space box" style="height:' + HEIGHT_UNIT * space_cols + 'px">(' + space_cols + ')</div>');
@@ -471,12 +473,21 @@ function append_space_cols(cache, max_avlbl_pt) {
     cache.graph.reverse();
     cache.lose_box.reverse();
   }
+  const rank_cell = '<div class="short box ' + get_rank_class(rank) + '">' + rank + '</div>';
   const team_name = '<div class="short box tooltip ' + cache.target_team + '">' + cache.target_team
     + '<span class=" tooltiptext fullW ' + cache.target_team + '">'
     + '成績情報:<hr/>' + cache.stats
     + '<hr/>敗戦記録:<hr/>'
     + join_lose_box(cache.lose_box) + '</span></div>\n';
-  return '<div id="' + cache.target_team + '_column">' + team_name + cache.graph.join('') + team_name + '</div>\n\n';
+  return '<div id="' + cache.target_team + '_column">' + rank_cell + team_name + cache.graph.join('') + team_name + rank_cell + '</div>\n\n';
+}
+function get_rank_class(rank) {
+  // 順位に応じた順位表示のCSSクラスを返す
+  const [all_team_num, promotion_num, relegation_num, _last_ranks, defined_rank_class] = SEASON_MAP[get_category()][get_season()];
+  if (defined_rank_class.hasOwnProperty(String(rank))) return defined_rank_class[String(rank)];
+  if (rank <= promotion_num) return 'promoted';
+  if (rank > all_team_num - relegation_num) return 'relegated';
+  return '';
 }
 function join_lose_box(lose_box) {
   // なかなか負けている試合のライブ強調がうまく行かなかったので、上段を強調しようとしたが、
@@ -528,7 +539,8 @@ function make_point_column(max_avlbl_pt) {
   if(['old_bottom', 'first_bottom'].includes(document.getElementById('match_sort_key').value)) {
     box_list.reverse();
   }
-  return '<div class="point_column"><div class="point box">勝点</div>' + box_list.join('') + '<div class="point box">勝点</div></div>\n\n'
+  return '<div class="point_column"><div class="point box">順位</div><div class="point box">勝点</div>' + box_list.join('')
+    + '<div class="point box">勝点</div><div class="point box">順位</div></div>\n\n'
 }
 
 function render_bar_graph() {
@@ -546,9 +558,6 @@ function render_bar_graph() {
     columns[team_name] = make_html_column(team_name, grp_input[team_name]);
     max_avlbl_pt = Math.max(max_avlbl_pt, columns[team_name].avlbl_pt);
   });
-  Object.keys(grp_input).forEach(function (team_name) {
-    columns[team_name].graph = append_space_cols(columns[team_name], max_avlbl_pt);
-  });
   MATCH_DATE_SET.sort();
   reset_date_slider(date_format(TARGET_DATE));
   const insert_point_columns = make_insert_columns(get_category());
@@ -558,7 +567,7 @@ function render_bar_graph() {
   TEAM_LIST[_group].forEach(function(team_name, index) {
     if(insert_point_columns.includes(index))
       BOX_CON.innerHTML += point_column;
-    BOX_CON.innerHTML += columns[team_name].graph;
+    BOX_CON.innerHTML += append_space_cols(columns[team_name], index + 1, max_avlbl_pt);
   });
   BOX_CON.innerHTML += point_column;
   set_scale(document.getElementById('scale_slider').value, false, false);
