@@ -68,9 +68,7 @@ p {
   background-color: #CFF3C0;
 }
 .promoted_playoff {
-  background: -moz-linear-gradient(left, #CFF3C0, #CBF7F5);
-  background: -webkit-linear-gradient(left, #CFF3C0, #CBF7F5);
-  background: linear-gradient(to right, #CFF3C0, #CBF7F5);
+  background-color: #E0DFB5;
 }
 .relegated {
   background-color: #FBDCDC;
