@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RUNNING_HOUR=`ZONE="JST" date "+%H"`
+RUNNING_HOUR=`TZ=JST−9 date "+%H"`
 
 echo $RUNNING_HOUR
 
