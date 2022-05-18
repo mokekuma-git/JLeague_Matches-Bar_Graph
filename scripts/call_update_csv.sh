@@ -1,7 +1,8 @@
 #!/bin/bash
 
-RUNNING_HOUR=`env TZ=JST−9 date "+%H"`
-env TZ=JST−9 date
+RUNNING_HOUR=`TZ=Asia/Tokyo date "+%H"`
+TZ=Asia/Tokyo date
+TZ=JST-9 date
 echo $RUNNING_HOUR
 
 if [ $RUNNING_HOUR -eq 1 ]; then
