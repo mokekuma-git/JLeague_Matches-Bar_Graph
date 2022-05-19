@@ -169,7 +169,7 @@ jobs:
     - name: Update matches csv
       run: |
         DATE=`TZ=Asia/Tokyo date +'%m/%d %H:%M'`
-        bash scripts/call_update_csv.sh
+        bash scripts/call_update_csv.sh github.event.schedule
         if (git diff --shortstat | grep '[0-9]'); then \
           git config --global user.name "mokekuma-git"
           git config --global user.email "mokekuma.git@gmail.com"

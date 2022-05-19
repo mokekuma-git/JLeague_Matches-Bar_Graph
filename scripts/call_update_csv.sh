@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo Called by schedule $1
+
 RUNNING_HOUR=`TZ=Asia/Tokyo date "+%H"`
 TZ=Asia/Tokyo date
 echo $RUNNING_HOUR
