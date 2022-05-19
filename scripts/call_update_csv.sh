@@ -2,12 +2,11 @@
 
 RUNNING_HOUR=`TZ=Asia/Tokyo date "+%H"`
 TZ=Asia/Tokyo date
-TZ=JST-9 date
 echo $RUNNING_HOUR
 
 if [ $RUNNING_HOUR -eq 1 ]; then
   # 日ごと深夜自動実行 ⇒ 全CSVのアップデートを実行
-  python src/read_jleague_matches.py
+  python src/read_jleague_matches.py -f
   python src/read_jfamatch.py PrincePremierE
   python src/read_jfamatch.py PrincePremierW
   python src/read_jfamatch.py PrinceKanto
