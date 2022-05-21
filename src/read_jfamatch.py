@@ -148,10 +148,12 @@ def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
 
         # U18高円宮杯プリンス関東リーグでの中止情報は、なぜか 'venueFullName' に入っていたので暫定対応
         if '【中止】' in _match_data['venueFullName']:
-            print('Cancel Game## ' + _match_data['venueFullName'])
             _row['status'] = '試合中止'
+            if PREFERENCE['debug']:
+                print('Cancel Game## ' + _match_data['venueFullName'])
         else:
-            print('No Cancel## ' + _match_data['venueFullName'])
+            if PREFERENCE['debug']:
+                print('No Cancel## ' + _match_data['venueFullName'])
 
         _row['extraTime'] = str(_row['extraTime'])  # 旧CSVとの比較用に文字列化
 
