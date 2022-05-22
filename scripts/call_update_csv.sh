@@ -14,9 +14,7 @@ if [ $RUNNING_HOUR -eq 1 ]; then
 # if [ $TRIGGER = $DAILY]; then
   # 日ごと深夜自動実行 ⇒ 全CSVのアップデートを実行
   python src/read_jleague_matches.py -f
-  python src/read_jfamatch.py PrincePremierE
-  python src/read_jfamatch.py PrincePremierW
-  python src/read_jfamatch.py PrinceKanto
+  python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto
   # python src/read_jfamatch.py WC2022AFC_F
   # python src/read_we-league.py
   # python src/read_aclgl_matches.py
