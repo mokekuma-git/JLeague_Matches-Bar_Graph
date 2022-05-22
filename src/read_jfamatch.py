@@ -176,7 +176,8 @@ def read_group(competition: str) -> None:
         _df = read_match_df(COMPETITION_CONF[competition][SCHEDULE_URL].format(group), _mis)
         _df['group'] = group
         match_df = pd.concat([match_df, _df])
-    print(match_df['status'])
+    if PREFERENCE['debug']:
+        print(match_df['status'])
     match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
     update_if_diff(match_df, COMPETITION_CONF[competition][CSV_FILENAME])
 
@@ -187,7 +188,7 @@ def make_args() -> argparse.Namespace:
         description='read_jfamatches.py\n'
                     'JFAで公開される各大会の試合情報を読み込んでCSVを作成')
 
-    parser.add_argument('competition', metavar='COMP', type=str, nargs='?',
+    parser.add_argument('competition', metavar='COMP', type=str, nargs='*',
                         help='大会の名前' + str(list(COMPETITION_CONF.keys())), default='PrinceKanto')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='デバッグ出力を表示')
@@ -203,4 +204,5 @@ if __name__ == '__main__':
     if ARGS.debug:
         PREFERENCE['debug'] = True
 
-    read_group(ARGS.competition)
+    for competition in ARGS.competition:
+        read_group(competition)
