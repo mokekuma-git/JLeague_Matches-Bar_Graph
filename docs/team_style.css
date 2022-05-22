@@ -34,12 +34,12 @@
   color: #ffb606;
   background-color: #140b8c;
 }
-.横浜FM, .横浜M {
+.横浜FM, .横浜M, .横浜F・マリノスユース {
   background: -moz-linear-gradient(top left, #E60039 10%, #FFFFFF, #004098 90%);
   background: -webkit-linear-gradient(top left, #E60039 10%, #FFFFFF, #004098 90%);
   background: linear-gradient(to bottom right, #E60039 10%, #FFFFFF, #004098 90%);
 }
-.鹿島, .鹿島アントラーズユース, .横浜F・マリノスユース {
+.鹿島, .鹿島アントラーズユース {
   color: white;
   background-color: #b8193f;
 }
