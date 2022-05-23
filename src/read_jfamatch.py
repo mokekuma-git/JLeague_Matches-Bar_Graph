@@ -55,7 +55,7 @@ COMPETITION_CONF = {
 
 SCHEDULE_CONTAINER_NAME = 'matchScheduleList'
 SCHEDULE_LIST_NAME = 'matchSchedule'
-SECTION_NO = re.compile(r'.*(\d+).*')
+SECTION_NO = re.compile(r'(\d+)')
 
 REPLACE_KEY_DICT = {
     'match_date': 'matchDateJpn',
@@ -132,7 +132,7 @@ def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
             _row[target_key] = _match_data[org_key]
         for (target_key, org_key) in SCORE_DATA_KEY_LIST.items():
             _row[target_key] = _match_data['score'][org_key]
-        _regexp_result = SECTION_NO.match(_row['section_no'])
+        _regexp_result = SECTION_NO.search(_row['section_no'])
         if _regexp_result:
             section_no = _regexp_result[1]
         elif matches_in_section is not None:  # 節数の記載が無く、節ごとの試合数が分かっている時は計算
