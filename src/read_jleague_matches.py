@@ -281,8 +281,8 @@ def compare_matches(foo_df, bar_df) -> bool:
             for (_index, col_list) in _diff.items():
                 print(_index, col_list)
                 for col_name in col_list:
-                    print(_foo.loc[_index, col_name], type(_foo.loc[_index, col_name]))
-                    print(_bar.loc[_index, col_name], type(_bar.loc[_index, col_name]))
+                    print('foo', col_name, _foo.loc[_index, col_name], type(_foo.loc[_index, col_name]))
+                    print('bar', col_name, _bar.loc[_index, col_name], type(_bar.loc[_index, col_name]))
         return True
     return False
 
@@ -293,7 +293,7 @@ def update_if_diff(match_df: pd.DataFrame, filename: str) -> bool:
         update_csv(match_df, filename)
         return True
 
-    old_df = pd.read_csv(filename, index_col=0, dtype=str, na_values='')
+    old_df = read_allmatches_csv(filename)
     if compare_matches(match_df, old_df):
         update_csv(match_df, filename)
         return True
