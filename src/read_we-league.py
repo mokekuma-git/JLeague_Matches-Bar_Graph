@@ -51,7 +51,11 @@ def parse_match_date_data(match: bs4.element.Tag) -> Dict[str, str]:
     else:
         #_date = _date.replace(year=2021)
         match_date = f'{SEASON}/' + match_date
-    return {'match_date': pd.to_datetime(match_date),
+    try:
+        match_date = pd.to_datetime(match_date)
+    except:
+        pass
+    return {'match_date': match_date,
             'start_time': match.contents[2].strip(),
             'dayofweek': match.contents[1].text.strip('()')}
 
