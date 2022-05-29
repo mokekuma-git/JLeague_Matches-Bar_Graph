@@ -193,7 +193,7 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
     all_matches = pd.read_csv(matches_file, index_col=0, dtype=str, na_values='')
     if 'index' in all_matches.columns:
         all_matches = all_matches.drop(columns=['index'])
-    all_matches['match_date'] = pd.to_datetime(all_matches['match_date'])
+    all_matches['match_date'] = all_matches['match_date'].map(to_datetime_aspossible)
     all_matches['home_goal'] = all_matches['home_goal'].fillna('')
     all_matches['away_goal'] = all_matches['away_goal'].fillna('')
     all_matches['section_no'] = all_matches['section_no'].astype('int')
@@ -201,6 +201,14 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
     # JSONでNaNをnullとして出力するために、置換
     all_matches = all_matches.where(pd.notnull(all_matches), None)
     return all_matches
+
+
+def to_datetime_aspossible(val):
+    """可能な限りTimestamp型として読み込み、不可能な場合は文字列として返す"""
+    try:
+        return pd.to_datetime(val)
+    except:
+        return val
 
 
 def update_timestamp(filename: str) -> None:
