@@ -201,11 +201,6 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
     return all_matches
 
 
-def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
-    """試合結果ファイルを実行日を付けた試合データファイルとして保存する"""
-    update_if_diff(all_matches, get_latest_allmatches_filename(category))
-
-
 def update_timestamp(filename: str) -> None:
     """与えられたfilenameのタイムスタンプ日時を現時刻に更新する"""
     if os.path.exists(TIMESTAMP_FILE):
@@ -237,7 +232,7 @@ def update_all_matches(category: int, force_update: bool = False,
     # 最新の試合結果が無い場合は、全データを読んで保存して読み込み結果を返す
     if (not latest_file) or force_update:
         all_matches = read_all_matches(category)
-        store_all_matches(all_matches, category)
+        update_if_diff(all_matches, get_latest_allmatches_filename(category))
         return all_matches
 
     current = read_allmatches_csv(latest_file)
@@ -258,7 +253,7 @@ def update_all_matches(category: int, force_update: bool = False,
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \
                         .sort_values(['section_no', 'match_index_in_section']) \
                         .reset_index(drop=True)
-        store_all_matches(new_matches, category)
+        update_if_diff(all_matches, get_latest_allmatches_filename(category))
         return new_matches
     return None
 
