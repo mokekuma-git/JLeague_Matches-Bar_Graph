@@ -42,7 +42,7 @@ def parse_match_date_data(text: str) -> Dict[str, str]:
         start_time = pd.to_datetime(start_time).time()
     except:
         start_time = pd.to_datetime('00:00').time()
-    return {'match_date': str(match_date), 'start_time': str(start_time)}
+    return {'match_date': match_date, 'start_time': str(start_time)}
 
 
 def parse_match_result_data(text: str) -> Dict[str, str]:
