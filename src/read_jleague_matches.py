@@ -203,9 +203,7 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
 
 def store_all_matches(all_matches: pd.DataFrame, category: int) -> None:
     """試合結果ファイルを実行日を付けた試合データファイルとして保存する"""
-    filename = get_latest_allmatches_filename(category)
-    update_timestamp(filename)
-    all_matches.to_csv(filename)
+    update_if_diff(all_matches, get_latest_allmatches_filename(category))
 
 
 def update_timestamp(filename: str) -> None:
