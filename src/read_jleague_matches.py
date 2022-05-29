@@ -25,6 +25,8 @@ LOCAL_TZ = pytz.timezone('Asia/Tokyo')
 SEASON = 2022
 CSVFILE_FORMAT = '../docs/csv/{}_allmatch_result-J{}.csv'
 TIMESTAMP_FILE = '../docs/csv/csv_timestamp.csv'
+JLEAGUE_DATE_FORMAT = '%Y年%m月%d日'
+STANDARD_DATE_FORMAT = '%Y/%m/%d'
 
 # Jリーグ公開の各節試合情報のURL
 SOURCE_URL_FORMAT = 'https://www.jleague.jp/match/section/j{}/{}/'
@@ -68,7 +70,7 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
         match_div = _section.find('div', class_='timeStamp')
         if match_div:
             match_date = match_div.find('h4').text.strip()
-            match_date = datetime.strptime(match_date[:match_date.index('(')], '%Y年%m月%d日')
+            match_date = datetime.strptime(match_date[:match_date.index('(')], JLEAGUE_DATE_FORMAT)
         else:
             match_date = None
         section_no = _section.find('div', class_='leagAccTit').find('h5').text.strip()
@@ -145,7 +147,7 @@ def make_kickoff_time(_subset: pd.DataFrame):
     同一時間を複数返さないようにするためのセット化を実施
     """
     start_time = _subset['start_time'].str.replace('未定', '00:00')
-    result = pd.to_datetime(_subset['match_date'].dt.strftime('%Y/%m/%d ') + start_time)
+    result = pd.to_datetime(_subset['match_date'].dt.strftime(STANDING_URL_FORMAT + ' ') + start_time)
     result = result.dt.tz_localize(LOCAL_TZ)
     return set(result)
 
