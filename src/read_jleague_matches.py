@@ -279,7 +279,7 @@ def compare_matches(foo_df, bar_df) -> bool:
         if PREFERENCE['debug']:
             df_comp = _foo.compare(_bar)
             for col_name in df_comp.columns.droplevel(1).unique():
-                print(df_comp[col_name].dropna())
+                print(col_name, df_comp[col_name].dropna())
         return True
     return False
 
