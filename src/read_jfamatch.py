@@ -134,7 +134,7 @@ def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
             _row[target_key] = _match_data['score'][org_key]
         _regexp_result = SECTION_NO.search(_row['section_no'])
         if _regexp_result:
-            section_no = _regexp_result[1]
+            section_no = int(_regexp_result[1])
         elif matches_in_section is not None:  # 節数の記載が無く、節ごとの試合数が分かっている時は計算
             section_no = int(_count / matches_in_section) + 1
         else:  # 節数不明

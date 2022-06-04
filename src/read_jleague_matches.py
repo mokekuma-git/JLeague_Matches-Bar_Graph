@@ -269,28 +269,17 @@ def update_all_matches(category: int, force_update: bool = False,
 
 
 def compare_matches(foo_df, bar_df) -> bool:
-    """試合情報を比較"""
+    """試合情報を比較 (違いがあればTrue)"""
     _foo = foo_df.drop(columns=['match_index_in_section'])
     _bar = bar_df.drop(columns=['match_index_in_section'])
     _foo = _foo.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
     _bar = _bar.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
-    _diff = {}
-    for col_name in _foo.columns:
-        if list(_foo[col_name].fillna('')) == list(_bar[col_name].fillna('')):
-            continue
-        for _index in _foo[col_name].index:
-            if _foo[col_name].at[_index] == _bar[col_name].at[_index]:
-                continue
-            if _index not in _diff:
-                _diff[_index] = []
-            _diff[_index].append(col_name)
-    if _diff:
+
+    if not _foo.equals(_bar):
         if PREFERENCE['debug']:
-            for (_index, col_list) in _diff.items():
-                print(_index, col_list)
-                for col_name in col_list:
-                    print('foo', col_name, _foo.loc[_index, col_name], type(_foo.loc[_index, col_name]))
-                    print('bar', col_name, _bar.loc[_index, col_name], type(_bar.loc[_index, col_name]))
+            df_comp = _foo.compare(_bar)
+            for col_name in df_comp.columns.droplevel(1).unique():
+                print(df_comp[col_name].dropna())
         return True
     return False
 
