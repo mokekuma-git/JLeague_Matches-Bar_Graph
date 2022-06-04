@@ -270,8 +270,8 @@ def update_all_matches(category: int, force_update: bool = False,
 
 def compare_matches(foo_df, bar_df) -> bool:
     """試合情報を比較 (違いがあればTrue)"""
-    _foo = foo_df.drop(columns=['match_index_in_section'])
-    _bar = bar_df.drop(columns=['match_index_in_section'])
+    _foo = foo_df.drop(columns=['match_index_in_section']).fillna('')
+    _bar = bar_df.drop(columns=['match_index_in_section']).fillna('')
     _foo = _foo.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
     _bar = _bar.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
 
