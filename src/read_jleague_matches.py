@@ -147,7 +147,7 @@ def make_kickoff_time(_subset: pd.DataFrame):
     同一時間を複数返さないようにするためのセット化を実施
     """
     start_time = _subset['start_time'].str.replace('未定', '00:00')
-    result = pd.to_datetime(_subset['match_date'].dt.strftime(STANDING_URL_FORMAT + ' ') + start_time)
+    result = pd.to_datetime(_subset['match_date'].dt.strftime(STANDARD_DATE_FORMAT) + ' ' + start_time)
     result = result.dt.tz_localize(LOCAL_TZ)
     return set(result)
 
@@ -263,7 +263,7 @@ def update_all_matches(category: int, force_update: bool = False,
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \
                         .sort_values(['section_no', 'match_index_in_section']) \
                         .reset_index(drop=True)
-        update_if_diff(all_matches, get_latest_allmatches_filename(category))
+        update_if_diff(new_matches, get_latest_allmatches_filename(category))
         return new_matches
     return None
 
