@@ -157,7 +157,7 @@ def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
 
         _row['extraTime'] = str(_row['extraTime'])  # 旧CSVとの比較用に文字列化
         try:
-            _row['match_date'] = pd.to_datetime(_row['match_date'])
+            _row['match_date'] = pd.to_datetime(_row['match_date']).date()
         except:
             pass
 

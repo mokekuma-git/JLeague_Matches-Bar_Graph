@@ -1,6 +1,7 @@
 """Jリーグ各節の試合情報を読み込み、CSVとして取得、保存"""
 import argparse
 from datetime import datetime
+from datetime import date
 from datetime import timedelta
 import os
 import re
@@ -70,7 +71,7 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
         match_div = _section.find('div', class_='timeStamp')
         if match_div:
             match_date = match_div.find('h4').text.strip()
-            match_date = datetime.strptime(match_date[:match_date.index('(')], JLEAGUE_DATE_FORMAT)
+            match_date = datetime.strptime(match_date[:match_date.index('(')], JLEAGUE_DATE_FORMAT).date()
         else:
             match_date = None
         section_no = _section.find('div', class_='leagAccTit').find('h5').text.strip()
@@ -139,7 +140,7 @@ def get_match_dates_of_section(all_matches: pd.DataFrame) -> Dict[str, Set[pd.Ti
     return all_matches.dropna(subset=['match_date']).groupby('section_no').apply(make_kickoff_time)
 
 
-def make_kickoff_time(_subset: pd.DataFrame):
+def make_kickoff_time(_subset: pd.DataFrame) -> Set[pd.Timestamp]:
     """与えられた試合データから、キックオフ時間を作成し、その2時間後 (試合終了時間想定) のセットを返す
 
     与えられる試合データは同一節のものと想定
@@ -206,7 +207,7 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
 def to_datetime_aspossible(val):
     """可能な限りTimestamp型として読み込み、不可能な場合は文字列として返す"""
     try:
-        return pd.to_datetime(val)
+        return pd.to_datetime(val).date()
     except:
         return val
 
@@ -301,6 +302,10 @@ def update_if_diff(match_df: pd.DataFrame, filename: str) -> bool:
 def update_csv(match_df: pd.DataFrame, filename: str) -> None:
     """試合DataFrameとファイル名を受け取り、CSVファイルを作成・更新する"""
     print(f'Update {filename}')
+    # pd.Timestamp だけなら元の記述 (日付だけ) をキープしてくれるようだが、
+    # 文字列も入ってくると、日付・時間の双方を出してしまうらしいので、
+    # 出力前に match_date の内容を文字列にする
+    match_df['match_date'] = match_df['match_date'].map(lambda x: str(x) if isinstance(x, date) else x)
     match_df.to_csv(filename)
     update_timestamp(filename)
 
