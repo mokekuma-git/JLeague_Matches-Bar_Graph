@@ -158,7 +158,7 @@ function parse_csvresults(data, fields, default_group=null) {
 
     let match_date_str = _match.match_date;
     const match_date = new Date(_match.match_date);
-    if (! isNaN(match_date)) match_date_str = date_format(match_date);
+    match_date_str = date_format(match_date);
     team_map[group][_match.home_team].df.push({
       'is_home': true,
       'opponent': _match.away_team,
@@ -430,7 +430,8 @@ function make_full_content(_row, match_date) {
 
 const dgt = (m, n) => ('0000' + m).substr(-n);
 function date_format(_date) {
-  if(is_string(_date)) return _date;
+  if (isNaN(_date)) return '';
+  if (is_string(_date)) return _date;
   return [_date.getYear() + 1900, dgt(_date.getMonth() + 1, 2), dgt(_date.getDate(), 2)].join('/');
 }
 function time_format(_date) {
