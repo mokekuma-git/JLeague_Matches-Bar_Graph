@@ -148,7 +148,7 @@ def make_kickoff_time(_subset: pd.DataFrame) -> Set[pd.Timestamp]:
     同一時間を複数返さないようにするためのセット化を実施
     """
     start_time = _subset['start_time'].str.replace('未定', '00:00')
-    result = pd.to_datetime(_subset['match_date'].dt.strftime(STANDARD_DATE_FORMAT) + ' ' + start_time)
+    result = pd.to_datetime(_subset['match_date'].map(lambda x: x.strftime(STANDARD_DATE_FORMAT)) + ' ' + start_time)
     result = result.dt.tz_localize(LOCAL_TZ)
     return set(result)
 
