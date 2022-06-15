@@ -360,6 +360,7 @@ function make_html_column(target_team, team_data) {
       if (match_date == '') match_date = '未定';
       else if (match_date < '1970/01/01') console.log('Unexpected date: ' + match_date, _row);
       if (!MATCH_DATE_SET.includes(match_date) && match_date != '未定') MATCH_DATE_SET.push(match_date)
+      // ↑ '未定' 以外のYYYY/MM/DDフォーマットでない文字列も弾かないといけない
     } else {
       match_date = (_row.match_date) ? _row.match_date : '未定';
     }
@@ -519,7 +520,7 @@ function dgt(m, n) {
   return longstr.substring(longstr.length - n);
 }
 function date_format(_date) {
-  if (isNaN(_date)) return '';
+  // if (isNaN(_date)) return '';
   if (is_string(_date)) return _date;
   return [_date.getYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
 }

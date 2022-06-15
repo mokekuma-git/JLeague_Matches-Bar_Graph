@@ -430,7 +430,7 @@ function make_full_content(_row, match_date) {
 
 const dgt = (m, n) => ('0000' + m).substr(-n);
 function date_format(_date) {
-  if (isNaN(_date)) return '';
+  // if (isNaN(_date)) return '';
   if (is_string(_date)) return _date;
   return [_date.getYear() + 1900, dgt(_date.getMonth() + 1, 2), dgt(_date.getDate(), 2)].join('/');
 }
