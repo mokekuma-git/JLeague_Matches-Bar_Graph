@@ -17,11 +17,11 @@ const MATCH_DATE_SET = [];
 let COMPARE_DEBUG = false;
 let RELEGATION_DEBUG = false;
 
-// Cookie variables
-let COOKIE_OBJ; // COOKIE_OBJはwrite throughキャッシュ
-const TARGET_ITEM_ID = { // Cookie_Key: HTML_key
+// Storage variables
+const TARGET_ITEM_ID = { // localStorage_Key: HTML_key
   team_sort: 'team_sort_key',
   match_sort: 'match_sort_key',
+  cat: 'category',
 };
 
 
@@ -36,9 +36,9 @@ window.addEventListener('load', read_seasonmap, false);
 
 function init() {
   BOX_CON = document.getElementById('box_container');
-  load_cookies();
-  refresh_match_data();
   TARGET_DATE = date_format(new Date());
+  load_storage();
+  refresh_match_data();
   document.getElementById('future_opacity').addEventListener('change', set_future_opacity_ev, false);
   document.getElementById('space_color').addEventListener('change', set_space_ev, false);
   document.getElementById('team_sort_key').addEventListener('change', set_sort_key_ev, false);
@@ -50,68 +50,49 @@ function init() {
   document.getElementById('date_slider_up').addEventListener('click', function() {date_slider.value++; set_date_slider_ev()}, false);
   document.getElementById('date_slider_down').addEventListener('click', function() {date_slider.value--; set_date_slider_ev()}, false);
   document.getElementById('reset_date_slider').addEventListener('click', reset_date_slider_ev, false);
-  document.getElementById('reset_cookie').addEventListener('click', function(){clear_cookies(); load_cookies();}, false);
+  document.getElementById('reset_storage').addEventListener('click', function(){localStorage.clear(); load_storage();}, false);
   document.getElementById('scale_slider').addEventListener('change', set_scale_ev, false);
 
   // デフォルト値の読み込み
   HEIGHT_UNIT = parseInt(get_css_rule('.short').style.height);
 }
 
-function load_cookies() {
-  COOKIE_OBJ = parse_cookies();
-  const opacity = get_cookie('opacity');
+function load_storage() {
+  const params = new URL(window.location.href).searchParams;
+  params.forEach(function(value, key){
+    localStorage.setItem(key, value);
+  });
+  const target_date = localStorage.getItem('target_date');
+  if(target_date) {
+    date_obj = new Date(target_date);
+    if(! isNaN(date_obj)) TARGET_DATE = date_format(date_obj);
+  }
+
+  const opacity = localStorage.getItem('opacity');
   if(opacity) {
     set_future_opacity(opacity, false, true);
-  } else { // cookieにopacity設定がなければ、CSSのデフォルト値を設定
+  } else { // localStorageにopacity設定がなければ、CSSのデフォルト値を設定
     const _rule = get_css_rule('.future');
     document.getElementById('future_opacity').value = _rule.style.opacity;
     document.getElementById('current_opacity').innerHTML = _rule.style.opacity;
   }
 
-  const space = get_cookie('space');
+  const space = localStorage.getItem('space');
   if(space) set_space(space, false, true);
 
-  const team_sort = get_cookie('team_sort');
+  const team_sort = localStorage.getItem('team_sort');
   if(team_sort) set_pulldown('team_sort', team_sort, false, true, false);
 
-  const match_sort = get_cookie('match_sort');
+  const match_sort = localStorage.getItem('match_sort');
   if(match_sort) set_pulldown('match_sort', match_sort, false, true, false);
 
-  const cat = get_cookie('cat');
+  const cat = localStorage.getItem('cat');
   if(cat) set_pulldown('cat', cat, false, true, false);
-  // load_cookieの後にはrenderが呼ばれるので、ここではrenderは不要
+  // load_storageの後にはrenderが呼ばれるので、ここではrenderは不要
   make_season_pulldown();
 
-  const scale = get_cookie('scale');
+  const scale = localStorage.getItem('scale');
   if(scale) set_scale(scale, false, true);
-}
-
-function parse_cookies() {
-  const cookies = document.cookie;
-  COOKIE_OBJ = {};
-  for(const c of cookies.split(';')) {
-    const cArray = c.trim().split('=');
-    // TODO: =が無かった時のチェック
-    COOKIE_OBJ[cArray[0]] = cArray[1];
-  }
-  return COOKIE_OBJ;
-}
-
-function get_cookie(key) {
-  if(COOKIE_OBJ.hasOwnProperty(key)) return COOKIE_OBJ[key];
-  return undefined;
-}
-
-function set_cookie(key, value) { // COOKIE_OBJはwrite throughキャッシュ
-  COOKIE_OBJ[key] = value;
-  document.cookie = key + '=' + value;
-}
-
-function clear_cookies() {
-  const cookie_obj = parse_cookies();
-  Object.keys(cookie_obj).forEach(function(key) {
-    document.cookie = key + '=;max-age=0';
-  });
 }
 
 function refresh_match_data() {
@@ -786,12 +767,12 @@ function get_self_possible_line(rank, team_name, disp=True, group) {
 function set_scale_ev(event) {
   set_scale(event.target.value, true, false);
 }
-function set_scale(scale, cookie_write = true, slider_write = true) {
+function set_scale(scale, storage_write = true, slider_write = true) {
   BOX_CON.style.transform = 'scale(' + scale + ')';
   const p_col = document.querySelector('.point_column');
   if(p_col) BOX_CON.style.height = p_col.clientHeight * scale;
   document.getElementById('current_scale').innerHTML = scale;
-  if(cookie_write) set_cookie('scale', scale);
+  if(storage_write) localStorage.setItem('scale', scale);
   if(slider_write) document.getElementById('scale_slider').value = scale;
 }
 
@@ -809,10 +790,10 @@ function set_category_ev(event) {
 function set_season_ev(event) {
   reset_target_date();
   refresh_match_data();
-  // set_pulldown('season', event.target.value, true, false, false); // COOKIE保存は後回し
+  // set_pulldown('season', event.target.value, true, false, false); // localStorage保存は後回し
 }
-function set_pulldown(key, value, cookie_write = true, pulldown_write = true, call_render = true) {
-  if(cookie_write) set_cookie(key, value);
+function set_pulldown(key, value, storage_write = true, pulldown_write = true, call_render = true, refresh_match = false) {
+  if(storage_write) localStorage.setItem(key, value);
   if(pulldown_write) {
     const select = document.getElementById(TARGET_ITEM_ID[key]);
     if(select) {
@@ -820,10 +801,11 @@ function set_pulldown(key, value, cookie_write = true, pulldown_write = true, ca
       if(target) select.selectedIndex = target.index;
     }
   }
-  if(call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
+  if(refresh_match) refresh_match_data();
+  else if(call_render) render_bar_graph(); // 今のところ、false だけだけど、念のため
 }
 
-function set_date_slider_ev(event) { // Cookieで制御しないし、数値リセットは別コマンドなので、シンプルに
+function set_date_slider_ev(event) { // localStorageで制御しないし、数値リセットは別コマンドなので、シンプルに
   TARGET_DATE = MATCH_DATE_SET[document.getElementById('date_slider').value];
   document.getElementById('target_date').innerHTML = TARGET_DATE;
   render_bar_graph();
@@ -840,24 +822,24 @@ function reset_target_date() {
 function set_future_opacity_ev(event) {
   set_future_opacity(event.target.value, true, false);
 }
-function set_future_opacity(value, cookie_write = true, slider_write = true) {
+function set_future_opacity(value, storage_write = true, slider_write = true) {
   // set_future_opacity はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
   _rule = get_css_rule('.future')
   _rule.style.opacity = value;
   document.getElementById('current_opacity').innerHTML = value;
-  if(cookie_write) set_cookie('opacity', value);
+  if(storage_write) localStorage.setItem('opacity', value);
   if(slider_write) document.getElementById('future_opacity').value = value;
 }
 
 function set_space_ev(event) {
   set_space(event.target.value, true, false);
 }
-function set_space(value, cookie_write = true, color_write = true) {
+function set_space(value, storage_write = true, color_write = true) {
   // set_space はクラス設定の変更のみで、renderは呼ばないのでcall_renderは不要
   _rule = get_css_rule('.space')
   _rule.style.backgroundColor = value;
   _rule.style.color = getBright(value, RGB_MOD) > 0.5 ? 'black' : 'white';
-  if(cookie_write) set_cookie('space', value);
+  if(storage_write) localStorage.setItem('space', value);
   if(color_write) document.getElementById('space_color').value = value;
 }
 
