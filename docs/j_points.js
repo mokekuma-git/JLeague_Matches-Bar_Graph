@@ -58,6 +58,11 @@ function init() {
 }
 
 function load_storage() {
+  const params = new URL(window.location.href).searchParams;
+  params.forEach(function(value, key){
+    localStorage.setItem(key, value);
+  });
+
   const opacity = localStorage.getItem('opacity');
   if(opacity) {
     set_future_opacity(opacity, false, true);
