@@ -36,9 +36,9 @@ window.addEventListener('load', read_seasonmap, false);
 
 function init() {
   BOX_CON = document.getElementById('box_container');
+  TARGET_DATE = date_format(new Date());
   load_storage();
   refresh_match_data();
-  TARGET_DATE = date_format(new Date());
   document.getElementById('future_opacity').addEventListener('change', set_future_opacity_ev, false);
   document.getElementById('space_color').addEventListener('change', set_space_ev, false);
   document.getElementById('team_sort_key').addEventListener('change', set_sort_key_ev, false);
@@ -62,6 +62,11 @@ function load_storage() {
   params.forEach(function(value, key){
     localStorage.setItem(key, value);
   });
+  const target_date = localStorage.getItem('target_date');
+  if(target_date) {
+    date_obj = new Date(target_date);
+    if(! isNaN(date_obj)) TARGET_DATE = date_format(date_obj);
+  }
 
   const opacity = localStorage.getItem('opacity');
   if(opacity) {
