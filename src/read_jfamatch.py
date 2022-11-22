@@ -8,6 +8,7 @@ import json
 import re
 from typing import Any
 from typing import Dict
+from datetime import timedelta
 
 import pandas as pd
 
@@ -19,6 +20,7 @@ SCHEDULE_URL = 'URL'
 CSV_FILENAME = 'CSV'
 GROUP_NAMES = 'GROUP'
 MATCHES_IN_SECTION = 'MATCHES_IN_SECTION'
+TIMEZONE_DIFF = 'TIMEZONE_DIFF'
 COMPETITION_CONF = {
     'Olympic': {
         SCHEDULE_URL: 'https://www.jfa.jp/national_team/u24_2021/tokyo_olympic_2020/group{}/match/schedule.json',
@@ -55,7 +57,8 @@ COMPETITION_CONF = {
         SCHEDULE_URL: 'https://www.jfa.jp/national_team/samuraiblue/worldcup_2022/group{}/match/schedule.json',
         CSV_FILENAME: '../docs/csv/allmatch_result-wc2022_group.csv',
         GROUP_NAMES: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-        MATCHES_IN_SECTION: 3
+        MATCHES_IN_SECTION: 3,
+        TIMEZONE_DIFF: '06:00'
     }
 }
 
@@ -163,7 +166,7 @@ def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
 
         _row['extraTime'] = str(_row['extraTime'])  # 旧CSVとの比較用に文字列化
         try:
-            _row['match_date'] = pd.to_datetime(_row['match_date']).date()
+            _row['match_date'] = pd.to_datetime(_row['match_date']).dt.date
         except:
             pass
 
@@ -186,6 +189,23 @@ def read_group(competition: str) -> None:
         _df = read_match_df(COMPETITION_CONF[competition][SCHEDULE_URL].format(group), _mis)
         _df['group'] = group
         match_df = pd.concat([match_df, _df])
+    # JFAはなぜか 'matchDateJpn', 'matchTimeJpn' でも現地時間にするのでタイムゾーン分変更
+    if TIMEZONE_DIFF in COMPETITION_CONF[competition]:
+        time_diff_str = COMPETITION_CONF[competition][TIMEZONE_DIFF]
+        time_diff_sign = 1
+        if COMPETITION_CONF[competition][TIMEZONE_DIFF].startswith('-'):
+            time_diff_str = time_diff_str[1:]
+            time_diff_sign = -1
+        time_diff = list(map(int, time_diff_str.split(':')))
+        if len(time_diff) == 1:
+            time_diff.append(0)
+        if len(time_diff) == 2:
+            time_diff.append(0)
+        new_time = pd.to_datetime(match_df['match_date'].map(str) + 'T' + match_df['start_time']) + \
+                                  time_diff_sign * timedelta(hours=time_diff[0], minutes=time_diff[1], seconds=time_diff[2])
+        match_df['match_date'] = new_time.dt.date
+        match_df['start_time'] = new_time.dt.time
+
     if PREFERENCE['debug']:
         print(match_df['status'])
     match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
