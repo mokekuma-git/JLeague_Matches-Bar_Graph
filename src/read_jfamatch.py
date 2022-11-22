@@ -50,6 +50,12 @@ COMPETITION_CONF = {
         CSV_FILENAME: '../docs/csv/allmatch_result-wc2022afc_final.csv',
         GROUP_NAMES: ['A', 'B'],
         MATCHES_IN_SECTION: 3
+    },
+    'WC2022': {
+        SCHEDULE_URL: 'https://www.jfa.jp/national_team/samuraiblue/worldcup_2022/group{}/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/allmatch_result-wc2022_group.csv',
+        GROUP_NAMES: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+        MATCHES_IN_SECTION: 3
     }
 }
 
