@@ -1,0 +1,188 @@
+/**************************************************************** National Team style definition */
+.フランス {
+  color: red;
+  background-color: #00205b;
+}
+.メキシコ {
+  color: white;
+  background-color: green;
+}
+.南アフリカ {
+  color: green;
+  background-color: yellow;
+}
+.日本 {
+  color: crimson;
+  background-color: #00205b;
+}
+.ニュージーランド {
+  color: white;
+  background-color: black;
+}
+.ホンジュラス {
+  color: white;
+  background-color: blue;
+}
+.ルーマニア {
+  color: red;
+  background-color: yellow;
+}
+.韓国 {
+  color: black;
+  background-color: red;
+}
+.アルゼンチン {
+  color: white;
+  background-color: #4e84e9;
+}
+.エジプト {
+  color: white;
+  background-color: red;
+}
+.オーストラリア {
+  color: darkgreen;
+  background-color: yellow;
+}
+.スペイン {
+  color: black;
+  background-color: red;
+}
+.コートジボワール {
+  color: white;
+  background-color: orange;
+}
+.サウジアラビア {
+  color: white;
+  background-color: darkgreen;
+}
+.ドイツ {
+  color: white;
+  background-color: black;
+}
+.ブラジル {
+  color: darkblue;
+  background-color: yellow;
+}
+.オマーン {
+  color: white;
+  background-color: red;
+}
+.中国 {
+  color: white;
+  background-color: red;
+}
+.ベトナム {
+  color: yellow;
+  background-color: darkred;
+}
+.イラン {
+  color: white;
+  background-color: crimson;
+}
+.イラク {
+  color: white;
+  background-color: darkgreen;
+}
+.レバノン {
+  color: white;
+  background-color: red;
+}
+.UAE {
+  color: white;
+  background-color: darkred;
+}
+.シリア {
+  color: white;
+  background-color: orangered;
+}
+.エクアドル {
+    background-color: yellow;
+    color: #0f0f7c;
+}
+.オランダ {
+    color: white;
+    background-color: orange;
+}
+.カタール {
+    color: white;
+    background-color: darkred;
+}
+.セネガル {
+    color: yellow;
+    background-color: green;
+}
+.イングランド {
+    color: blue;
+    background: -moz-linear-gradient(top, lightblue 15%, white 45%);
+    background: -webkit-linear-gradient(top, lightblue 15%, white 45%);
+    background: linear-gradient(to bottom, lightblue 15%, white 45%);
+  }
+.アメリカ {
+    color: red;
+    background-color: darkblue;
+}
+.ウェールズ {
+    color: yellow;
+    background-color: darkred;
+}
+.ポーランド {
+    color: white;
+    background-color: red;
+}
+.デンマーク {
+    color: white;
+    background-color: red;
+}
+.チュニジア {
+    color: white;
+    background: -moz-linear-gradient(top, darkred 15%, red 45%);
+    background: -webkit-linear-gradient(top, darkred 15%, red 45%);
+    background: linear-gradient(to bottom, darkred 15%, red 45%);
+}
+.コスタリカ {
+    color: blue;
+    background-color: red;
+}
+.ベルギー {
+    color: white;
+    background: -moz-linear-gradient(top, black 15%, darkred 45%);
+    background: -webkit-linear-gradient(top, black 15%, darkred 45%);
+    background: linear-gradient(to bottom, black 15%, darkred 45%);
+}
+.カナダ {
+    color: white;
+    background-color: red;
+}
+.モロッコ {
+    color: darkgpreen;
+    background-color: red;
+}
+.クロアチア {
+    color: white;
+    background-color: red;    
+}
+.スイス {
+    color: white;
+    background-color: red;
+}
+.カメルーン {
+    color: yellow;
+    background-color: green;
+}
+.セルビア{
+    color: yellow;
+    background-color: darkred;
+}
+.ウルグアイ {
+    color: black;
+    background-color: lightblue;
+}
+.ポルトガル {    color: white;
+    background: -moz-linear-gradient(top right, darkred 50%, green 50%);
+    background: -webkit-linear-gradient(top right, darkred 50%, green 50%);
+    background: linear-gradient(to bottom left, darkred 50%, green 50%);
+}
+.ガーナ {
+    color: black;
+    background-color: yellow;
+}

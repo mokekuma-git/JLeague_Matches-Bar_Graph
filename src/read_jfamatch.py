@@ -49,13 +49,13 @@ COMPETITION_CONF = {
     },
     'WC2022AFC_F': {
         SCHEDULE_URL: 'https://www.jfa.jp/national_team/samuraiblue/worldcup2022/final_q/group{}/match/schedule.json',
-        CSV_FILENAME: '../docs/csv/allmatch_result-wc2022afc_final.csv',
+        CSV_FILENAME: '../docs/csv/2022_allmatch_result-wcafc_final.csv',
         GROUP_NAMES: ['A', 'B'],
         MATCHES_IN_SECTION: 3
     },
     'WC2022': {
         SCHEDULE_URL: 'https://www.jfa.jp/national_team/samuraiblue/worldcup_2022/group{}/match/schedule.json',
-        CSV_FILENAME: '../docs/csv/allmatch_result-wc2022_group.csv',
+        CSV_FILENAME: '../docs/csv/2022_allmatch_result-wc_group.csv',
         GROUP_NAMES: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
         MATCHES_IN_SECTION: 3,
         TIMEZONE_DIFF: '06:00'
