@@ -85,8 +85,18 @@ SCORE_DATA_KEY_LIST = {
 
 def read_match_json(_url: str) -> Dict[str, Any]:
     """指定したURLの試合リスト情報をjfaのJSON形式で返す"""
-    print(f'access {_url}...')
-    return json.loads(requests.get(_url).text)
+    result = None
+    counter = 0
+    while result is None or counter > 10:
+        try:
+            print(f'access {_url} ...')
+            result = json.loads(requests.get(_url).text)
+        except Exception as _ex:
+            print((counter, _ex))
+        counter +=1
+    if result is not None:
+        return result
+    return json.loads('{"matchScheduleList":{"matchSchedule": []}}')
 
 
 def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
