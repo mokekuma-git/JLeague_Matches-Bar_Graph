@@ -1,13 +1,13 @@
 ,match_date,section_no,start_time,stadium,home_team,away_team,status,matchNumber,home_goal,away_goal,extraTime,match_index_in_section,group
 0,2022-11-21,1,01:00:00,Al Bayt Stadium,カタール,エクアドル,試合終了,1,0,2,False,1,A
 1,2022-11-22,1,01:00:00,Al Thumama Stadium,セネガル,オランダ,試合終了,2,0,2,False,2,A
-2,2022-11-25,2,22:00:00,Al Thumama Stadium,カタール,セネガル,,18,,,False,1,A
+2,2022-11-25,2,22:00:00,Al Thumama Stadium,カタール,セネガル,試合終了,18,1,3,False,1,A
 3,2022-11-26,2,01:00:00,Khalifa International Stadium,オランダ,エクアドル,,19,,,False,2,A
 4,2022-11-30,3,00:00:00,Khalifa International Stadium,エクアドル,セネガル,,35,,,False,1,A
 5,2022-11-30,3,00:00:00,Al Bayt Stadium,オランダ,カタール,,36,,,False,2,A
 6,2022-11-21,1,22:00:00,Khalifa International Stadium,イングランド,イラン,試合終了,3,6,2,False,1,B
 7,2022-11-22,1,04:00:00,Ahmad Bin Ali Stadium,アメリカ,ウェールズ,試合終了,4,1,1,False,2,B
-8,2022-11-25,2,19:00:00,Ahmad Bin Ali Stadium,ウェールズ,イラン,,17,,,False,1,B
+8,2022-11-25,2,19:00:00,Ahmad Bin Ali Stadium,ウェールズ,イラン,試合終了,17,0,2,False,1,B
 9,2022-11-26,2,04:00:00,Al Bayt Stadium,イングランド,アメリカ,,20,,,False,2,B
 10,2022-11-30,3,04:00:00,Ahmad Bin Ali Stadium,ウェールズ,イングランド,,33,,,False,1,B
 11,2022-11-30,3,04:00:00,Al Thumama Stadium,イラン,アメリカ,,34,,,False,2,B
@@ -35,14 +35,14 @@
 33,2022-11-28,2,01:00:00,Khalifa International Stadium,クロアチア,カナダ,,27,,,False,2,F
 34,2022-12-02,3,00:00:00,Ahmad Bin Ali Stadium,クロアチア,ベルギー,,41,,,False,1,F
 35,2022-12-02,3,00:00:00,Al Thumama Stadium,カナダ,モロッコ,,42,,,False,2,F
-36,2022-11-24,1,19:00:00,Al Janoub Stadium,スイス,カメルーン,,13,,,False,1,G
-37,2022-11-25,1,04:00:00,Lusail Stadium,ブラジル,セルビア,,16,,,False,2,G
+36,2022-11-24,1,19:00:00,Al Janoub Stadium,スイス,カメルーン,試合終了,13,1,0,False,1,G
+37,2022-11-25,1,04:00:00,Lusail Stadium,ブラジル,セルビア,試合終了,16,2,0,False,2,G
 38,2022-11-28,2,19:00:00,Al Janoub Stadium,カメルーン,セルビア,,29,,,False,1,G
 39,2022-11-29,2,01:00:00,Stadium 974,ブラジル,スイス,,31,,,False,2,G
 40,2022-12-03,3,04:00:00,Stadium 974,セルビア,スイス,,47,,,False,1,G
 41,2022-12-03,3,04:00:00,Lusail Stadium,カメルーン,ブラジル,,48,,,False,2,G
-42,2022-11-24,1,22:00:00,Education City Stadium,ウルグアイ,韓国,,14,,,False,1,H
-43,2022-11-25,1,01:00:00,Stadium 974,ポルトガル,ガーナ,,15,,,False,2,H
+42,2022-11-24,1,22:00:00,Education City Stadium,ウルグアイ,韓国,試合終了,14,0,0,False,1,H
+43,2022-11-25,1,01:00:00,Stadium 974,ポルトガル,ガーナ,試合終了,15,3,2,False,2,H
 44,2022-11-28,2,22:00:00,Education City Stadium,韓国,ガーナ,,30,,,False,1,H
 45,2022-11-29,2,04:00:00,Lusail Stadium,ポルトガル,ウルグアイ,,32,,,False,2,H
 46,2022-12-03,3,00:00:00,Al Janoub Stadium,ガーナ,ウルグアイ,,45,,,False,1,H
