@@ -2,7 +2,7 @@ name: Update matches csv
 
 on:
   schedule:
-    - cron: '0,3,6,21 16 * * *'
+    - cron: '0 12,16,18,21 * * *'
 
 jobs:
   build:
