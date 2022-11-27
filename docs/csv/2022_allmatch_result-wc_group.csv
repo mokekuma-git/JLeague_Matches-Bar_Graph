@@ -26,13 +26,13 @@
 24,2022-11-24,1,01:00:00,Al Thumama Stadium,スペイン,コスタリカ,試合終了,10,7,0,False,1,E
 25,2022-11-23,1,22:00:00,Khalifa International Stadium,ドイツ,日本,試合終了,11,1,2,False,2,E
 26,2022-11-27,2,19:00:00,Ahmad Bin Ali Stadium,日本,コスタリカ,試合終了,25,0,1,False,1,E
-27,2022-11-28,2,04:00:00,Al Bayt Stadium,スペイン,ドイツ,,28,,,False,2,E
+27,2022-11-28,2,04:00:00,Al Bayt Stadium,スペイン,ドイツ,試合終了,28,1,1,False,2,E
 28,2022-12-02,3,04:00:00,Khalifa International Stadium,日本,スペイン,,43,,,False,1,E
 29,2022-12-02,3,04:00:00,Al Bayt Stadium,コスタリカ,ドイツ,,44,,,False,2,E
 30,2022-11-24,1,04:00:00,Ahmad Bin Ali Stadium,ベルギー,カナダ,試合終了,9,1,0,False,1,F
 31,2022-11-23,1,19:00:00,Al Bayt Stadium,モロッコ,クロアチア,試合終了,12,0,0,False,2,F
-32,2022-11-27,2,22:00:00,Al Thumama Stadium,ベルギー,モロッコ,,26,,,False,1,F
-33,2022-11-28,2,01:00:00,Khalifa International Stadium,クロアチア,カナダ,,27,,,False,2,F
+32,2022-11-27,2,22:00:00,Al Thumama Stadium,ベルギー,モロッコ,試合終了,26,0,2,False,1,F
+33,2022-11-28,2,01:00:00,Khalifa International Stadium,クロアチア,カナダ,試合終了,27,4,1,False,2,F
 34,2022-12-02,3,00:00:00,Ahmad Bin Ali Stadium,クロアチア,ベルギー,,41,,,False,1,F
 35,2022-12-02,3,00:00:00,Al Thumama Stadium,カナダ,モロッコ,,42,,,False,2,F
 36,2022-11-24,1,19:00:00,Al Janoub Stadium,スイス,カメルーン,試合終了,13,1,0,False,1,G
