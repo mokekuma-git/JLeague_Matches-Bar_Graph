@@ -3,14 +3,14 @@
 1,2022-11-22,1,01:00:00,Al Thumama Stadium,セネガル,オランダ,試合終了,2,0,2,False,2,A
 2,2022-11-25,2,22:00:00,Al Thumama Stadium,カタール,セネガル,試合終了,18,1,3,False,1,A
 3,2022-11-26,2,01:00:00,Khalifa International Stadium,オランダ,エクアドル,試合終了,19,1,1,False,2,A
-4,2022-11-30,3,00:00:00,Khalifa International Stadium,エクアドル,セネガル,,35,,,False,1,A
-5,2022-11-30,3,00:00:00,Al Bayt Stadium,オランダ,カタール,,36,,,False,2,A
+4,2022-11-30,3,00:00:00,Khalifa International Stadium,エクアドル,セネガル,試合終了,35,1,2,False,1,A
+5,2022-11-30,3,00:00:00,Al Bayt Stadium,オランダ,カタール,試合終了,36,2,0,False,2,A
 6,2022-11-21,1,22:00:00,Khalifa International Stadium,イングランド,イラン,試合終了,3,6,2,False,1,B
 7,2022-11-22,1,04:00:00,Ahmad Bin Ali Stadium,アメリカ,ウェールズ,試合終了,4,1,1,False,2,B
 8,2022-11-25,2,19:00:00,Ahmad Bin Ali Stadium,ウェールズ,イラン,試合終了,17,0,2,False,1,B
 9,2022-11-26,2,04:00:00,Al Bayt Stadium,イングランド,アメリカ,試合終了,20,0,0,False,2,B
-10,2022-11-30,3,04:00:00,Ahmad Bin Ali Stadium,ウェールズ,イングランド,,33,,,False,1,B
-11,2022-11-30,3,04:00:00,Al Thumama Stadium,イラン,アメリカ,,34,,,False,2,B
+10,2022-11-30,3,04:00:00,Ahmad Bin Ali Stadium,ウェールズ,イングランド,試合終了,33,0,3,False,1,B
+11,2022-11-30,3,04:00:00,Al Thumama Stadium,イラン,アメリカ,試合終了,34,0,1,False,2,B
 12,2022-11-23,1,01:00:00,Stadium 974,メキシコ,ポーランド,試合終了,7,0,0,False,1,C
 13,2022-11-22,1,19:00:00,Lusail Stadium,アルゼンチン,サウジアラビア,試合終了,8,1,2,False,2,C
 14,2022-11-26,2,22:00:00,Education City Stadium,ポーランド,サウジアラビア,試合終了,22,2,0,False,1,C
