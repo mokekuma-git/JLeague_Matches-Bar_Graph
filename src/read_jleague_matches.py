@@ -23,7 +23,7 @@ PREFERENCE = {}
 PREFERENCE['debug'] = False
 DATE_FORMAT = '%Y%m%d'
 LOCAL_TZ = pytz.timezone('Asia/Tokyo')
-SEASON = 2022
+SEASON = 2023
 CSVFILE_FORMAT = '../docs/csv/{}_allmatch_result-J{}.csv'
 TIMESTAMP_FILE = '../docs/csv/csv_timestamp.csv'
 JLEAGUE_DATE_FORMAT = '%Y年%m月%d日'
@@ -173,7 +173,10 @@ def get_latest_allmatches_filename(category: int) -> str:
 
     CSVファイルは常に同一名称に変更 (最新ファイルは毎回上書き)
     """
-    return CSVFILE_FORMAT.format(SEASON, category)
+    latest_file = CSVFILE_FORMAT.format(SEASON, category)
+    if os.path.isfile(latest_file):
+        return latest_file
+    return None
 
 
 def read_latest_allmatches_csv(category: int) -> pd.DataFrame:

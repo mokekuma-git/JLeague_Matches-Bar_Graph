@@ -4,7 +4,7 @@ import sys
 from typing import Any
 from typing import Dict
 from typing import List
-
+import datetime
 from bs4 import BeautifulSoup
 
 import pandas as pd
@@ -15,8 +15,8 @@ from read_jleague_matches import PREFERENCE, update_if_diff
 
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
-CSV_FILENAME = '../docs/csv/2022_allmatch_result-ACL_GL.csv'
-
+SEASON = datetime.datetime.now().year
+CSV_FILENAME = f'../docs/csv/{SEASON}_allmatch_result-ACL_GL.csv'
 
 def read_match(section_id: str) -> List[Dict[str, Any]]:
     """スポーツナビサイトから指定された節の各グループの試合リスト情報を読んで返す
@@ -36,8 +36,7 @@ def parse_match_date_data(text: str) -> Dict[str, str]:
     Validationのため、一度datetimeに変換するが、返すのは文字列
     """
     (match_date, start_time) = text.split()
-    # TODO: 年指定を固定値なのは、どうにかする
-    match_date = pd.to_datetime('2022/' + match_date[:match_date.index('（')]).date()
+    match_date = pd.to_datetime(SEASON + '/' + match_date[:match_date.index('（')]).date()
     try:
         start_time = pd.to_datetime(start_time).time()
     except:

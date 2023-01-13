@@ -2,14 +2,15 @@
 
 githubのworkflowはUTCで時間を扱うので、その分修正。
 """
-
+import datetime
 from datetime import timedelta
 
 import pandas as pd
 
+SEASON = datetime.datetime.now().year
 _df = []
 for i in [1, 2, 3]:
-    _df.append(pd.read_csv(f'docs/csv/2022_allmatch_result-J{i}.csv', index_col=0))
+    _df.append(pd.read_csv(f'docs/csv/{SEASON}_allmatch_result-J{i}.csv', index_col=0))
 
 time_df = pd.DataFrame()
 for i in [0, 1, 2]:
