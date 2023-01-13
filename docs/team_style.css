@@ -257,6 +257,18 @@
   color: white;
 }
 
+.奈良, .奈良クラブ {
+  background: -moz-linear-gradient(right left, #9C191C, #01276C);
+  background: -webkit-linear-gradient(right left, #9C191C, #01276C);
+  background: linear-gradient(to left right, #9C191C, #01276C);
+  color: white;
+}
+
+.FC大阪, .ＦＣ大阪 {
+  background-color: #4AC4FC;
+  color: black;
+}
+
 /**************************************************************** Lost Team style definition */
 .横浜Ｆ {
   color: #00adde;
