@@ -258,10 +258,10 @@
 }
 
 .奈良, .奈良クラブ {
-  background: -moz-linear-gradient(right left, #9C191C, #01276C);
-  background: -webkit-linear-gradient(right left, #9C191C, #01276C);
-  background: linear-gradient(to left right, #9C191C, #01276C);
   color: white;
+  background: -moz-linear-gradient(left, #9C191C 40%, #01276C 60%);
+  background: -webkit-linear-gradient(left, #9C191C 40%, #01276C 60%);
+  background: linear-gradient(to right, #9C191C 40%, #01276C 60%);
 }
 
 .FC大阪, .ＦＣ大阪 {
