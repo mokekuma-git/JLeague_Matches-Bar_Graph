@@ -85,8 +85,10 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
             stadium_td = _tr.find('td', class_='stadium')
             if not stadium_td:
                 continue
-            match_dict['start_time'] = re.search(r'([^\>]+)\<br', str(stadium_td))[1]
-            match_dict['stadium'] = re.search(r'([^\>]+)\<\/a', str(stadium_td))[1]
+            _match = re.search(r'([^\>]+)\<br', str(stadium_td))
+            match_dict['start_time'] = _match[1] if _match else ""
+            _match = re.search(r'([^\>]+)\<\/a', str(stadium_td))
+            match_dict['stadium'] = _match[1] if _match else ""
             match_dict['home_team'] = _tr.find('td', class_='clubName rightside').text.strip()
             match_dict['home_goal'] = _tr.find('td', class_='point rightside').text.strip()
             match_dict['away_goal'] = _tr.find('td', class_='point leftside').text.strip()
@@ -173,18 +175,18 @@ def get_latest_allmatches_filename(category: int) -> str:
 
     CSVファイルは常に同一名称に変更 (最新ファイルは毎回上書き)
     """
-    latest_file = CSVFILE_FORMAT.format(SEASON, category)
-    if os.path.isfile(latest_file):
-        return latest_file
-    return None
+    return CSVFILE_FORMAT.format(SEASON, category)
 
 
 def read_latest_allmatches_csv(category: int) -> pd.DataFrame:
     """指定されたカテゴリの最新のCSVファイルを読み込んでDataFrameで返す
 
-    該当ファイルが一つもない場合はエラー
+    該当ファイルが一つもない場合は空DataFrameを返す
     """
-    return read_allmatches_csv(get_latest_allmatches_filename(category))
+    filename = get_latest_allmatches_filename(category)
+    if filename:
+        return read_allmatches_csv(filename)
+    return pd.DataFrame()
 
 
 def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
@@ -193,7 +195,7 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
     Arguments:
         matches_file: 読み込むファイル名
     """
-    print('match file "' + matches_file + '" reading.')
+    print(f'match file {matches_file} reading.')
     all_matches = pd.read_csv(matches_file, index_col=0, dtype=str, na_values='')
     if 'index' in all_matches.columns:
         all_matches = all_matches.drop(columns=['index'])
@@ -244,9 +246,9 @@ def update_all_matches(category: int, force_update: bool = False,
     latest_file = get_latest_allmatches_filename(category)
 
     # 最新の試合結果が無い場合は、全データを読んで保存して読み込み結果を返す
-    if (not latest_file) or force_update:
+    if (not os.path.exists(latest_file)) or force_update:
         all_matches = read_all_matches(category)
-        update_if_diff(all_matches, get_latest_allmatches_filename(category))
+        update_if_diff(all_matches, latest_file)
         return all_matches
 
     current = read_allmatches_csv(latest_file)
@@ -267,7 +269,7 @@ def update_all_matches(category: int, force_update: bool = False,
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \
                         .sort_values(['section_no', 'match_index_in_section']) \
                         .reset_index(drop=True)
-        update_if_diff(new_matches, get_latest_allmatches_filename(category))
+        update_if_diff(new_matches, latest_file)
         return new_matches
     return None
 
@@ -290,14 +292,22 @@ def compare_matches(foo_df, bar_df) -> bool:
 
 def update_if_diff(match_df: pd.DataFrame, filename: str) -> bool:
     """試合DataFrameとファイル名を受け取り、中身に差分があれば更新する"""
+    # ファイル名をが無ければ上書きもできないので、異常終了
+    if not filename:
+        raise ValueError("Filename is mandatory")
+
     if not os.path.exists(filename):
+        # 旧ファイルが無ければ書きこんで終了
         update_csv(match_df, filename)
         return True
 
     old_df = read_allmatches_csv(filename)
     if compare_matches(match_df, old_df):
+        # 旧ファイルと変更があれば書きこんで終了
         update_csv(match_df, filename)
         return True
+
+    # 旧ファイルと最新内容に変更が無いのでそのまま終了
     print(f'No chnges found in {filename}')
     return False
 
