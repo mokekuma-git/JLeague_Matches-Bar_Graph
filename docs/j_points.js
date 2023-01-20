@@ -194,7 +194,11 @@ function parse_csvresults(data, fields, default_group=null) {
     // console.log(_i, group, _match.match_date, _match.home_team, _match.away_team);
     // console.log(_match);
 
-    if (! team_map.hasOwnProperty(group)) team_map[group] = {};
+    if (! team_map.hasOwnProperty(group)) {
+      // リーグデータの初期化
+      team_map[group] = {};
+      SEASON_MAP[get_category()][get_season()][3].forEach(function(teamname) {team_map[group][teamname] = {'df': []};});
+    }
     if (! team_map[group].hasOwnProperty(_match.home_team)) team_map[group][_match.home_team] = {'df': []};
     if (! team_map[group].hasOwnProperty(_match.away_team)) team_map[group][_match.away_team] = {'df': []};
 
@@ -269,7 +273,8 @@ function make_insert_columns(category) {
   // 各カテゴリの勝ち点列を入れる敷居位置を決定
   //  昇格チーム (ACL出場チーム)、中間、降格チームの位置に挟む
   let season_data = SEASON_MAP[category][get_season()];
-  const columns = [season_data[1], Math.floor(season_data[0] / 2)];
+  const columns = [Math.floor(season_data[0] / 2)];
+  if (season_data[1] != 0) columns.unshift(season_data[1]);
   if (season_data[2] != 0) columns.push(season_data[0] - season_data[2]);
   return columns;
 }
