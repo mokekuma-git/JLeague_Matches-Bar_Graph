@@ -2,34 +2,50 @@
 
 githubのworkflowはUTCで時間を扱うので、その分修正。
 """
-import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import pandas as pd
+import numpy as np
 
-SEASON = datetime.datetime.now().year
-_df = []
+SEASON = datetime.now().year
+DELAY_TIME = 135
+
+DTTIME = 'datetime'
+M_DATE = 'match_date'
+S_TIME = 'start_time'
+IGNORE_COLS = [DTTIME, M_DATE, S_TIME]
+
+df_list = []
 for i in [1, 2, 3]:
-    _df.append(pd.read_csv(f'docs/csv/{SEASON}_allmatch_result-J{i}.csv', index_col=0))
+    df_list.append(pd.read_csv(f'docs/csv/{SEASON}_allmatch_result-J{i}.csv', index_col=0))
 
 time_df = pd.DataFrame()
 for i in [0, 1, 2]:
-    time_df = pd.concat([time_df, _df[i][['match_date', 'start_time']]])
+    time_df = pd.concat([time_df, df_list[i][[M_DATE, S_TIME]]])
 
-time_df = time_df[time_df['start_time'] != '未定']
-time_df['datetime'] = time_df['match_date'] + ' ' + time_df['start_time']
-time_df['datetime'] = pd.to_datetime(time_df['datetime'])
+# Make Datetime column
+time_df = time_df[time_df[S_TIME] != '未定']
+time_df[DTTIME] = time_df[M_DATE] + ' ' + time_df[S_TIME]
+time_df[DTTIME] = pd.to_datetime(time_df[DTTIME])
 
-time_df['datetime'] += timedelta(minutes=135)
-time_df['datetime'] -= timedelta(hours=9)
+# Filter target datetime
+time_df = time_df[time_df[DTTIME] > datetime.now()]
 
-time_df['m'] = time_df['datetime'].dt.minute
-time_df['h'] = time_df['datetime'].dt.hour
-time_df['D'] = time_df['datetime'].dt.day
-time_df['M'] = time_df['datetime'].dt.month
+# Adjust Finish time in GMT
+time_df[DTTIME] += timedelta(minutes=DELAY_TIME)
+time_df[DTTIME] -= timedelta(hours=9)
+
+# Make cron part
+time_df['m'] = time_df[DTTIME].dt.minute
+time_df['h'] = time_df[DTTIME].dt.hour
+time_df['D'] = time_df[DTTIME].dt.day
+time_df['M'] = time_df[DTTIME].dt.month
 time_df['WD'] = '*'
 
-time_df = time_df.sort_values('datetime')
-time_df = time_df.drop_duplicates(subset=['datetime'])
+time_df = time_df.sort_values(DTTIME)
+time_df = time_df.drop_duplicates(subset=[DTTIME])
+time_df = time_df.reset_index(drop=True).astype(str)
 
-time_df.to_csv('datetimes.csv')
+time_df = time_df.drop(columns=IGNORE_COLS)
+PREFIX = "    - cron: '"
+time_df.apply(lambda x: print(PREFIX + " ".join(x.to_list()) + "'"), axis=1)
