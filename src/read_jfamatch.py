@@ -229,7 +229,7 @@ def make_args() -> argparse.Namespace:
                     'JFAで公開される各大会の試合情報を読み込んでCSVを作成')
 
     parser.add_argument('competition', metavar='COMP', type=str, nargs='*',
-                        help='大会の名前' + str(list(COMPETITION_CONF.keys())), default='PrinceKanto')
+                        help='大会の名前' + str(list(COMPETITION_CONF.keys())), default=['PrinceKanto'])
     parser.add_argument('-d', '--debug', action='store_true',
                         help='デバッグ出力を表示')
 
