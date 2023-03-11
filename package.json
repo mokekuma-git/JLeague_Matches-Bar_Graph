@@ -1,0 +1,19 @@
+{
+  "dependencies": {
+    "@types/node": "^18.15.0",
+    "typescript": "^4.9.5"
+  },
+  "name": "jleague_matches-bar_graph",
+  "description": "Make a bar graph of points each team got and will get.",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
