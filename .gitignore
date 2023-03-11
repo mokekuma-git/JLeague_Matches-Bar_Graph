@@ -1,6 +1,42 @@
 # Jupyter Notebook
-.vscode
 .ipynb_checkpoints
-__pycache__
+
 # Visual Studio Code
 .vscode
+
+# Node.js
+node_modules/
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+
+# TypeScript
+*.tsbuildinfo
+*.tsbak
+
+# Build
+dist/
+build/
+*.tgz
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+
+# Misc
+.DS_Store
+Thumbs.db
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+coverage/
+*.seed
+*.css.map
+*.js.map
