@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>CSV Viewer</title>
+    <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
+  </head>
+  <body>
+    <form>
+      <label for="csv-url">CSV URL:</label>
+      <input type="text" id="csv-url" name="csv-url">
+      <button type="submit">Load CSV</button>
+    </form>
+    <table id="csv-table"></table>
+
+    <script src="script/readcsv.js"></script>
+  </body>
+</html>
