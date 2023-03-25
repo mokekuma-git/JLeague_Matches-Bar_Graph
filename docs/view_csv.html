@@ -8,11 +8,11 @@
   <body>
     <form>
       <label for="csv-url">CSV URL:</label>
-      <input type="text" id="csv-url" name="csv-url">
+      <input type="text" id="csv-url" name="csv-url" value="./csv/2023_allmatch_result-J3.csv">
       <button type="submit">Load CSV</button>
     </form>
     <table id="csv-table"></table>
 
-    <script src="script/readcsv.js"></script>
+    <script type="module" src="script/readcsv.js"></script>
   </body>
 </html>

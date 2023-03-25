@@ -1,11 +1,8 @@
-// import Papa from 'papaparse';
+import Papa from 'papaparse';
+import { parse_csvresults, CsvRow, col_names } from './competition';
 
 const formElement = document.querySelector('form');
 const csvTableElement = document.getElementById('csv-table');
-
-interface CsvRow {
-    [key: string]: string;
-}
 
 if (formElement && csvTableElement) {
   formElement.addEventListener('submit', async (event) => {
@@ -19,9 +16,11 @@ if (formElement && csvTableElement) {
     try {
       const response = await fetch(csvUrl);
       const csvText = await response.text()
-      const { data: rows } = Papa.parse<CsvRow>(csvText, { header: true });
+      const {data: rows, meta: metadata} = Papa.parse<CsvRow<typeof col_names>>(csvText, { header: true, skipEmptyLines: 'greedy' });
       // console.log(rows);
+      // console.log(metadata.fields);
       csvTableElement.innerHTML = rows.map((row) => `<tr>${Object.values(row).map((cell) => `<td>${cell}</td>`).join('')}</tr>`).join('');
+      console.log(parse_csvresults(rows, metadata.fields, 'matches'));
     } catch (error) {
       console.error(error);
     }
