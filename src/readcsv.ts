@@ -1,3 +1,9 @@
+/**
+ * Read CSV, Make Competition and Bar Graph Test
+ * @module readcsv
+ * @author mokekuma.git@gmail.com
+ * @license CC BY 4.0
+ */
 import Papa from 'papaparse';
 import { parse_csvresults, CsvRow, col_names } from './competition';
 

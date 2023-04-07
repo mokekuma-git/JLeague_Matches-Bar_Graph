@@ -1,3 +1,9 @@
+/**
+ * Competition, Group, Team, TeamStatus, Match data definitions.
+ * @module competition
+ * @author mokekuma.git@gmail.com
+ * @license CC BY 4.0
+ */
 export function new_team_status() {
     return {
         win: 0,
@@ -119,7 +125,6 @@ function get_point_from_result(goal_get, goal_lose, has_extra = 'false', pk_get 
  * Returns the status attribute for a match for J League data.
  * If the match status is 'ＶＳ' (before the start of the match), returns '開始前'.
  * Otherwise, returns the status with '速報中' removed if it is present.
- *
  * @param {CsvRow<typeof col_names>} match - The match data.
  * @returns {string} The status attribute.
  */
@@ -136,7 +141,6 @@ function make_status_attr(match) {
  * Returns whether the match is live.
  * If the match status contains '速報中' (during the match), returns true.
  * Otherwise, returns false.
- *
  * @param {CsvRow<typeof col_names>} match - The match data.
  * @returns {boolean} Whether the match is live.
  */
@@ -180,23 +184,30 @@ function date_format(_date) {
     return [_date.getFullYear() + 1900, dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
 }
 /**
- * Formats a date object or string in the format 'HH:MM:SS'.
+ * Formats a date object or string in the format 'HH:MM'.
  * If a string is passed in and cannot be parsed as a Date, it is returned as-is.
  * @param {Date | string} _date - The date object or string to format.
  * @returns {string} The formatted time string.
  */
 function time_format(_date) {
-    //if (is_string(_date)) return (_date as string).replace(/(\d\d:\d\d):\d\d/, "$1");
     if (is_string(_date)) {
         const date = new Date(_date);
         if (isNaN(date.getTime())) {
             console.warn('Invalid date format: ' + _date);
-            return _date;
+            return cut_time_part(_date);
         }
         _date = date;
     }
     _date = _date;
-    return [dgt((_date.getHours()), 2), dgt(_date.getMinutes(), 2), dgt(_date.getSeconds(), 2)].join(':');
+    return [dgt((_date.getHours()), 2), dgt(_date.getMinutes(), 2)].join(':'); // Second: dgt(_date.getSeconds(), 2)
+}
+/**
+ * Cut off second part of the time string.
+ * @param time_str - The time string with/without seconds.
+ * @returns The time string without seconds.
+ */
+function cut_time_part(time_str) {
+    return time_str.replace(/(\d\d:\d\d):\d\d/, "$1");
 }
 /**
  * Returns the date string without the year part.
