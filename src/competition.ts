@@ -5,6 +5,8 @@
  * @license CC BY 4.0
  */
 
+const COMPARE_DEBUG = true;
+
 /**
  * Match data structure
  * Future match has has_result as false, and goals and point are fixed as 0.
@@ -195,12 +197,47 @@ export class Team {
 /**
  * Data structure of Group of the league
  */
-export type Group = { [teamName: string]: Team };
+export type Group = { [team_name: string]: Team };
+
+const point_properties = ['points', 'avlbl_pt', 'avrg_pt'] as const;
+export type PointProperty = typeof point_properties[number];
+
+export function get_sorted_team_list(group: Group, latest: boolean, sort_key: PointProperty): string[] {
+  const disp = sort_key.startsWith('disp_');
+  const disp_str = (disp ? 'disp' : 'latest'); // Debug表示用
+  return Object.keys(group).sort(function(a, b) {
+    let a_status = latest ? group[a].latest : group[a].display;
+    let b_status = latest ? group[b].latest : group[b].display;
+    // team_sort_keyで指定された勝ち点で比較
+    let compare = calc_compare(a, a_status[sort_key], b, b_status[sort_key], '勝点' + sort_key);
+    if (compare != 0) return compare;
+    if (sort_key.endsWith('avlbl_pt')) { // 最大勝ち点が同じときは、既に取った勝ち点を次点で比較
+      let sub_key = sort_key.replace('avlbl_pt', 'points') as PointProperty;
+      compare = calc_compare(a, a_status[sub_key], b, b_status[sub_key], '(通常の)勝点' + sub_key);
+      if (compare != 0) return compare;
+    }
+
+    // 得失点差で比較 (表示時点か最新かで振り分け)
+    compare = calc_compare(a, a_status.goal_diff, b, b_status.goal_diff, '得失点' + disp_str);
+    if (compare != 0) return compare;
+
+    // 総得点で比較 (表示時点か最新かで振り分け)
+    compare = calc_compare(a, a_status.goal_get, b, b_status.goal_get, '総得点' + disp_str);
+    // それでも同じなら、そのまま登録順 (return 0)
+    return compare;
+    function calc_compare(a: string, val_a: number, b: string, val_b: number, criteria: string): number {
+      // 比較値を出す際に、Flagに応じてデバッグ出力を実施
+      if (COMPARE_DEBUG) console.log(criteria, a, val_a, b, val_b);
+      return val_b - val_a;
+    }
+  });
+};
+
 
 /**
  * Competition data structure
  */
-export type Competition = { [groupName: string]: Group };
+export type Competition = { [group_name: string]: Group };
 
 // readonly column names
 export const col_names = [
@@ -211,7 +248,7 @@ export const col_names = [
 export type CsvRow<T extends readonly string[]> = {[K in T[number]]: string}
 
 export function parse_csvresults(data: CsvRow<typeof col_names>[], fields?: string[],
-  default_group?: string): Competition {
+  default_team_list?: string[], default_group?: string): Competition {
   const competition: Competition = {};
   if (default_group == null) default_group = 'DefaultGroup';
   // CSVが 'group' 列を持っている時はGroup名としてこの値を使い、無ければdefault_groupの文字列を使う
@@ -356,7 +393,7 @@ function dgt(m: number, n: number): string {
  * @param {Date | string} _date - The date object or string to format.
  * @returns {string} The formatted date string.
  */
-function date_format(_date: Date | string): string {
+export function date_format(_date: Date | string): string {
   if (is_string(_date)) {
     const date = new Date(_date as string);
     if (isNaN(date.getTime())) {
@@ -375,7 +412,7 @@ function date_format(_date: Date | string): string {
  * @param {Date | string} _date - The date object or string to format.
  * @returns {string} The formatted time string.
  */
-function time_format(_date: Date| string): string {
+export function time_format(_date: Date| string): string {
   if (is_string(_date)) {
     const date = new Date(_date as string);
     if (isNaN(date.getTime())) {

@@ -4,6 +4,7 @@
  * @author mokekuma.git@gmail.com
  * @license CC BY 4.0
  */
+const COMPARE_DEBUG = true;
 const DATE_REGEX = /^\d+\/\d+\/\d+$/;
 /**
  * Checks if a string follows the format of DateString (`${number}/${number}/${number}`).
@@ -137,6 +138,40 @@ export class Team {
         });
     }
 }
+const point_properties = ['points', 'avlbl_pt', 'avrg_pt'];
+export function get_sorted_team_list(group, latest, sort_key) {
+    const disp = sort_key.startsWith('disp_');
+    const disp_str = (disp ? 'disp' : 'latest'); // Debug表示用
+    return Object.keys(group).sort(function (a, b) {
+        let a_status = latest ? group[a].latest : group[a].display;
+        let b_status = latest ? group[b].latest : group[b].display;
+        // team_sort_keyで指定された勝ち点で比較
+        let compare = calc_compare(a, a_status[sort_key], b, b_status[sort_key], '勝点' + sort_key);
+        if (compare != 0)
+            return compare;
+        if (sort_key.endsWith('avlbl_pt')) { // 最大勝ち点が同じときは、既に取った勝ち点を次点で比較
+            let sub_key = sort_key.replace('avlbl_pt', 'points');
+            compare = calc_compare(a, a_status[sub_key], b, b_status[sub_key], '(通常の)勝点' + sub_key);
+            if (compare != 0)
+                return compare;
+        }
+        // 得失点差で比較 (表示時点か最新かで振り分け)
+        compare = calc_compare(a, a_status.goal_diff, b, b_status.goal_diff, '得失点' + disp_str);
+        if (compare != 0)
+            return compare;
+        // 総得点で比較 (表示時点か最新かで振り分け)
+        compare = calc_compare(a, a_status.goal_get, b, b_status.goal_get, '総得点' + disp_str);
+        // それでも同じなら、そのまま登録順 (return 0)
+        return compare;
+        function calc_compare(a, val_a, b, val_b, criteria) {
+            // 比較値を出す際に、Flagに応じてデバッグ出力を実施
+            if (COMPARE_DEBUG)
+                console.log(criteria, a, val_a, b, val_b);
+            return val_b - val_a;
+        }
+    });
+}
+;
 // readonly column names
 export const col_names = [
     "meta",
@@ -144,7 +179,7 @@ export const col_names = [
     "extraTime", "group", "home_goal", "home_pk", "home_team", "match_date", "match_index_in_section",
     "match_status", "matchNumber", "section_no", "stadium", "start_time", "status"
 ];
-export function parse_csvresults(data, fields, default_group) {
+export function parse_csvresults(data, fields, default_team_list, default_group) {
     const competition = {};
     if (default_group == null)
         default_group = 'DefaultGroup';
@@ -285,7 +320,7 @@ function dgt(m, n) {
  * @param {Date | string} _date - The date object or string to format.
  * @returns {string} The formatted date string.
  */
-function date_format(_date) {
+export function date_format(_date) {
     if (is_string(_date)) {
         const date = new Date(_date);
         if (isNaN(date.getTime())) {
@@ -303,7 +338,7 @@ function date_format(_date) {
  * @param {Date | string} _date - The date object or string to format.
  * @returns {string} The formatted time string.
  */
-function time_format(_date) {
+export function time_format(_date) {
     if (is_string(_date)) {
         const date = new Date(_date);
         if (isNaN(date.getTime())) {
