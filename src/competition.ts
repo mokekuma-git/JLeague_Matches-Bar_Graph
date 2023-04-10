@@ -25,18 +25,18 @@ const COMPARE_DEBUG = true;
  * @property {number} point - The points earned from the match
  */
 export type Match = {
-  section_no: number,
-  opponent: string,
-  match_date: DateString | string,
-  start_time: TimeString | string,
-  stadium: string,
-  is_home: boolean,
-  has_result: boolean,
-  status: string,
-  live: boolean
-  goal_get: number,
-  goal_lose: number,
-  point: number,
+  section_no: number;
+  opponent: string;
+  match_date: DateString | string;
+  start_time: TimeString | string;
+  stadium: string;
+  is_home: boolean;
+  has_result: boolean;
+  status: string;
+  live: boolean;
+  goal_get: number;
+  goal_lose: number;
+  point: number;
 };
 
 const DATE_REGEX = /^\d+\/\d+\/\d+$/;
@@ -97,16 +97,16 @@ export class TeamStatus {
   rest_games: { [opponent: string]: number };
 
   constructor() {
-    this.win = 0,
-    this.lose= 0;
-    this.draw= 0;
-    this.points= 0;
-    this.avlbl_pt= 0;
-    this.avrg_pt= 0;
-    this.goal_get= 0;
-    this.goal_diff= 0;
-    this.all_game= 0;
-    this.rest_games= {};
+    this.win = 0;
+    this.lose = 0;
+    this.draw = 0;
+    this.points = 0;
+    this.avlbl_pt = 0;
+    this.avrg_pt = 0;
+    this.goal_get = 0;
+    this.goal_diff = 0;
+    this.all_game = 0;
+    this.rest_games = {};
   }
 
   /**
@@ -115,9 +115,11 @@ export class TeamStatus {
    * @param {Match} match - The match object to update.
    * @returns {void}
    */
-  updateFutureStatus(match: Match): void { // 未来の試合のStatusの更新
+  updateFutureStatus(match: Match): void {
+    // 未来の試合のStatusの更新
     this.avlbl_pt += 3;
-    if (this.rest_games.hasOwnProperty(match.opponent)) this.rest_games[match.opponent]++;
+    if (this.rest_games.hasOwnProperty(match.opponent))
+      this.rest_games[match.opponent]++;
     else this.rest_games[match.opponent] = 1;
   }
   /**
@@ -126,7 +128,8 @@ export class TeamStatus {
    * @param {Match} match - The match object to update.
    * @returns {void}
    */
-  updateStatus(match: Match): void { // 終わった試合のStatusの更新
+  updateStatus(match: Match): void {
+    // 終わった試合のStatusの更新
     this.points += match.point;
     this.avlbl_pt += match.point;
     this.goal_diff += match.goal_get - match.goal_lose;
@@ -167,26 +170,31 @@ export class Team {
    * @returns {void}
    */
   count_team_point(count_date: Date): void {
-    const match_date_set: (Date)[] = [];
+    const match_date_set: Date[] = [];
     this.matches.forEach((match) => {
       let match_date: Date | null = null;
       if (isValidDateString(match.match_date)) {
-        if (match.match_date < '1970/01/01') {
-          console.log('Unexpected date: ', match);
+        if (match.match_date < "1970/01/01") {
+          console.log("Unexpected date: ", match);
         } else {
           match_date = new Date(match.match_date);
-          if (!match_date_set.includes(match_date)) match_date_set.push(match_date)
+          if (!match_date_set.includes(match_date))
+            match_date_set.push(match_date);
         }
       }
       const future = match_date !== null && match_date > count_date;
-      if (!match.has_result) { // 試合がまだ無いので、勝点、得失点差は不変、最大勝ち点は⁺3
+      if (!match.has_result) {
+        // 試合がまだ無いので、勝点、得失点差は不変、最大勝ち点は⁺3
         this.latest.updateFutureStatus(match);
         this.display.updateFutureStatus(match);
-      } else { // 試合があるので、実際の勝ち点、最大勝ち点、得失点は実際の記録通り
+      } else {
+        // 試合があるので、実際の勝ち点、最大勝ち点、得失点は実際の記録通り
         this.latest.updateStatus(match);
-        if (future) { // 表示対象ではないので、表示時点のdisplayは勝点、得失点差は不変、最大勝ち点は⁺3
+        if (future) {
+          // 表示対象ではないので、表示時点のdisplayは勝点、得失点差は不変、最大勝ち点は⁺3
           this.display.updateFutureStatus(match);
-        } else { // 表示対象なので、表示時点displayも実際latestと同じ
+        } else {
+          // 表示対象なので、表示時点displayも実際latestと同じ
           this.display.updateStatus(match);
         }
       }
@@ -199,40 +207,44 @@ export class Team {
  */
 export type Group = { [team_name: string]: Team };
 
-const point_properties = ['points', 'avlbl_pt', 'avrg_pt'] as const;
+const point_properties = ["points", "avlbl_pt", "avrg_pt"] as const;
 export type PointProperty = typeof point_properties[number];
 
-export function get_sorted_team_list(group: Group, latest: boolean, sort_key: PointProperty): string[] {
-  const disp = sort_key.startsWith('disp_');
-  const disp_str = (disp ? 'disp' : 'latest'); // Debug表示用
-  return Object.keys(group).sort(function(a, b) {
-    let a_status = latest ? group[a].latest : group[a].display;
-    let b_status = latest ? group[b].latest : group[b].display;
+export function get_sorted_team_list(
+  group: Group,
+  latest: boolean,
+  sort_key: PointProperty
+): string[] {
+  const disp = sort_key.startsWith("disp_");
+  const disp_str = disp ? "disp" : "latest"; // Debug表示用
+  return Object.keys(group).sort(function (a, b) {
+    let a_st = latest ? group[a].latest : group[a].display;
+    let b_st = latest ? group[b].latest : group[b].display;
     // team_sort_keyで指定された勝ち点で比較
-    let compare = calc_compare(a, a_status[sort_key], b, b_status[sort_key], '勝点' + sort_key);
+    let compare = cmp(a, a_st[sort_key], b, b_st[sort_key], "勝点" + sort_key);
     if (compare != 0) return compare;
-    if (sort_key.endsWith('avlbl_pt')) { // 最大勝ち点が同じときは、既に取った勝ち点を次点で比較
-      let sub_key = sort_key.replace('avlbl_pt', 'points') as PointProperty;
-      compare = calc_compare(a, a_status[sub_key], b, b_status[sub_key], '(通常の)勝点' + sub_key);
+    if (sort_key.endsWith("avlbl_pt")) {
+      // 最大勝ち点が同じときは、既に取った勝ち点を次点で比較
+      let sub_key = sort_key.replace("avlbl_pt", "points") as PointProperty;
+      compare = cmp(a, a_st[sub_key], b, b_st[sub_key], "(通常の)勝点" + sub_key);
       if (compare != 0) return compare;
     }
 
     // 得失点差で比較 (表示時点か最新かで振り分け)
-    compare = calc_compare(a, a_status.goal_diff, b, b_status.goal_diff, '得失点' + disp_str);
+    compare = cmp(a, a_st.goal_diff, b, b_st.goal_diff, "得失点" + disp_str);
     if (compare != 0) return compare;
 
     // 総得点で比較 (表示時点か最新かで振り分け)
-    compare = calc_compare(a, a_status.goal_get, b, b_status.goal_get, '総得点' + disp_str);
+    compare = cmp(a, a_st.goal_get, b, b_st.goal_get, "総得点" + disp_str);
     // それでも同じなら、そのまま登録順 (return 0)
     return compare;
-    function calc_compare(a: string, val_a: number, b: string, val_b: number, criteria: string): number {
+    function cmp(a: string, val_a: number, b: string, val_b: number, criteria: string): number {
       // 比較値を出す際に、Flagに応じてデバッグ出力を実施
       if (COMPARE_DEBUG) console.log(criteria, a, val_a, b, val_b);
       return val_b - val_a;
     }
   });
-};
-
+}
 
 /**
  * Competition data structure
@@ -242,19 +254,42 @@ export type Competition = { [group_name: string]: Group };
 // readonly column names
 export const col_names = [
   "meta", // Papa.parse set metadata
-  "attendance", "away_goal", "away_pk", "away_team", "broadcast", "dayofweek",
-  "extraTime", "group", "home_goal", "home_pk", "home_team", "match_date", "match_index_in_section",
-  "match_status", "matchNumber", "section_no", "stadium", "start_time", "status"] as const;
-export type CsvRow<T extends readonly string[]> = {[K in T[number]]: string}
+  "attendance",
+  "away_goal",
+  "away_pk",
+  "away_team",
+  "broadcast",
+  "dayofweek",
+  "extraTime",
+  "group",
+  "home_goal",
+  "home_pk",
+  "home_team",
+  "match_date",
+  "match_index_in_section",
+  "match_status",
+  "matchNumber",
+  "section_no",
+  "stadium",
+  "start_time",
+  "status",
+] as const;
+export type CsvRow<T extends readonly string[]> = { [K in T[number]]: string };
 
-export function parse_csvresults(data: CsvRow<typeof col_names>[], fields?: string[],
-  default_team_list?: string[], default_group?: string): Competition {
+export function parse_csvresults(
+  data: CsvRow<typeof col_names>[],
+  fields?: string[],
+  default_team_list?: string[],
+  default_group?: string
+): Competition {
   const competition: Competition = {};
-  if (default_group == null) default_group = 'DefaultGroup';
+  if (default_group == null) default_group = "DefaultGroup";
   // CSVが 'group' 列を持っている時はGroup名としてこの値を使い、無ければdefault_groupの文字列を使う
   // group列がある時 => force_group == undefined
-  let force_group: string | undefined = (fields?.includes('group')) ? undefined : default_group;
-  let group = '';
+  let force_group: string | undefined = fields?.includes("group")
+    ? undefined
+    : default_group;
+  let group = "";
   data.forEach(function (_match) {
     // ここで毎回同じ結果になる _match.hasOwnProperty('group') を繰り返したくなかったので force_groupを使う
     // group = (_match.hasOwnProperty('group')) ? _match.group : default_group; と同じという認識
@@ -262,42 +297,44 @@ export function parse_csvresults(data: CsvRow<typeof col_names>[], fields?: stri
     // console.log(_match[""], group, _match.match_date, _match.home_team, _match.away_team);
     // console.log(_match);
 
-    if (! competition.hasOwnProperty(group)) {
+    if (!competition.hasOwnProperty(group)) {
       // リーグデータの初期化
       competition[group] = {};
     }
-    if (! competition[group].hasOwnProperty(_match.home_team)) competition[group][_match.home_team] = new Team();
-    if (! competition[group].hasOwnProperty(_match.away_team)) competition[group][_match.away_team] = new Team();
+    if (!competition[group].hasOwnProperty(_match.home_team))
+      competition[group][_match.home_team] = new Team();
+    if (!competition[group].hasOwnProperty(_match.away_team))
+      competition[group][_match.away_team] = new Team();
 
     let match_date_str = _match.match_date;
     const match_date: Date = new Date(_match.match_date);
     // 日時が適切にDateオブジェクトにできなければ、getTime()はNaNが返ってくる
     // そうでなければ、Dateデータを元にDateStringを作る
-    if (! isNaN(match_date.getTime())) match_date_str = date_format(match_date);
+    if (!isNaN(match_date.getTime())) match_date_str = date_format(match_date);
     const commonProps = {
-      'has_result': Boolean(_match.home_goal && _match.away_goal),
-      'match_date': match_date_str as DateString,
-      'section_no':  parseInt(_match.section_no),
-      'stadium': _match.stadium,
-      'start_time': _match.start_time as TimeString,
-      'status': make_status_attr(_match),
-      'live': make_live_attr(_match)
+      has_result: Boolean(_match.home_goal && _match.away_goal),
+      match_date: match_date_str as DateString,
+      section_no: parseInt(_match.section_no),
+      stadium: _match.stadium,
+      start_time: _match.start_time as TimeString,
+      status: make_status_attr(_match),
+      live: make_live_attr(_match),
     };
     competition[group][_match.home_team].matches.push({
-      'point': get_point_from_result(_match.home_goal, _match.away_goal),
-      'is_home': true,
-      'opponent': _match.away_team,
-      'goal_get':  parseInt(_match.home_goal),
-      'goal_lose':  parseInt(_match.away_goal),
-      ...commonProps
+      point: get_point_from_result(_match.home_goal, _match.away_goal),
+      is_home: true,
+      opponent: _match.away_team,
+      goal_get: parseInt(_match.home_goal),
+      goal_lose: parseInt(_match.away_goal),
+      ...commonProps,
     });
     competition[group][_match.away_team].matches.push({
-      'point': get_point_from_result(_match.away_goal, _match.home_goal),
-      'is_home': false,
-      'opponent': _match.home_team,
-      'goal_get': parseInt(_match.away_goal),
-      'goal_lose': parseInt(_match.home_goal),
-      ...commonProps
+      point: get_point_from_result(_match.away_goal, _match.home_goal),
+      is_home: false,
+      opponent: _match.home_team,
+      goal_get: parseInt(_match.away_goal),
+      goal_lose: parseInt(_match.home_goal),
+      ...commonProps,
     });
   });
   return competition;
@@ -316,15 +353,15 @@ export function parse_csvresults(data: CsvRow<typeof col_names>[], fields?: stri
 function get_point_from_result(
   goal_get: string,
   goal_lose: string,
-  has_extra: string = 'false',
-  pk_get: string = '',
-  pk_lose: string = ''
+  has_extra: string = "false",
+  pk_get: string = "",
+  pk_lose: string = ""
 ): number {
   const n_goal_get = parseFloat(goal_get);
   const n_goal_lose = parseFloat(goal_lose);
   const n_pk_get = parseFloat(pk_get);
   const n_pk_lose = parseFloat(pk_lose);
-  const n_has_extra = has_extra === 'true';
+  const n_has_extra = has_extra === "true";
   if (isNaN(n_goal_get) || isNaN(n_goal_lose)) {
     return 0;
   }
@@ -347,13 +384,14 @@ function get_point_from_result(
  * @returns {string} The status attribute.
  */
 function make_status_attr(match: CsvRow<typeof col_names>): string {
-  if (! match.hasOwnProperty('status')) {
-    return '';
+  if (!match.hasOwnProperty("status")) {
+    return "";
   }
-  if (match.status == 'ＶＳ') { // Jリーグ公式の試合前は、この表示
-    return '開始前';
+  if (match.status == "ＶＳ") {
+    // Jリーグ公式の試合前は、この表示
+    return "開始前";
   }
-  return match.status.replace('速報中', '');
+  return match.status.replace("速報中", "");
 }
 
 /**
@@ -365,45 +403,46 @@ function make_status_attr(match: CsvRow<typeof col_names>): string {
  * @returns {boolean} Whether the match is live.
  */
 function make_live_attr(match: CsvRow<typeof col_names>): boolean {
-  if (! match.hasOwnProperty('status')) {
+  if (!match.hasOwnProperty("status")) {
     return false;
   }
-  if (match.status.indexOf('速報中') >= 0) { // Jリーグ公式の試合中は、この表示
+  if (match.status.indexOf("速報中") >= 0) {
+    // Jリーグ公式の試合中は、この表示
     return true;
   }
   return false;
 }
 
 /**
- * Returns a string of `n` digits representing the integer `m`. 
- * If the length of the resulting string is less than `n`, 
- * it is left-padded with zeros to the length of `n`. 
+ * Returns a string of `n` digits representing the integer `m`.
+ * If the length of the resulting string is less than `n`,
+ * it is left-padded with zeros to the length of `n`.
  * @param {number} m - The integer to convert to a string.
  * @param {number} n - The number of digits in the resulting string.
  * @returns {string} The resulting string.
  */
 function dgt(m: number, n: number): string {
-  const longstr = ('0000' + m);
+  const longstr = "0000" + m;
   return longstr.substring(longstr.length - n);
 }
 
 /**
  * Formats a date object or string in the format 'YYYY/MM/DD'.
  * If a string is passed in and cannot be parsed as a Date, it is returned as-is.
- * @param {Date | string} _date - The date object or string to format.
+ * @param {Date | string} dt - The date object or string to format.
  * @returns {string} The formatted date string.
  */
-export function date_format(_date: Date | string): string {
-  if (is_string(_date)) {
-    const date = new Date(_date as string);
+export function date_format(dt: Date | string): string {
+  if (is_string(dt)) {
+    const date = new Date(dt as string);
     if (isNaN(date.getTime())) {
-      console.warn('Invalid date format: ' + _date);
-      return _date as string;
+      console.warn("Invalid date format: " + dt);
+      return dt as string;
     }
-    _date = date;
+    dt = date;
   }
-  _date = _date as Date;
-  return [_date.getFullYear(), dgt((_date.getMonth() + 1), 2), dgt(_date.getDate(), 2)].join('/');
+  dt = dt as Date;
+  return [dt.getFullYear(), dgt(dt.getMonth() + 1, 2), dgt(dt.getDate(), 2)].join("/");
 }
 
 /**
@@ -412,17 +451,18 @@ export function date_format(_date: Date | string): string {
  * @param {Date | string} _date - The date object or string to format.
  * @returns {string} The formatted time string.
  */
-export function time_format(_date: Date| string): string {
+export function time_format(_date: Date | string): string {
   if (is_string(_date)) {
     const date = new Date(_date as string);
     if (isNaN(date.getTime())) {
-      console.warn('Invalid date format: ' + _date);
+      console.warn("Invalid date format: " + _date);
       return cut_time_part(_date as string);
     }
     _date = date;
   }
   _date = _date as Date;
-  return [dgt((_date.getHours()), 2), dgt(_date.getMinutes(), 2)].join(':'); // Second: dgt(_date.getSeconds(), 2)
+  return [dgt(_date.getHours(), 2), dgt(_date.getMinutes(), 2)].join(":");
+  // Second: dgt(_date.getSeconds(), 2)
 }
 
 /**
@@ -440,7 +480,7 @@ function cut_time_part(time_str: string): TimeString {
  * @returns {string} The formatted date string without the year part.
  */
 function date_only(_date_str: string): DateString {
-  return _date_str.replace(/^\d{4}\//, '') as DateString;
+  return _date_str.replace(/^\d{4}\//, "") as DateString;
 }
 
 /**
@@ -449,7 +489,7 @@ function date_only(_date_str: string): DateString {
  * @returns {boolean} True if the value is a string, false otherwise.
  */
 function is_string(value: any): boolean {
-  return (typeof (value) === 'string' || value instanceof String);
+  return typeof value === "string" || value instanceof String;
 }
 
 /**
