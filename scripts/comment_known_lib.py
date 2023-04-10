@@ -19,7 +19,8 @@ Args:
     known_libraries (List[str], optional): A list of known libraries. Defaults to None.
 """
 def comment_out_known_libraries(file_path: str, out_file: str,
-                                known_libraries: Optional[List[str]] = None) -> None:
+                                known_libraries: Optional[List[str]] = None,
+                                debug: bool = False) -> None:
     if known_libraries is None:
         known_libraries = KNOWN_LIBRARIES
 
@@ -35,8 +36,15 @@ def comment_out_known_libraries(file_path: str, out_file: str,
             changed = True
             if lib in known_libraries:
                 checked_lines.append("// " + line)
+                if debug:
+                    print(f"Found import from known library: {lib}")
             else:
-                checked_lines.append(line.replace(f"'{lib}'", f"'{lib}.js'"))
+                line = line.replace(f'"{lib}"', f'"{lib}.js"')
+                line = line.replace(f"'{lib}'", f"'{lib}.js'")
+                checked_lines.append(line)
+                if debug:
+                    print(f"Found import from unknown library: {lib}")
+                    print(line)
 
     if changed:
         with open(out_file, "w") as out:
@@ -44,7 +52,10 @@ def comment_out_known_libraries(file_path: str, out_file: str,
                 out.write(line)
 
 if __name__ == "__main__":
+    debug = True if "--debug" in sys.argv else False
     for filename in sys.argv[1:]:
-        comment_out_known_libraries(filename, TMP_FILE)
+        if filename == "--debug":
+            continue
+        comment_out_known_libraries(filename, TMP_FILE, debug=debug)
         if os.path.exists(TMP_FILE):
             shutil.move(TMP_FILE, filename)
