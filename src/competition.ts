@@ -213,7 +213,8 @@ export type PointProperty = typeof point_properties[number];
 export function get_sorted_team_list(
   group: Group,
   latest: boolean,
-  sort_key: PointProperty
+  sort_key: PointProperty,
+  default_team_list?: string[]
 ): string[] {
   const disp = sort_key.startsWith("disp_");
   const disp_str = disp ? "disp" : "latest"; // Debug表示用
@@ -221,23 +222,33 @@ export function get_sorted_team_list(
     let a_st = latest ? group[a].latest : group[a].display;
     let b_st = latest ? group[b].latest : group[b].display;
     // team_sort_keyで指定された勝ち点で比較
-    let compare = cmp(a, a_st[sort_key], b, b_st[sort_key], "勝点" + sort_key);
-    if (compare != 0) return compare;
+    let diff = cmp(a, a_st[sort_key], b, b_st[sort_key],
+      "勝点" + disp_str + sort_key);
+    if (diff != 0) return diff;
     if (sort_key.endsWith("avlbl_pt")) {
       // 最大勝ち点が同じときは、既に取った勝ち点を次点で比較
       let sub_key = sort_key.replace("avlbl_pt", "points") as PointProperty;
-      compare = cmp(a, a_st[sub_key], b, b_st[sub_key], "(通常の)勝点" + sub_key);
-      if (compare != 0) return compare;
+      diff = cmp(a, a_st[sub_key], b, b_st[sub_key],
+        "(通常の)勝点" + disp_str + sub_key);
+      if (diff != 0) return diff;
     }
 
     // 得失点差で比較 (表示時点か最新かで振り分け)
-    compare = cmp(a, a_st.goal_diff, b, b_st.goal_diff, "得失点" + disp_str);
-    if (compare != 0) return compare;
+    diff = cmp(a, a_st.goal_diff, b, b_st.goal_diff, "得失点" + disp_str);
+    if (diff != 0) return diff;
 
     // 総得点で比較 (表示時点か最新かで振り分け)
-    compare = cmp(a, a_st.goal_get, b, b_st.goal_get, "総得点" + disp_str);
+    diff = cmp(a, a_st.goal_get, b, b_st.goal_get, "総得点" + disp_str);
+    if (diff != 0) return diff;
+
     // それでも同じなら、そのまま登録順 (return 0)
-    return compare;
+    if (default_team_list == undefined) return 0;
+    diff = cmp(
+      b, default_team_list.indexOf(b),
+      a, default_team_list.indexOf(a),
+      "登録順" + disp_str + "\n" + default_team_list);
+    return diff;
+
     function cmp(a: string, val_a: number, b: string, val_b: number, criteria: string): number {
       // 比較値を出す際に、Flagに応じてデバッグ出力を実施
       if (COMPARE_DEBUG) console.log(criteria, a, val_a, b, val_b);

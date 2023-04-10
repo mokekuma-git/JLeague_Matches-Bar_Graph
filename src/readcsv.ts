@@ -15,7 +15,7 @@ import {
   date_format,
 } from "./competition";
 
-type SeasonData = {
+type SeasonMap = {
   [category: string]: {
     [season: string]: [
       number, // チーム数
@@ -26,18 +26,25 @@ type SeasonData = {
     ];
   };
 };
+
 type ViewContext = {
-  seasonMap: SeasonData | null;
+  competition: Competition;
+  season_map: SeasonMap | null;
   category: string;
   season: string;
   target_date: string;
+  default_team_order?: string[];
 };
+
 const CNTXT: ViewContext = {
-  seasonMap: null, // カテゴリ毎のSeason情報
+  competition: {}, // 表示対象のCompetition
+  season_map: null, // カテゴリ毎のSeason情報
   category: "1", // 1: J1, 2: J2, 3: J3
   season: "2023", // 1993-2023シーズン
   target_date: date_format(new Date()),
 };
+const SEASON_MAP_URL = "./json/season_map.json";
+const CSV_URL_FORMAT = "csv/${season}_allmatch_result-J${category}.csv";
 
 window.addEventListener("load", read_seasonmap, false);
 
@@ -58,12 +65,11 @@ function init() {
 
 function read_seasonmap() {
   // URLからSeasonMap JSONファイルを読み込む
-  const seasonMapUrl = "./json/season_map.json";
-  fetch(seasonMapUrl)
+  fetch(SEASON_MAP_URL)
     .then((response) => response.json())
     .then((seasonMap) => {
       console.log(seasonMap);
-      CNTXT.seasonMap = seasonMap;
+      CNTXT.season_map = seasonMap;
       init();
     })
     .catch((error) => {
@@ -80,21 +86,18 @@ async function refresh_match_data(): Promise<void> {
   fetch(csv_url)
     .then((response) => response.text())
     .then((csvText) => {
-      const { data: rows, meta: metadata } = Papa.parse<
+      const { data: rows, meta: meta } = Papa.parse<
         CsvRow<typeof col_names>
       >(csvText, { header: true, skipEmptyLines: "greedy" });
       // console.log(rows);
       // console.log(metadata.fields);
       // print_csv(rows, document.getElementById('csv-table') as HTMLElement);
-      let team_names: string[] = get_team_names();
-      let competition = parse_csvresults(
-        rows,
-        metadata.fields,
-        team_names,
-        "matches"
-      );
+      let teams: string[] = get_team_names();
+      let cmpt = parse_csvresults(rows, meta.fields, teams, "matches");
+      CNTXT.default_team_order = teams;
+      CNTXT.competition = cmpt;
       // console.log(competition);
-      render_competition(competition, new Date());
+      render_competition(cmpt, new Date());
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -106,19 +109,19 @@ async function refresh_match_data(): Promise<void> {
  * @returns {string[]} Team names of the category and season in CNTEXT.
  */
 function get_team_names(): string[] {
-  if (CNTXT.seasonMap == null) {
+  if (CNTXT.season_map == null) {
     console.log("seasonMap is undefined.");
     return [];
   }
-  if (CNTXT.seasonMap[CNTXT.category] == undefined) {
+  if (CNTXT.season_map[CNTXT.category] == undefined) {
     console.log("seasonMap[CNTXT.category] is undefined.");
     return [];
   }
-  if (CNTXT.seasonMap[CNTXT.category][CNTXT.season] == undefined) {
+  if (CNTXT.season_map[CNTXT.category][CNTXT.season] == undefined) {
     console.log("seasonMap[CNTXT.category][CNTXT.season] is undefined.");
     return [];
   }
-  return CNTXT.seasonMap[CNTXT.category][CNTXT.season][3];
+  return CNTXT.season_map[CNTXT.category][CNTXT.season][3];
 }
 /*
 function print_csv(rows: CsvRow<typeof col_names>[], csvTableElement: HTMLElement) {
@@ -174,17 +177,19 @@ export function createTeamStatusTable(group: Group, latest: boolean): string {
     "<th>得点</th><th>得失点差</th><th>試合数</th></tr>";
 
   // Loop through the team status object and generate rows for each team
-  get_sorted_team_list(group, true, "points").forEach((teamName) => {
-    if (group.hasOwnProperty(teamName)) {
-      const teamStatus = latest
-        ? group[teamName].latest
-        : group[teamName].display;
-      tableHTML +=
-        `<tr><td>${teamName}</td><td>${teamStatus.win}</td><td>${teamStatus.lose}</td><td>${teamStatus.draw}</td>` +
-        `<td>${teamStatus.points}</td><td>${teamStatus.avlbl_pt}</td><td>${teamStatus.avrg_pt}</td>` +
-        `<td>${teamStatus.goal_get}</td><td>${teamStatus.goal_diff}</td><td>${teamStatus.all_game}</td></tr>`;
+  get_sorted_team_list(group, true, "points", CNTXT.default_team_order).forEach(
+    (teamName) => {
+      if (group.hasOwnProperty(teamName)) {
+        const teamStatus = latest
+          ? group[teamName].latest
+          : group[teamName].display;
+        tableHTML +=
+          `<tr><td>${teamName}</td><td>${teamStatus.win}</td><td>${teamStatus.lose}</td><td>${teamStatus.draw}</td>` +
+          `<td>${teamStatus.points}</td><td>${teamStatus.avlbl_pt}</td><td>${teamStatus.avrg_pt}</td>` +
+          `<td>${teamStatus.goal_get}</td><td>${teamStatus.goal_diff}</td><td>${teamStatus.all_game}</td></tr>`;
+      }
     }
-  });
+  );
 
   tableHTML += "</table>";
   return tableHTML;
@@ -200,7 +205,8 @@ export function createTeamStatusTable(group: Group, latest: boolean): string {
  * @returns {string} The CSV file name.
  */
 function get_csv_filename(category: string, season: string): string {
-  return "csv/" + season + "_allmatch_result-J" + category + ".csv";
+  return CSV_URL_FORMAT.replace("${season}", season)
+    .replace("${category}", category);
 }
 
 // HTML form control methods ###############################################################
@@ -209,14 +215,14 @@ function get_csv_filename(category: string, season: string): string {
  * Create a select option list from the seasonMap following the category.
  * @returns {string} The generated season list as select option string.
  */
-function make_season_pulldown() {
-  if (CNTXT.seasonMap === null) return;
+function make_season_pulldown(): void {
+  if (CNTXT.season_map === null) return;
   const season_select = document.getElementById("season");
   if (season_select === null) return;
 
   const category = CNTXT["category"];
   const options: string[] = [];
-  Object.keys(CNTXT.seasonMap[category])
+  Object.keys(CNTXT.season_map[category])
     .sort()
     .reverse()
     .forEach(function (x) {
@@ -225,7 +231,7 @@ function make_season_pulldown() {
   season_select.innerHTML = options.join("");
 }
 
-function set_category_ev(event: Event) {
+function set_category_ev(event: Event): void {
   if (event.target === null) return;
   const selectElement = event.target as HTMLSelectElement;
   CNTXT.category = selectElement.value;
@@ -234,7 +240,7 @@ function set_category_ev(event: Event) {
   refresh_match_data();
 }
 
-function set_season_ev(event: Event) {
+function set_season_ev(event: Event): void {
   const selectElement = event.target as HTMLSelectElement;
   CNTXT.season = selectElement.value;
   // reset_target_date();

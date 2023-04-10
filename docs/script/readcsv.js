@@ -5,13 +5,16 @@
  * @license CC BY 4.0
  */
 // import Papa from "papaparse";
-import { parse_csvresults, get_sorted_team_list, date_format, } from "./competition";
+import { parse_csvresults, get_sorted_team_list, date_format, } from "./competition.js";
 const CNTXT = {
-    seasonMap: null,
+    competition: {},
+    season_map: null,
     category: "1",
     season: "2023",
     target_date: date_format(new Date()),
 };
+const SEASON_MAP_URL = "./json/season_map.json";
+const CSV_URL_FORMAT = "csv/${season}_allmatch_result-J${category}.csv";
 window.addEventListener("load", read_seasonmap, false);
 // Functions
 function init() {
@@ -27,12 +30,11 @@ function init() {
 }
 function read_seasonmap() {
     // URLからSeasonMap JSONファイルを読み込む
-    const seasonMapUrl = "./json/season_map.json";
-    fetch(seasonMapUrl)
+    fetch(SEASON_MAP_URL)
         .then((response) => response.json())
         .then((seasonMap) => {
         console.log(seasonMap);
-        CNTXT.seasonMap = seasonMap;
+        CNTXT.season_map = seasonMap;
         init();
     })
         .catch((error) => {
@@ -48,14 +50,16 @@ async function refresh_match_data() {
     fetch(csv_url)
         .then((response) => response.text())
         .then((csvText) => {
-        const { data: rows, meta: metadata } = Papa.parse(csvText, { header: true, skipEmptyLines: "greedy" });
+        const { data: rows, meta: meta } = Papa.parse(csvText, { header: true, skipEmptyLines: "greedy" });
         // console.log(rows);
         // console.log(metadata.fields);
         // print_csv(rows, document.getElementById('csv-table') as HTMLElement);
-        let team_names = get_team_names();
-        let competition = parse_csvresults(rows, metadata.fields, team_names, "matches");
+        let teams = get_team_names();
+        let cmpt = parse_csvresults(rows, meta.fields, teams, "matches");
+        CNTXT.default_team_order = teams;
+        CNTXT.competition = cmpt;
         // console.log(competition);
-        render_competition(competition, new Date());
+        render_competition(cmpt, new Date());
     })
         .catch((error) => {
         console.error("Error:", error);
@@ -66,19 +70,19 @@ async function refresh_match_data() {
  * @returns {string[]} Team names of the category and season in CNTEXT.
  */
 function get_team_names() {
-    if (CNTXT.seasonMap == null) {
+    if (CNTXT.season_map == null) {
         console.log("seasonMap is undefined.");
         return [];
     }
-    if (CNTXT.seasonMap[CNTXT.category] == undefined) {
+    if (CNTXT.season_map[CNTXT.category] == undefined) {
         console.log("seasonMap[CNTXT.category] is undefined.");
         return [];
     }
-    if (CNTXT.seasonMap[CNTXT.category][CNTXT.season] == undefined) {
+    if (CNTXT.season_map[CNTXT.category][CNTXT.season] == undefined) {
         console.log("seasonMap[CNTXT.category][CNTXT.season] is undefined.");
         return [];
     }
-    return CNTXT.seasonMap[CNTXT.category][CNTXT.season][3];
+    return CNTXT.season_map[CNTXT.category][CNTXT.season][3];
 }
 /*
 function print_csv(rows: CsvRow<typeof col_names>[], csvTableElement: HTMLElement) {
@@ -130,7 +134,7 @@ export function createTeamStatusTable(group, latest) {
             "<th>勝ち点</th><th>最大勝点</th><th>平均勝点</th>" +
             "<th>得点</th><th>得失点差</th><th>試合数</th></tr>";
     // Loop through the team status object and generate rows for each team
-    get_sorted_team_list(group, true, "points").forEach((teamName) => {
+    get_sorted_team_list(group, true, "points", CNTXT.default_team_order).forEach((teamName) => {
         if (group.hasOwnProperty(teamName)) {
             const teamStatus = latest
                 ? group[teamName].latest
@@ -154,7 +158,8 @@ export function createTeamStatusTable(group, latest) {
  * @returns {string} The CSV file name.
  */
 function get_csv_filename(category, season) {
-    return "csv/" + season + "_allmatch_result-J" + category + ".csv";
+    return CSV_URL_FORMAT.replace("${season}", season)
+        .replace("${category}", category);
 }
 // HTML form control methods ###############################################################
 /**
@@ -162,14 +167,14 @@ function get_csv_filename(category, season) {
  * @returns {string} The generated season list as select option string.
  */
 function make_season_pulldown() {
-    if (CNTXT.seasonMap === null)
+    if (CNTXT.season_map === null)
         return;
     const season_select = document.getElementById("season");
     if (season_select === null)
         return;
     const category = CNTXT["category"];
     const options = [];
-    Object.keys(CNTXT.seasonMap[category])
+    Object.keys(CNTXT.season_map[category])
         .sort()
         .reverse()
         .forEach(function (x) {
