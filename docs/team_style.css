@@ -82,7 +82,7 @@
   background: -webkit-linear-gradient(left, #003a68 60%, #000000);
   background: linear-gradient(to right, #003a68 60%, #000000);
 }
-.浦和, .浦和レッドダイヤモンズユース {
+.浦和, .浦和レッドダイヤモンズユース, .浦和レッズユース {
   color: white;
   background-color: #e6002d;
 }
@@ -117,7 +117,7 @@
   color: white;
   background-color: #004093;
 }
-.甲府, .山梨学院高校 {
+.甲府, .山梨学院高校, .ヴァンフォーレ甲府U-18 {
   color: white;
   background: -moz-linear-gradient(left, #B8193F, #005bac, #005bac);
   background: -webkit-linear-gradient(left, #B8193F, #005bac, #005bac);
@@ -422,4 +422,16 @@
 .旭川実業高校 {
   color: white;
   background-color: #a41919;
+}
+.米子北高校 {
+  color: white;
+  background-color: #002844;
+}
+.神村学園高等部 {
+  color: white;
+  background-color: #CD0004;
+}
+.高崎健康福祉大学高崎高校 {
+  color: white;
+  background-color: #0183E2;
 }
