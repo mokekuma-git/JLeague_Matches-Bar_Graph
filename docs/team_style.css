@@ -107,7 +107,7 @@
   color: white;
   background-color: #f18900;
 }
-.岡山 {
+.岡山, .ファジアーノ岡山U-18 {
   color: white;
   background: -moz-linear-gradient(left, #ad0040, #ad0040, #0c0a58);
   background: -webkit-linear-gradient(left, #ad0040, #ad0040, #0c0a58);
@@ -175,7 +175,7 @@
   color: white;
   background-color: #046A38;
 }
-.栃木 {
+.栃木, .栃木SC {
   color: #005bac;
   background-color: #fff100;
 }
@@ -434,4 +434,16 @@
 .高崎健康福祉大学高崎高校 {
   color: white;
   background-color: #0183E2;
+}
+.帝京長岡高校 {
+  color: yellow;
+  background-color: green;
+}
+.鹿児島城西高校 {
+  color: yellow;
+  background-color: darkblue;
+}
+.桐蔭学園高校 {
+  color: white;
+  background-color: darkblue;
 }
