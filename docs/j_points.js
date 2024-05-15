@@ -272,7 +272,11 @@ function append_inputs(next, group) {
 function make_insert_columns(category) {
   // 各カテゴリの勝ち点列を入れる敷居位置を決定
   //  昇格チーム (ACL出場チーム)、中間、降格チームの位置に挟む
-  let season_data = SEASON_MAP[category][get_season()];
+  return _make_insert_columns(category, get_season());
+}
+
+function _make_insert_columns(category, season) {
+  let season_data = SEASON_MAP[category][season];
   const columns = [Math.floor(season_data[0] / 2)];
   if (season_data[1] != 0) columns.unshift(season_data[1]);
   if (season_data[2] != 0) columns.push(season_data[0] - season_data[2]);
