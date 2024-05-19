@@ -20,4 +20,5 @@ if [ $RUNNING_HOUR -eq 1 ]; then
 else
   # 試合時間ごとの自動実行は、現在はJリーグ分のみ
   python src/read_jleague_matches.py
+  python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto
 fi
