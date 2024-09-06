@@ -47,10 +47,10 @@ COMPETITION_CONF = {
         CSV_FILENAME: '../docs/csv/2024_allmatch_result-PrincePremierW.csv',
         GROUP_NAMES: ['']
     },
-    'WC2023AFC_F': {
-        SCHEDULE_URL: 'https://www.jfa.jp/national_team/samuraiblue/worldcup2023/final_q/group{}/match/schedule.json',
-        CSV_FILENAME: '../docs/csv/2023_allmatch_result-wcafc_final.csv',
-        GROUP_NAMES: ['A', 'B'],
+    'WC2026AFC_F': {
+        SCHEDULE_URL: 'https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/final_q_2026/group{}/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/2026_allmatch_result-wcafc_final.csv',
+        GROUP_NAMES: ['C'],
         MATCHES_IN_SECTION: 3
     },
     'WC2022': {
