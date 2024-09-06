@@ -231,7 +231,7 @@ def update_timestamp(filename: str) -> None:
         timestamp = pd.DataFrame(columns=['date'])
         timestamp.index.name = 'file'
     timestamp.loc[filename] = datetime.now().astimezone(LOCAL_TZ)
-    timestamp.to_csv(TIMESTAMP_FILE)
+    timestamp.to_csv(TIMESTAMP_FILE, lineterminator='\n')
 
 
 def update_all_matches(category: int, force_update: bool = False,
@@ -319,7 +319,7 @@ def update_csv(match_df: pd.DataFrame, filename: str) -> None:
     # 文字列も入ってくると、日付・時間の双方を出してしまうらしいので、
     # 出力前に match_date の内容を文字列にする
     match_df['match_date'] = match_df['match_date'].map(lambda x: str(x) if isinstance(x, date) else x)
-    match_df.to_csv(filename)
+    match_df.to_csv(filename, lineterminator='\n')
     update_timestamp(filename)
 
 
