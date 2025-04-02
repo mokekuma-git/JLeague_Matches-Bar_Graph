@@ -33,18 +33,18 @@ COMPETITION_CONF = {
     #     GROUP_NAMES: ['G', 'H', 'I', 'J']
     # }, # A~Fのグループ情報が無い
     'PrinceKanto': {
-        SCHEDULE_URL: 'https://jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2024/kanto1/match/schedule.json',
-        CSV_FILENAME: '../docs/csv/2024_allmatch_result-PrinceKanto.csv',
+        SCHEDULE_URL: 'https://jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2025/kanto1/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/2025_allmatch_result-PrinceKanto.csv',
         GROUP_NAMES: ['']
     },
     'PrincePremierE': {
-        SCHEDULE_URL: 'https://www.jfa.jp/match/takamado_jfa_u18_premier2024/east/match/schedule.json',
-        CSV_FILENAME: '../docs/csv/2024_allmatch_result-PrincePremierE.csv',
+        SCHEDULE_URL: 'https://www.jfa.jp/match/takamado_jfa_u18_premier2025/east/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/2025_allmatch_result-PrincePremierE.csv',
         GROUP_NAMES: ['']
     },
     'PrincePremierW': {
-        SCHEDULE_URL: 'https://www.jfa.jp/match/takamado_jfa_u18_premier2024/west/match/schedule.json',
-        CSV_FILENAME: '../docs/csv/2024_allmatch_result-PrincePremierW.csv',
+        SCHEDULE_URL: 'https://www.jfa.jp/match/takamado_jfa_u18_premier2025/west/match/schedule.json',
+        CSV_FILENAME: '../docs/csv/2025_allmatch_result-PrincePremierW.csv',
         GROUP_NAMES: ['']
     },
     'WC2026AFC_F': {

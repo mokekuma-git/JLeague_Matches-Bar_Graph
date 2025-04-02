@@ -543,7 +543,7 @@ function reset_date_slider(target_date) { // MATCH_DATAが変わった時用
 function make_season_pulldown() {
   const category = get_category();
   const options = [];
-  ['2024', '2023', '2022', '2021'].forEach(function (x) {
+  ['2025', '2024', '2023', '2022', '2021'].forEach(function (x) {
       options.push('<option value="' + x + '">' + x + "</option>\n");
     });
   document.getElementById('season').innerHTML = options.join('');
