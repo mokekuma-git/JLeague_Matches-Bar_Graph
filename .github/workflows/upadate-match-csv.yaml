@@ -3,6 +3,10 @@ name: Update matches csv
 on:
   schedule:
     - cron: '0 16 * * *'
+    - cron: '50 15 1 10 *'
+    - cron: '40 16 1 10 *'
+    - cron: '50 16 2 10 *'
+    - cron: '40 17 2 10 *'
 
 jobs:
   build:
