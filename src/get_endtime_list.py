@@ -1,5 +1,5 @@
 """Generate cron schedules for GitHub Actions based on J-League match start times."""
-import sys
+import argparse
 from typing import List
 import pandas as pd
 import re
@@ -134,10 +134,32 @@ def update_workflow_file(match_times):
         return False
 
 
+def make_argparse() -> argparse.ArgumentParser:
+    """Create argument parser for command line arguments."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate cron schedules for GitHub Actions based on J-League match start times.")
+    parser.add_argument(
+        "-y", "--year",
+        type=int,
+        default=None,
+        help="Year to filter matches. Defaults to current year."
+    )
+    parser.add_argument(
+        "-c", "--category",
+        type=int,
+        default=None,
+        help="Category to filter matches. [1, 2...]. Defaults to all categories."
+    )
+    return parser.parse_args()
+
+
 def main():
     """Main function."""
     print("Getting match times from CSV files...")
-    match_times = read_all_match_times()
+    args = make_argparse()
+
+    match_times = read_all_match_times(args.year, args.category)
     print(f"Found {len(match_times)} future matches.")
 
     if match_times:
