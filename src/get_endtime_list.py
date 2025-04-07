@@ -89,10 +89,17 @@ def read_match_times_from_file(file:Path) -> List[datetime]:
 
 
 def datetime_to_cron(dt, offset_minutes=0):
-    """Convert a datetime to a cron expression with an offset."""
-    # Apply offset
+    """Convert a datetime to a cron expression with an offset.
+    
+    Adjusts the time from JST to GitHub server time (UTC) by subtracting 15 hours.
+    """
+    # Apply offset in minutes
     dt = dt + timedelta(minutes=offset_minutes)
-
+    
+    # Adjust for GitHub server time (UTC) - subtract 15 hours from JST
+    dt = dt - timedelta(hours=9)
+    
+    # Handle day change when crossing midnight
     # Format as cron expression (minute hour day month day-of-week)
     return f"{dt.minute} {dt.hour} {dt.day} {dt.month} *"
 
@@ -111,10 +118,10 @@ def update_workflow_file(match_times):
 
     cron_expressions = []
     cron_expressions.append("    - cron: '0 16 * * *'")  # Default cron expression
-    # Add expressions for 50/100 minutes after match start
+    # Add expressions for 60/120 minutes after match start
     for dt in match_times:
-        cron_expressions.append(f"    - cron: '{datetime_to_cron(dt, 50)}'")
-        cron_expressions.append(f"    - cron: '{datetime_to_cron(dt, 100)}'")
+        cron_expressions.append(f"    - cron: '{datetime_to_cron(dt, 60)}'")
+        cron_expressions.append(f"    - cron: '{datetime_to_cron(dt, 120)}'")
 
     new_schedule = "on:\n  schedule:\n" + "\n".join(cron_expressions)
     # Replace the old schedule section with the new one
