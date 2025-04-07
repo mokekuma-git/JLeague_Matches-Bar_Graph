@@ -132,8 +132,9 @@ def update_workflow_file(match_times):
         flags=re.DOTALL
     )
     # Write the updated workflow file
+    # Change line endings to LF
     try:
-        with open(WORKFLOW_FILE, 'w', encoding='utf-8') as f:
+        with open(WORKFLOW_FILE, 'w', encoding='utf-8', newline='\n') as f:
             f.write(new_workflow_content)
         return True
     except Exception as e:
