@@ -60,7 +60,7 @@
 .湘南, .平塚 {
   background-color: #8dd64c;
 }
-.福岡 {
+.福岡, .アビスパ福岡U-18 {
   color: white;
   background-color: #00205b;
 }
@@ -103,7 +103,7 @@
   color: white;
   background-color: #750069;
 }
-.大宮, .大宮アルディージャU18 {
+.大宮, .大宮アルディージャU18, .RB大宮アルディージャU18 {
   color: white;
   background-color: #f18900;
 }
@@ -161,7 +161,7 @@
   color: #fdd448;
   background-color: #285B99;
 }
-.千葉, .市原 {
+.千葉, .市原, .ジェフユナイテッド市原・千葉U-18 {
   color: #d7083b;
   background: -moz-linear-gradient(top left, #ffe100, #ffe100, #009260);
   background: -webkit-linear-gradient(top left, #ffe100, #ffe100, #009260);
