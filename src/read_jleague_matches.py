@@ -137,7 +137,20 @@ def get_match_dates_of_section(all_matches: pd.DataFrame) -> dict[str, set[pd.Ti
     """各節の開催日リストを返す
 
     開催日未定の試合は無視
-    """
+
+    Args:
+        all_matches: 全試合データ
+
+    Returns:
+        dict: 各節の開催日リスト
+
+    Raises:
+        AttributeError: start_time列の値に文字列以外が含まれる時
+        ParserError: 日時データが正しい形式でない場合 (日時、'未定' 以外の文字列)
+        ValueError: 日時データが正しい形式でない場合 (日時、'未定' 以外の文字列)
+        TypeError: タイムスタンプが既にTimezoneを持っている場合
+        KeyError: DataFrame内に'start_time'または'match_date'列が存在しない場合 
+   """
     return all_matches.dropna(subset=['match_date']).groupby('section_no').apply(make_kickoff_time)
 
 
@@ -147,6 +160,18 @@ def make_kickoff_time(_subset: pd.DataFrame) -> set[pd.Timestamp]:
     与えられる試合データは同一節のものと想定
     試合開始時間未定の場合は 00:00 キックオフと考える
     同一時間を複数返さないようにするためのセット化を実施
+
+    Args:
+        _subset: 試合データのDataFrame
+    Returns:
+        set: 試合開始時間のセット
+
+    Raises:
+        AttributeError: start_time列の値に文字列以外が含まれる時
+        ParserError: 日時データが正しい形式でない場合 (日時、'未定' 以外の文字列)
+        ValueError: 日時データが正しい形式でない場合 (日時、'未定' 以外の文字列)
+        TypeError: タイムスタンプが既にTimezoneを持っている場合
+        KeyError: DataFrame内に'start_time'または'match_date'列が存在しない場合
     """
     start_time = _subset['start_time'].str.replace('未定', '00:00')
     result = pd.to_datetime(_subset['match_date'] + ' ' + start_time)
@@ -155,14 +180,30 @@ def make_kickoff_time(_subset: pd.DataFrame) -> set[pd.Timestamp]:
 
 
 def get_sections_to_update(all_matches: pd.DataFrame,
-                           _lastupdate: pd.Timestamp, _now: pd.Timestamp) -> set[str]:
-    """startからendまでの対象期間に、試合が開始した節のセットを返す"""
+                           lastupdate: pd.Timestamp, current_time: pd.Timestamp) -> set[str]:
+    """startからendまでの対象期間に、試合が開始した節のセットを返す
+
+    Args:
+        all_matches: 全試合データ
+        lastupdate: 更新確認開始時刻
+        current_time: 更新確認終了時刻
+        
+    Returns:
+        対象期間に試合が開始した節のリスト（ソート済み）
+        
+    Raises:
+        AttributeError: start_time列の値に文字列以外が含まれる時
+        ParserError: 日時データが正しい形式でない場合 (日時、'未定' 以外の文字列)
+        ValueError: 日時データが正しい形式でない場合 (日時、'未定' 以外の文字列)
+        TypeError: タイムスタンプが既にTimezoneを持っている場合
+        KeyError: DataFrame内に'start_time'または'match_date'列が存在しない場合
+    """
     target_sec = set()
     for (_sec, _dates) in get_match_dates_of_section(all_matches).items():
         for _start in _dates:
             _end = _start + timedelta(hours=2)
-            if _lastupdate <= _end and _start <= _now:
-                print(f'add "{_sec}" (for match at {_start}-{_end}) between {_lastupdate} - {_now}')
+            if lastupdate <= _end and _start <= current_time:
+                print(f'add "{_sec}" (for match at {_start}-{_end}) between {lastupdate} - {current_time}')
                 target_sec.add(_sec)
     target_sec = list(target_sec)
     target_sec.sort()
@@ -204,7 +245,7 @@ def to_datetime_aspossible(val: str) -> str:
     """可能な限りTimestamp型をconfig.standard_date_format形式で出力し、それ以外の文字列はそのまま返す"""
     try:
         return pd.to_datetime(val).date().strftime(config.standard_date_format)
-    except:
+    except (ValueError, TypeError) as e:
         return val
 
 

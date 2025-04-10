@@ -14,7 +14,7 @@ import pandas as pd
 
 import requests
 
-from read_jleague_matches import PREFERENCE, update_if_diff, STANDARD_DATE_FORMAT
+from read_jleague_matches import update_if_diff, to_datetime_aspossible
 
 SCHEDULE_URL = 'URL'
 CSV_FILENAME = 'CSV'
@@ -181,10 +181,7 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
                 print('No Cancel## ' + _match_data['venueFullName'])
 
         _row['extraTime'] = str(_row['extraTime'])  # 旧CSVとの比較用に文字列化
-        try:
-            _row['match_date'] = pd.to_datetime(_row['match_date']).strftime(STANDARD_DATE_FORMAT)
-        except:
-            pass
+        _row['match_date'] = to_datetime_aspossible(_row['match_date'])
 
         result_list.append(_row)
 
