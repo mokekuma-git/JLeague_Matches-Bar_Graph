@@ -71,7 +71,7 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
         match_div = _section.find('div', class_='timeStamp')
         if match_div:
             match_date = match_div.find('h4').text.strip()
-            match_date = datetime.strptime(match_date[:match_date.index('(')], JLEAGUE_DATE_FORMAT).date()
+            match_date = convert_jleague_date(match_date)
         else:
             match_date = None
         section_no = _section.find('div', class_='leagAccTit').find('h5').text.strip()
@@ -103,7 +103,17 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
                 print(match_dict)
             result_list.append(match_dict)
             _index += 1
+    print(f'  Read {len(result_list)} matches in section {section_no}')
     return result_list
+
+def convert_jleague_date(match_date: str) -> str:
+    """Jリーグの試合日付を標準形式に変換する
+
+    Jリーグの試合日付の "2025年3月1日(土)" のような形式からこのプログラムの標準形式
+    "2025/03/01" に変換する
+    """
+    _date = datetime.strptime(match_date[:match_date.index('(')], JLEAGUE_DATE_FORMAT)
+    return _date.strftime(STANDARD_DATE_FORMAT)
 
 
 def read_all_matches(category: int) -> pd.DataFrame:
@@ -209,10 +219,10 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
     return all_matches
 
 
-def to_datetime_aspossible(val):
-    """可能な限りTimestamp型として読み込み、不可能な場合は文字列として返す"""
+def to_datetime_aspossible(val: str) -> str:
+    """可能な限りTimestamp型をSTANDARD_DATE_FORMAT形式で出力し、それ以外の文字列はそのまま返す"""
     try:
-        return pd.to_datetime(val).date()
+        return pd.to_datetime(val).date().strftime(STANDARD_DATE_FORMAT)
     except:
         return val
 

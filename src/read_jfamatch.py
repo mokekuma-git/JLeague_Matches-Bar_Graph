@@ -14,7 +14,7 @@ import pandas as pd
 
 import requests
 
-from read_jleague_matches import PREFERENCE, update_if_diff
+from read_jleague_matches import PREFERENCE, update_if_diff, STANDARD_DATE_FORMAT
 
 SCHEDULE_URL = 'URL'
 CSV_FILENAME = 'CSV'
@@ -66,6 +66,8 @@ SCHEDULE_CONTAINER_NAME = 'matchScheduleList'
 SCHEDULE_LIST_NAME = 'matchSchedule'
 SECTION_NO = re.compile(r'(\d+)')
 
+# Key mapping from our format to JFA JSON 
+# {"our key": "JFA JSON key"}
 REPLACE_KEY_DICT = {
     'match_date': 'matchDateJpn',
     'section_no': 'matchTypeName',
@@ -76,6 +78,9 @@ REPLACE_KEY_DICT = {
     'status': 'matchStatus',
     'matchNumber': 'matchNumber'
 }
+# Key mapping for scoring data
+# {"our key": "JFA JSON key in score"}
+## JFA JSON format {"score": {"homeScore": "0", "awayScore": "0", "exMatch": false, ...}}
 SCORE_DATA_KEY_LIST = {
     'home_goal': 'homeScore',
     'away_goal': 'awayScore',
@@ -96,11 +101,12 @@ def read_match_json(_url: str) -> Dict[str, Any]:
         counter +=1
     if result is not None:
         return result
+    print(f'Failed to get match data for {_url} after {counter} tries')
     return json.loads('{"matchScheduleList":{"matchSchedule": []}}')
 
 
-def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
-    """各グループの試合リスト情報を自分たちのDataFrame形式で返す
+def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
+    """URLで与えられた各グループの試合リスト情報を自分たちのDataFrame形式で返す
 
     JFA形式のJSONは、1試合の情報が下記のような内容
     {'matchTypeName': '第1節',
@@ -176,7 +182,7 @@ def read_match_df(_url: str, matches_in_section: int = None) -> pd.DataFrame:
 
         _row['extraTime'] = str(_row['extraTime'])  # 旧CSVとの比較用に文字列化
         try:
-            _row['match_date'] = pd.to_datetime(_row['match_date']).dt.date
+            _row['match_date'] = pd.to_datetime(_row['match_date']).strftime(STANDARD_DATE_FORMAT)
         except:
             pass
 
@@ -191,35 +197,59 @@ def read_group(competition: str) -> None:
         print(f'Unknown competion: "{competition}"\n{list(COMPETITION_CONF.keys())}')
         return
 
-    match_df = pd.DataFrame()
-    for group in COMPETITION_CONF[competition][GROUP_NAMES]:
-        _mis = None
-        if MATCHES_IN_SECTION in COMPETITION_CONF[competition]:
-            _mis = COMPETITION_CONF[competition][MATCHES_IN_SECTION]
-        _df = read_match_df(COMPETITION_CONF[competition][SCHEDULE_URL].format(group), _mis)
-        _df['group'] = group
-        match_df = pd.concat([match_df, _df])
-    # JFAはなぜか 'matchDateJpn', 'matchTimeJpn' でも現地時間にするのでタイムゾーン分変更
-    if TIMEZONE_DIFF in COMPETITION_CONF[competition]:
-        time_diff_str = COMPETITION_CONF[competition][TIMEZONE_DIFF]
-        time_diff_sign = 1
-        if COMPETITION_CONF[competition][TIMEZONE_DIFF].startswith('-'):
-            time_diff_str = time_diff_str[1:]
-            time_diff_sign = -1
-        time_diff = list(map(int, time_diff_str.split(':')))
-        if len(time_diff) == 1:
-            time_diff.append(0)
-        if len(time_diff) == 2:
-            time_diff.append(0)
-        new_time = pd.to_datetime(match_df['match_date'].map(str) + 'T' + match_df['start_time']) + \
-                                  time_diff_sign * timedelta(hours=time_diff[0], minutes=time_diff[1], seconds=time_diff[2])
-        match_df['match_date'] = new_time.dt.date
-        match_df['start_time'] = new_time.dt.time
+    comp_conf = COMPETITION_CONF[competition]
+    match_df = read_all_group(comp_conf)
 
     if PREFERENCE['debug']:
         print(match_df['status'])
+    update_if_diff(match_df, comp_conf[CSV_FILENAME])
+
+
+def read_all_group(comp_conf: Dict[str, Any]) -> pd.DataFrame:
+    """指定された大会のグループ全体を読み込んでDataFrameにして返す"""
+    df_list = []
+    for group in comp_conf[GROUP_NAMES]:
+        _mis = None
+        if MATCHES_IN_SECTION in comp_conf:
+            _mis = comp_conf[MATCHES_IN_SECTION]
+        _df = read_jfa_match(comp_conf[SCHEDULE_URL].format(group), _mis)
+        _df['group'] = group
+        df_list.append(_df)
+    match_df = pd.concat(df_list, ignore_index=True)
+
+    # JFAはなぜか 'matchDateJpn', 'matchTimeJpn' でも現地時間にするのでタイムゾーン分変更
+    if TIMEZONE_DIFF in comp_conf:
+        new_time = calc_time_diff(
+            match_df['match_date'].map(str),
+            match_df['start_time'],
+            comp_conf[TIMEZONE_DIFF])
+        match_df['match_date'] = new_time.dt.date.strftime(STANDARD_DATE_FORMAT)
+        match_df['start_time'] = new_time.dt.time.strftime('%H:%M')
+
     match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
-    update_if_diff(match_df, COMPETITION_CONF[competition][CSV_FILENAME])
+    return match_df
+
+def calc_time_diff(org_date: pd.Series, org_time: pd.Series, diff_str: str) -> pd.Series:
+    """元の日時に時間差分を適用
+
+    Args:
+        org_date (pd.Series): 元の日時配列 (str)
+        org_time (pd.Series): 元の時間配列 (str)
+        time_diff_str (str): 時間差分  HH:MM:SS or -HH:MM:SS
+    Returns:
+        pd.Series: 時間差分を適用した日時配列 (pd.Timestamp)
+    """
+    _sign = 1
+    if diff_str.startswith('-'):
+        diff_str = diff_str[1:]
+        _sign = -1
+    diff_list = list(map(int, diff_str.split(':')))
+    if len(diff_list) == 1:
+        diff_list.append(0)
+    if len(diff_list) == 2:
+        diff_list.append(0)
+    time_diff = _sign * timedelta(hours=diff_list[0], minutes=diff_list[1], seconds=diff_list[2])
+    return pd.to_datetime(org_date + 'T' + org_time) + time_diff
 
 
 def make_args() -> argparse.Namespace:
@@ -240,9 +270,9 @@ if __name__ == '__main__':
     import os
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    ARGS = make_args()
-    if ARGS.debug:
+    args = make_args()
+    if args.debug:
         PREFERENCE['debug'] = True
 
-    for competition in ARGS.competition:
+    for competition in args.competition:
         read_group(competition)
