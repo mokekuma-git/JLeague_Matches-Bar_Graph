@@ -1,49 +1,38 @@
 """Jリーグ各節の試合情報を読み込み、CSVとして取得、保存"""
+import os
 import argparse
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
-import os
+from pathlib import Path
 import re
 from typing import Any
-from typing import Dict
-from typing import List
-from typing import Set
 
 from bs4 import BeautifulSoup
-
 import pandas as pd
-
 import pytz
-
 import requests
 
-PREFERENCE = {}
-# このあたりの変数は、configなどの外部パラメータ化したい
-PREFERENCE['debug'] = False
-DATE_FORMAT = '%Y%m%d'
-LOCAL_TZ = pytz.timezone('Asia/Tokyo')
-SEASON = 2025
-CSVFILE_FORMAT = '../docs/csv/{}_allmatch_result-J{}.csv'
-TIMESTAMP_FILE = '../docs/csv/csv_timestamp.csv'
-JLEAGUE_DATE_FORMAT = '%Y年%m月%d日'
-STANDARD_DATE_FORMAT = '%Y/%m/%d'
+from set_config import load_config
 
-# Jリーグ公開の各節試合情報のURL
-SOURCE_URL_FORMAT = 'https://www.jleague.jp/match/section/j{}/{}/'
-# Jリーグ公開の順位情報のURL
-STANDING_URL_FORMAT = 'https://www.jleague.jp/standings/j{}/'
+# 設定ファイルの読み込み
+config = load_config('../config/jleague.yaml')
 
+# 型変換
+config.season = int(config.season)
+config.timezone = pytz.timezone(config.timezone)
+
+get_csv_path = lambda category: config.get_path('paths', 'csv_format', season=config.season, category=category)
 
 def read_teams(category: int):
     """各カテゴリのチームリストを返す"""
-    _url = STANDING_URL_FORMAT.format(category)
+    _url = config.get_format_str('urls', 'standing_url_format', category)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url).text, 'lxml')
     return read_teams_from_web(soup, category)
 
 
-def read_teams_from_web(soup: BeautifulSoup, category: int) -> List[str]:
+def read_teams_from_web(soup: BeautifulSoup, category: int) -> list[str]:
     """Jリーグの順位情報からチームリストを読み込んで返す"""
     standings = soup.find('table', class_=f'J{category}table')
     if not standings:
@@ -55,13 +44,13 @@ def read_teams_from_web(soup: BeautifulSoup, category: int) -> List[str]:
 
 def read_match(category: int, sec: int) -> pd.DataFrame:
     """指定されたカテゴリの指定された1つの節をデータをWebから読み込む"""
-    _url = SOURCE_URL_FORMAT.format(category, sec)
+    _url = config.get_format_str('urls', 'source_url_format', category, sec)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url).text, 'lxml')
     return read_match_from_web(soup)
 
 
-def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
+def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
     """Jリーグの各節の試合情報リストから内容を読み込んで返す"""
     result_list = []
 
@@ -99,7 +88,7 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
             match_dict['status'] = \
                 _status.text.strip().replace('\n', '') if _status is not None else '不明'
 
-            if PREFERENCE['debug']:
+            if config.debug:
                 print(match_dict)
             result_list.append(match_dict)
             _index += 1
@@ -112,8 +101,8 @@ def convert_jleague_date(match_date: str) -> str:
     Jリーグの試合日付の "2025年3月1日(土)" のような形式からこのプログラムの標準形式
     "2025/03/01" に変換する
     """
-    _date = datetime.strptime(match_date[:match_date.index('(')], JLEAGUE_DATE_FORMAT)
-    return _date.strftime(STANDARD_DATE_FORMAT)
+    _date = datetime.strptime(match_date[:match_date.index('(')], config.jleague_date_format)
+    return _date.strftime(config.standard_date_format)
 
 
 def read_all_matches(category: int) -> pd.DataFrame:
@@ -121,7 +110,7 @@ def read_all_matches(category: int) -> pd.DataFrame:
     return read_matches_range(category)
 
 
-def read_matches_range(category: int, _range: List[int] = None) -> pd.DataFrame:
+def read_matches_range(category: int, _range: list[int] = None) -> pd.DataFrame:
     """指定されたカテゴリの指定された節リストのデータをWebから読み込む"""
     _matches = pd.DataFrame()
     if not _range:
@@ -139,12 +128,12 @@ def read_matches_range(category: int, _range: List[int] = None) -> pd.DataFrame:
     return _matches
 
 
-def get_undecided_section(all_matches: pd.DataFrame) -> Set[str]:
+def get_undecided_section(all_matches: pd.DataFrame) -> set[str]:
     """開催日未定の節を返す"""
     return set(all_matches[all_matches['match_date'].isnull()]['section_no'])
 
 
-def get_match_dates_of_section(all_matches: pd.DataFrame) -> Dict[str, Set[pd.Timestamp]]:
+def get_match_dates_of_section(all_matches: pd.DataFrame) -> dict[str, set[pd.Timestamp]]:
     """各節の開催日リストを返す
 
     開催日未定の試合は無視
@@ -152,7 +141,7 @@ def get_match_dates_of_section(all_matches: pd.DataFrame) -> Dict[str, Set[pd.Ti
     return all_matches.dropna(subset=['match_date']).groupby('section_no').apply(make_kickoff_time)
 
 
-def make_kickoff_time(_subset: pd.DataFrame) -> Set[pd.Timestamp]:
+def make_kickoff_time(_subset: pd.DataFrame) -> set[pd.Timestamp]:
     """与えられた試合データから、キックオフ時間を作成し、その2時間後 (試合終了時間想定) のセットを返す
 
     与えられる試合データは同一節のものと想定
@@ -160,13 +149,13 @@ def make_kickoff_time(_subset: pd.DataFrame) -> Set[pd.Timestamp]:
     同一時間を複数返さないようにするためのセット化を実施
     """
     start_time = _subset['start_time'].str.replace('未定', '00:00')
-    result = pd.to_datetime(_subset['match_date'].map(lambda x: x.strftime(STANDARD_DATE_FORMAT)) + ' ' + start_time)
-    result = result.dt.tz_localize(LOCAL_TZ)
+    result = pd.to_datetime(_subset['match_date'] + ' ' + start_time)
+    result = result.dt.tz_localize(config.timezone)
     return set(result)
 
 
 def get_sections_to_update(all_matches: pd.DataFrame,
-                           _lastupdate: pd.Timestamp, _now: pd.Timestamp) -> Set[str]:
+                           _lastupdate: pd.Timestamp, _now: pd.Timestamp) -> set[str]:
     """startからendまでの対象期間に、試合が開始した節のセットを返す"""
     target_sec = set()
     for (_sec, _dates) in get_match_dates_of_section(all_matches).items():
@@ -180,21 +169,13 @@ def get_sections_to_update(all_matches: pd.DataFrame,
     return target_sec
 
 
-def get_latest_allmatches_filename(category: int) -> str:
-    """指定されたカテゴリの最新のCSVファイル名を返す
-
-    CSVファイルは常に同一名称に変更 (最新ファイルは毎回上書き)
-    """
-    return CSVFILE_FORMAT.format(SEASON, category)
-
-
 def read_latest_allmatches_csv(category: int) -> pd.DataFrame:
     """指定されたカテゴリの最新のCSVファイルを読み込んでDataFrameで返す
 
     該当ファイルが一つもない場合は空DataFrameを返す
     """
-    filename = get_latest_allmatches_filename(category)
-    if filename:
+    filename = get_csv_path(category)
+    if filename.exists():
         return read_allmatches_csv(filename)
     return pd.DataFrame()
 
@@ -220,32 +201,33 @@ def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
 
 
 def to_datetime_aspossible(val: str) -> str:
-    """可能な限りTimestamp型をSTANDARD_DATE_FORMAT形式で出力し、それ以外の文字列はそのまま返す"""
+    """可能な限りTimestamp型をconfig.standard_date_format形式で出力し、それ以外の文字列はそのまま返す"""
     try:
-        return pd.to_datetime(val).date().strftime(STANDARD_DATE_FORMAT)
+        return pd.to_datetime(val).date().strftime(config.standard_date_format)
     except:
         return val
 
 
 def update_timestamp(filename: str) -> None:
-    """与えられたfilenameのタイムスタンプ日時を現時刻に更新する"""
-    if os.path.exists(TIMESTAMP_FILE):
-        timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
+    """タイムスタンプ記録ファイルを読み込み、与えられたfilenameのタイムスタンプ日時を現時刻に更新する"""
+    timestamp_file = config.get_path('paths', 'timestamp_file')
+    if timestamp_file.exists():
+        timestamp = pd.read_csv(timestamp_file, index_col=0, parse_dates=[1])
         timestamp['date'] = timestamp['date'].apply(
-            lambda x: x.tz_localize(LOCAL_TZ) if x.tz is None else x.tz_convert(LOCAL_TZ))
-        # タイムゾーン記述がない時間はLOCAL_TZ (東京時間) と解釈
+            lambda x: x.tz_localize(config.timezone) if x.tz is None else x.tz_convert(config.timezone))
+        # タイムゾーン記述がない時間はconfig.timezoneと解釈
         # +09:00 などの記述から付くタイムゾーンはpytz.FixedOffset(540)で、
         # pytz.timezone('Asia/Tokyo')で得られる<DstTzInfo 'Asia/Tokyo' JST+9:00:00 STD>
         # とは異なるので、tz_convertを使って変換しないと代入時にpandasがWarningを出す
     else:
         timestamp = pd.DataFrame(columns=['date'])
         timestamp.index.name = 'file'
-    timestamp.loc[filename] = datetime.now().astimezone(LOCAL_TZ)
-    timestamp.to_csv(TIMESTAMP_FILE, lineterminator='\n')
+    timestamp.loc[filename] = datetime.now().astimezone(config.timezone)
+    timestamp.to_csv(timestamp_file, lineterminator='\n')
 
 
 def update_all_matches(category: int, force_update: bool = False,
-                       need_update:Set[int] = None) -> pd.DataFrame:
+                       need_update:set[int] = None) -> pd.DataFrame:
     """これまでに読み込んだ試合データからの差分をWeb経由で読み込んで、差分を上書きした結果を返す
 
     該当ファイルが一つもない場合は、全試合のデータをWeb経由で読み込む
@@ -253,7 +235,7 @@ def update_all_matches(category: int, force_update: bool = False,
     need_update指定がない場合は、対象ファイルの更新日から現在までに開始した試合のみ更新
     試合データに変化があった場合に実行日を付けた試合データファイルを保存する
     """
-    latest_file = get_latest_allmatches_filename(category)
+    latest_file = get_csv_path(category)
 
     # 最新の試合結果が無い場合は、全データを読んで保存して読み込み結果を返す
     if (not os.path.exists(latest_file)) or force_update:
@@ -264,7 +246,7 @@ def update_all_matches(category: int, force_update: bool = False,
     current = read_allmatches_csv(latest_file)
     if not need_update:  # アップデート対象節を指定されていない場合、自動チェック
         _lastupdate = get_timestamp_from_csv(latest_file)
-        _now = datetime.now().astimezone(LOCAL_TZ)
+        _now = datetime.now().astimezone(config.timezone)
         print(f'  Check matches finished since {_lastupdate}')
         # undecided = get_undecided_section(current)
         need_update = get_sections_to_update(current, _lastupdate, _now)
@@ -292,7 +274,7 @@ def compare_matches(foo_df, bar_df) -> bool:
     _bar = _bar.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
 
     if not _foo.equals(_bar):
-        if PREFERENCE['debug']:
+        if config.debug:
             df_comp = _foo.compare(_bar)
             for col_name in df_comp.columns.droplevel(1).unique():
                 print(col_name, df_comp[col_name].dropna())
@@ -335,16 +317,18 @@ def update_csv(match_df: pd.DataFrame, filename: str) -> None:
 
 def get_timestamp_from_csv(filename: str) -> datetime:
     """試合データ更新日CSVから、取得日時を読みだす"""
-    if os.path.exists(TIMESTAMP_FILE):
-        timestamp = pd.read_csv(TIMESTAMP_FILE, index_col=0, parse_dates=[1])
+    timestamp_file = config.get_path('paths', 'timestamp_file')
+    if timestamp_file.exists():
+        timestamp = pd.read_csv(timestamp_file, index_col=0, parse_dates=[1])
         timestamp = timestamp[~timestamp.index.duplicated(keep="first")]
         if filename in timestamp.index:
             return timestamp.loc[filename]['date']
     # TIMESTAMP_FILE そのものが無い、filename の時間が記録されていない時はファイルスタンプから
-    return datetime.fromtimestamp(os.stat(filename).st_mtime)
+    #return datetime.fromtimestamp(os.stat(filename).st_mtime)
+    return datetime.fromtimestamp(Path(filename).stat().st_mtime).astimezone(config.timezone)
 
 
-def parse_range_csv(args: str) -> Set[int]:
+def parse_range_args(args: str) -> set[int]:
     """カンマで区切られた数値引数リストをパースする
     
     カンマで区切られた数値と、"数値-数値" の形式のリストを受け取り、全要素の和集合を作成する
@@ -353,7 +337,7 @@ def parse_range_csv(args: str) -> Set[int]:
     return parse_range_list(args.split(','))
 
 
-def parse_range_list(args: str) -> Set[int]:
+def parse_range_list(args: str) -> set[int]:
     """引数リストをパースする
 
     数値と、"数値-数値" の形式のリストを受け取り、全要素の和集合を作成する
@@ -365,29 +349,35 @@ def parse_range_list(args: str) -> Set[int]:
     return sorted(result)
 
 
-def parse_range(arg: str) -> Set[int]:
+def parse_range(arg: str) -> list[int]:
     """引数をパースする
 
     数値と、"数値-数値" の形式を受け取り、範囲全体の数値リストに変換
     1-3 -> [1, 2, 3]
     """
     match = re.match(r'(\d+)\-(\d+)', arg)
-    if match:
-        return list(range(int(match[1]), int(match[2]) + 1))
-    return [int(arg)]
+    try:
+        if match:
+            start = int(match[1])
+            end = int(match[2])
+            return list(range(start, end + 1))
+
+        return [int(arg)]
+    except ValueError:
+        raise ValueError(f"Invalid integer format: {arg}. Must be an integer or a range like '1-3'.")
 
 
 def make_args() -> argparse.Namespace:
     """引数チェッカ"""
     parser = argparse.ArgumentParser(
         description='read_jleague_matches.py\n'
-                    'Jリーグの各カテゴリの試合情報を読み込んでCSV化し、JSONファイルを作成')
+                    'Jリーグの各カテゴリの試合情報を読み込んでCSV化')
 
     parser.add_argument('category', default=['1-3'], nargs='*',
                         help='リーグカテゴリ (数値指定、複数指定時は-で繋ぐ [default: 1-3])')
     parser.add_argument('-f', '--force_update_all', action='store_true',
                         help='差分を考えずにすべての試合データを読み込んで保存')
-    parser.add_argument('-s', '--sections', type=parse_range_csv,
+    parser.add_argument('-s', '--sections', type=parse_range_args,
                         help='更新する節を指定する (カンマで区切られた数値指定、範囲指定は-で繋ぐ ex) 1,10-15,20)')
     parser.add_argument('-d', '--debug', action='store_true',
                         help='デバッグ出力を表示')
@@ -396,13 +386,13 @@ def make_args() -> argparse.Namespace:
 
 
 if __name__ == '__main__':
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(Path(__file__).parent)
 
-    ARGS = make_args()
-    if ARGS.debug:
-        PREFERENCE['debug'] = True
+    args = make_args()
+    if args.debug:
+        config.debug = True
 
-    for _category in parse_range_list(ARGS.category):
+    for _category in parse_range_list(args.category):
         print(f'Start read J{_category} matches...')
 
-        update_all_matches(_category, force_update=ARGS.force_update_all, need_update=ARGS.sections)
+        update_all_matches(_category, force_update=args.force_update_all, need_update=args.sections)
