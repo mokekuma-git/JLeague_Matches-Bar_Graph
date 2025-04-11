@@ -2,8 +2,6 @@
 import re
 import os
 from typing import Any
-from typing import Dict
-from typing import List
 from datetime import datetime
 import argparse
 
@@ -13,7 +11,7 @@ import pandas as pd
 
 import requests
 
-from read_jleague_matches import PREFERENCE, update_if_diff
+from read_jleague_matches import config, update_if_diff
 
 WEL_MATCH_URL = 'https://weleague.jp/matches/'
 CSV_FILENAME = '../docs/csv/{}_allmatch_result-we.csv'
@@ -28,14 +26,14 @@ else:
     SEASON = _TODAY.year
 
 
-def read_match() -> List[Dict[str, Any]]:
+def read_match() -> list[dict[str, Any]]:
     """WEリーグ公式Webから試合リスト情報を読んで返す"""
     print(f'access {WEL_MATCH_URL}...')
     soup = bs4.BeautifulSoup(requests.get(WEL_MATCH_URL).text, 'lxml')
     return read_match_from_web(soup)
 
 
-def parse_match_date_data(match: bs4.element.Tag) -> Dict[str, str]:
+def parse_match_date_data(match: bs4.element.Tag) -> dict[str, str]:
     r"""与えられた "日付<span>(曜日)</span>時間" を日付と時間に分けて返す
 
     ex) <span class="time">[空白類]9/12<span>(SUN)</span>10:01[空白類]</span>
@@ -58,7 +56,7 @@ def parse_match_date_data(match: bs4.element.Tag) -> Dict[str, str]:
             'dayofweek': match.contents[1].text.strip('()')}
 
 
-def read_match_from_web(soup: bs4.BeautifulSoup) -> List[Dict[str, Any]]:
+def read_match_from_web(soup: bs4.BeautifulSoup) -> list[dict[str, Any]]:
     """各グループの試合リスト情報をHTML内容から読み取る"""
     result_list = []
 
@@ -115,6 +113,6 @@ if __name__ == '__main__':
 
     ARGS = make_args()
     if ARGS.debug:
-        PREFERENCE['debug'] = True
+        config.debug = True
 
     update_if_diff(pd.DataFrame(read_match()), CSV_FILENAME.format(f'{SEASON}-{SEASON+1}'))
