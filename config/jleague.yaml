@@ -1,0 +1,15 @@
+debug: false
+season: 2025
+
+timezone: "Asia/Tokyo"
+date_format: "%Y%m%d"
+standard_date_format: "%Y/%m/%d"
+jleague_date_format: "%Y年%m月%d日"
+
+paths:
+  csv_format: "../docs/csv/{season}_allmatch_result-J{category}.csv"
+  timestamp_file: "../docs/csv/csv_timestamp.csv"
+
+urls:
+  source_url_format: "https://www.jleague.jp/match/section/j{}/{}/"
+  standing_url_format: "https://www.jleague.jp/standings/j{}/"

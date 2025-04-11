@@ -2,8 +2,6 @@
 import re
 import sys
 from typing import Any
-from typing import Dict
-from typing import List
 import datetime
 from bs4 import BeautifulSoup
 
@@ -11,14 +9,14 @@ import pandas as pd
 
 import requests
 
-from read_jleague_matches import PREFERENCE, update_if_diff
+from read_jleague_matches import config, update_if_diff
 
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
 SEASON = datetime.datetime.now().year
 CSV_FILENAME = f'../docs/csv/{SEASON}_allmatch_result-ACL_GL.csv'
 
-def read_match(section_id: str) -> List[Dict[str, Any]]:
+def read_match(section_id: str) -> list[dict[str, Any]]:
     """スポーツナビサイトから指定された節の各グループの試合リスト情報を読んで返す
 
     1節～6節は、それぞれSECTION_ID_LISTに対応
@@ -29,7 +27,7 @@ def read_match(section_id: str) -> List[Dict[str, Any]]:
     return read_match_from_web(soup)
 
 
-def parse_match_date_data(text: str) -> Dict[str, str]:
+def parse_match_date_data(text: str) -> dict[str, str]:
     r"""与えられた "日付(改行)時間" (4/16（金）\n4:00 など) を日付と時間に分けて返す
 
     フォーマットは、match_date, start_timeをキーとしたDict形式
@@ -44,7 +42,7 @@ def parse_match_date_data(text: str) -> Dict[str, str]:
     return {'match_date': match_date, 'start_time': str(start_time)}
 
 
-def parse_match_result_data(text: str) -> Dict[str, str]:
+def parse_match_result_data(text: str) -> dict[str, str]:
     r"""勝敗結果データ ("3 - 1\n試合終了" や "- 試合前" など) をゴール数と状態に分けて返す
 
     フォーマットは、home_goal, away_goal, statusをキーとしたDict形式
@@ -66,7 +64,7 @@ def parse_match_result_data(text: str) -> Dict[str, str]:
     return {'home_goal': home_goal, 'away_goal': away_goal, 'status': match_status}
 
 
-def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
+def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
     """各グループの試合リスト情報をHTML内容から読み取る"""
     result_list = []
 
@@ -104,10 +102,11 @@ def read_match_from_web(soup: BeautifulSoup) -> List[Dict[str, Any]]:
 
 if __name__ == '__main__':
     import os
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    from pathlib import Path
+    os.chdir(Path(__file__).parent.parent)
 
     if '--debug' in sys.argv:
-        PREFERENCE['debug'] = True
+        config.debug = True
 
     match_df = pd.DataFrame()
     for section in SECTION_ID_LIST:
