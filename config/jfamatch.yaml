@@ -1,0 +1,58 @@
+# Competition Settings
+competitions:
+  Olympic:
+    schedule_url: https://www.jfa.jp/national_team/u24_2021/tokyo_olympic_2020/group{}/match/schedule.json
+    csv_path: ../docs/csv/2021_allmatch_result-Olympic_GS.csv
+    groups: A, B, C, D
+  # ACL2021GL: 
+  #     schedule_url: http://www.jfa.jp/match/acl_2021/group{}/match/schedule.json,
+  #     csv_path: ../docs/csv/2021_allmatch_result-ACL_GL.csv,
+  #     groups: G, H, I, J
+  ## A~Fのグループ情報が無い
+  PrinceKanto:
+    schedule_url: https://jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2025/kanto1/match/schedule.json
+    csv_path: ../docs/csv/2025_allmatch_result-PrinceKanto.csv
+  PrincePremierE:
+    schedule_url: https://www.jfa.jp/match/takamado_jfa_u18_premier2025/east/match/schedule.json
+    csv_path: ../docs/csv/2025_allmatch_result-PrincePremierE.csv
+  PrincePremierW:
+    schedule_url: https://www.jfa.jp/match/takamado_jfa_u18_premier2025/west/match/schedule.json
+    csv_path: ../docs/csv/2025_allmatch_result-PrincePremierW.csv
+  WC2026AFC_F:
+    schedule_url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/final_q_2026/group{}/match/schedule.json
+    csv_path: ../docs/csv/2026_allmatch_result-wcafc_final.csv
+    groups: C
+    match_in_section: 3
+  WC2022:
+    schedule_url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2022/group{}/match/schedule.json
+    csv_path: ../docs/csv/2022_allmatch_result-wc_group.csv
+    groups: A, B, C, D, E, F, G, H
+    match_in_section: 3
+    timezone_diff: 06:00
+
+## Program Settings must be start with lower case letter and no space.
+debug: false
+
+schedule_container: matchScheduleList
+schedule_list: matchSchedule
+section_no: (\d+)
+
+# Key mapping from our format to JFA JSON 
+# our_key: JFA_JSON_key
+replace_key:
+  match_date: matchDateJpn
+  section_no: matchTypeName
+  start_time: matchTimeJpn
+  stadium: venue
+  home_team: homeTeamName
+  away_team: awayTeamName
+  status: matchStatus
+  matchNumber: matchNumber
+
+# Key mapping for scoring data
+# our_key: JFA JSON key in score
+## JFA JSON format {"score": {"homeScore": "0", "awayScore": "0", "exMatch": false, ...}}
+score_data_key:
+  home_goal: homeScore
+  away_goal: awayScore
+  extraTime: exMatch

@@ -16,17 +16,18 @@ import requests
 from set_config import load_config
 
 # 設定ファイルの読み込み
-config = load_config('../config/jleague.yaml')
+file_path = Path(__file__).parent
+config = load_config(file_path / '../config/jleague.yaml')
 
 # 型変換
 config.season = int(config.season)
 config.timezone = pytz.timezone(config.timezone)
 
-get_csv_path = lambda category: config.get_path('paths', 'csv_format', season=config.season, category=category)
+get_csv_path = lambda category: config.get_path('paths.csv_format', season=config.season, category=category)
 
 def read_teams(category: int):
     """各カテゴリのチームリストを返す"""
-    _url = config.get_format_str('urls', 'standing_url_format', category)
+    _url = config.get_format_str('urls.standing_url_format', category)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url).text, 'lxml')
     return read_teams_from_web(soup, category)
@@ -44,7 +45,7 @@ def read_teams_from_web(soup: BeautifulSoup, category: int) -> list[str]:
 
 def read_match(category: int, sec: int) -> pd.DataFrame:
     """指定されたカテゴリの指定された1つの節をデータをWebから読み込む"""
-    _url = config.get_format_str('urls', 'source_url_format', category, sec)
+    _url = config.get_format_str('urls.source_url_format', category, sec)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url).text, 'lxml')
     return read_match_from_web(soup)
@@ -251,7 +252,7 @@ def to_datetime_aspossible(val: str) -> str:
 
 def update_timestamp(filename: str) -> None:
     """タイムスタンプ記録ファイルを読み込み、与えられたfilenameのタイムスタンプ日時を現時刻に更新する"""
-    timestamp_file = config.get_path('paths', 'timestamp_file')
+    timestamp_file = config.get_path('paths.timestamp_file')
     if timestamp_file.exists():
         timestamp = pd.read_csv(timestamp_file, index_col=0, parse_dates=[1])
         timestamp['date'] = timestamp['date'].apply(
@@ -358,7 +359,7 @@ def update_csv(match_df: pd.DataFrame, filename: str) -> None:
 
 def get_timestamp_from_csv(filename: str) -> datetime:
     """試合データ更新日CSVから、取得日時を読みだす"""
-    timestamp_file = config.get_path('paths', 'timestamp_file')
+    timestamp_file = config.get_path('paths.timestamp_file')
     if timestamp_file.exists():
         timestamp = pd.read_csv(timestamp_file, index_col=0, parse_dates=[1])
         timestamp = timestamp[~timestamp.index.duplicated(keep="first")]

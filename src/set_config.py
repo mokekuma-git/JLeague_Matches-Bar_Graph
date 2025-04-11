@@ -1,6 +1,6 @@
 """設定ファイル管理モジュール
 
-設定ファイルはyamlで2レベルまでのセクションを持つ辞書形式で記述
+設定ファイルはyamlで多層のセクションを持つ辞書形式で記述
 ex)
 ```yaml
 debug: true
@@ -45,7 +45,7 @@ config.timezone = pytz.timezone(config.timezone)
 """
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import yaml
 
@@ -59,13 +59,20 @@ class ConfigSection:
         for key, value in section_data.items():
             if isinstance(value, dict):
                 # ネストした辞書は新しいConfigSectionに変換
-                setattr(self, key, ConfigSection(value))
+                new_section = ConfigSection(value)
+                setattr(self, key, new_section)
+                self._data[key] = new_section
             else:
                 setattr(self, key, value)
 
     def __getitem__(self, key: str) -> Any:
         """辞書風のアクセスをサポート: section['key']"""
         return self._data.get(key)
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """辞書風のアクセスをサポート: section['key'] = value"""
+        self._data[key] = value
+        setattr(self, key, value)
 
     def get(self, key: str, default: Any = None) -> Any:
         """キーに対応する値を取得、なければデフォルト値を返す"""
@@ -74,6 +81,18 @@ class ConfigSection:
     def keys(self) -> list[str]:
         """利用可能なキーのリストを返す"""
         return list(self._data.keys())
+
+    def items(self) -> list[tuple[str, Any]]:
+        """キーと値のペアのリストを返す"""
+        return list(self._data.items())
+
+    def __contains__(self, key: str) -> bool:
+        """in演算子をサポート: key in section"""
+        return key in self._data
+    
+    def __iter__(self):
+        """イテレーションをサポート: for key in section"""
+        return iter(self._data)
 
     def __repr__(self) -> str:
         return f'ConfigSection({self._data})'
@@ -105,7 +124,7 @@ class Config:
     def _load_config(self, config_path: str) -> dict[str, Any]:
         """設定ファイルを読み込む"""
         if not Path(config_path).exists():
-            raise FileNotFoundError(f'Config file not found: {config_path}')
+            raise FileNotFoundError(f'Config file not found: {config_path} current_dir: {Path().resolve()}')
 
         with open(config_path, 'r', encoding='utf-8') as f:
             return yaml.safe_load(f)
@@ -114,14 +133,25 @@ class Config:
         """辞書風のアクセスをサポート: config['section']"""
         return self._raw_config.get(key)
 
-    def get_path(self, section: str, key: str, *args, **kwargs) -> Path:
-        """パス設定のセクションとキーを取得し、必要に応じて引数でフォーマットして絶対パスに変換
+    def keys(self) -> list[str]:
+        """利用可能なキーのリストを返す"""
+        return list(self._raw_config.keys())
+
+    def __repr__(self) -> str:
+        """設定内容を文字列として返す"""
+        return f'Config({self._raw_config})'
+
+
+    def get_path(self, key: str, *args, **kwargs) -> Path:
+        """パス設定のキーを受け取り、必要に応じて引数でフォーマットして絶対ファイルパスに変換
+
+        キーはドット区切りでセクション名と共に指定する
 
         ex)
         paths:
             csv_format: "csv/{season}/{category}/{section}.csv"
 
-        config.get_path('paths', 'csv_format', season=2023, category='groupA', section='section1')
+        config.get_path('paths.csv_format', season=2023, category='groupA', section='section1')
         -> Path('csv/2023/groupA/section1.csv')
 
         Args:
@@ -132,16 +162,18 @@ class Config:
         Returns:
             Pathオブジェクト
         """
-        return Path(self.get_format_str(section, key, *args, **kwargs)).resolve()
+        return Path(self.get_format_str(key, *args, **kwargs)).resolve()
 
-    def get_format_str(self, section: str, key: str, *args, **kwargs) -> str:
-        """フォーマット文字列のセクションとキーを取得し、引数でフォーマットして文字列を返す
+    def get_format_str(self, key: str, *args, **kwargs) -> str:
+        """フォーマット文字列のキーを受け取り、引数でフォーマットして文字列を返す
+
+        キーはドット区切りでセクション名と共に指定する
 
         ex)
         urls:
             source_url_format: "https://example.com/{category}/{section}"
 
-        config.get_format_str('urls', 'source_url_format', category='groupA', section='section1')
+        config.get_format_str('urls.source_url_format', category='groupA', section='section1')
         -> 'https://example.com/groupA/section1'
 
         Args:
@@ -151,24 +183,58 @@ class Config:
 
         Returns:
             フォーマット済み文字列
+
+        Raises:
+            KeyError: 指定されたキーが存在しない場合
+            TypeError: フォーマット文字列が文字列でない場合
         """
-        if section is None:
-            # トップレベルのセクションを扱うときはNoneを指定
-            if not hasattr(self, key):
-                raise ValueError(f'Format not found in top level: {key}')
-            format_str = getattr(self, key)
-            if isinstance(format_str, dict):
-                raise ValueError(f'section name found in top level: {key}')
-        else:
-            if not hasattr(self, section) or not hasattr(getattr(self, section), key):
-                raise ValueError(f'URL not found in {section} section: {key}')
-            format_str = getattr(getattr(self, section), key)
+        format_str = self.get_from_keypath(key)
+        if not isinstance(format_str, str):
+            raise TypeError(f'Format string for key {key} is not a string: {format_str}')
 
         if args:
             return format_str.format(*args)
         elif kwargs:
             return format_str.format(**kwargs)
         return format_str
+
+    def get_from_keypath(self, key: str) -> Union[str, ConfigSection, Any]:
+        """指定されたキーのパスを辿って値、またはConfigSectionを取得する
+
+        キーはドット区切りでセクション名と共に指定する
+
+        ex)
+        config.get_from_keypath('urls.source_url_format')
+        -> 'https://example.com/{category}/{section}'
+
+        Args:
+            key: ドット区切りで表す取得対象のキーパス (例: 'urls.source_url_format')
+
+        Returns:
+            対象の値、またはConfigSection
+
+        Raises:
+            KeyError: 指定されたキーが存在しない場合
+        """
+        parts = key.split('.')
+        parent = self
+        path = ''
+
+        for i, part in enumerate(parts):
+            is_last = i == len(parts) - 1
+
+            result = getattr(parent, part, None)
+
+            if result is None:
+                _type = 'Key' if is_last else 'Section'
+                raise KeyError(f'{_type} {part} not found in config {path}')
+
+            if is_last:
+                return result
+
+            # 次のイテレーションのために親とパスを更新
+            path = f'{path}.{part}' if path else part
+            parent = result
 
 
 def load_config(config_path: PathLike) -> Config:
