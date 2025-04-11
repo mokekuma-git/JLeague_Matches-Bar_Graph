@@ -134,16 +134,16 @@ def get_undecided_section(all_matches: pd.DataFrame) -> set[str]:
     return set(all_matches[all_matches['match_date'].isnull()]['section_no'])
 
 
-def get_match_dates_of_section(all_matches: pd.DataFrame) -> dict[str, set[pd.Timestamp]]:
+def get_match_dates_of_section(all_matches: pd.DataFrame) -> dict[str, list[pd.Timestamp]]:
     """各節の開催日リストを返す
 
     開催日未定の試合は無視
 
     Args:
-        all_matches: 全試合データ
+        all_matches (pd.DataFrame): 全試合データ
 
     Returns:
-        dict: 各節の開催日リスト
+        dict: 各節の開催日リスト {section_no: [開催日リスト (pd.Timestamp)]}
 
     Raises:
         AttributeError: start_time列の値に文字列以外が含まれる時
@@ -152,20 +152,22 @@ def get_match_dates_of_section(all_matches: pd.DataFrame) -> dict[str, set[pd.Ti
         TypeError: タイムスタンプが既にTimezoneを持っている場合
         KeyError: DataFrame内に'start_time'または'match_date'列が存在しない場合 
    """
-    return all_matches.dropna(subset=['match_date']).groupby('section_no').apply(make_kickoff_time)
+    matches_with_date = all_matches.dropna(subset=['match_date'])
+    grouped_by_section = matches_with_date.groupby('section_no')
+    kickoff_times = grouped_by_section.apply(make_kickoff_time, include_groups=False)
+    return kickoff_times.to_dict()
 
-
-def make_kickoff_time(_subset: pd.DataFrame) -> set[pd.Timestamp]:
-    """与えられた試合データから、キックオフ時間を作成し、その2時間後 (試合終了時間想定) のセットを返す
+def make_kickoff_time(_subset: pd.DataFrame) -> list[pd.Timestamp]:
+    """与えられた試合データから、キックオフ時間を作成し、その2時間後 (試合終了時間想定) のリストを返す
 
     与えられる試合データは同一節のものと想定
     試合開始時間未定の場合は 00:00 キックオフと考える
-    同一時間を複数返さないようにするためのセット化を実施
+    結果はソートして重複削除した上でリストとして返す
 
     Args:
         _subset: 試合データのDataFrame
     Returns:
-        set: 試合開始時間のセット
+        list: 試合開始時間のリスト
 
     Raises:
         AttributeError: start_time列の値に文字列以外が含まれる時
@@ -176,8 +178,8 @@ def make_kickoff_time(_subset: pd.DataFrame) -> set[pd.Timestamp]:
     """
     start_time = _subset['start_time'].str.replace('未定', '00:00')
     result = pd.to_datetime(_subset['match_date'] + ' ' + start_time)
-    result = result.dt.tz_localize(config.timezone)
-    return set(result)
+    result = result.dt.tz_localize(config.timezone).sort_values().drop_duplicates()
+    return list(result)
 
 
 def get_sections_to_update(all_matches: pd.DataFrame,
