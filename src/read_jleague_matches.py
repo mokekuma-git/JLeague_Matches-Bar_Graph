@@ -57,6 +57,7 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
     result_list = []
 
     match_sections = soup.find_all('section', class_='matchlistWrap')
+    section_no = None
     _index = 1
     for _section in match_sections:
         match_div = _section.find('div', class_='timeStamp')
@@ -80,10 +81,10 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
             match_dict['start_time'] = _match[1] if _match else ""
             _match = re.search(r'([^\>]+)\<\/a', str(stadium_td))
             match_dict['stadium'] = _match[1] if _match else ""
-            match_dict['home_team'] = _tr.find('td', class_='clubName rightside').text.strip()
-            match_dict['home_goal'] = _tr.find('td', class_='point rightside').text.strip()
-            match_dict['away_goal'] = _tr.find('td', class_='point leftside').text.strip()
-            match_dict['away_team'] = _tr.find('td', class_='clubName leftside').text.strip()
+            match_dict['home_team'] = _tr.find('td', class_='clubName leftside').text.strip()
+            match_dict['home_goal'] = _tr.find('td', class_='point leftside').text.strip()
+            match_dict['away_goal'] = _tr.find('td', class_='point rightside').text.strip()
+            match_dict['away_team'] = _tr.find('td', class_='clubName rightside').text.strip()
             # str_match_date = (match_date.strftime("%Y/%m/%d") if match_date else '未定')
 
             _status = _tr.find('td', class_='status')
