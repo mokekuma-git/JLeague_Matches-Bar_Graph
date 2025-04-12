@@ -264,11 +264,29 @@ def update_timestamp(filename: str) -> None:
         # +09:00 などの記述から付くタイムゾーンはpytz.FixedOffset(540)で、
         # pytz.timezone('Asia/Tokyo')で得られる<DstTzInfo 'Asia/Tokyo' JST+9:00:00 STD>
         # とは異なるので、tz_convertを使って変換しないと代入時にpandasがWarningを出す
+
     else:
         timestamp = pd.DataFrame(columns=['date'])
         timestamp.index.name = 'file'
     timestamp.loc[filename] = datetime.now().astimezone(config.timezone)
+    if timestamp.index.duplicated().any():  # インデックス重複確認、最新値（最後のエントリ）のみ保持
+        print(f"Notice: Duplicates in timestamp file were consolidated (keeping most recent values)")
+        timestamp = drop_duplicated_indexes(timestamp)
     timestamp.to_csv(timestamp_file, lineterminator='\n')
+
+
+def drop_duplicated_indexes(df: pd.DataFrame) -> pd.DataFrame:
+    """DataFrameからインデックスfileが重複する行について、dateが最新の1つを残す"""
+    # インデックスをリセットして一時的に通常の列に変換
+    if df.index.name != 'file':
+        raise ValueError("DataFrame index must be named 'file'")
+    df = df.reset_index()
+    df = df.sort_values(['file', 'date'], ascending=[True, False])
+    df = df.drop_duplicates(subset=['file'], keep='first')
+
+    # インデックスを再設定
+    df = df.set_index('file')
+    return df
 
 
 def update_all_matches(category: int, force_update: bool = False,
