@@ -23,7 +23,8 @@ config = load_config(file_path / '../config/jleague.yaml')
 config.season = int(config.season)
 config.timezone = pytz.timezone(config.timezone)
 
-get_csv_path = lambda category: config.get_path('paths.csv_format', season=config.season, category=category)
+# CSVファイルパスはTimestampファイルのキーにもなるので、文字列で扱う
+get_csv_path = lambda category: config.get_format_str('paths.csv_format', season=config.season, category=category)
 
 def read_teams(category: int):
     """各カテゴリのチームリストを返す"""
@@ -218,8 +219,8 @@ def read_latest_allmatches_csv(category: int) -> pd.DataFrame:
 
     該当ファイルが一つもない場合は空DataFrameを返す
     """
-    filename = get_csv_path(category)
-    if filename.exists():
+    filename = get_csv_path(category)  # Timestampファイルのキーにもなるので文字列で扱う
+    if Path(filename).exists():
         return read_allmatches_csv(filename)
     return pd.DataFrame()
 
@@ -282,7 +283,7 @@ def update_all_matches(category: int, force_update: bool = False,
     latest_file = get_csv_path(category)
 
     # 最新の試合結果が無い場合は、全データを読んで保存して読み込み結果を返す
-    if (not os.path.exists(latest_file)) or force_update:
+    if (not Path(latest_file).exists()) or force_update:
         all_matches = read_all_matches(category)
         update_if_diff(all_matches, latest_file)
         return all_matches
@@ -332,7 +333,7 @@ def update_if_diff(match_df: pd.DataFrame, filename: str) -> bool:
     if not filename:
         raise ValueError("Filename is mandatory")
 
-    if not os.path.exists(filename):
+    if not Path(filename).exists():
         # 旧ファイルが無ければ書きこんで終了
         update_csv(match_df, filename)
         return True
@@ -368,7 +369,6 @@ def get_timestamp_from_csv(filename: str) -> datetime:
         if filename in timestamp.index:
             return timestamp.loc[filename]['date']
     # TIMESTAMP_FILE そのものが無い、filename の時間が記録されていない時はファイルスタンプから
-    #return datetime.fromtimestamp(os.stat(filename).st_mtime)
     return datetime.fromtimestamp(Path(filename).stat().st_mtime).astimezone(config.timezone)
 
 
