@@ -5,6 +5,7 @@ import argparse
 from typing import Optional, List
 from pathlib import Path
 import sys
+from io import StringIO
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -46,8 +47,9 @@ def store_year_data(year: int) -> None:
     print(f"Read year: {year}")
 
     _url = config.get_format_str('match_data.url_format', year=year)
-    html_text = requests.request('GET', _url).text
-    df = pd.read_html(html_text)[0]
+    html_text = requests.request('GET', _url).text   
+    html_io = StringIO(html_text)
+    df = pd.read_html(html_io)[0]
     soup = BeautifulSoup(html_text, 'lxml')
     id_list = []
     match_td_list = soup.find_all('td', class_='al-c')
@@ -56,7 +58,7 @@ def store_year_data(year: int) -> None:
     df['match_card_id'] = id_list
 
     csv_file = config.get_path('match_data.csv_path_format', year=year)
-    df.to_csv(csv_file, encoding=config.match_data.encoding)
+    df.to_csv(csv_file, lineterminator='\n', encoding=config.match_data.encoding)
     print(f"Stored: {csv_file}")
 
 

@@ -23,7 +23,7 @@ def make_old_matches_csv(category: int, years: int=None) -> None:
         for (season, df) in df_dict.items():
             outfile = config.get_path('match_data.league_csv_path', season=season, category=category)
             print(outfile, len(df))
-            df.to_csv(outfile)
+            df.to_csv(outfile, lineterminator='\n', encoding=config.match_data.encoding)
 
 
 def make_each_csv(filename: str, category: int) -> dict[str, pd.DataFrame]:
