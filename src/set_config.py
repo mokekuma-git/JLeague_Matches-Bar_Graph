@@ -97,6 +97,15 @@ class ConfigSection:
     def __repr__(self) -> str:
         return f'ConfigSection({self._data})'
 
+    def to_dict(self) -> dict[str, Any]:
+        """セクションを辞書形式で返す"""
+        result = {}
+        for key, value in self._data.items():
+            if isinstance(value, ConfigSection):
+                result[key] = value.to_dict()
+            else:
+                result[key] = value
+        return result
 
 class Config:
     """設定ファイル管理クラス"""
