@@ -15,7 +15,6 @@ from set_config import load_config
 
 config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
 
-# 正規表現パターンを設定から読み込む
 MATCH_CARD_ID = re.compile(config.match_data.card_id_pattern)
 
 

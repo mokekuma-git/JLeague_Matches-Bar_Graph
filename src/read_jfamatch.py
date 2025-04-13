@@ -26,8 +26,7 @@ def _prepare_config() -> Config:
     Returns:
         Config: Configuration object with parsed settings
     """
-    file_path = Path(__file__).parent
-    config = load_config(file_path / '../config/jfamatch.yaml')
+    config = load_config(Path(__file__).parent / '../config/jfamatch.yaml')
 
     config.competition_names = config.competitions.keys()
     for cmpt in config.competitions:

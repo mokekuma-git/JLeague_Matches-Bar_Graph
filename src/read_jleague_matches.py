@@ -16,8 +16,7 @@ import requests
 from set_config import load_config
 
 # 設定ファイルの読み込み
-file_path = Path(__file__).parent
-config = load_config(file_path / '../config/jleague.yaml')
+config = load_config(Path(__file__).parent / '../config/jleague.yaml')
 
 # 型変換
 config.season = int(config.season)
