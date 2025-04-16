@@ -1,6 +1,7 @@
 debug: false
 season: 2025
 
+http_timeout: 60
 timezone: "Asia/Tokyo"
 date_format: "%Y%m%d"
 standard_date_format: "%Y/%m/%d"

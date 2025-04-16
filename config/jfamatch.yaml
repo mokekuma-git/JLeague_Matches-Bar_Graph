@@ -33,6 +33,7 @@ competitions:
 ## Program Settings must be start with lower case letter and no space.
 debug: false
 
+http_timeout: 60
 schedule_container: matchScheduleList
 schedule_list: matchSchedule
 section_no: (\d+)

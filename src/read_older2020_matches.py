@@ -1,11 +1,12 @@
 """Read J-League match data and store it in CSV files"""
-import os
-import re
 import argparse
-from typing import Optional, List
-from pathlib import Path
-import sys
 from io import StringIO
+import os
+from pathlib import Path
+import re
+import sys
+from typing import List
+from typing import Optional
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -46,7 +47,7 @@ def store_year_data(year: int) -> None:
     print(f"Read year: {year}")
 
     _url = config.get_format_str('match_data.url_format', year=year)
-    html_text = requests.request('GET', _url).text   
+    html_text = requests.request('GET', _url, timeout=config.http_timeout).text
     html_io = StringIO(html_text)
     df = pd.read_html(html_io)[0]
     soup = BeautifulSoup(html_text, 'lxml')
@@ -79,15 +80,22 @@ def parse_arguments() -> argparse.Namespace:
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-y', '--year', type=int, help='Specify a single year (e.g., 2000)')
     group.add_argument('-r', '--range', nargs=2, type=int, metavar=('START', 'END'),
-                      help='Specify a range of years (e.g., 1993 2020)')
+                       help='Specify a range of years (e.g., 1993 2020)')
     group.add_argument('-l', '--list', nargs='+', type=int, metavar='YEAR',
-                      help='Specify a list of years (e.g., 1993 1994 1995)')
+                       help='Specify a list of years (e.g., 1993 1994 1995)')
 
     args = parser.parse_args()
     return args
 
 
-def parse_years():
+def parse_years() -> List[int]:
+    """Parse years from command-line arguments.
+
+    If no arguments are provided, default to all years from 1993 to the current year.
+
+    Returns:
+        List[int]: List of years to process.
+    """
     args = parse_arguments()
 
     if not any([args.year, args.range, args.list]):

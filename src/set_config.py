@@ -45,7 +45,8 @@ config.timezone = pytz.timezone(config.timezone)
 """
 from os import PathLike
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
+from typing import Union
 
 import yaml
 
@@ -89,7 +90,7 @@ class ConfigSection:
     def __contains__(self, key: str) -> bool:
         """in演算子をサポート: key in section"""
         return key in self._data
-    
+
     def __iter__(self):
         """イテレーションをサポート: for key in section"""
         return iter(self._data)
@@ -106,6 +107,7 @@ class ConfigSection:
             else:
                 result[key] = value
         return result
+
 
 class Config:
     """設定ファイル管理クラス"""
@@ -149,7 +151,6 @@ class Config:
     def __repr__(self) -> str:
         """設定内容を文字列として返す"""
         return f'Config({self._raw_config})'
-
 
     def get_path(self, key: str, *args, **kwargs) -> Path:
         """パス設定のキーを受け取り、必要に応じて引数でフォーマットして絶対ファイルパスに変換
@@ -203,7 +204,7 @@ class Config:
 
         if args:
             return format_str.format(*args)
-        elif kwargs:
+        if kwargs:
             return format_str.format(**kwargs)
         return format_str
 
@@ -244,6 +245,7 @@ class Config:
             # 次のイテレーションのために親とパスを更新
             path = f'{path}.{part}' if path else part
             parent = result
+        return result  # pylint: disable=unreachable
 
 
 def load_config(config_path: PathLike) -> Config:

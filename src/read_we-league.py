@@ -1,20 +1,20 @@
 """2021 ACLグループステージの試合情報を読み込んでCSV, JSO化"""
-import re
-import os
-from typing import Any
-from datetime import datetime
 import argparse
+from datetime import datetime
+import os
+import re
+from typing import Any
 
 import bs4
-
 import pandas as pd
-
 import requests
 
-from read_jleague_matches import config, update_if_diff
+from read_jleague_matches import config
+from read_jleague_matches import update_if_diff
 
 WEL_MATCH_URL = 'https://weleague.jp/matches/'
 CSV_FILENAME = '../docs/csv/{}_allmatch_result-we.csv'
+HTTP_TIMEOUT = 60  # seconds
 
 MATCH_WEEK_REGEXP = re.compile(r'matchweek(\d+)')
 DATE_FORMAT = '%m/%d'
@@ -29,7 +29,7 @@ else:
 def read_match() -> list[dict[str, Any]]:
     """WEリーグ公式Webから試合リスト情報を読んで返す"""
     print(f'access {WEL_MATCH_URL}...')
-    soup = bs4.BeautifulSoup(requests.get(WEL_MATCH_URL).text, 'lxml')
+    soup = bs4.BeautifulSoup(requests.get(WEL_MATCH_URL, timeout=HTTP_TIMEOUT).text, 'lxml')
     return read_match_from_web(soup)
 
 
@@ -41,7 +41,7 @@ def parse_match_date_data(match: bs4.element.Tag) -> dict[str, str]:
         match: 日時データを示すTag要素
         フォーマットは、match_date, start_timeをキーとしたDict形式
     """
-    #display(match.contents[0].strip(), match.contents[2].strip())
+    # display(match.contents[0].strip(), match.contents[2].strip())
     match_date = match.contents[0].strip()
     if datetime.strptime(match_date, DATE_FORMAT).date().month <= SEASON_THRESHOLD_MONTH:
         match_date = f'{SEASON + 1}/' + match_date
@@ -49,7 +49,7 @@ def parse_match_date_data(match: bs4.element.Tag) -> dict[str, str]:
         match_date = f'{SEASON}/' + match_date
     try:
         match_date = pd.to_datetime(match_date)
-    except:
+    except (ValueError, pd.errors.ParserError):
         pass
     return {'match_date': match_date,
             'start_time': match.contents[2].strip(),
@@ -66,7 +66,7 @@ def read_match_from_web(soup: bs4.BeautifulSoup) -> list[dict[str, Any]]:
         section = MATCH_WEEK_REGEXP.match(match_box.get('id'))[1]
         for match_data in match_box.find_all('li', class_='matchContainer'):
             # 1試合分のmatchContainer内
-            #display(match_data)
+            # display(match_data)
             match_dict = {'section_no': section, 'match_index_in_section': _index}
 
             # 日時 (<span class="time">[空白類]9/12<span>(SUN)</span>10:01[空白類]</span>)
@@ -115,4 +115,4 @@ if __name__ == '__main__':
     if ARGS.debug:
         config.debug = True
 
-    update_if_diff(pd.DataFrame(read_match()), CSV_FILENAME.format(f'{SEASON}-{SEASON+1}'))
+    update_if_diff(pd.DataFrame(read_match()), CSV_FILENAME.format(f'{SEASON} - {SEASON + 1}'))

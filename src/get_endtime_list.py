@@ -1,10 +1,12 @@
 """Generate cron schedules for GitHub Actions based on J-League match start times."""
 import argparse
-from typing import List
-import pandas as pd
-import re
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
+import re
+from typing import List
+
+import pandas as pd
 
 # Constants
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -57,7 +59,7 @@ def read_all_match_times(year: int = None, category: int = "*") -> List[datetime
     return all_times
 
 
-def read_match_times_from_file(file:Path) -> List[datetime]:
+def read_match_times_from_file(file: Path) -> List[datetime]:
     """Read match times from a specific CSV file.
 
     Args:
@@ -90,15 +92,15 @@ def read_match_times_from_file(file:Path) -> List[datetime]:
 
 def datetime_to_cron(dt, offset_minutes=0):
     """Convert a datetime to a cron expression with an offset.
-    
+
     Adjusts the time from JST to GitHub server time (UTC) by subtracting 15 hours.
     """
     # Apply offset in minutes
     dt = dt + timedelta(minutes=offset_minutes)
-    
+
     # Adjust for GitHub server time (UTC) - subtract 15 hours from JST
     dt = dt - timedelta(hours=9)
-    
+
     # Handle day change when crossing midnight
     # Format as cron expression (minute hour day month day-of-week)
     return f"{dt.minute} {dt.hour} {dt.day} {dt.month} *"
@@ -137,16 +139,16 @@ def update_workflow_file(match_times):
         with open(WORKFLOW_FILE, 'w', encoding='utf-8', newline='\n') as f:
             f.write(new_workflow_content)
         return True
-    except Exception as e:
+    except OSError as e:
         print(f"Error writing to workflow file: {e}")
         return False
 
 
 def make_argparse() -> argparse.ArgumentParser:
     """Create argument parser for command line arguments."""
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Generate cron schedules for GitHub Actions based on J-League match start times.")
+    parser = argparse.ArgumentParser(
+        description="Generate cron schedules for GitHub Actions based on J-League match start times."
+    )
     parser.add_argument(
         "-y", "--year",
         type=int,
@@ -173,7 +175,7 @@ def main():
     if match_times:
         print("Updating workflow file...")
         if update_workflow_file(match_times):
-            print(f"Successfully updated {WORKFLOW_FILE} with {len(match_times)*2} new cron schedules.")
+            print(f"Successfully updated {WORKFLOW_FILE} with {len(match_times) * 2} new cron schedules.")
         else:
             print("Failed to update workflow file.")
     else:

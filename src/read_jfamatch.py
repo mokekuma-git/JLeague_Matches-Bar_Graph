@@ -29,23 +29,24 @@ The `timezone_diff` is the time difference from JST.
   It is used to convert the match date and time to JST.
   '-' can be used to indicate a negative time difference. ex) -06:00
 """
-import os
 import argparse
+from datetime import timedelta
 import json
+import os
 from pathlib import Path
 import re
 from typing import Any
 from typing import Dict
-from datetime import timedelta
 
 import pandas as pd
-
 import requests
 
-from read_jleague_matches import update_if_diff, to_datetime_aspossible
 from read_jleague_matches import config as jl_config
+from read_jleague_matches import to_datetime_aspossible
+from read_jleague_matches import update_if_diff
+from set_config import Config
+from set_config import load_config
 
-from set_config import load_config, Config
 
 def _prepare_config() -> Config:
     """Reads the configuration file and prepares the config object.
@@ -53,15 +54,15 @@ def _prepare_config() -> Config:
     Returns:
         Config: Configuration object with parsed settings
     """
-    config = load_config(Path(__file__).parent / '../config/jfamatch.yaml')
+    new_conf = load_config(Path(__file__).parent / '../config/jfamatch.yaml')
 
     def is_string_list(obj):
         if not isinstance(obj, list):
             return False
         return all(isinstance(item, str) for item in obj)
 
-    config.competition_names = config.competitions.keys()
-    for _, cmpt_conf in config.competitions.items():
+    new_conf.competition_names = new_conf.competitions.keys()
+    for _, cmpt_conf in new_conf.competitions.items():
         if 'groups' in cmpt_conf:
             if isinstance(cmpt_conf.groups, str):
                 # groups are comma separated
@@ -75,11 +76,12 @@ def _prepare_config() -> Config:
             cmpt_conf['groups'] = ['']
 
     # Type conversion
-    config.section_no = re.compile(config.section_no)
+    new_conf.section_no = re.compile(new_conf.section_no)
 
     # Inherited from jleague config
-    config.standard_date_format = jl_config.standard_date_format
-    return config
+    new_conf.standard_date_format = jl_config.standard_date_format
+    return new_conf
+
 
 config = _prepare_config()
 
@@ -99,10 +101,11 @@ def read_match_json(_url: str) -> Dict[str, Any]:
     while result is None or counter > 10:
         try:
             print(f'access {_url} ...')
-            result = json.loads(requests.get(_url).text)
-        except Exception as _ex:
+            result = json.loads(requests.get(_url, timeout=config.http_timeout).text)
+        except (TypeError, json.JSONDecodeError) as _ex:
             print((counter, _ex))
-        counter +=1
+
+        counter += 1
     if result is not None:
         return result
     print(f'Failed to get match data for {_url} after {counter} tries')
@@ -249,6 +252,7 @@ def read_all_group(comp_conf: Dict[str, Any]) -> pd.DataFrame:
     match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
     return match_df
 
+
 def calc_time_diff(org_date: pd.Series, org_time: pd.Series, diff_str: str) -> pd.Series:
     """Apply time difference to the original date and time.
 
@@ -298,5 +302,5 @@ if __name__ == '__main__':
     if args.debug:
         config.debug = True
 
-    for competition in args.competition:
-        read_group(competition)
+    for compt in args.competition:
+        read_group(compt)

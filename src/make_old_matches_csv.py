@@ -1,16 +1,16 @@
 """Process and save J-League match results from data.j-league.or.jp into CSV files"""
-from glob import glob
 import os
 from pathlib import Path
 
 import pandas as pd
 
-from set_config import load_config
 from read_older2020_matches import parse_years
+from set_config import load_config
 
 config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
 
-def make_old_matches_csv(category: int, years: int=None) -> None:
+
+def make_old_matches_csv(category: int, years: int = None) -> None:
     """Convert match results of the specified years for the given category into CSV format
 
     Args:
@@ -49,27 +49,14 @@ def make_each_csv(filename: str, category: int) -> dict[str, pd.DataFrame]:
         dict: Dictionary containing DataFrames for each season {season_name: DataFrame}
     """
     _df = pd.read_csv(filename, index_col=0)
-    league_name = config.league_name
-    matches = _df[_df['大会'].isin(league_name[category - 1])].reset_index(drop=True)
+    matches = _df[_df['大会'].isin(config.league_name[category - 1])].reset_index(drop=True)
     if matches.empty:
         # print tournament counts for debugging
         # print(matches['大会'].value_counts())
         return []
 
     year = matches['年度'].value_counts().keys()[0]
-    season_dict = {}
-    season_names = matches['大会'].value_counts().keys()
-    if len(season_names) > 1:
-        # print(f"Multiple tournaments in {year}: {season_names}")
-        # ex) 1993: ['Ｊ１ サントリー', 'Ｊ１ ＮＩＣＯＳ']
-        season_start = {}
-        for _name in season_names:
-            season_start[_name] = matches[matches['大会'] == _name]['試合日'].iat[0]
-        for (_i, _season) in enumerate(sorted(season_start.items(), key=lambda x: x[1])):
-            season_dict[str(year) + config.season_suffix[_i]] = _season[0]
-    else:
-        season_dict[str(year)] = season_names[0]
-    print(season_dict)
+    season_dict = init_season_dict(matches, year)
 
     matches['match_date'] = matches['年度'].astype(str) + \
         '/' + matches['試合日'].str.replace(r'\(.+\)', '', regex=True)
@@ -102,8 +89,33 @@ def make_each_csv(filename: str, category: int) -> dict[str, pd.DataFrame]:
     return season_dict
 
 
+def init_season_dict(matches: pd.DataFrame, year: int) -> dict[str, str]:
+    """Create a dictionary mapping season names to their respective start dates
+
+    Args:
+        matches: DataFrame containing match data
+        year: Year of the matches
+
+    Returns:
+        dict: Dictionary mapping season names to their respective start dates
+    """
+    season_dict = {}
+    season_names = matches['大会'].value_counts().keys()
+    if len(season_names) > 1:
+        # print(f"Multiple tournaments in {year}: {season_names}")
+        # ex) 1993: ['Ｊ１ サントリー', 'Ｊ１ ＮＩＣＯＳ']
+        season_start = {}
+        for _name in season_names:
+            season_start[_name] = matches[matches['大会'] == _name]['試合日'].iat[0]
+        for (_i, _season) in enumerate(sorted(season_start.items(), key=lambda x: x[1])):
+            season_dict[str(year) + config.season_suffix[_i]] = _season[0]
+    else:
+        season_dict[str(year)] = season_names[0]
+    print(season_dict)
+    return season_dict
+
+
 if __name__ == '__main__':
     os.chdir(Path(__file__).parent)
-    years = parse_years()
     for _category in [1, 2, 3]:
-        make_old_matches_csv(_category, years)
+        make_old_matches_csv(_category, parse_years())

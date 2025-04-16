@@ -1,20 +1,22 @@
 """2021 ACLグループステージの試合情報を読み込んでCSV, JSO化"""
+import datetime
 import re
 import sys
 from typing import Any
-import datetime
+
 from bs4 import BeautifulSoup
-
 import pandas as pd
-
 import requests
 
-from read_jleague_matches import config, update_if_diff
+from read_jleague_matches import config
+from read_jleague_matches import update_if_diff
 
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
+HTTP_TIMEOUT = 60
 SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
 SEASON = datetime.datetime.now().year
 CSV_FILENAME = f'../docs/csv/{SEASON}_allmatch_result-ACL_GL.csv'
+
 
 def read_match(section_id: str) -> list[dict[str, Any]]:
     """スポーツナビサイトから指定された節の各グループの試合リスト情報を読んで返す
@@ -23,7 +25,7 @@ def read_match(section_id: str) -> list[dict[str, Any]]:
     """
     _url = ACL_MATCH_URL.format(section_id)
     print(f'access {_url}...')
-    soup = BeautifulSoup(requests.get(_url).text, 'lxml')
+    soup = BeautifulSoup(requests.get(_url, timeout=HTTP_TIMEOUT).text, 'lxml')
     return read_match_from_web(soup)
 
 
@@ -37,7 +39,7 @@ def parse_match_date_data(text: str) -> dict[str, str]:
     match_date = pd.to_datetime(SEASON + '/' + match_date[:match_date.index('（')]).date()
     try:
         start_time = pd.to_datetime(start_time).time()
-    except:
+    except (ValueError, pd.errors.ParserError):
         start_time = pd.to_datetime('00:00').time()
     return {'match_date': match_date, 'start_time': str(start_time)}
 
