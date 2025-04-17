@@ -49,12 +49,43 @@ def test_datetime_to_cron():
 
 def test_update_workflow_file():
     """Test update_workflow_file function."""
-    test_match_times = [datetime(2023, 10, 1, 15, 0), datetime(2023, 10, 2, 16, 0)]
-    result = update_workflow_file(test_match_times)
-    assert result, "Failed to update workflow file"
+    try:
+        test_match_times = [datetime(2023, 10, 1, 15, 0), datetime(2023, 10, 2, 16, 0)]
+        result = update_workflow_file(test_match_times)
+        assert result, "Failed to update workflow file"
 
-    # Show the diff to visually inspect the changes
-    subprocess.run(["git", "diff", WORKFLOW_FILE])
+        # check the differences in the workflow file
+        process = subprocess.run(["git", "diff", WORKFLOW_FILE],
+                                capture_output=True, text=True, check=False)
+        diff_output = process.stdout
+
+        print("Changes made to workflow file:")
+        print(diff_output)
+
+        # Basic checks for the diff output
+        assert "diff --git" in diff_output, "Diff header not found"
+        assert "--- a/" in diff_output, "--- a/ line not found"
+        assert "+++ b/" in diff_output, "+++ b/ line not found"
+
+        # Check for the default cron entry
+        assert "    - cron: '0 16 * * *'" in diff_output, "Default cron entry not found"
+
+        # Check for the deleted old cron entries
+        assert "-    - cron: '" in diff_output, "削除された古いcronエントリが見つかりません"
+
+        # Check for the new added cron entries
+        expected_crons = [
+            "+    - cron: '0 7 1 10 *'",  # 1st day 15:00 JST → 07:00 UTC
+            "+    - cron: '0 8 2 10 *'",  # 2nd day 16:00 JST → 08:00 UTC
+        ]
+
+        for cron in expected_crons:
+            assert cron in diff_output, f"Expected cron entry not found: {cron}"
+
+    finally:
+        # Restore the original workflow file after the test even if it fails
+        print("Restoring original workflow file...")
+        subprocess.run(["git", "checkout", "--", WORKFLOW_FILE], check=False)
 
 
 if __name__ == "__main__":
