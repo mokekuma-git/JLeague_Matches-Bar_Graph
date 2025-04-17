@@ -32,7 +32,7 @@ class TestDropDuplicatedIndexes(unittest.TestCase):
         # 検証
         self.assertEqual(len(result), 1)  # 1行だけ残る
         self.assertEqual(result.index[0], 'file1.csv')
-        self.assertEqual(result['date'][0], datetime(2023, 1, 2, tzinfo=timezone.utc))  # 新しい日付が残る
+        self.assertEqual(result['date'].iloc[0], datetime(2023, 1, 2, tzinfo=timezone.utc))  # 新しい日付が残る
 
     def test_multiple_files_with_duplicates(self):
         """複数のファイルがあり、それぞれに重複がある場合のテスト"""
