@@ -1,42 +1,42 @@
-import unittest
-import pandas as pd
-from datetime import datetime, timezone
-import sys
+"""Tests for read_jleague_matches.py"""
+from datetime import datetime
+from datetime import timezone
 from pathlib import Path
-from bs4 import BeautifulSoup
+import unittest
 
-sys.path.append(str(Path(__file__).parent.parent / 'src'))
-from read_jleague_matches import read_teams_from_web
-from read_jleague_matches import read_match_from_web
+from bs4 import BeautifulSoup
+import pandas as pd
+
 from read_jleague_matches import drop_duplicated_indexes
+from read_jleague_matches import read_match_from_web
+from read_jleague_matches import read_teams_from_web
 
 
 class TestDropDuplicatedIndexes(unittest.TestCase):
+    """Test for drop_duplicated_indexes function"""
 
     def test_basic_duplicate_removal(self):
-        """基本的な重複除去のテスト - 古い日付のエントリが除去されることを確認"""
-        # テスト用データ作成
+        """Basic duplicate removal test - check that older entries are removed"""
+        # Test data
         data = {
             'date': [
-                datetime(2023, 1, 1, tzinfo=timezone.utc),  # 古い日付
-                datetime(2023, 1, 2, tzinfo=timezone.utc)   # 新しい日付
+                datetime(2023, 1, 1, tzinfo=timezone.utc),  # Older date
+                datetime(2023, 1, 2, tzinfo=timezone.utc)   # Newer date
             ]
         }
-        index = ['file1.csv', 'file1.csv']  # 同じファイル名
+        index = ['file1.csv', 'file1.csv']  # The same file name
         df = pd.DataFrame(data, index=index)
         df.index.name = 'file'
 
-        # 関数実行
         result = drop_duplicated_indexes(df)
 
-        # 検証
-        self.assertEqual(len(result), 1)  # 1行だけ残る
+        self.assertEqual(len(result), 1)  # Only one row should remain
         self.assertEqual(result.index[0], 'file1.csv')
-        self.assertEqual(result['date'].iloc[0], datetime(2023, 1, 2, tzinfo=timezone.utc))  # 新しい日付が残る
+        self.assertEqual(result['date'].iloc[0], datetime(2023, 1, 2, tzinfo=timezone.utc))  # Newer date should remain
 
     def test_multiple_files_with_duplicates(self):
-        """複数のファイルがあり、それぞれに重複がある場合のテスト"""
-        # テスト用データ作成
+        """Multiple files with duplicates - check that the latest date is kept for each file"""
+        # Test data
         data = {
             'date': [
                 datetime(2023, 1, 1, tzinfo=timezone.utc),
@@ -50,37 +50,33 @@ class TestDropDuplicatedIndexes(unittest.TestCase):
         df = pd.DataFrame(data, index=index)
         df.index.name = 'file'
 
-        # 関数実行
         result = drop_duplicated_indexes(df)
 
-        # 検証
-        self.assertEqual(len(result), 2)  # 各ファイルにつき1行ずつ残る
+        self.assertEqual(len(result), 2)  # One row for each file remains
         self.assertEqual(result.loc['file1.csv', 'date'], datetime(2023, 1, 3, tzinfo=timezone.utc))
         self.assertEqual(result.loc['file2.csv', 'date'], datetime(2023, 2, 5, tzinfo=timezone.utc))
 
     def test_no_duplicates(self):
-        """重複がない場合のテスト - データに変化がないことを確認"""
-        # テスト用データ作成
+        """No duplicates - check that all rows are kept"""
+        # Test data
         data = {
             'date': [
                 datetime(2023, 1, 1, tzinfo=timezone.utc),
                 datetime(2023, 2, 1, tzinfo=timezone.utc)
             ]
         }
-        index = ['file1.csv', 'file2.csv']  # 異なるファイル名
+        index = ['file1.csv', 'file2.csv']  # Different file names
         df = pd.DataFrame(data, index=index)
         df.index.name = 'file'
 
-        # 関数実行
         result = drop_duplicated_indexes(df)
 
-        # 検証
-        self.assertEqual(len(result), 2)  # 全ての行が残る
-        pd.testing.assert_frame_equal(result, df)  # 元のDataFrameと同じ
+        self.assertEqual(len(result), 2)  # All rows should remain
+        pd.testing.assert_frame_equal(result, df)  # As same as original DataFrame
 
     def test_additional_columns(self):
-        """日付以外の列がある場合のテスト"""
-        # テスト用データ作成
+        """The row has rows other than date - check that the latest date is kept and other columns are preserved"""
+        # Test data
         data = {
             'date': [
                 datetime(2023, 1, 1, tzinfo=timezone.utc),
@@ -92,18 +88,19 @@ class TestDropDuplicatedIndexes(unittest.TestCase):
         df = pd.DataFrame(data, index=index)
         df.index.name = 'file'
 
-        # 関数実行
         result = drop_duplicated_indexes(df)
 
-        # 検証
         self.assertEqual(len(result), 1)
         self.assertEqual(result.loc['file1.csv', 'date'], datetime(2023, 1, 3, tzinfo=timezone.utc))
         self.assertEqual(result.loc['file1.csv', 'size'], 200)
 
 
 class HtmlLoadingTestCase(unittest.TestCase):
+    """Base class for loading HTML files for testing"""
+    test_data_dir = None
+
     def _load_html_file(self, filename):
-        """HTMLファイルを読み込みBeautifulSoupオブジェクトを返す"""
+        """Load HTML file and return a BeautifulSoup object"""
         file_path = self.test_data_dir / filename
         with open(file_path, 'rb') as f:
             content = f.read()
@@ -111,84 +108,81 @@ class HtmlLoadingTestCase(unittest.TestCase):
 
 
 class TestReadTeamsFromWeb(HtmlLoadingTestCase):
+    """Test for read_teams_from_web function"""
+
     def setUp(self):
-        """テストで使用するHTMLファイルを読み込む"""
+        """Read HTML files for each category"""
         self.test_data_dir = Path(__file__).parent / 'test_data'
-        # 各カテゴリーのHTMLファイルを読み込み、BeautifulSoupオブジェクトを作成
+        # Read HTML files for each category and create BeautifulSoup objects
         self.j1_soup = self._load_html_file('j1_standing.html')
         self.j2_soup = self._load_html_file('j2_standing.html')
         self.j3_soup = self._load_html_file('j3_standing.html')
 
     def test_read_j1_teams(self):
-        """J1チームの読み込みテスト"""
+        """Test for reading J1 teams"""
         teams = read_teams_from_web(self.j1_soup, 1)
 
-        # J1のチームが適切に読み込まれていることを確認
         self.assertIsInstance(teams, list)
-        self.assertTrue(len(teams) > 0)  # チーム数はシーズンによって変わる可能性があるので一般的なチェック
+        self.assertTrue(len(teams) > 0)  # Should check the length of the list
 
-        # J1チームのサンプルチェック (必要に応じて実際のチーム名で更新)
         expected_teams = ['アビスパ福岡', '京都サンガF.C.', '川崎フロンターレ', 'ＦＣ町田ゼルビア', 'ファジアーノ岡山',
                           '柏レイソル', 'サンフレッチェ広島', '鹿島アントラーズ', '湘南ベルマーレ', 'ガンバ大阪',
                           '清水エスパルス', 'セレッソ大阪', 'ヴィッセル神戸', '横浜ＦＣ', '浦和レッズ', '東京ヴェルディ',
                           'ＦＣ東京', '横浜Ｆ・マリノス', '名古屋グランパス', 'アルビレックス新潟']
         for team in expected_teams:
-            self.assertIn(team, teams, f"{team}がJ1チームリストに含まれていません")
+            self.assertIn(team, teams, f"{team} is not in the J1 team list")
 
     def test_read_j2_teams(self):
-        """J2チームの読み込みテスト"""
+        """Test for reading J2 teams"""
         teams = read_teams_from_web(self.j2_soup, 2)
 
-        # J2のチームが適切に読み込まれていることを確認
         self.assertIsInstance(teams, list)
         self.assertTrue(len(teams) > 0)
 
-        # J2チームのサンプルチェック
         expected_teams = ['ジェフユナイテッド千葉', 'ＦＣ今治', 'ＲＢ大宮アルディージャ', 'ジュビロ磐田', 'ベガルタ仙台',
                           'Ｖ・ファーレン長崎', '水戸ホーリーホック', 'モンテディオ山形', '徳島ヴォルティス', '藤枝ＭＹＦＣ',
                           '大分トリニータ', 'カターレ富山', 'ロアッソ熊本', 'ヴァンフォーレ甲府', 'サガン鳥栖',
                           'ブラウブリッツ秋田', '北海道コンサドーレ札幌', 'レノファ山口ＦＣ', 'いわきＦＣ', '愛媛ＦＣ']
         for team in expected_teams:
-            self.assertIn(team, teams, f"{team}がJ2チームリストに含まれていません")
+            self.assertIn(team, teams, f"{team} is not in the J2 team list")
 
     def test_read_j3_teams(self):
-        """J3チームの読み込みテスト"""
+        """Test for reading J3 teams"""
         teams = read_teams_from_web(self.j3_soup, 3)
 
-        # J3のチームが適切に読み込まれていることを確認
         self.assertIsInstance(teams, list)
         self.assertTrue(len(teams) > 0)
 
-        # J3チームのサンプルチェック
         expected_teams = ['ＦＣ大阪', '鹿児島ユナイテッドＦＣ', 'ギラヴァンツ北九州', 'テゲバジャーロ宮崎',
                           '栃木シティ', '福島ユナイテッドＦＣ', '奈良クラブ', 'ツエーゲン金沢', 'ヴァンラーレ八戸',
                           'カマタマーレ讃岐', '高知ユナイテッドＳＣ', 'ＡＣ長野パルセイロ', 'ＦＣ琉球', '栃木ＳＣ',
                           'ザスパ群馬', 'ＳＣ相模原', 'アスルクラロ沼津', '松本山雅ＦＣ', 'ＦＣ岐阜', 'ガイナーレ鳥取']
         for team in expected_teams:
-            self.assertIn(team, teams, f"{team}がJ3チームリストに含まれていません")
+            self.assertIn(team, teams, f"{team} is not in the J3 team list")
 
     def test_invalid_category(self):
-        """存在しないカテゴリでの処理テスト"""
-        # 存在しないカテゴリ (例: J4) で関数を呼び出し
+        """Test for non-existing category"""
+        # Call the function with a non-existing category (e.g., J4)
         teams = read_teams_from_web(self.j1_soup, 4)
 
-        # 空リストが返されることを確認
+        # Check that an empty list is returned
         self.assertEqual(teams, [])
 
 
 class TestReadMatchFromWeb(HtmlLoadingTestCase):
+    """Test for read_match_from_web function"""
+
     def setUp(self):
-        """テストで使用するHTMLファイルを読み込む"""
+        """Read HTML files for each category"""
         self.test_data_dir = Path(__file__).parent / 'test_data'
         self.j1_soup = self._load_html_file('j1_section1.html')
         self.j2_soup = self._load_html_file('j2_section2.html')
         self.j3_soup = self._load_html_file('j3_section3.html')
 
     def test_read_match_from_j1_data(self):
-        """有効なHTMLデータから試合情報を正しく読み込むテスト"""
+        """Test for reading match information from valid HTML data for J1"""
         matches = read_match_from_web(self.j1_soup)
 
-        # 試合情報が正しく読み込まれていることを確認
         self.assertIsInstance(matches, list)
 
         assert len(matches) == 10
@@ -215,10 +209,9 @@ class TestReadMatchFromWeb(HtmlLoadingTestCase):
         assert matches[9]['status'] == '試合終了'
 
     def test_read_match_from_j2_data(self):
-        """J2のHTMLデータから試合情報を正しく読み込むテスト"""
+        """Test for reading match information from valid HTML data for J2"""
         matches = read_match_from_web(self.j2_soup)
 
-        # 試合情報が正しく読み込まれていることを確認
         self.assertIsInstance(matches, list)
 
         assert len(matches) == 10
@@ -244,10 +237,9 @@ class TestReadMatchFromWeb(HtmlLoadingTestCase):
         assert matches[9]['status'] == '試合終了'
 
     def test_read_match_from_j3_data(self):
-        """J3のHTMLデータから試合情報を正しく読み込むテスト"""
+        """Test for reading match information from valid HTML data for J3"""
         matches = read_match_from_web(self.j3_soup)
 
-        # 試合情報が正しく読み込まれていることを確認
         self.assertIsInstance(matches, list)
 
         assert len(matches) == 10
@@ -273,7 +265,7 @@ class TestReadMatchFromWeb(HtmlLoadingTestCase):
         assert matches[9]['status'] == '試合終了'
 
     def test_read_match_from_web_no_matches(self):
-        """試合情報が存在しないHTMLデータのテスト"""
+        """Test for no match information - check that an empty list is returned"""
         empty_soup = BeautifulSoup('<html></html>', 'lxml')
         matches = read_match_from_web(empty_soup)
 
@@ -281,7 +273,7 @@ class TestReadMatchFromWeb(HtmlLoadingTestCase):
         self.assertEqual(matches, [])
 
     def test_read_match_from_web_partial_data(self):
-        """部分的なデータが欠けている場合のテスト"""
+        """Test for partial data - check that the function can handle missing data"""
         partial_soup = BeautifulSoup("""
         <section class="matchlistWrap">
             <div class="timeStamp">
@@ -302,7 +294,7 @@ class TestReadMatchFromWeb(HtmlLoadingTestCase):
         """, 'lxml')
         matches = read_match_from_web(partial_soup)
 
-        # データが部分的に欠けていても処理が続行されることを確認
+        # Check if the function can continue processing even if the data is partially missing
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]['stadium'], "")
         self.assertEqual(matches[0]['home_team'], "ホームチーム")

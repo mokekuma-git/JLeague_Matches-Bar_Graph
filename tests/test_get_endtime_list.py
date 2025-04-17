@@ -1,25 +1,18 @@
 """Tests for get_endtime_list.py module."""
-print("Starting test_get_endtime_list.py")
-import sys
-import subprocess
 from datetime import datetime
-from pathlib import Path
+import subprocess
+import sys
 
-# Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from src.get_endtime_list import (
-    read_all_match_times,
-    update_workflow_file,
-    datetime_to_cron,
-    WORKFLOW_FILE
-)
+from src.get_endtime_list import WORKFLOW_FILE
+from src.get_endtime_list import datetime_to_cron
+from src.get_endtime_list import read_all_match_times
+from src.get_endtime_list import update_workflow_file
 
 
 def test_read_match_times():
     """Test read_match_times function."""
     match_times = read_all_match_times(None, "*")
-    print(f"Match times from J-League in current year:")
+    print("Match times from J-League in current year:")
     for match_time in match_times:
         print(match_time)
     # We don't have specific assertions here as this is more of a visual inspection test
@@ -55,8 +48,7 @@ def test_update_workflow_file():
         assert result, "Failed to update workflow file"
 
         # check the differences in the workflow file
-        process = subprocess.run(["git", "diff", WORKFLOW_FILE],
-                                capture_output=True, text=True, check=False)
+        process = subprocess.run(["git", "diff", WORKFLOW_FILE], capture_output=True, text=True, check=False)
         diff_output = process.stdout
 
         print("Changes made to workflow file:")

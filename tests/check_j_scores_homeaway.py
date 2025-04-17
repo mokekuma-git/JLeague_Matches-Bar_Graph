@@ -6,9 +6,11 @@
 - If the user inputs a response starting with 'N', the file is flagged.
 - Finally, it prints the list of flagged files.
 """
-import os
-import pandas as pd
 import glob
+import os
+
+import pandas as pd
+
 
 def check_csv_files(directory: str):
     """Checks CSV files in the specified directory for swapped columns."""
@@ -18,22 +20,22 @@ def check_csv_files(directory: str):
     for csv_file in csv_files:
         file_path = os.path.join(directory, csv_file)
         print(f"\nChecking file: {csv_file}")
-        
+
         try:
             df = pd.read_csv(file_path)
-            
+
             if {'stadium', 'home_team', 'away_team'}.issubset(df.columns):
                 # print top 5 rows of stadium, home_team, away_team columns
                 print(df[['stadium', 'home_team', 'away_team']].head(5))
             else:
                 print(f"Warning: {csv_file} does not contain the required columns.")
                 continue
-        except Exception as e:
+        except (FileNotFoundError, UnicodeDecodeError, pd.errors.ParserError, pd.errors.EmptyDataError) as e:
             print(f"Error reading {csv_file}: {e}")
             continue
 
         # Judge if the file has swapped columns
-        user_input = input(f"Does this file have swapped columns? (Type 'N' to flag this file, or press Enter to skip): ")
+        user_input = input("Does this file have swapped columns? (Type 'N' to flag this file, or press Enter to skip):")
         if user_input.strip().upper().startswith('N'):
             flagged_files.append(csv_file)
 
@@ -43,5 +45,4 @@ def check_csv_files(directory: str):
 
 
 if __name__ == "__main__":
-    directory = "docs/csv"
-    check_csv_files(directory)
+    check_csv_files("docs/csv")
