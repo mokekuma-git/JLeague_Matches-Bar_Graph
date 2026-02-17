@@ -3,6 +3,7 @@ import argparse
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+import json
 import os
 from pathlib import Path
 import re
@@ -21,11 +22,60 @@ config = load_config(Path(__file__).parent / '../config/jleague.yaml')
 config.timezone = pytz.timezone(config.timezone)
 
 
-def get_csv_path(category: str) -> str:
+def load_season_map() -> dict:
+    """Load season_map.json.
+
+    Returns:
+        dict: Season map data keyed by category string ('1', '2', '3')
+    """
+    season_map_path = config.get_path('paths.season_map_file')
+    with open(season_map_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def get_sub_seasons(category: int) -> list[dict]:
+    """Get sub-seasons for the given category from season_map.json.
+
+    For years with multiple sub-seasons (e.g. 2026East/2026West),
+    returns a list of sub-season info dicts. For single-season years,
+    returns an empty list.
+
+    Args:
+        category (int): Category of J-League (1, 2, 3)
+
+    Returns:
+        list[dict]: List of dicts with keys: name, teams, team_count, group.
+                    Empty list if single season.
+    """
+    season_map = load_season_map()
+    cat_str = str(category)
+    if cat_str not in season_map:
+        return []
+
+    season_str = str(config.season)
+    cat_map = season_map[cat_str]
+    sub_keys = sorted(k for k in cat_map if k.startswith(season_str) and k != season_str)
+
+    if len(sub_keys) <= 1:
+        return []
+
+    return [
+        {
+            'name': k,
+            'teams': cat_map[k][3],
+            'team_count': cat_map[k][0],
+            'group': k[len(season_str):],
+        }
+        for k in sub_keys
+    ]
+
+
+def get_csv_path(category: str, season: str = None) -> str:
     """Get the path of CSV file from config file.
 
     Args:
         category (str): Category of J-League (1, 2, 3)
+        season (str, optional): Season name (e.g. '2026East'). Defaults to config.season.
 
     Returns:
         str: Path of CSV file
@@ -33,8 +83,10 @@ def get_csv_path(category: str) -> str:
     Raises:
         KeyError: If the key 'paths.csv_format' is not found in the config file
     """
+    if season is None:
+        season = config.season
     # CSV file path is also the key of Timestamp file, so handle it as a string
-    return config.get_format_str('paths.csv_format', season=config.season, category=category)
+    return config.get_format_str('paths.csv_format', season=season, category=category)
 
 
 def read_teams(category: int) -> list[str]:
@@ -116,14 +168,32 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
             match_date = convert_jleague_date(match_date)
         else:
             match_date = None
-        section_no = _section.find('div', class_='leagAccTit').find('h5').text.strip()
-        section_no = re.search('第(.+)節', section_no)[1]
+        section_no_text = _section.find('div', class_='leagAccTit').find('h5').text.strip()
+        section_no_match = re.search('第(.+)節', section_no_text)
+        if section_no_match is None:
+            # Check if there are actual match rows on the page
+            if _section.find('td', class_='clubName leftside'):
+                raise ValueError(
+                    f'Could not parse section_no from "{section_no_text}" '
+                    'but match data exists on the page')
+            print(f'Warning: No match data in section "{section_no_text}", skipping')
+            continue
+        section_no = section_no_match[1]
         # print((match_date, section_no))
+        group = None  # Track current group from groupHead headers (e.g., EAST, WEST)
         for _tr in _section.find_all('tr'):
+            # Track group headers
+            group_th = _tr.find('th', class_='groupHead')
+            if group_th:
+                group = group_th.text.strip()
+                continue
+
             match_dict = {}
             match_dict['match_date'] = match_date
             match_dict['section_no'] = int(section_no)
             match_dict['match_index_in_section'] = _index
+            if group:
+                match_dict['group'] = group
             stadium_td = _tr.find('td', class_='stadium')
             if not stadium_td:
                 continue
