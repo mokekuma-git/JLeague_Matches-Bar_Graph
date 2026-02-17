@@ -12,7 +12,38 @@ import pandas as pd
 ROOT_DIR = Path(__file__).resolve().parent.parent
 CSV_DIR = ROOT_DIR / Path("docs/csv")
 WORKFLOW_FILE = ROOT_DIR / Path(".github/workflows/upadate-match-csv.yaml")
-MATCH_PATTERN = r"(\d{4})_allmatch_result-J(\d+).csv"
+MATCH_PATTERN = r"(\d{4}[A-Za-z]*|\d{2}-\d{2}[A-Za-z]*)_allmatch_result-J(\d+).csv"
+
+
+def _is_current_or_future_season(season_name: str) -> bool:
+    """Check if a season may contain current or future matches.
+
+    Supports two season name formats:
+    - "2026" or "2026East": standard seasons (year >= current_year)
+    - "26-27" or "26-27East": European-style (Aug start ~ May end)
+      - June onwards: current season starts this year -> start_year >= current_year
+      - Before June: current season started last year -> start_year >= current_year - 1
+    """
+    now = datetime.now()
+    current_year = now.year
+    current_month = now.month
+
+    # "26-27" format
+    euro_match = re.match(r'(\d{2})-(\d{2})', season_name)
+    if euro_match:
+        start_year = 2000 + int(euro_match.group(1))
+        if current_month >= 6:
+            return start_year >= current_year
+        else:
+            return start_year >= current_year - 1
+
+    # "2026" format
+    std_match = re.match(r'(\d{4})', season_name)
+    if std_match:
+        year = int(std_match.group(1))
+        return year >= current_year
+
+    return False
 
 
 def read_match_csv(file_path):
@@ -46,10 +77,9 @@ def read_all_match_times(year: int = None, category: int = "*") -> List[datetime
     for file in CSV_DIR.glob("*_allmatch_result-J*.csv"):
         match = re.match(MATCH_PATTERN, file.name)
         if match:
-            year = match.group(1)
-            category = match.group(2)
+            season_name = match.group(1)
 
-            if int(year) >= current_year:  # Only consider future matches
+            if _is_current_or_future_season(season_name):
                 _times = read_match_times_from_file(file)
                 all_times.extend(_times)
     # Remove duplicates and sort
