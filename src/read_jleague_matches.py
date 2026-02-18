@@ -44,7 +44,8 @@ def get_sub_seasons(category: int) -> list[dict]:
         category (int): Category of J-League (1, 2, 3)
 
     Returns:
-        list[dict]: List of dicts with keys: name, teams, team_count, group.
+        list[dict]: List of dicts with keys: name, teams, team_count, group,
+                    and optionally group_display, url_category.
                     Empty list if single season.
     """
     season_map = load_season_map()
@@ -59,15 +60,23 @@ def get_sub_seasons(category: int) -> list[dict]:
     if len(sub_keys) <= 1:
         return []
 
-    return [
-        {
+    result = []
+    for k in sub_keys:
+        entry = cat_map[k]
+        info = {
             'name': k,
-            'teams': cat_map[k][3],
-            'team_count': cat_map[k][0],
+            'teams': entry[3],
+            'team_count': entry[0],
             'group': k[len(season_str):],
         }
-        for k in sub_keys
-    ]
+        # Read season-specific overrides from index 5
+        if len(entry) > 5 and isinstance(entry[5], dict):
+            if 'group_display' in entry[5]:
+                info['group_display'] = entry[5]['group_display']
+            if 'url_category' in entry[5]:
+                info['url_category'] = entry[5]['url_category']
+        result.append(info)
+    return result
 
 
 def get_csv_path(category: str, season: str = None) -> str:
@@ -128,12 +137,15 @@ def read_teams_from_web(soup: BeautifulSoup, category: int) -> list[str]:
     return [list(_td.stripped_strings)[1] for _td in td_teams]
 
 
-def read_match(category: int, sec: int) -> pd.DataFrame:
+def read_match(category: int, sec: int, url_category: str = None) -> pd.DataFrame:
     """Read match data for a specified category and section from the web.
 
     Args:
         category (int): Category of J-League (1, 2, 3)
         sec (int): Section number
+        url_category (str, optional): Override category value for URL construction.
+            The source_url_format 'j{}/{}/' normally uses the category number,
+            e.g. 'j1/1/'. When url_category='2j3', it becomes 'j2j3/1/' instead of 'j2/1/'.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
@@ -141,7 +153,8 @@ def read_match(category: int, sec: int) -> pd.DataFrame:
     Raises:
         KeyError: If the key 'urls.source_url_format' is not found in the config file
     """
-    _url = config.get_format_str('urls.source_url_format', category, sec)
+    cat_for_url = url_category if url_category else category
+    _url = config.get_format_str('urls.source_url_format', cat_for_url, sec)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
     return read_match_from_web(soup)
@@ -238,24 +251,27 @@ def convert_jleague_date(match_date: str) -> str:
     return _date.strftime(config.standard_date_format)
 
 
-def read_all_matches(category: int) -> pd.DataFrame:
+def read_all_matches(category: int, url_category: str = None) -> pd.DataFrame:
     """Read all match data for specified category via web.
 
     Args:
         category (int): Category of J-League (1, 2, 3)
+        url_category (str, optional): Override category value for URL construction.
 
     Returns:
         pd.DataFrame: DataFrame containing all match data
     """
-    return read_matches_range(category)
+    return read_matches_range(category, url_category=url_category)
 
 
-def read_matches_range(category: int, _range: list[int] = None) -> pd.DataFrame:
+def read_matches_range(category: int, _range: list[int] = None,
+                       url_category: str = None) -> pd.DataFrame:
     """Read match data for specified category and section list from the web.
 
     Args:
         category (int): Category of J-League (1, 2, 3)
         _range (list[int], optional): List of section numbers. Defaults to None.
+        url_category (str, optional): Override category value for URL construction.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
@@ -269,7 +285,7 @@ def read_matches_range(category: int, _range: list[int] = None) -> pd.DataFrame:
             _range = range(1, (teams_count - 1) * 2 + 1)
 
     for _i in _range:
-        result_list = read_match(category, _i)
+        result_list = read_match(category, _i, url_category=url_category)
         _matches = pd.concat([_matches, pd.DataFrame(result_list)])
     # A common mistake is not saving the result of sort or reset_index operations
     _matches = _matches.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
@@ -490,7 +506,8 @@ def drop_duplicated_indexes(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def update_all_matches(category: int, force_update: bool = False,
-                       need_update: set[int] = None) -> pd.DataFrame:
+                       need_update: set[int] = None,
+                       url_category: str = None) -> pd.DataFrame:
     """
     Fetch incremental match data from the web and apply it to the existing dataset.
 
@@ -503,6 +520,7 @@ def update_all_matches(category: int, force_update: bool = False,
         category (int): Category of J-League (1, 2, 3)
         force_update (bool): Force update all matches regardless of changes
         need_update (set[int]): Sections to be updated
+        url_category (str, optional): Override category value for URL construction.
 
     Returns:
         pd.DataFrame: Updated DataFrame containing match data
@@ -519,7 +537,7 @@ def update_all_matches(category: int, force_update: bool = False,
 
     # If the file does not exist, read all matches and save them
     if (not Path(latest_file).exists()) or force_update:
-        all_matches = read_all_matches(category)
+        all_matches = read_all_matches(category, url_category=url_category)
         update_if_diff(all_matches, latest_file)
         return all_matches
 
@@ -535,7 +553,7 @@ def update_all_matches(category: int, force_update: bool = False,
         if not need_update:
             return current
 
-    diff_matches = read_matches_range(category, need_update)
+    diff_matches = read_matches_range(category, need_update, url_category=url_category)
     old_matches = current[current['section_no'].isin(need_update)]
     if matches_differ(diff_matches, old_matches):
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \
