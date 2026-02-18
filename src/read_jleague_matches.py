@@ -264,6 +264,20 @@ def read_all_matches(category: int, url_category: str = None) -> pd.DataFrame:
     return read_matches_range(category, url_category=url_category)
 
 
+def _team_count_to_section_range(team_count: int) -> range:
+    """Convert team count to full home-and-away section range (1-based).
+
+    Args:
+        team_count (int): Number of teams in the league.
+
+    Returns:
+        range: Range of section numbers.
+    """
+    if team_count % 2 > 0:
+        return range(1, team_count * 2 + 1)
+    return range(1, (team_count - 1) * 2 + 1)
+
+
 def read_matches_range(category: int, _range: list[int] = None,
                        url_category: str = None) -> pd.DataFrame:
     """Read match data for specified category and section list from the web.
@@ -279,10 +293,7 @@ def read_matches_range(category: int, _range: list[int] = None,
     _matches = pd.DataFrame()
     if not _range:
         teams_count = len(read_teams(category))
-        if teams_count % 2 > 0:
-            _range = range(1, teams_count * 2 + 1)
-        else:
-            _range = range(1, (teams_count - 1) * 2 + 1)
+        _range = _team_count_to_section_range(teams_count)
 
     for _i in _range:
         result_list = read_match(category, _i, url_category=url_category)
@@ -505,6 +516,134 @@ def drop_duplicated_indexes(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _calc_section_range(sub_seasons: list[dict]) -> range:
+    """Calculate the full section range from team_count in season_map sub-seasons.
+
+    Args:
+        sub_seasons (list[dict]): Sub-season info list from get_sub_seasons().
+
+    Returns:
+        range: Range of section numbers (1-based).
+    """
+    max_team_count = max(s['team_count'] for s in sub_seasons)
+    return _team_count_to_section_range(max_team_count)
+
+
+def _get_sections_since(csv_path: str, current: pd.DataFrame, now: datetime) -> set[int]:
+    """Get sections that started since the last CSV update.
+
+    Args:
+        csv_path (str): Path to the CSV file (used to look up the timestamp).
+        current (pd.DataFrame): Match data already loaded from csv_path.
+        now (datetime): Current time (timezone-aware).
+
+    Returns:
+        set[int]: Set of section numbers that need updating.
+    """
+    lastupdate = get_timestamp_from_csv(csv_path)
+    print(f'  Check matches finished since {lastupdate}')
+    return get_sections_to_update(current, lastupdate, now)
+
+
+def _get_sections_for_sub_group(subs: list[dict]) -> set[int] | None:
+    """Determine which sections need fetching for a group of sub-seasons sharing a url_category.
+
+    Returns:
+        None  — at least one CSV is missing → fetch all sections
+        set() — all CSVs are up-to-date → skip
+        {5,6} — union of sections that need updating across all sub-seasons
+    """
+    _now = datetime.now().astimezone(config.timezone)
+    sections_needed: set[int] = set()
+    for sub in subs:
+        csv_path = get_csv_path(sub['category'], sub['name'])
+        if not Path(csv_path).exists():
+            return None  # Missing CSV → need full fetch
+        current = read_allmatches_csv(csv_path)
+        sections_needed |= _get_sections_since(csv_path, current, _now)
+    return sections_needed
+
+
+def update_sub_season_matches(category: int, sub_seasons: list[dict],
+                              force_update: bool = False,
+                              need_update: set[int] = None) -> None:
+    """Fetch and distribute match data for a multi-group season.
+
+    Sub-seasons that share the same url_category are fetched together in one
+    request per section; the result is then filtered by group_display and
+    written to separate CSVs.
+
+    Args:
+        category (int): Category of J-League (1, 2, 3)
+        sub_seasons (list[dict]): Sub-season info from get_sub_seasons().
+        force_update (bool): If True, re-fetch all sections regardless of timestamps.
+        need_update (set[int]): If given, fetch only these sections (differential update).
+    """
+    # Attach category to each sub for _get_sections_for_sub_group
+    for sub in sub_seasons:
+        sub['category'] = category
+
+    # Group sub-seasons by url_category
+    url_cat_groups: dict[str, list[dict]] = {}
+    for sub in sub_seasons:
+        url_cat = sub.get('url_category', str(category))
+        url_cat_groups.setdefault(url_cat, []).append(sub)
+
+    for url_cat, subs in url_cat_groups.items():
+        # Determine sections to fetch
+        if force_update:
+            fetch_range = _calc_section_range(subs)
+            do_merge = False
+        elif need_update is not None:
+            fetch_range = need_update
+            do_merge = True
+        else:
+            sections = _get_sections_for_sub_group(subs)
+            if sections is None:
+                fetch_range = _calc_section_range(subs)
+                do_merge = False
+            elif not sections:
+                print(f'  No updates needed for url_category={url_cat}')
+                continue
+            else:
+                fetch_range = sections
+                do_merge = True
+
+        print(f'  Fetching sections {list(fetch_range)} for url_category={url_cat}...')
+        fetched = read_matches_range(category, fetch_range, url_category=url_cat)
+
+        # Distribute fetched data to each sub-season CSV
+        for sub in subs:
+            group_display = sub.get('group_display')
+            if group_display:
+                sub_data = fetched[fetched['group'] == group_display].copy()
+            else:
+                sub_data = fetched.copy()
+
+            # Drop 'group' column — sub-season is identified by filename
+            if 'group' in sub_data.columns:
+                sub_data = sub_data.drop(columns=['group'])
+
+            # Recalculate match_index_in_section within each sub-season
+            sub_data = sub_data.sort_values(['section_no', 'match_date', 'home_team'])
+            sub_data['match_index_in_section'] = sub_data.groupby('section_no').cumcount() + 1
+            sub_data = sub_data.reset_index(drop=True)
+
+            csv_path = get_csv_path(category, sub['name'])
+            if do_merge and Path(csv_path).exists():
+                current = read_allmatches_csv(csv_path)
+                old = current[current['section_no'].isin(fetch_range)]
+                if not matches_differ(sub_data, old):
+                    print(f'  No changes detected for {sub["name"]}')
+                    continue
+                merged = pd.concat([current[~current['section_no'].isin(fetch_range)], sub_data]) \
+                           .sort_values(['section_no', 'match_index_in_section']) \
+                           .reset_index(drop=True)
+                update_if_diff(merged, csv_path)
+            else:
+                update_if_diff(sub_data, csv_path)
+
+
 def update_all_matches(category: int, force_update: bool = False,
                        need_update: set[int] = None,
                        url_category: str = None) -> pd.DataFrame:
@@ -543,11 +682,9 @@ def update_all_matches(category: int, force_update: bool = False,
 
     current = read_allmatches_csv(latest_file)
     if not need_update:  # If no specific sections to update are provided, check automatically
-        _lastupdate = get_timestamp_from_csv(latest_file)
         _now = datetime.now().astimezone(config.timezone)
-        print(f'  Check matches finished since {_lastupdate}')
         # undecided = get_undecided_section(current)
-        need_update = get_sections_to_update(current, _lastupdate, _now)
+        need_update = _get_sections_since(latest_file, current, _now)
 
         # If no sections need to be updated, return the current DataFrame
         if not need_update:
@@ -759,5 +896,11 @@ if __name__ == '__main__':
 
     for _category in parse_range_list(_args.category):
         print(f'Start read J{_category} matches...')
-
-        update_all_matches(_category, force_update=_args.force_update_all, need_update=_args.sections)
+        _sub_seasons = get_sub_seasons(_category)
+        if _sub_seasons:
+            update_sub_season_matches(_category, _sub_seasons,
+                                      force_update=_args.force_update_all,
+                                      need_update=_args.sections)
+        else:
+            update_all_matches(_category, force_update=_args.force_update_all,
+                               need_update=_args.sections)
