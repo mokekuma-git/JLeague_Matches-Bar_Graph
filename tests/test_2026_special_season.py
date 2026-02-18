@@ -8,11 +8,17 @@
 import json
 from pathlib import Path
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
+import pandas as pd
 from bs4 import BeautifulSoup
 
-from read_jleague_matches import read_match_from_web
+from read_jleague_matches import (
+    read_match_from_web,
+    _team_count_to_section_range,
+    _calc_section_range,
+    update_sub_season_matches,
+)
 
 
 TEST_DATA_DIR = Path(__file__).parent / 'test_data'
@@ -184,6 +190,171 @@ class TestGetSubSeasons(unittest.TestCase):
             self.assertEqual(s['url_category'], '2j3')
         displays = [s['group_display'] for s in subs]
         self.assertEqual(displays, ['EAST-A', 'EAST-B', 'WEST-A', 'WEST-B'])
+
+
+class TestTeamCountToSectionRange(unittest.TestCase):
+    """Test _team_count_to_section_range section count formula."""
+
+    def test_even_team_count(self):
+        # 10 teams (even): (10-1)*2 = 18 sections
+        self.assertEqual(_team_count_to_section_range(10), range(1, 19))
+
+    def test_odd_team_count(self):
+        # 11 teams (odd): 11*2 = 22 sections
+        self.assertEqual(_team_count_to_section_range(11), range(1, 23))
+
+    def test_standard_j1_18_teams(self):
+        # 18 teams (even): (18-1)*2 = 34 sections
+        self.assertEqual(_team_count_to_section_range(18), range(1, 35))
+
+
+class TestCalcSectionRange(unittest.TestCase):
+    """Test _calc_section_range uses max team_count across sub-seasons."""
+
+    def test_uses_max_team_count(self):
+        # max is 10 (even) → (10-1)*2 = 18 sections, ignores smaller sub
+        subs = [{'team_count': 8}, {'team_count': 10}]
+        self.assertEqual(_calc_section_range(subs), range(1, 19))
+
+    def test_single_sub_season(self):
+        subs = [{'team_count': 10}]
+        self.assertEqual(_calc_section_range(subs), range(1, 19))
+
+    def test_all_same_team_count(self):
+        # 4 groups of 10 teams each → range(1, 19)
+        subs = [{'team_count': 10}] * 4
+        self.assertEqual(_calc_section_range(subs), range(1, 19))
+
+
+class TestUpdateSubSeasonMatches(unittest.TestCase):
+    """Test update_sub_season_matches distributes fetched data into sub-season CSVs."""
+
+    BASE_ROW = {
+        'section_no': 1, 'match_index_in_section': 1,
+        'match_date': '2026/02/06', 'start_time': '19:00',
+        'stadium': 'Stadium', 'home_goal': '1', 'away_goal': '0',
+        'status': '試合終了',
+    }
+
+    def _make_match_df(self, group_name, home_teams):
+        """Create a fake fetched DataFrame for one group."""
+        rows = []
+        for i, team in enumerate(home_teams, start=1):
+            row = dict(self.BASE_ROW, match_index_in_section=i,
+                       home_team=team, away_team=f'Away{i}', group=group_name)
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def _make_sub_seasons(self):
+        return [
+            {'name': '2026East', 'team_count': 10, 'teams': [], 'group': 'East',
+             'group_display': 'EAST'},
+            {'name': '2026West', 'team_count': 10, 'teams': [], 'group': 'West',
+             'group_display': 'WEST'},
+        ]
+
+    @patch('read_jleague_matches.update_if_diff')
+    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.get_csv_path')
+    def test_force_update_fetches_full_range(self, mock_csv_path, mock_read_range, mock_update):
+        """force_update=True should fetch _calc_section_range sections."""
+        east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
+        west_df = self._make_match_df('WEST', ['B1', 'B2', 'B3', 'B4', 'B5'])
+        mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
+        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+
+        update_sub_season_matches(1, self._make_sub_seasons(), force_update=True)
+
+        # read_matches_range called once (shared fetch for both sub-seasons)
+        mock_read_range.assert_called_once()
+        # Section range for 10 even teams = 18 sections
+        call_range = mock_read_range.call_args.args[1]
+        self.assertEqual(list(call_range), list(range(1, 19)))
+
+    @patch('read_jleague_matches.update_if_diff')
+    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.get_csv_path')
+    def test_group_filter_distributes_correctly(self, mock_csv_path, mock_read_range, mock_update):
+        """Each sub-season CSV should receive only its own group's matches."""
+        east_teams = ['A1', 'A2', 'A3', 'A4', 'A5']
+        west_teams = ['B1', 'B2', 'B3', 'B4', 'B5']
+        east_df = self._make_match_df('EAST', east_teams)
+        west_df = self._make_match_df('WEST', west_teams)
+        mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
+        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+
+        update_sub_season_matches(1, self._make_sub_seasons(), force_update=True)
+
+        self.assertEqual(mock_update.call_count, 2)
+        written = {call.args[1]: call.args[0] for call in mock_update.call_args_list}
+
+        east_written = written['/tmp/2026East.csv']
+        self.assertEqual(set(east_written['home_team']), set(east_teams))
+
+        west_written = written['/tmp/2026West.csv']
+        self.assertEqual(set(west_written['home_team']), set(west_teams))
+
+    @patch('read_jleague_matches.update_if_diff')
+    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.get_csv_path')
+    def test_group_column_dropped(self, mock_csv_path, mock_read_range, mock_update):
+        """The 'group' column should not appear in written CSVs."""
+        east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
+        west_df = self._make_match_df('WEST', ['B1', 'B2', 'B3', 'B4', 'B5'])
+        mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
+        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+
+        update_sub_season_matches(1, self._make_sub_seasons(), force_update=True)
+
+        for call in mock_update.call_args_list:
+            written_df = call.args[0]
+            self.assertNotIn('group', written_df.columns)
+
+    @patch('read_jleague_matches.update_if_diff')
+    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.get_csv_path')
+    def test_match_index_recalculated_per_sub_season(self, mock_csv_path, mock_read_range, mock_update):
+        """match_index_in_section should be 1-based within each sub-season."""
+        east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
+        west_df = self._make_match_df('WEST', ['B1', 'B2', 'B3', 'B4', 'B5'])
+        # Give original indexes that span both groups (1-10)
+        combined = pd.concat([east_df, west_df], ignore_index=True)
+        combined['match_index_in_section'] = range(1, 11)
+        mock_read_range.return_value = combined
+        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+
+        update_sub_season_matches(1, self._make_sub_seasons(), force_update=True)
+
+        written = {call.args[1]: call.args[0] for call in mock_update.call_args_list}
+        for path, df in written.items():
+            indexes = sorted(df['match_index_in_section'].tolist())
+            self.assertEqual(indexes, [1, 2, 3, 4, 5], f"{path}: indexes should be 1-5, got {indexes}")
+
+    @patch('read_jleague_matches.update_if_diff')
+    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.get_csv_path')
+    def test_need_update_uses_specified_sections(self, mock_csv_path, mock_read_range, mock_update):
+        """need_update param should pass the specified sections to read_matches_range."""
+        east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
+        west_df = self._make_match_df('WEST', ['B1', 'B2', 'B3', 'B4', 'B5'])
+        mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
+        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+
+        # Simulate existing CSVs for the merge path
+        existing_east = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
+        existing_east = existing_east.drop(columns=['group'])
+        existing_east['match_index_in_section'] = range(1, 6)
+
+        with patch('read_jleague_matches.Path') as mock_path_cls, \
+             patch('read_jleague_matches.read_allmatches_csv', return_value=existing_east), \
+             patch('read_jleague_matches.matches_differ', return_value=True):
+            mock_path_cls.return_value.exists.return_value = True
+
+            update_sub_season_matches(1, self._make_sub_seasons(), need_update={3, 4})
+
+        # Should have fetched only sections {3, 4}
+        call_range = mock_read_range.call_args.args[1]
+        self.assertEqual(call_range, {3, 4})
 
 
 if __name__ == '__main__':
