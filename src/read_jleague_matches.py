@@ -33,29 +33,35 @@ def load_season_map() -> dict:
         return json.load(f)
 
 
-def get_sub_seasons(category: int) -> list[dict]:
+def get_sub_seasons(category: int) -> list[dict] | None:
     """Get sub-seasons for the given category from season_map.json.
 
     For years with multiple sub-seasons (e.g. 2026East/2026West),
     returns a list of sub-season info dicts. For single-season years,
-    returns an empty list.
+    returns an empty list. If no season entry exists for this category,
+    returns None (caller should skip this category entirely).
 
     Args:
         category (int): Category of J-League (1, 2, 3)
 
     Returns:
-        list[dict]: List of dicts with keys: name, teams, team_count, group,
-                    and optionally group_display, url_category.
-                    Empty list if single season.
+        list[dict] | None:
+            None       — no season entry for config.season → skip
+            []         — single season → use update_all_matches
+            [dict,...] — multi-group season → use update_sub_season_matches
     """
     season_map = load_season_map()
     cat_str = str(category)
     if cat_str not in season_map:
-        return []
+        return None
 
     season_str = str(config.season)
     cat_map = season_map[cat_str]
     sub_keys = sorted(k for k in cat_map if k.startswith(season_str) and k != season_str)
+
+    # No entry at all for this season (neither bare key nor sub-keys)
+    if not sub_keys and season_str not in cat_map:
+        return None
 
     if len(sub_keys) <= 1:
         return []
@@ -897,7 +903,9 @@ if __name__ == '__main__':
     for _category in parse_range_list(_args.category):
         print(f'Start read J{_category} matches...')
         _sub_seasons = get_sub_seasons(_category)
-        if _sub_seasons:
+        if _sub_seasons is None:
+            print(f'  No {config.season} season entry for J{_category} in season_map, skipping.')
+        elif _sub_seasons:
             update_sub_season_matches(_category, _sub_seasons,
                                       force_update=_args.force_update_all,
                                       need_update=_args.sections)

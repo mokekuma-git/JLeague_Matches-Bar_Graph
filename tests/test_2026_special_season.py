@@ -179,6 +179,20 @@ class TestGetSubSeasons(unittest.TestCase):
         self.assertNotIn('url_category', subs[0])
         self.assertNotIn('url_category', subs[1])
 
+    def test_j3_no_2026_entry_returns_none(self):
+        """Category 3 has no 2026 entry → get_sub_seasons returns None (skip)."""
+        from read_jleague_matches import get_sub_seasons
+        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
+            result = get_sub_seasons(3)
+        self.assertIsNone(result)
+
+    def test_unknown_category_returns_none(self):
+        """Category not in season_map at all → None."""
+        from read_jleague_matches import get_sub_seasons
+        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
+            result = get_sub_seasons(9)
+        self.assertIsNone(result)
+
     def test_j2_sub_seasons(self):
         from read_jleague_matches import get_sub_seasons
         with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
