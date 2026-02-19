@@ -1,11 +1,11 @@
 # JLeague_Matches-Bar_Graph
 
 Jリーグ・各種サッカー大会の勝ち点積み上げグラフを可視化するWebアプリケーション。
-GitHub Pages で公開: https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/
+GitHub Pages で公開: <https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/>
 
 ## ディレクトリ構造
 
-```
+```text
 JLeague_Matches-Bar_Graph/
 ├── config/                          # YAML設定ファイル
 │   ├── jfamatch.yaml               #   JFA系大会設定
@@ -87,12 +87,13 @@ uv run python src/read_jfamatch.py <大会名>
 - `status`: "試合終了" (完了) / "ＶＳ" (未実施)
 - `home_goal`/`away_goal`: 空 = 未実施
 - `group`: グループ名 (2026特別シーズン等、グループ分けがある場合のみ)
+- `home_pk_score`/`away_pk_score`: PK得点 (省略可能。PK戦あり試合のみ値あり、それ以外は空。JFA JSONの命名に倣った)
 
 ## season_map.json 構造
 
 `docs/json/season_map.json` はカテゴリ別・シーズン別のチーム構成を定義する。
 
-```
+```json
 {
   "カテゴリ": {
     "シーズン名": [チーム数, 昇格枠, 降格枠, [チームリスト], {順位プロパティ}, {シーズン固有情報}]
@@ -103,7 +104,7 @@ uv run python src/read_jfamatch.py <大会名>
 ### 配列要素
 
 | Index | 内容 | 必須 | 例 |
-|-------|------|------|-----|
+| ----- | ---- | ---- | -- |
 | 0 | チーム数 | 必須 | `10` |
 | 1 | 昇格枠数 | 必須 | `1` |
 | 2 | 降格枠数 | 必須 | `0` |
@@ -119,7 +120,7 @@ uv run python src/read_jfamatch.py <大会名>
 ### シーズン固有情報 (index 5) のキー
 
 | キー | 説明 | 例 |
-|------|------|-----|
+| ---- | --- | -- |
 | `group_display` | HTML上の表示グループ名 (groupHeadテキスト)。スクレイピング結果の `group` 列でフィルタしてCSVに振り分ける | `"EAST"`, `"EAST-A"` |
 | `url_category` | スクレイピングURL `j{category}/{sec}/` のカテゴリ部分を上書き (デフォルト: カテゴリキーをそのまま使用) | `"2j3"` → URL `j2j3/{sec}/` |
 
