@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 from typing import Any
+import warnings
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -102,6 +103,40 @@ def get_csv_path(category: str, season: str = None) -> str:
         season = config.season
     # CSV file path is also the key of Timestamp file, so handle it as a string
     return config.get_format_str('paths.csv_format', season=season, category=category)
+
+
+def get_season_from_date(reference_date: date = None) -> str:
+    """Return the season string for the given date.
+
+    Season naming rules:
+    - Up to 2025: "YYYY" (4-digit year, calendar-year seasons)
+    - 2026 Jan-Jun: "2026" (special transition season before autumn-spring schedule)
+    - 2026 Jul onwards: two-digit years format "YY-YY"
+    - The boundary month is July (seasons end in May, start in August;
+      June and earlier belong to the season that started in the previous calendar year,
+      July and later belong to the season starting this year)
+
+    Args:
+        reference_date: Date to use as reference. Defaults to today.
+
+    Returns:
+        str: Season string (e.g. "2025", "2026", "26-27", "27-28")
+    """
+    if reference_date is None:
+        reference_date = date.today()
+    year = reference_date.year
+    month = reference_date.month
+
+    if year <= 2025:
+        return str(year)
+
+    # 2026 special transition season (Jan-Jun)
+    if year == 2026 and month <= 6:
+        return "2026"
+
+    # two‑digit year season (2026 Jul+ or 2027+)
+    start_year = year if month >= 7 else year - 1
+    return f"{start_year % 100:02d}-{(start_year + 1) % 100:02d}"
 
 
 def read_teams(category: int) -> list[str]:
@@ -899,6 +934,13 @@ if __name__ == '__main__':
     _args = make_args()
     if _args.debug:
         config.debug = True
+
+    _expected = get_season_from_date()
+    if str(config.season) != _expected:
+        warnings.warn(
+            f'config.season={config.season!r} does not match expected season {_expected!r}',
+            stacklevel=1
+        )
 
     for _category in parse_range_list(_args.category):
         print(f'Start read J{_category} matches...')
