@@ -1,13 +1,23 @@
-name: Run tests
+name: Run Python tests
 
 on:
   pull_request:
     branches:
       - main
       - 'feature/**'
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'setup.cfg'
   push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'setup.cfg'
 
 jobs:
   test:
