@@ -306,6 +306,14 @@ const is_string = (value) => (typeof(value) === 'string' || value instanceof Str
 // const is_number = (value) => (typeof(value) === 'number');
 
 const compare_str = (a, b) => (a === b) ? 0 : (a < b) ? -1 : 1;
+function get_postponed_sort_priority(row, target_date) {
+  // 0: completed (has result), 1: postponed with past date (no result, no new schedule),
+  // 2: future scheduled (no result, future date)
+  if (row.has_result) return 0;
+  const date = row.match_date;
+  if (date && date.match(/\d\d\/\d\d$/) && date <= target_date) return 1;
+  return 2;
+}
 function make_html_column(target_team, team_data) {
   // 抽出したチームごとのDataFrameを使って、HTMLでチームの勝ち点積み上げ表を作る
   //  target_team: 対象チームの名称
@@ -348,6 +356,10 @@ function make_html_column(target_team, team_data) {
     match_sort_key = 'match_date';
   }
   team_data.df.sort(function(a, b) {  // 超カッコ悪い もっとうまく比較したい
+    // Sort priority: 0=completed, 1=postponed(no result, past date), 2=future scheduled
+    const prio_a = get_postponed_sort_priority(a, TARGET_DATE);
+    const prio_b = get_postponed_sort_priority(b, TARGET_DATE);
+    if (prio_a !== prio_b) return prio_a - prio_b;
     v_a = a[match_sort_key];
     v_b = b[match_sort_key];
     if(match_sort_key === 'section_no') return parseInt(v_a) - parseInt(v_b);
