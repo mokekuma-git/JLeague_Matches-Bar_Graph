@@ -5,6 +5,7 @@
 - J2/J3: Merged into 4 groups (EastA/EastB/WestA/WestB, 10 teams each)
   with URL path 'j2j3' instead of 'j2'
 """
+from datetime import date
 import json
 from pathlib import Path
 import unittest
@@ -15,6 +16,7 @@ from bs4 import BeautifulSoup
 
 from read_jleague_matches import (
     read_match_from_web,
+    get_season_from_date,
     _team_count_to_section_range,
     _calc_section_range,
     update_sub_season_matches,
@@ -369,6 +371,49 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         # Should have fetched only sections {3, 4}
         call_range = mock_read_range.call_args.args[1]
         self.assertEqual(call_range, {3, 4})
+
+
+class TestGetSeasonFromDate(unittest.TestCase):
+    """Test get_season_from_date returns the correct season string for each date."""
+
+    def _d(self, year, month, day=1):
+        return date(year, month, day)
+
+    def test_pre_2026_returns_year_string(self):
+        self.assertEqual(get_season_from_date(self._d(2025, 1)), '2025')
+        self.assertEqual(get_season_from_date(self._d(2024, 12)), '2024')
+        self.assertEqual(get_season_from_date(self._d(2023, 6)), '2023')
+
+    def test_2026_jan_jun_returns_2026(self):
+        """Jan-Jun 2026 is the special transition season."""
+        self.assertEqual(get_season_from_date(self._d(2026, 1)), '2026')
+        self.assertEqual(get_season_from_date(self._d(2026, 6, 30)), '2026')
+
+    def test_2026_jul_dec_returns_26_27(self):
+        """Jul-Dec 2026 is the first European-style season."""
+        self.assertEqual(get_season_from_date(self._d(2026, 7, 1)), '26-27')
+        self.assertEqual(get_season_from_date(self._d(2026, 12)), '26-27')
+
+    def test_2027_jan_jun_returns_26_27(self):
+        """Jan-Jun 2027 still belongs to the 26-27 season."""
+        self.assertEqual(get_season_from_date(self._d(2027, 1)), '26-27')
+        self.assertEqual(get_season_from_date(self._d(2027, 6, 30)), '26-27')
+
+    def test_2027_jul_dec_returns_27_28(self):
+        """Jul-Dec 2027 starts the 27-28 season."""
+        self.assertEqual(get_season_from_date(self._d(2027, 7, 1)), '27-28')
+        self.assertEqual(get_season_from_date(self._d(2027, 12)), '27-28')
+
+    def test_boundary_jun_vs_jul(self):
+        """June 30 and July 1 should differ for years after 2026."""
+        self.assertEqual(get_season_from_date(self._d(2028, 6, 30)), '27-28')
+        self.assertEqual(get_season_from_date(self._d(2028, 7, 1)), '28-29')
+
+    def test_defaults_to_today(self):
+        """Called without arguments should not raise and return a non-empty string."""
+        result = get_season_from_date()
+        self.assertIsInstance(result, str)
+        self.assertTrue(result)
 
 
 if __name__ == '__main__':

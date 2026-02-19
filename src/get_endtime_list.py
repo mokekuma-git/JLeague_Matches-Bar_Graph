@@ -21,8 +21,8 @@ def _is_current_or_future_season(season_name: str) -> bool:
     Supports two season name formats:
     - "2026" or "2026East": standard seasons (year >= current_year)
     - "26-27" or "26-27East": European-style (Aug start ~ May end)
-      - June onwards: current season starts this year -> start_year >= current_year
-      - Before June: current season started last year -> start_year >= current_year - 1
+      - July onwards: current season starts this year -> start_year >= current_year
+      - Before July: current season started last year -> start_year >= current_year - 1
     """
     now = datetime.now()
     current_year = now.year
@@ -32,7 +32,7 @@ def _is_current_or_future_season(season_name: str) -> bool:
     euro_match = re.match(r'(\d{2})-(\d{2})', season_name)
     if euro_match:
         start_year = 2000 + int(euro_match.group(1))
-        if current_month >= 6:
+        if current_month >= 7:
             return start_year >= current_year
         else:
             return start_year >= current_year - 1
