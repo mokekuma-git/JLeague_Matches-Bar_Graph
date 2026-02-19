@@ -87,6 +87,19 @@ class TestJ1_2026(unittest.TestCase):
         self.assertEqual(kyoto_match['home_goal'], '1')
         self.assertEqual(kyoto_match['away_goal'], '1')
 
+    def test_pk_score_columns(self):
+        """home_pk_score and away_pk_score should be populated for PK matches."""
+        # Kyoto vs Kobe: PK 1-4  (home=Kyoto=1, away=Kobe=4)
+        kyoto_match = next(m for m in self.matches if m['home_team'] == '京都')
+        self.assertEqual(kyoto_match['home_pk_score'], '1')
+        self.assertEqual(kyoto_match['away_pk_score'], '4')
+
+    def test_non_pk_match_has_empty_pk_columns(self):
+        """Matches without PK should have empty home_pk_score and away_pk_score."""
+        non_pk = next(m for m in self.matches if 'PK' not in m['status'])
+        self.assertEqual(non_pk['home_pk_score'], '')
+        self.assertEqual(non_pk['away_pk_score'], '')
+
 
 class TestJ2J3_2026(unittest.TestCase):
     """Test parsing 2026 J2/J3 merged match data with 4 groups."""
@@ -153,6 +166,19 @@ class TestJ2J3_2026(unittest.TestCase):
         iwata_match = next(m for m in self.matches if m['home_team'] == '磐田')
         self.assertEqual(iwata_match['status'], '試合終了(4 PK 2)')
         self.assertEqual(iwata_match['group'], 'EAST-B')
+
+    def test_pk_score_columns(self):
+        """home_pk_score and away_pk_score should be populated for PK matches."""
+        # Iwata vs Nagano: PK 4-2 (home=Iwata=4, away=Nagano=2)
+        iwata_match = next(m for m in self.matches if m['home_team'] == '磐田')
+        self.assertEqual(iwata_match['home_pk_score'], '4')
+        self.assertEqual(iwata_match['away_pk_score'], '2')
+
+    def test_non_pk_match_has_empty_pk_columns(self):
+        """Matches without PK should have empty home_pk_score and away_pk_score."""
+        non_pk = next(m for m in self.matches if 'PK' not in m['status'])
+        self.assertEqual(non_pk['home_pk_score'], '')
+        self.assertEqual(non_pk['away_pk_score'], '')
 
     def test_section_no_parsed_from_special_title(self):
         """Section number should be parsed from '...第1節' title format."""

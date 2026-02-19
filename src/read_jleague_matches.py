@@ -309,6 +309,9 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
             _status = _tr.find('td', class_='status')
             match_dict['status'] = \
                 _status.text.strip().replace('\n', '') if _status is not None else '不明'
+            pk_match = re.search(r'試合終了\((\d+) PK (\d+)\)', match_dict['status'])
+            match_dict['home_pk_score'] = str(int(pk_match[1])) if pk_match else ''
+            match_dict['away_pk_score'] = str(int(pk_match[2])) if pk_match else ''
 
             if config.debug:
                 print(match_dict)
