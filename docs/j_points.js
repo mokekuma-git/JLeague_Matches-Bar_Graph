@@ -106,11 +106,10 @@ function get_csv_files(category, season) {
   const target_seasons = [];
   Object.keys(SEASON_MAP[category]).forEach(function(x) {if (x.startsWith(season)) target_seasons.push(x);});
   if (target_seasons.length == 1) return [get_csv_filename(category, season)];
-  target_seasons.shift(season);
-  target_seasons.sort();
-  const result = [];
-  target_seasons.forEach(function(x) {result.push(get_csv_filename(category, x));});
-  return result;
+  // Filter out the exact base season to get only sub-seasons (e.g., "2026East", "2026West")
+  const sub_seasons = target_seasons.filter(x => x !== season);
+  sub_seasons.sort();
+  return sub_seasons.map(x => get_csv_filename(category, x));
 }
 
 function get_csv_filename(category, season) {

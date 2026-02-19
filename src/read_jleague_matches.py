@@ -3,6 +3,7 @@ import argparse
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
+import json
 import os
 from pathlib import Path
 import re
@@ -21,11 +22,69 @@ config = load_config(Path(__file__).parent / '../config/jleague.yaml')
 config.timezone = pytz.timezone(config.timezone)
 
 
-def get_csv_path(category: str) -> str:
+def load_season_map() -> dict:
+    """Load season_map.json.
+
+    Returns:
+        dict: Season map data keyed by category string ('1', '2', '3')
+    """
+    season_map_path = config.get_path('paths.season_map_file')
+    with open(season_map_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def get_sub_seasons(category: int) -> list[dict]:
+    """Get sub-seasons for the given category from season_map.json.
+
+    For years with multiple sub-seasons (e.g. 2026East/2026West),
+    returns a list of sub-season info dicts. For single-season years,
+    returns an empty list.
+
+    Args:
+        category (int): Category of J-League (1, 2, 3)
+
+    Returns:
+        list[dict]: List of dicts with keys: name, teams, team_count, group,
+                    and optionally group_display, url_category.
+                    Empty list if single season.
+    """
+    season_map = load_season_map()
+    cat_str = str(category)
+    if cat_str not in season_map:
+        return []
+
+    season_str = str(config.season)
+    cat_map = season_map[cat_str]
+    sub_keys = sorted(k for k in cat_map if k.startswith(season_str) and k != season_str)
+
+    if len(sub_keys) <= 1:
+        return []
+
+    result = []
+    for k in sub_keys:
+        entry = cat_map[k]
+        info = {
+            'name': k,
+            'teams': entry[3],
+            'team_count': entry[0],
+            'group': k[len(season_str):],
+        }
+        # Read season-specific overrides from index 5
+        if len(entry) > 5 and isinstance(entry[5], dict):
+            if 'group_display' in entry[5]:
+                info['group_display'] = entry[5]['group_display']
+            if 'url_category' in entry[5]:
+                info['url_category'] = entry[5]['url_category']
+        result.append(info)
+    return result
+
+
+def get_csv_path(category: str, season: str = None) -> str:
     """Get the path of CSV file from config file.
 
     Args:
         category (str): Category of J-League (1, 2, 3)
+        season (str, optional): Season name (e.g. '2026East'). Defaults to config.season.
 
     Returns:
         str: Path of CSV file
@@ -33,8 +92,10 @@ def get_csv_path(category: str) -> str:
     Raises:
         KeyError: If the key 'paths.csv_format' is not found in the config file
     """
+    if season is None:
+        season = config.season
     # CSV file path is also the key of Timestamp file, so handle it as a string
-    return config.get_format_str('paths.csv_format', season=config.season, category=category)
+    return config.get_format_str('paths.csv_format', season=season, category=category)
 
 
 def read_teams(category: int) -> list[str]:
@@ -76,12 +137,15 @@ def read_teams_from_web(soup: BeautifulSoup, category: int) -> list[str]:
     return [list(_td.stripped_strings)[1] for _td in td_teams]
 
 
-def read_match(category: int, sec: int) -> pd.DataFrame:
+def read_match(category: int, sec: int, url_category: str = None) -> pd.DataFrame:
     """Read match data for a specified category and section from the web.
 
     Args:
         category (int): Category of J-League (1, 2, 3)
         sec (int): Section number
+        url_category (str, optional): Override category value for URL construction.
+            The source_url_format 'j{}/{}/' normally uses the category number,
+            e.g. 'j1/1/'. When url_category='2j3', it becomes 'j2j3/1/' instead of 'j2/1/'.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
@@ -89,7 +153,8 @@ def read_match(category: int, sec: int) -> pd.DataFrame:
     Raises:
         KeyError: If the key 'urls.source_url_format' is not found in the config file
     """
-    _url = config.get_format_str('urls.source_url_format', category, sec)
+    cat_for_url = url_category if url_category else category
+    _url = config.get_format_str('urls.source_url_format', cat_for_url, sec)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
     return read_match_from_web(soup)
@@ -116,14 +181,32 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
             match_date = convert_jleague_date(match_date)
         else:
             match_date = None
-        section_no = _section.find('div', class_='leagAccTit').find('h5').text.strip()
-        section_no = re.search('第(.+)節', section_no)[1]
+        section_no_text = _section.find('div', class_='leagAccTit').find('h5').text.strip()
+        section_no_match = re.search('第(.+)節', section_no_text)
+        if section_no_match is None:
+            # Check if there are actual match rows on the page
+            if _section.find('td', class_='clubName leftside'):
+                raise ValueError(
+                    f'Could not parse section_no from "{section_no_text}" '
+                    'but match data exists on the page')
+            print(f'Warning: No match data in section "{section_no_text}", skipping')
+            continue
+        section_no = section_no_match[1]
         # print((match_date, section_no))
+        group = None  # Track current group from groupHead headers (e.g., EAST, WEST)
         for _tr in _section.find_all('tr'):
+            # Track group headers
+            group_th = _tr.find('th', class_='groupHead')
+            if group_th:
+                group = group_th.text.strip()
+                continue
+
             match_dict = {}
             match_dict['match_date'] = match_date
             match_dict['section_no'] = int(section_no)
             match_dict['match_index_in_section'] = _index
+            if group:
+                match_dict['group'] = group
             stadium_td = _tr.find('td', class_='stadium')
             if not stadium_td:
                 continue
@@ -168,24 +251,27 @@ def convert_jleague_date(match_date: str) -> str:
     return _date.strftime(config.standard_date_format)
 
 
-def read_all_matches(category: int) -> pd.DataFrame:
+def read_all_matches(category: int, url_category: str = None) -> pd.DataFrame:
     """Read all match data for specified category via web.
 
     Args:
         category (int): Category of J-League (1, 2, 3)
+        url_category (str, optional): Override category value for URL construction.
 
     Returns:
         pd.DataFrame: DataFrame containing all match data
     """
-    return read_matches_range(category)
+    return read_matches_range(category, url_category=url_category)
 
 
-def read_matches_range(category: int, _range: list[int] = None) -> pd.DataFrame:
+def read_matches_range(category: int, _range: list[int] = None,
+                       url_category: str = None) -> pd.DataFrame:
     """Read match data for specified category and section list from the web.
 
     Args:
         category (int): Category of J-League (1, 2, 3)
         _range (list[int], optional): List of section numbers. Defaults to None.
+        url_category (str, optional): Override category value for URL construction.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
@@ -199,7 +285,7 @@ def read_matches_range(category: int, _range: list[int] = None) -> pd.DataFrame:
             _range = range(1, (teams_count - 1) * 2 + 1)
 
     for _i in _range:
-        result_list = read_match(category, _i)
+        result_list = read_match(category, _i, url_category=url_category)
         _matches = pd.concat([_matches, pd.DataFrame(result_list)])
     # A common mistake is not saving the result of sort or reset_index operations
     _matches = _matches.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
@@ -420,7 +506,8 @@ def drop_duplicated_indexes(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def update_all_matches(category: int, force_update: bool = False,
-                       need_update: set[int] = None) -> pd.DataFrame:
+                       need_update: set[int] = None,
+                       url_category: str = None) -> pd.DataFrame:
     """
     Fetch incremental match data from the web and apply it to the existing dataset.
 
@@ -433,6 +520,7 @@ def update_all_matches(category: int, force_update: bool = False,
         category (int): Category of J-League (1, 2, 3)
         force_update (bool): Force update all matches regardless of changes
         need_update (set[int]): Sections to be updated
+        url_category (str, optional): Override category value for URL construction.
 
     Returns:
         pd.DataFrame: Updated DataFrame containing match data
@@ -449,7 +537,7 @@ def update_all_matches(category: int, force_update: bool = False,
 
     # If the file does not exist, read all matches and save them
     if (not Path(latest_file).exists()) or force_update:
-        all_matches = read_all_matches(category)
+        all_matches = read_all_matches(category, url_category=url_category)
         update_if_diff(all_matches, latest_file)
         return all_matches
 
@@ -465,7 +553,7 @@ def update_all_matches(category: int, force_update: bool = False,
         if not need_update:
             return current
 
-    diff_matches = read_matches_range(category, need_update)
+    diff_matches = read_matches_range(category, need_update, url_category=url_category)
     old_matches = current[current['section_no'].isin(need_update)]
     if matches_differ(diff_matches, old_matches):
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \

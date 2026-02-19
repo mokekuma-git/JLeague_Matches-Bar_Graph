@@ -10,6 +10,7 @@ jleague_date_format: "%Y年%m月%d日"
 paths:
   csv_format: "../docs/csv/{season}_allmatch_result-J{category}.csv"
   timestamp_file: "../docs/csv/csv_timestamp.csv"
+  season_map_file: "../docs/json/season_map.json"
 
 urls:
   source_url_format: "https://www.jleague.jp/match/section/j{}/{}/"
