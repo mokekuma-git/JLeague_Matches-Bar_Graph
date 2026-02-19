@@ -23,6 +23,7 @@ JLeague_Matches-Bar_Graph/
 ├── tests/                           # テストコード (pytest)
 │   ├── test_read_jleague_matches.py
 │   ├── test_get_endtime_list.py
+│   ├── test_2026_special_season.py #   2026特別シーズン対応テスト
 │   ├── check_j_scores_homeaway.py
 │   └── test_data/                  #   テスト用HTMLファイル
 ├── docs/                            # GitHub Pages公開ディレクトリ
@@ -137,3 +138,8 @@ uv run python src/read_jfamatch.py <大会名>
 
 - **JFA JSON APIはCSVカラム設計の重要な参考情報源** — 新カラムを追加する際はJFA JSON構造を参照して名称を決める
 - **スクレイピング時のシーズン文字列は `config.season` (YAML) が正** — HTMLから読み取ったシーズン情報で上書きしない。不一致時は警告のみ (別途シーズン検証ロジックを設けることはあり得る)
+- **`get_sub_seasons(category)` の戻り値で更新動作が決まる**
+  - `None`: そのカテゴリに `config.season` のエントリが season_map にない → スキップ (何もしない)
+  - `[]`: 通常の単一シーズン → `update_all_matches()` で従来通り更新
+  - `[...]`: マルチグループシーズン → `update_sub_season_matches()` で各サブシーズン CSV に振り分け
+  - season_map に新しい年のエントリを追加しない限り、そのカテゴリ・年は自動的にスキップされる
