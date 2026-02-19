@@ -205,13 +205,17 @@ function parse_csvresults(data, fields, default_group=null) {
     const match_date = new Date(_match.match_date);
     // 日時が適切にDateオブジェクトにできなければ、NaNが返ってくる
     if (! isNaN(match_date)) match_date_str = date_format(match_date);
+    const home_pk = _match.home_pk_score ? parseInt(_match.home_pk_score) : null;
+    const away_pk = _match.away_pk_score ? parseInt(_match.away_pk_score) : null;
     team_map[group][_match.home_team].df.push({
       'is_home': true,
       'opponent': _match.away_team,
       'goal_get': _match.home_goal,
       'goal_lose': _match.away_goal,
+      'pk_get': home_pk,
+      'pk_lose': away_pk,
       'has_result': Boolean(_match.home_goal && _match.away_goal),
-      'point': get_point_from_result(_match.home_goal, _match.away_goal),
+      'point': get_point_from_result(_match.home_goal, _match.away_goal, false, home_pk, away_pk),
       'match_date': match_date_str,
       'section_no': _match.section_no,
       'stadium': _match.stadium,
@@ -225,8 +229,10 @@ function parse_csvresults(data, fields, default_group=null) {
       'opponent': _match.home_team,
       'goal_get': _match.away_goal,
       'goal_lose': _match.home_goal,
+      'pk_get': away_pk,
+      'pk_lose': home_pk,
       'has_result': Boolean(_match.home_goal && _match.away_goal),
-      'point': get_point_from_result(_match.away_goal, _match.home_goal),
+      'point': get_point_from_result(_match.away_goal, _match.home_goal, false, away_pk, home_pk),
       'match_date': match_date_str,
       'section_no': _match.section_no,
       'stadium': _match.stadium,
@@ -244,7 +250,11 @@ function get_point_from_result(goal_get, goal_lose, has_extra=false, pk_get=null
   if (! (goal_get && goal_lose)) return 0;
   if (goal_get > goal_lose) return 3;
   if (goal_get < goal_lose) return 0;
-  return 1;
+  // 90分同点 → PK戦の結果で判定
+  if (pk_get !== null && pk_lose !== null) {
+    return pk_get > pk_lose ? 2 : 1;  // PK勝ち=2点, PK負け=1点
+  }
+  return 1;  // 通常の引き分け
 }
 
 function append_inputs(next, group) {
@@ -317,10 +327,14 @@ function make_html_column(target_team, team_data) {
   team_data.disp_goal_diff = 0; // 表示時の得失点差
   team_data.disp_goal_get = 0; // 表示時の総得点
   team_data.win = 0; // 最新の勝利数
+  team_data.pk_win = 0; // 最新のPK勝ち数
+  team_data.pk_loss = 0; // 最新のPK負け数
   team_data.lose = 0; // 最新の敗北数
   team_data.draw = 0; // 最新の引分数
   team_data.all_game = 0; // 最新の終了済み試合数
   team_data.disp_win = 0; // 表示時の勝利数
+  team_data.disp_pk_win = 0; // 表示時のPK勝ち数
+  team_data.disp_pk_loss = 0; // 表示時のPK負け数
   team_data.disp_lose = 0; // 表示時の敗北数
   team_data.disp_draw = 0; // 表示時のの引分数
   team_data.disp_all_game = 0; // 表示時の終了済み試合数
@@ -371,7 +385,9 @@ function make_html_column(target_team, team_data) {
       team_data.point += _row.point;
       team_data.avlbl_pt += _row.point;
       team_data.all_game += 1;
-      if (_row.point > 1) team_data.win += 1;
+      if (_row.point == 3) team_data.win += 1;
+      else if (_row.point == 2) team_data.pk_win += 1;
+      else if (_row.point == 1 && _row.pk_get !== null) team_data.pk_loss += 1;
       else if (_row.point == 1) team_data.draw += 1;
       else if (_row.point == 0) team_data.lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
       team_data.goal_diff += parseInt(_row.goal_get) - parseInt(_row.goal_lose);
@@ -380,7 +396,9 @@ function make_html_column(target_team, team_data) {
         future = false;
         box_height = _row.point;
         // 表示対象なので、表示時点のdisp_も実際と同じ
-        if (_row.point > 1) team_data.disp_win += 1;
+        if (_row.point == 3) team_data.disp_win += 1;
+        else if (_row.point == 2) team_data.disp_pk_win += 1;
+        else if (_row.point == 1 && _row.pk_get !== null) team_data.disp_pk_loss += 1;
         else if (_row.point == 1) team_data.disp_draw += 1;
         else if (_row.point == 0) team_data.disp_lose += 1; // 2013年以前は、また別途考慮 ⇒ 関数化すべき
         team_data.disp_all_game += 1;
@@ -413,6 +431,13 @@ function make_html_column(target_team, team_data) {
           + '<span class="tooltiptext halfW ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
           + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
       }
+    } else if(box_height == 2) {
+      box_html = '<div class="medium box'
+        + (_row.live ? ' live' : '') + '"><p class="tooltip '
+        + target_team + '">' + make_pk_win_content(_row, match_date)
+        + '<span class="tooltiptext halfW ' + target_team + '">(' + _row.section_no + ') ' + time_format(_row.start_time)
+        + '<br/>' + _row.stadium
+        + ((_row.status) ? '<br/>' + _row.status : '') + '</span></p></div>\n';
     } else if(box_height == 1) {
       box_html = '<div class="short box'
         + (_row.live ? ' live' : '')
@@ -445,7 +470,9 @@ function make_team_stats(team_data) {
   }
 
   return _stats_type + '<br/>'
-  + team_data[_pre + 'win'] + '勝 ' + team_data[_pre + 'draw'] + '分 ' + team_data[_pre + 'lose'] + '敗<br/>'
+  + team_data[_pre + 'win'] + '勝 ' + team_data[_pre + 'pk_win'] + 'PK勝 '
+  + team_data[_pre + 'pk_loss'] + 'PK負 ' + team_data[_pre + 'draw'] + '分 '
+  + team_data[_pre + 'lose'] + '敗<br/>'
   + '勝点' + team_data[_pre + 'point'] + ', 最大' + team_data[_pre + 'avlbl_pt'] + '<br/>'
   + team_data[_pre + 'goal_get'] + '得点, ' + (team_data[_pre + 'goal_get'] - team_data[_pre + 'goal_diff']) + '失点<br/>'
   + '得失点差: ' + team_data[_pre + 'goal_diff'];
@@ -494,6 +521,11 @@ function join_lose_box(lose_box) {
 function make_win_content(_row, match_date) {
   return date_only(match_date) + ' ' + _row.opponent + '<br/>'
     + _row.goal_get + '-' + _row.goal_lose
+    + '<br/>' + _row.stadium;
+}
+function make_pk_win_content(_row, match_date) {
+  return date_only(match_date) + ' ' + _row.opponent + '<br/>'
+    + _row.goal_get + '-' + _row.goal_lose + ' (' + _row.pk_get + '-' + _row.pk_lose + ')'
     + '<br/>' + _row.stadium;
 }
 function make_draw_content(_row, match_date) {
@@ -660,6 +692,8 @@ function make_rankdata(group) {
       rank: rank,
       name: '<div class="' + team_name + '">' + team_name + '</div>',
       win: get_team_attr(team_data, 'win', disp),
+      pk_win: get_team_attr(team_data, 'pk_win', disp),
+      pk_loss: get_team_attr(team_data, 'pk_loss', disp),
       draw: get_team_attr(team_data, 'draw', disp),
       lose: get_team_attr(team_data, 'lose', disp),
       point: get_team_attr(team_data, 'point', disp),
