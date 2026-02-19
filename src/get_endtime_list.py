@@ -20,7 +20,7 @@ def _is_current_or_future_season(season_name: str) -> bool:
 
     Supports two season name formats:
     - "2026" or "2026East": standard seasons (year >= current_year)
-    - "26-27" or "26-27East": European-style (Aug start ~ May end)
+    - "26-27" or "26-27East": two-digit years format (Aug start ~ May end)
       - July onwards: current season starts this year -> start_year >= current_year
       - Before July: current season started last year -> start_year >= current_year - 1
     """

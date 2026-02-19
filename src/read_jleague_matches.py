@@ -111,7 +111,7 @@ def get_season_from_date(reference_date: date = None) -> str:
     Season naming rules:
     - Up to 2025: "YYYY" (4-digit year, calendar-year seasons)
     - 2026 Jan-Jun: "2026" (special transition season before autumn-spring schedule)
-    - 2026 Jul onwards: two‑digit year style "YY-YY" (2-digit year pair)
+    - 2026 Jul onwards: two-digit years format "YY-YY"
     - The boundary month is July (seasons end in May, start in August;
       June and earlier belong to the season that started in the previous calendar year,
       July and later belong to the season starting this year)
