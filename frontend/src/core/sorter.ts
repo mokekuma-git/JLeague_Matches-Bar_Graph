@@ -130,6 +130,8 @@ export function makePointCache(teams: Record<string, TeamData>): PointCache {
 export function getSafetyLine(rank: number, disp: boolean, teams: Record<string, TeamData>): number {
   const key: AvlblPtKey = disp ? 'disp_avlbl_pt' : 'avlbl_pt';
   const sorted = getPointSortedTeamList(key, teams);
+  // rank >= sorted.length means no competition at that position → any score guarantees it
+  if (rank >= sorted.length) return 0;
   return (teams[sorted[rank]][key] ?? 0) + 1;
 }
 
@@ -144,6 +146,8 @@ export function getSafetyLine(rank: number, disp: boolean, teams: Record<string,
 export function getPossibleLine(rank: number, disp: boolean, teams: Record<string, TeamData>): number {
   const key: PointKey = disp ? 'disp_point' : 'point';
   const sorted = getPointSortedTeamList(key, teams);
+  // rank out of bounds → every team has a chance at that position
+  if (rank <= 0 || rank > sorted.length) return 0;
   return teams[sorted[rank - 1]][key] ?? 0;
 }
 
@@ -184,5 +188,7 @@ export function getSelfPossibleLine(
     }
   }
 
+  // idx out of bounds → target rank doesn't exist among competitors
+  if (idx >= pointSorted.length) return 0;
   return cache[pointSorted[idx]][avlblPtKey];
 }
