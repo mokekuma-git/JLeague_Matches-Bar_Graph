@@ -22,6 +22,51 @@ config = load_config(Path(__file__).parent / '../config/jleague.yaml')
 # Type conversion of config values
 config.timezone = pytz.timezone(config.timezone)
 
+# Schema for CSV output columns: column_name -> type string.
+#   'int'          : always an integer (section_no, match_index_in_section, etc.)
+#   'nullable_int' : integer when the match has been played, empty string otherwise
+#                    (home_goal, away_goal, etc.)
+#   'str'          : plain string
+# Extend this dict whenever a new column is added to the CSV.
+CSV_COLUMN_SCHEMA: dict[str, str] = {
+    'match_date': 'str',
+    'section_no': 'int',
+    'match_index_in_section': 'int',
+    'start_time': 'str',
+    'stadium': 'str',
+    'home_team': 'str',
+    'home_goal': 'nullable_int',
+    'away_goal': 'nullable_int',
+    'away_team': 'str',
+    'status': 'str',
+    'group': 'str',
+}
+
+
+def _normalize_df_for_csv(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize DataFrame columns to their declared types before CSV output.
+
+    Converts 'nullable_int' columns from float-format strings (e.g. '2.0')
+    to plain integer strings ('2'), leaving empty strings unchanged.
+    Only columns present in the DataFrame and listed in CSV_COLUMN_SCHEMA
+    are processed.
+
+    Args:
+        df (pd.DataFrame): Match DataFrame to normalize.
+
+    Returns:
+        pd.DataFrame: Normalized copy of the DataFrame.
+    """
+    df = df.copy()
+    for col, dtype in CSV_COLUMN_SCHEMA.items():
+        if col not in df.columns:
+            continue
+        if dtype == 'nullable_int':
+            df[col] = df[col].fillna('').apply(
+                lambda x: str(int(float(x))) if x != '' else x
+            )
+    return df
+
 
 def load_season_map() -> dict:
     """Load season_map.json.
@@ -804,6 +849,8 @@ def update_csv(match_df: pd.DataFrame, filename: str) -> None:
         TypeError: If the timestamp already has a timezone
     """
     print(f'Update {filename}')
+    # Normalize column types (e.g. convert float-format goal strings to int strings).
+    match_df = _normalize_df_for_csv(match_df)
     # When the match_date contains only date, it is converted and keeps the original format (date only),
     # but when a string is also included, it seems to output both date and time,
     # so convert the content of match_date to a string before outputting.
