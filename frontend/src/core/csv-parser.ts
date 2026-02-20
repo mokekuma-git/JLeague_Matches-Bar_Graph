@@ -10,6 +10,9 @@ import { getPointFromResult } from './point-calculator';
  * @returns Display status string
  */
 function makeStatusAttr(match: RawMatchRow): string {
+  if (match.status === undefined) {
+    return (match.home_goal && match.away_goal) ? '試合終了' : '';
+  }
   if (match.status === 'ＶＳ') return '開始前';
   return match.status.replace('速報中', '');
 }
@@ -20,7 +23,7 @@ function makeStatusAttr(match: RawMatchRow): string {
  * @returns True if the match is live, false otherwise
  */
 function makeLiveAttr(match: RawMatchRow): boolean {
-  return match.status.includes('速報中');
+  return match.status?.includes('速報中') ?? false;
 }
 
 /**
