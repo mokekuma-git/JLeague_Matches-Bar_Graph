@@ -1,6 +1,7 @@
 name: Build TypeScript frontend
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
