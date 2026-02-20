@@ -1,0 +1,24 @@
+name: Check build artifacts not committed
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'feature/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify build artifacts are not tracked in git
+        run: |
+          tracked=$(git ls-files docs/j_points.html 'docs/assets/j_points-*.js' 'docs/assets/j_points-*.css')
+          if [ -n "$tracked" ]; then
+            echo "::error::Build artifacts must not be committed to git:"
+            echo "$tracked" | sed 's/^/::error::  /'
+            echo "::error::Fix with: git rm --cached <file>"
+            exit 1
+          fi

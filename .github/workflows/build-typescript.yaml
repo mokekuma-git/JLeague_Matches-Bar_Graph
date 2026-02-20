@@ -2,22 +2,12 @@ name: Build TypeScript frontend
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - 'frontend/**'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set git config
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
       - uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -31,19 +21,6 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Remove stale hashed assets
-        run: git rm --ignore-unmatch -f docs/assets/j_points-*.js docs/assets/j_points-*.css
-
       - name: Build
         run: npm run build
         working-directory: frontend
-
-      - name: Commit and push if changed
-        run: |
-          git add docs/j_points.html docs/assets/
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Build TypeScript frontend assets"
-            git push origin HEAD
-          fi
