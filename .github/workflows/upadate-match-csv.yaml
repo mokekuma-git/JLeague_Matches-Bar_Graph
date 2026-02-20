@@ -359,37 +359,35 @@ on:
     - cron: '0 12 31 8 *'
 
 jobs:
-  build:
+  update-csv:
 
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.12]
 
     steps:
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Set git config
-      run: |
-        git config --global user.name "mokekuma-git"
-        git config --global user.email "mokekuma.git@gmail.com"
     - name: git checkout
       uses: actions/checkout@v4
       with:
         ref: main
-    - name: Install Python dependencies
-      uses: py-actions/py-dependency-install@v4
+
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v5
       with:
-        path: "requirements.txt"
+        python-version: "3.12"
+
+    - name: Install dependencies
+      run: uv sync
+
+    - name: Set git config
+      run: |
+        git config --global user.name "mokekuma-git"
+        git config --global user.email "mokekuma.git@gmail.com"
+
     - name: Update matches csv
       run: |
         DATE=`TZ=Asia/Tokyo date +'%m/%d %H:%M'`
-        bash scripts/call_update_csv.sh github.event.schedule
+        bash scripts/call_update_csv.sh "${{ github.event.schedule }}"
         if (git diff --shortstat | grep '[0-9]'); then \
-          git add .; \
+          git add docs/csv/; \
           git commit -m "Make new csv (append games on $DATE)"; \
           git push origin HEAD; \
         fi
