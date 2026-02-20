@@ -1,7 +1,16 @@
-import { describe, test, expect } from 'vitest';
-import { makeRankData } from '../../ranking/rank-table';
+// @vitest-environment happy-dom
+import { describe, test, expect, beforeAll, vi } from 'vitest';
+import { makeRankData, makeRankTable } from '../../ranking/rank-table';
 import type { TeamData } from '../../types/match';
 import { makeSeasonInfo } from '../fixtures/match-data';
+
+// Mock the CDN-loaded SortableTable global required by makeRankTable.
+beforeAll(() => {
+  vi.stubGlobal('SortableTable', class {
+    setTable(_el: HTMLElement) {}
+    setData(_data: unknown[]) {}
+  });
+});
 
 // Build a TeamData with all stat fields set directly (bypasses calculateTeamStats).
 // df.length determines future_game: future_game = df.length - all_game.
@@ -532,5 +541,68 @@ describe('makeRankData – row shape', () => {
     const rows = makeRankData(groupData, ['TeamA', 'TeamB'], seasonInfo, false);
     expect(rows[0].rank).toBe(1);
     expect(rows[1].rank).toBe(2);
+  });
+});
+
+// ─── makeRankTable – thead column rendering ────────────────────────────────────
+
+function makeTableEl(): HTMLElement {
+  const table = document.createElement('table');
+  table.innerHTML = '<thead></thead>';
+  return table;
+}
+
+function getHeaderIds(table: HTMLElement): string[] {
+  return Array.from(table.querySelectorAll('thead th'))
+    .map(th => th.getAttribute('data-id') ?? '');
+}
+
+describe('makeRankTable – thead hasPk=false', () => {
+  test('does not include pk_win or pk_loss columns', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false);
+    const ids = getHeaderIds(table);
+    expect(ids).not.toContain('pk_win');
+    expect(ids).not.toContain('pk_loss');
+  });
+
+  test('includes standard columns: rank, name, win, draw, lose, point', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false);
+    const ids = getHeaderIds(table);
+    expect(ids).toContain('rank');
+    expect(ids).toContain('name');
+    expect(ids).toContain('win');
+    expect(ids).toContain('draw');
+    expect(ids).toContain('lose');
+    expect(ids).toContain('point');
+  });
+});
+
+describe('makeRankTable – thead hasPk=true', () => {
+  test('includes pk_win and pk_loss columns', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], true);
+    const ids = getHeaderIds(table);
+    expect(ids).toContain('pk_win');
+    expect(ids).toContain('pk_loss');
+  });
+
+  test('pk_win appears immediately after win, pk_loss after pk_win', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], true);
+    const ids = getHeaderIds(table);
+    const winIdx    = ids.indexOf('win');
+    const pkWinIdx  = ids.indexOf('pk_win');
+    const pkLossIdx = ids.indexOf('pk_loss');
+    expect(pkWinIdx).toBe(winIdx + 1);
+    expect(pkLossIdx).toBe(pkWinIdx + 1);
+  });
+
+  test('draw comes after pk_loss when hasPk=true', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], true);
+    const ids = getHeaderIds(table);
+    expect(ids.indexOf('draw')).toBe(ids.indexOf('pk_loss') + 1);
   });
 });

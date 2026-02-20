@@ -51,6 +51,7 @@ export function makeHtmlColumn(
   teamData: TeamData,
   targetDate: string,
   disp: boolean,
+  hasPk = false,
 ): ColumnResult {
   const graph: string[] = [];
   const loseBox: string[] = [];
@@ -121,7 +122,7 @@ export function makeHtmlColumn(
     avlbl_pt,
     teamName,
     loseBox,
-    stats: makeTeamStats(teamData, disp),
+    stats: makeTeamStats(teamData, disp, hasPk),
     matchDates: [...matchDateSet].sort(),
   };
 }

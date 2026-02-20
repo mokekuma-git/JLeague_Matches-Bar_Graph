@@ -154,8 +154,54 @@ export function makeRankData(
   return datalist;
 }
 
+// Dynamically builds the <thead> row for the rank table.
+// pk_win / pk_loss columns are included only when hasPk=true.
+// promotion and relegation columns are always present (data layer controls values).
+function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean): void {
+  const thead = tableEl.querySelector('thead');
+  if (!thead) return;
+
+  type ColDef = { id?: string; label: string; sortable?: true };
+  const cols: ColDef[] = [
+    { id: 'rank',        label: '',          sortable: true },
+    { id: 'name',        label: 'チーム' },
+    { id: 'all_game',    label: '試合',      sortable: true },
+    { id: 'point',       label: '勝点',      sortable: true },
+    { id: 'avrg_pt',     label: '平均',      sortable: true },
+    { id: 'avlbl_pt',    label: '最大',      sortable: true },
+    { id: 'win',         label: '勝',        sortable: true },
+    ...(hasPk ? [
+      { id: 'pk_win',  label: 'PK勝', sortable: true as true },
+      { id: 'pk_loss', label: 'PK負', sortable: true as true },
+    ] : []),
+    { id: 'draw',        label: '分',        sortable: true },
+    { id: 'lose',        label: '負',        sortable: true },
+    { id: 'goal_get',    label: '得点',      sortable: true },
+    { id: 'goal_lose',   label: '失点',      sortable: true },
+    { id: 'goal_diff',   label: '点差',      sortable: true },
+    { id: 'future_game', label: '残り',      sortable: true },
+    {                    label: '-' },
+    { id: 'champion',    label: '優勝',      sortable: true },
+    { id: 'promotion',   label: '昇格<br/>ACL', sortable: true },
+    { id: 'relegation',  label: '残留',      sortable: true },
+  ];
+
+  const tr = document.createElement('tr');
+  for (const col of cols) {
+    const th = document.createElement('th');
+    if (col.id) th.setAttribute('data-id', col.id);
+    if (col.sortable) th.setAttribute('sortable', '');
+    th.innerHTML = col.label;
+    tr.appendChild(th);
+  }
+  thead.innerHTML = '';
+  thead.appendChild(tr);
+}
+
 // Renders rankData into the given <table> element using SortableTable from CDN.
-export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[]): void {
+// hasPk controls whether PK win/loss columns appear in the table header.
+export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean): void {
+  buildRankTableHead(tableEl, hasPk);
   const sortableTable = new SortableTable();
   sortableTable.setTable(tableEl);
   sortableTable.setData(rankData);

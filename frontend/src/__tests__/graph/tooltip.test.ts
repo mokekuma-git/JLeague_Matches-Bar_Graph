@@ -100,6 +100,26 @@ describe('makeTeamStats', () => {
     expect(html).toContain('0敗');
     expect(html).toContain('勝点3');
   });
+
+  test('hasPk=false (default) omits PK line', () => {
+    const td = makeTeamData([
+      makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/01' }),
+    ]);
+    calculateTeamStats(td, '2025/12/31', 'section_no');
+    const html = makeTeamStats(td, false);
+    expect(html).not.toContain('PK勝');
+    expect(html).not.toContain('PK負');
+  });
+
+  test('hasPk=true includes PK win/loss in the output', () => {
+    const td = makeTeamData([
+      makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/01' }),
+    ]);
+    calculateTeamStats(td, '2025/12/31', 'section_no');
+    const html = makeTeamStats(td, false, true);
+    expect(html).toContain('PK勝');
+    expect(html).toContain('PK負');
+  });
 });
 
 // ─── joinLoseBox ───────────────────────────────────────────────────────────────

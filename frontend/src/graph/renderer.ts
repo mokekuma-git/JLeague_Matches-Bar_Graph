@@ -126,6 +126,7 @@ export function renderBarGraph(
   _matchSortKey: MatchSortKey,
   bottomFirst: boolean,
   heightUnit: number,
+  hasPk = false,
 ): RenderResult {
   // Step 1: Build column results for each team and collect all match dates.
   const columns: Record<string, ColumnResult> = {};
@@ -139,7 +140,7 @@ export function renderBarGraph(
   for (const teamName of sortedTeams) {
     const teamData = groupData[teamName];
     if (!teamData) continue;
-    const col = makeHtmlColumn(teamName, teamData, targetDate, disp);
+    const col = makeHtmlColumn(teamName, teamData, targetDate, disp, hasPk);
     columns[teamName] = col;
     maxAvblPt = Math.max(maxAvblPt, col.avlbl_pt);
     for (const d of col.matchDates) matchDateSet.add(d);

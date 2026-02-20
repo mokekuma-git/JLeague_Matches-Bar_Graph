@@ -34,15 +34,16 @@ export function makeFullContent(row: TeamMatch, matchDate: string): string {
 /**
  * Generates the stats HTML shown in the team name tooltip.
  * disp=true → uses display-time (disp_*) stats; disp=false → uses latest stats.
+ * hasPk=true → includes PK win/loss counts (omitted when the season has no PK matches).
  */
-export function makeTeamStats(teamData: TeamData, disp: boolean): string {
+export function makeTeamStats(teamData: TeamData, disp: boolean, hasPk = false): string {
   const pre = disp ? 'disp_' : '';
   const label = disp ? '表示時の状態' : '最新の状態';
   const p = (key: string): number =>
     (teamData as unknown as Record<string, number>)[pre + key] ?? 0;
+  const pkLine = hasPk ? p('pk_win') + 'PK勝 ' + p('pk_loss') + 'PK負 ' : '';
   return label + '<br/>'
-    + p('win') + '勝 ' + p('pk_win') + 'PK勝 '
-    + p('pk_loss') + 'PK負 ' + p('draw') + '分 '
+    + p('win') + '勝 ' + pkLine + p('draw') + '分 '
     + p('lose') + '敗<br/>'
     + '勝点' + p('point') + ', 最大' + p('avlbl_pt') + '<br/>'
     + p('goal_get') + '得点, ' + (p('goal_get') - p('goal_diff')) + '失点<br/>'

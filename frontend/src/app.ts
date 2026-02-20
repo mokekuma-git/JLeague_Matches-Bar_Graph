@@ -168,6 +168,7 @@ interface TeamMapCache {
   key: string;
   groupData: Record<string, TeamData>;
   teamCount: number;
+  hasPk: boolean;
 }
 let teamMapCache: TeamMapCache | null = null;
 
@@ -201,11 +202,13 @@ function renderFromCache(
 
   const sortedTeams = getSortedTeamList(groupData, sortKey);
 
+  const { hasPk } = cache;
+
   const boxCon = document.getElementById('box_container') as HTMLElement | null;
   if (boxCon) {
     const { html, matchDates } = renderBarGraph(
       groupData, sortedTeams, seasonInfo,
-      targetDate, disp, matchSortKey, bottomFirst, heightUnit,
+      targetDate, disp, matchSortKey, bottomFirst, heightUnit, hasPk,
     );
     boxCon.innerHTML = html;
     const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
@@ -215,7 +218,7 @@ function renderFromCache(
 
   const rankData = makeRankData(groupData, sortedTeams, seasonInfo, disp);
   const tableEl = document.getElementById('ranktable');
-  if (tableEl) makeRankTable(tableEl, rankData);
+  if (tableEl) makeRankTable(tableEl, rankData, hasPk);
 }
 
 function loadAndRender(seasonMap: SeasonMap): void {
@@ -244,7 +247,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
   const filename = getCsvFilename(category, season);
 
   if (teamMapCache?.key === csvKey) {
-    renderFromCache(teamMapCache, seasonMap, category, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
+    renderFromCache(teamMapCache!, seasonMap, category, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
     showTimestamp(filename);
     setStatus(`${categoryName(category)} ${season} (cached)`);
     return;
@@ -266,10 +269,12 @@ function loadAndRender(seasonMap: SeasonMap): void {
         'matches',
       );
       const groupData = teamMap['matches'] ?? {};
+      const hasPk = (results.meta.fields ?? []).includes('home_pk_score');
 
-      teamMapCache = { key: csvKey, groupData, teamCount: parseSeasonInfo.teamCount };
+      const newCache = { key: csvKey, groupData, teamCount: parseSeasonInfo.teamCount, hasPk };
+      teamMapCache = newCache;
 
-      renderFromCache(teamMapCache, seasonMap, category, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
+      renderFromCache(newCache, seasonMap, category, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
       showTimestamp(filename);
       setStatus(`${categoryName(category)} ${season} — ${results.data.length} 行`);
     },
