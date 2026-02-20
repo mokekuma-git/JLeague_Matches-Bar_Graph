@@ -11,6 +11,7 @@ export default defineConfig(({ command }) => ({
     rollupOptions: {
       input: {
         j_points: new URL('src/j_points_dev.html', import.meta.url).pathname,
+        unified:  new URL('src/unified.html',      import.meta.url).pathname,
       },
     },
   },
