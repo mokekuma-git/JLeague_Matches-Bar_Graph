@@ -152,6 +152,9 @@ table.ranktable td {
   border-bottom: solid 2px #777;
   text-align: right;
 }
+table.ranktable td div {
+  text-align: center;
+}
 table.ranktable th {
   border-bottom: solid 2px #222;
 }
