@@ -50,7 +50,7 @@
       <option value="last_bottom">最終節が下</option>
     </select>
   </label>
-  <span style="color:#999; font-size:0.85em;">データ取得時刻: <span id="data_timestamp"></span></span>
+
 </section>
 
 <!-- Date slider -->
@@ -82,13 +82,17 @@
   <button id="reset_prefs">設定をリセット</button>
 </section>
 
+<!-- Status message and data timestamp -->
+<div style="margin:0.5em 1em; font-size:0.9em; color:#666;">
+  <span id="status_msg"></span>
+  <span style="color:#999; margin-left:1em;">データ取得時刻: <span id="data_timestamp"></span></span>
+</div>
+
 <!-- Bar graph container -->
 <div id="box_container"></div>
 
 <!-- Hidden .short div for HEIGHT_UNIT calculation -->
 <div class="short" style="display:none;"></div>
-
-<div id="status_msg" style="color:#666; font-size:0.9em; margin:0.5em 1em;"></div>
 
 <hr/>
 データ参照元: <a href="https://www.jleague.jp/match/">Jリーグ公式サイト: 日程結果</a><br/>
