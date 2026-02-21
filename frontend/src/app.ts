@@ -18,7 +18,7 @@ import { getSortedTeamList } from './core/sorter';
 import { calculateTeamStats } from './ranking/stats-calculator';
 import type { MatchSortKey } from './ranking/stats-calculator';
 import { makeRankData, makeRankTable } from './ranking/rank-table';
-import { renderBarGraph, findSliderIndex, formatSliderDate } from './graph/renderer';
+import { renderBarGraph, findSliderIndex } from './graph/renderer';
 import { getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
 
@@ -158,8 +158,6 @@ function resetDateSlider(matchDates: string[], targetDate: string): void {
   const postEl = document.getElementById('post_date_slider');
   if (postEl) postEl.textContent = matchDates[matchDates.length - 1] ?? '';
 
-  const displayEl = document.getElementById('target_date_display');
-  if (displayEl) displayEl.textContent = formatSliderDate(matchDates[idx] ?? '1970/01/01', targetDate);
 }
 
 // ---- Cached TeamMap ----------------------------------------------------
@@ -212,7 +210,7 @@ function renderFromCache(
     );
     boxCon.innerHTML = html;
     const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
-    setScale(boxCon, scaleSlider?.value ?? '1', false);
+    setScale(boxCon, scaleSlider?.value ?? '1');
     resetDateSlider(matchDates, targetDate);
   }
 
@@ -333,6 +331,11 @@ async function main(): Promise<void> {
   if (spaceColorEl    && prefs.spaceColor)    spaceColorEl.value    = prefs.spaceColor;
   if (scaleSliderEl   && prefs.scale)         scaleSliderEl.value   = prefs.scale;
 
+  // Apply restored values to CSS rules and update display spans.
+  // updateSlider=false because the inputs were already set above.
+  setFutureOpacity(futureOpacityEl?.value ?? '0.1', false);
+  if (prefs.spaceColor) setSpace(prefs.spaceColor, false);
+
   // Restore target date from prefs; fall back to today.
   const dateInput = document.getElementById('target_date') as HTMLInputElement;
   if (prefs.targetDate) {
@@ -368,10 +371,7 @@ async function main(): Promise<void> {
     const updateFromSlider = (): void => {
       const date = currentMatchDates[parseInt(dateSlider.value)];
       if (!date) return;
-      const isPreSeason = date === '1970/01/01';
       (document.getElementById('target_date') as HTMLInputElement).value = date.replace(/\//g, '-');
-      const displayEl = document.getElementById('target_date_display');
-      if (displayEl) displayEl.textContent = isPreSeason ? '開幕前' : date;
       loadAndRender(seasonMap);
     };
 
