@@ -37,7 +37,10 @@ export function makeSeasonInfo(overrides: Partial<SeasonInfo> = {}): SeasonInfo 
     relegationCount: 1,
     teams: ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
     rankClass: {},
-    extra: {},
+    leagueDisplay: '',
+    pointSystem: 'standard',
+    cssFiles: [],
+    teamRenameMap: {},
     ...overrides,
   };
 }
