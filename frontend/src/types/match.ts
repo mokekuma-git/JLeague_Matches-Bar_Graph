@@ -16,6 +16,8 @@ export interface RawMatchRow {
   group?: string;           // Only in group-stage CSVs (column may be absent)
   home_pk_score?: string;   // Only in matches with PK shootout (column may be absent)
   away_pk_score?: string;
+  home_score_ex?: string;   // Extra-time score (column may be absent; Tier 4 preparation)
+  away_score_ex?: string;
   // Column aliases used in some competition CSVs:
   match_status?: string;    // ACL 2021 CSV uses this instead of 'status'
   home_pk?: string;         // 1993-1998 CSVs may use this instead of 'home_pk_score'
@@ -32,6 +34,8 @@ export interface TeamMatch {
   // Using | null (not ?) because the property is always set, but may be null.
   pk_get: number | null;
   pk_lose: number | null;
+  score_ex_get: number | null;
+  score_ex_lose: number | null;
   has_result: boolean;
   point: number;
   match_date: string;

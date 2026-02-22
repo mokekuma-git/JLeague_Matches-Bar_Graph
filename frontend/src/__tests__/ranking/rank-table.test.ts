@@ -49,7 +49,7 @@ function makeStatsTeam(opts: {
   return {
     df: Array.from({ length: dfLength }, () => ({
       is_home: true, opponent: '', goal_get: '', goal_lose: '',
-      pk_get: null, pk_lose: null, has_result: false, point: 0,
+      pk_get: null, pk_lose: null, score_ex_get: null, score_ex_lose: null, has_result: false, point: 0,
       match_date: '', section_no: '', stadium: '', start_time: '',
       status: '', live: false,
     })),
