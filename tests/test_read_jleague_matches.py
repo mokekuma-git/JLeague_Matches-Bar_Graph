@@ -111,16 +111,16 @@ class TestReadTeamsFromWeb(HtmlLoadingTestCase):
     """Test for read_teams_from_web function"""
 
     def setUp(self):
-        """Read HTML files for each category"""
+        """Read HTML files for each competition"""
         self.test_data_dir = Path(__file__).parent / 'test_data'
-        # Read HTML files for each category and create BeautifulSoup objects
+        # Read HTML files for each competition and create BeautifulSoup objects
         self.j1_soup = self._load_html_file('j1_standing.html')
         self.j2_soup = self._load_html_file('j2_standing.html')
         self.j3_soup = self._load_html_file('j3_standing.html')
 
     def test_read_j1_teams(self):
         """Test for reading J1 teams"""
-        teams = read_teams_from_web(self.j1_soup, 1)
+        teams = read_teams_from_web(self.j1_soup, 'J1')
 
         self.assertIsInstance(teams, list)
         self.assertTrue(len(teams) > 0)  # Should check the length of the list
@@ -134,7 +134,7 @@ class TestReadTeamsFromWeb(HtmlLoadingTestCase):
 
     def test_read_j2_teams(self):
         """Test for reading J2 teams"""
-        teams = read_teams_from_web(self.j2_soup, 2)
+        teams = read_teams_from_web(self.j2_soup, 'J2')
 
         self.assertIsInstance(teams, list)
         self.assertTrue(len(teams) > 0)
@@ -148,7 +148,7 @@ class TestReadTeamsFromWeb(HtmlLoadingTestCase):
 
     def test_read_j3_teams(self):
         """Test for reading J3 teams"""
-        teams = read_teams_from_web(self.j3_soup, 3)
+        teams = read_teams_from_web(self.j3_soup, 'J3')
 
         self.assertIsInstance(teams, list)
         self.assertTrue(len(teams) > 0)
@@ -160,10 +160,10 @@ class TestReadTeamsFromWeb(HtmlLoadingTestCase):
         for team in expected_teams:
             self.assertIn(team, teams, f"{team} is not in the J3 team list")
 
-    def test_invalid_category(self):
-        """Test for non-existing category"""
-        # Call the function with a non-existing category (e.g., J4)
-        teams = read_teams_from_web(self.j1_soup, 4)
+    def test_invalid_competition(self):
+        """Test for non-existing competition"""
+        # Call the function with a non-existing competition (e.g., J4)
+        teams = read_teams_from_web(self.j1_soup, 'J4')
 
         # Check that an empty list is returned
         self.assertEqual(teams, [])
@@ -173,7 +173,7 @@ class TestReadMatchFromWeb(HtmlLoadingTestCase):
     """Test for read_match_from_web function"""
 
     def setUp(self):
-        """Read HTML files for each category"""
+        """Read HTML files for each competition"""
         self.test_data_dir = Path(__file__).parent / 'test_data'
         self.j1_soup = self._load_html_file('j1_section1.html')
         self.j2_soup = self._load_html_file('j2_section2.html')

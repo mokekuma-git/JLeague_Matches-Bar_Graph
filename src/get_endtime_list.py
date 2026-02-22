@@ -55,13 +55,13 @@ def read_match_csv(file_path):
     return df
 
 
-def read_all_match_times(year: int = None, category: int = "*") -> List[datetime]:
+def read_all_match_times(year: int = None, competition: str = "*") -> List[datetime]:
     """Get all match times from all J-League CSV files.
 
     Args:
         year (int, optional): Year to filter matches. Defaults to None.
                               None means current year.
-        category (int, optional): Category to filter matches. [1, 2...] Defaults to "*".
+        competition (str, optional): Competition to filter matches. Defaults to "*".
 
     Returns:
         List[datetime]: List of match start times.
@@ -70,8 +70,8 @@ def read_all_match_times(year: int = None, category: int = "*") -> List[datetime
     current_year = datetime.now().year
     if year is None:
         year = current_year
-    if category is None:
-        category = "*"
+    if competition is None:
+        competition = "*"
 
     # Find all J-League match CSV files
     for file in CSV_DIR.glob("*_allmatch_result-J*.csv"):
@@ -186,10 +186,10 @@ def make_argparse() -> argparse.ArgumentParser:
         help="Year to filter matches. Defaults to current year."
     )
     parser.add_argument(
-        "-c", "--category",
-        type=int,
+        "-c", "--competition",
+        type=str,
         default=None,
-        help="Category to filter matches. [1, 2...]. Defaults to all categories."
+        help="Competition to filter matches (e.g. J1, J2). Defaults to all."
     )
     return parser.parse_args()
 
@@ -199,7 +199,7 @@ def main():
     print("Getting match times from CSV files...")
     args = make_argparse()
 
-    match_times = read_all_match_times(args.year, args.category)
+    match_times = read_all_match_times(args.year, args.competition)
     print(f"Found {len(match_times)} future matches.")
 
     if match_times:
