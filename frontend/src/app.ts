@@ -106,12 +106,16 @@ function isBottomFirst(uiValue: string): boolean {
 function populateCompetitionPulldown(seasonMap: SeasonMap): void {
   const sel = document.getElementById('competition_key') as HTMLSelectElement;
   sel.innerHTML = '';
-  for (const [, group] of Object.entries(seasonMap)) {
-    // Disabled separator showing group name
-    const sep = document.createElement('option');
-    sep.disabled = true;
-    sep.textContent = `── ${group.display_name} ──`;
-    sel.appendChild(sep);
+  const groups = Object.entries(seasonMap);
+  const multiGroup = groups.length > 1;
+  for (const [, group] of groups) {
+    if (multiGroup) {
+      // Disabled separator showing group name (only when multiple groups exist)
+      const sep = document.createElement('option');
+      sep.disabled = true;
+      sep.textContent = `── ${group.display_name} ──`;
+      sel.appendChild(sep);
+    }
 
     for (const [compKey, comp] of Object.entries(group.competitions)) {
       const opt = document.createElement('option');
