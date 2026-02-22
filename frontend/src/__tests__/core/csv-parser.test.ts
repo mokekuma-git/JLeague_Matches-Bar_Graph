@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { parseCsvResults } from '../../core/csv-parser';
+import { parseCsvResults, normalizeColumnAliases } from '../../core/csv-parser';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
 import type { RawMatchRow } from '../../types/match';
 
@@ -158,6 +158,62 @@ describe('parseCsvResults', () => {
       expect(Object.keys(result).sort()).toEqual(['EAST', 'WEST']);
       expect(result['EAST']['TeamA'].df).toHaveLength(1);
       expect(result['WEST']['TeamC'].df).toHaveLength(1);
+    });
+  });
+
+  describe('column alias normalization', () => {
+    test('match_status is normalized to status', () => {
+      const fields = ['match_date', 'section_no', 'match_index_in_section', 'start_time',
+        'stadium', 'home_team', 'home_goal', 'away_goal', 'away_team', 'match_status'];
+      const row = makeRow({ status: undefined as unknown as string, match_status: '試合終了' });
+      const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(result['DefaultGroup']['TeamA'].df[0].status).toBe('試合終了');
+    });
+
+    test('status takes precedence over match_status when both exist', () => {
+      const row = makeRow({ status: '試合終了', match_status: '前半' });
+      const result = parseCsvResults([row], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(result['DefaultGroup']['TeamA'].df[0].status).toBe('試合終了');
+    });
+
+    test('home_pk / away_pk aliases are normalized to home_pk_score / away_pk_score', () => {
+      const fields = [...BASE_FIELDS, 'home_pk', 'away_pk'];
+      const row = makeRow({
+        home_goal: '1', away_goal: '1',
+        home_pk: '5', away_pk: '3',
+      });
+      const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(result['DefaultGroup']['TeamA'].df[0].pk_get).toBe(5);
+      expect(result['DefaultGroup']['TeamA'].df[0].pk_lose).toBe(3);
+      expect(result['DefaultGroup']['TeamA'].df[0].point).toBe(2); // PK win
+    });
+
+    test('home_pk_score takes precedence over home_pk when both exist', () => {
+      const fields = [...BASE_FIELDS, 'home_pk_score', 'away_pk_score', 'home_pk', 'away_pk'];
+      const row = makeRow({
+        home_goal: '1', away_goal: '1',
+        home_pk_score: '4', away_pk_score: '3',
+        home_pk: '99', away_pk: '99',
+      });
+      const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(result['DefaultGroup']['TeamA'].df[0].pk_get).toBe(4);
+      expect(result['DefaultGroup']['TeamA'].df[0].pk_lose).toBe(3);
+    });
+
+    test('normalizeColumnAliases is a no-op for standard rows', () => {
+      const row = makeRow();
+      const original = { ...row };
+      normalizeColumnAliases(row);
+      expect(row.status).toBe(original.status);
+      expect(row.home_pk_score).toBe(original.home_pk_score);
+    });
+
+    test('missing status with no alias falls back to goal-based detection', () => {
+      const fields = BASE_FIELDS.filter(f => f !== 'status');
+      const row = makeRow({ status: undefined as unknown as string });
+      const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
+      // With goals present, fallback should produce '試合終了'
+      expect(result['DefaultGroup']['TeamA'].df[0].status).toBe('試合終了');
     });
   });
 

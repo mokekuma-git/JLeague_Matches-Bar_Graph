@@ -272,7 +272,8 @@ function loadAndRender(seasonMap: SeasonMap): void {
         'matches',
       );
       const groupData = teamMap['matches'] ?? {};
-      const hasPk = (results.meta.fields ?? []).includes('home_pk_score');
+      const fields = results.meta.fields ?? [];
+      const hasPk = fields.includes('home_pk_score') || fields.includes('home_pk');
 
       const newCache = { key: csvKey, groupData, teamCount: seasonInfo.teamCount, hasPk };
       teamMapCache = newCache;

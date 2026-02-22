@@ -5,8 +5,28 @@ import { dateFormat } from './date-utils';
 import { getPointFromResult } from './point-calculator';
 
 /**
+ * Normalizes column name aliases so that downstream code only needs to check
+ * canonical field names.
+ *
+ * Known aliases:
+ *   match_status → status      (ACL 2021 CSV)
+ *   home_pk / away_pk → home_pk_score / away_pk_score  (1993-1998 CSVs)
+ */
+export function normalizeColumnAliases(match: RawMatchRow): void {
+  if (match.status === undefined && match.match_status !== undefined) {
+    match.status = match.match_status;
+  }
+  if (match.home_pk_score === undefined && match.home_pk !== undefined) {
+    match.home_pk_score = match.home_pk;
+  }
+  if (match.away_pk_score === undefined && match.away_pk !== undefined) {
+    match.away_pk_score = match.away_pk;
+  }
+}
+
+/**
  * Returns the display status string for a match row.
- * @param match - RawMatchRow object
+ * @param match - RawMatchRow object (must be normalized first)
  * @returns Display status string
  */
 function makeStatusAttr(match: RawMatchRow): string {
@@ -19,7 +39,7 @@ function makeStatusAttr(match: RawMatchRow): string {
 
 /**
  * Returns true if the match is currently being played (live).
- * @param match - RawMatchRow object
+ * @param match - RawMatchRow object (must be normalized first)
  * @returns True if the match is live, false otherwise
  */
 function makeLiveAttr(match: RawMatchRow): boolean {
@@ -49,6 +69,7 @@ export function parseCsvResults(
   if (fields.includes('group')) defaultGroup = null;
 
   for (const match of data) {
+    normalizeColumnAliases(match);
     const group = defaultGroup ?? match.group ?? 'DefaultGroup';
 
     if (!(group in teamMap)) {
