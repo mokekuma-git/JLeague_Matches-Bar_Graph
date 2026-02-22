@@ -10,46 +10,47 @@ from set_config import load_config
 config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
 
 
-def make_old_matches_csv(category: int, years: int = None) -> None:
-    """Convert match results of the specified years for the given category into CSV format
+def make_old_matches_csv(competition: str, years: int = None) -> None:
+    """Convert match results of the specified years for the given competition into CSV format
 
     Args:
-        category: Category of the match results (1, 2, or 3)
+        competition: Competition key (e.g. 'J1', 'J2', 'J3')
         years: List of years to process. If None, all years will be processed.
 
     Returns:
         None
     """
+    comp_index = int(competition[1]) - 1
     for year in years:
         filename = config.get_path('match_data.csv_path_format', year=year)
         if not filename.exists():
             print(f"File not found: {filename}")
             continue
-        df_dict = make_each_csv(filename, category)
+        df_dict = make_each_csv(filename, comp_index)
         if not df_dict:
             continue
         for (season, df) in df_dict.items():
-            outfile = config.get_path('match_data.league_csv_path', season=season, category=category)
+            outfile = config.get_path('match_data.league_csv_path', season=season, competition=competition)
             print(outfile, len(df))
             df.to_csv(outfile, lineterminator='\n', encoding=config.match_data.encoding)
 
 
-def make_each_csv(filename: str, category: int) -> dict[str, pd.DataFrame]:
-    """Convert match results for the specified category and year into CSV format
+def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
+    """Convert match results for the specified competition and year into CSV format
 
     Original data source from data.j-league.or.jp includes multiple competitions in a single year.
-    If the season of specified category is divided into two stages, split and generate CSVs for each stage.
+    If the season of specified competition is divided into two stages, split and generate CSVs for each stage.
     The season name of multiple stages has suffixes like 'A', 'B', etc. (defined by config.season_suffix)
 
     Args:
         filename: Path to the input CSV file
-        category: Category of the match results (1, 2, or 3)
+        comp_index: Zero-based index into config.league_name
 
     Returns:
         dict: Dictionary containing DataFrames for each season {season_name: DataFrame}
     """
     _df = pd.read_csv(filename, index_col=0)
-    matches = _df[_df['大会'].isin(config.league_name[category - 1])].reset_index(drop=True)
+    matches = _df[_df['大会'].isin(config.league_name[comp_index])].reset_index(drop=True)
     if matches.empty:
         # print tournament counts for debugging
         # print(matches['大会'].value_counts())
@@ -117,5 +118,5 @@ def init_season_dict(matches: pd.DataFrame, year: int) -> dict[str, str]:
 
 if __name__ == '__main__':
     os.chdir(Path(__file__).parent)
-    for _category in [1, 2, 3]:
-        make_old_matches_csv(_category, parse_years())
+    for _comp in ['J1', 'J2', 'J3']:
+        make_old_matches_csv(_comp, parse_years())
