@@ -12,6 +12,8 @@ export function makeMatch(overrides: Partial<TeamMatch> = {}): TeamMatch {
     goal_lose: '1',
     pk_get: null,
     pk_lose: null,
+    score_ex_get: null,
+    score_ex_lose: null,
     has_result: true,
     point: 3,
     match_date: '2025/03/15',

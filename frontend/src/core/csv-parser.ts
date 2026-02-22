@@ -66,6 +66,8 @@ export function parseCsvResults(
 
     const homePk = match.home_pk_score ? parseInt(match.home_pk_score) : null;
     const awayPk = match.away_pk_score ? parseInt(match.away_pk_score) : null;
+    const homeScoreEx = match.home_score_ex ? parseInt(match.home_score_ex) : null;
+    const awayScoreEx = match.away_score_ex ? parseInt(match.away_score_ex) : null;
     const hasResult = Boolean(match.home_goal && match.away_goal);
     const status = makeStatusAttr(match);
     const live = makeLiveAttr(match);
@@ -77,6 +79,8 @@ export function parseCsvResults(
       goal_lose: match.away_goal,
       pk_get: homePk,
       pk_lose: awayPk,
+      score_ex_get: homeScoreEx,
+      score_ex_lose: awayScoreEx,
       has_result: hasResult,
       point: getPointFromResult(match.home_goal, match.away_goal, false, homePk, awayPk),
       match_date: matchDateStr,
@@ -95,6 +99,8 @@ export function parseCsvResults(
       goal_lose: match.home_goal,
       pk_get: awayPk,
       pk_lose: homePk,
+      score_ex_get: awayScoreEx,
+      score_ex_lose: homeScoreEx,
       has_result: hasResult,
       point: getPointFromResult(match.away_goal, match.home_goal, false, awayPk, homePk),
       match_date: matchDateStr,

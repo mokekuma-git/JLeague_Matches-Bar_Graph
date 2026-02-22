@@ -161,6 +161,34 @@ describe('parseCsvResults', () => {
     });
   });
 
+  describe('extra-time score columns', () => {
+    test('score_ex values are parsed as integers when columns present', () => {
+      const fields = [...BASE_FIELDS, 'home_score_ex', 'away_score_ex'];
+      const row = makeRow({ home_score_ex: '2', away_score_ex: '1' } as Partial<RawMatchRow>);
+      const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
+      const homeMatch = result['DefaultGroup']['TeamA'].df[0];
+      const awayMatch = result['DefaultGroup']['TeamB'].df[0];
+      expect(homeMatch.score_ex_get).toBe(2);
+      expect(homeMatch.score_ex_lose).toBe(1);
+      expect(awayMatch.score_ex_get).toBe(1);
+      expect(awayMatch.score_ex_lose).toBe(2);
+    });
+
+    test('score_ex values are null when columns absent', () => {
+      const result = parseCsvResults([makeRow()], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(result['DefaultGroup']['TeamA'].df[0].score_ex_get).toBeNull();
+      expect(result['DefaultGroup']['TeamA'].df[0].score_ex_lose).toBeNull();
+    });
+
+    test('score_ex values are null when column exists but value is empty', () => {
+      const fields = [...BASE_FIELDS, 'home_score_ex', 'away_score_ex'];
+      const row = makeRow({ home_score_ex: '', away_score_ex: '' } as Partial<RawMatchRow>);
+      const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(result['DefaultGroup']['TeamA'].df[0].score_ex_get).toBeNull();
+      expect(result['DefaultGroup']['TeamA'].df[0].score_ex_lose).toBeNull();
+    });
+  });
+
   // Integration: parseCsvResults + calculateTeamStats on a full 3-team round-robin.
   // Rows: A 2-1 B (s1), A 1-1 C (s2), B 0-1 C (s3)
   // Expected totals (all games before targetDate):
