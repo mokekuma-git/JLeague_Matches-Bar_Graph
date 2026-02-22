@@ -89,6 +89,11 @@ export function resolveSeasonInfo(
     ?? comp.point_system
     ?? 'standard';
 
+  // tiebreak_order: scalar cascade (lowest defined level wins)
+  const tiebreakOrder: string[] = opts.tiebreak_order
+    ?? comp.tiebreak_order
+    ?? ['goal_diff', 'goal_get'];
+
   return {
     teamCount: entry[0],
     promotionCount: entry[1],
@@ -101,5 +106,6 @@ export function resolveSeasonInfo(
     pointSystem,
     cssFiles,
     teamRenameMap,
+    tiebreakOrder,
   };
 }

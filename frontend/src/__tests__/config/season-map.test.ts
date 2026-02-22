@@ -190,4 +190,35 @@ describe('resolveSeasonInfo', () => {
 
     expect(info.leagueDisplay).toBe('Test Group');
   });
+
+  test('tiebreakOrder defaults to ["goal_diff", "goal_get"]', () => {
+    const entry: RawSeasonEntry = [20, 3, 3, []];
+    const info = resolveSeasonInfo(sampleGroup, sampleGroup.competitions.J1, entry);
+
+    expect(info.tiebreakOrder).toEqual(['goal_diff', 'goal_get']);
+  });
+
+  test('cascade: tiebreak_order from competition level', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'ACL GS',
+      tiebreak_order: ['head_to_head', 'goal_diff', 'goal_get'],
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = [8, 0, 0, []];
+    const info = resolveSeasonInfo(sampleGroup, comp, entry);
+
+    expect(info.tiebreakOrder).toEqual(['head_to_head', 'goal_diff', 'goal_get']);
+  });
+
+  test('cascade: tiebreak_order from season overrides competition', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'ACL GS',
+      tiebreak_order: ['head_to_head', 'goal_diff', 'goal_get'],
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = [8, 0, 0, [], { tiebreak_order: ['goal_diff', 'wins'] }];
+    const info = resolveSeasonInfo(sampleGroup, comp, entry);
+
+    expect(info.tiebreakOrder).toEqual(['goal_diff', 'wins']);
+  });
 });

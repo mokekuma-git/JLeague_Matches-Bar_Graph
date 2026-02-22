@@ -117,7 +117,7 @@ export function makeRankData(
       // Champion calculation
       const silver      = avlblPt - silverLine;
       const champion    = point   - championLine;
-      const selfChampion = avlblPt - getSelfPossibleLine(1, teamName, disp, groupData);
+      const selfChampion = avlblPt - getSelfPossibleLine(1, teamName, disp, groupData, seasonInfo.pointSystem);
       row.champion = champion >= 0 ? '確定'
         : silver < 0              ? 'なし'
         : selfChampion >= 0       ? '自力'
@@ -127,7 +127,7 @@ export function makeRankData(
       if (promotionCount > 0) {
         const remaining      = avlblPt - nonPromotLine;
         const promotion      = point   - promotionLine;
-        const selfPromotion  = avlblPt - getSelfPossibleLine(promotionCount, teamName, disp, groupData);
+        const selfPromotion  = avlblPt - getSelfPossibleLine(promotionCount, teamName, disp, groupData, seasonInfo.pointSystem);
         row.promotion = promotion >= 0  ? '確定'
           : remaining < 0              ? 'なし'
           : selfPromotion >= 0         ? '自力'
@@ -138,7 +138,7 @@ export function makeRankData(
       if (relegationCount > 0 && keepLeagueLine !== undefined && relegationLine !== undefined) {
         const keepLeague    = point   - keepLeagueLine;
         const relegation    = avlblPt - relegationLine;
-        const selfRelegation = avlblPt - getSelfPossibleLine(relegationRank, teamName, disp, groupData);
+        const selfRelegation = avlblPt - getSelfPossibleLine(relegationRank, teamName, disp, groupData, seasonInfo.pointSystem);
         row.relegation = keepLeague >= 0 ? '確定'
           : relegation < 0              ? '降格'
           : selfRelegation >= 0         ? '自力'

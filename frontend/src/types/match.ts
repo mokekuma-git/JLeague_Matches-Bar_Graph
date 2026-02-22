@@ -1,5 +1,7 @@
 // Raw CSV row as returned by PapaParse.
 // Field names match the CSV header columns in docs/csv/*.csv exactly.
+// Some competitions use different column names (aliases); these are normalized
+// in csv-parser.ts before processing.
 export interface RawMatchRow {
   match_date: string;
   section_no: string;
@@ -16,6 +18,10 @@ export interface RawMatchRow {
   away_pk_score?: string;
   home_score_ex?: string;   // Extra-time score (column may be absent; Tier 4 preparation)
   away_score_ex?: string;
+  // Column aliases used in some competition CSVs:
+  match_status?: string;    // ACL 2021 CSV uses this instead of 'status'
+  home_pk?: string;         // 1993-1998 CSVs may use this instead of 'home_pk_score'
+  away_pk?: string;
 }
 
 // Per-match data from a single team's perspective, produced by parse_csvresults.
