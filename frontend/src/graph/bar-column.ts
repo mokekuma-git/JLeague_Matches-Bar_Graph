@@ -97,6 +97,7 @@ export function makeHtmlColumn(
           '<div class="' + heightCls + ' box' + (row.live ? ' live' : '') + '"><p class="tooltip '
           + teamName + '">' + makeWinContent(row, matchDate)
           + '<span class="tooltiptext halfW ' + teamName + '">(' + row.section_no + ') ' + timeFormat(row.start_time)
+          + (heightCls !== 'tall' ? '<br/>' + row.stadium : '')
           + (row.status ? '<br/>' + row.status : '') + '</span></p></div>\n',
         );
       } else if (cls === 'pk_win') {

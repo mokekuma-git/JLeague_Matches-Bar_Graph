@@ -36,6 +36,15 @@ describe('makeHtmlColumn – box class per result type', () => {
     expect(result.graph[0]).toContain(TEAM);
   });
 
+  test('win (3 pt, tall) → tooltiptext does NOT include stadium', () => {
+    const { result } = buildColumn([
+      makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/15', stadium: 'BigStadium' }),
+    ]);
+    const tooltiptext = result.graph[0].match(/<span class="tooltiptext[^"]*">(.*?)<\/span>/s);
+    expect(tooltiptext).not.toBeNull();
+    expect(tooltiptext![1]).not.toContain('BigStadium');
+  });
+
   test('PK win (2 pt) → medium box in graph', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: '1', goal_lose: '1', pk_get: 5, pk_lose: 3, point: 2, match_date: '2025/03/15' }),
@@ -211,6 +220,15 @@ describe('makeHtmlColumn – old-two-points system', () => {
       makeMatch({ goal_get: '2', goal_lose: '0', point: 2, match_date: '2025/03/15' }),
     ]);
     expect(result.graph[0]).toContain('"medium box"');
+  });
+
+  test('win (2 pt, medium) → tooltiptext includes stadium', () => {
+    const { result } = buildOldColumn([
+      makeMatch({ goal_get: '2', goal_lose: '0', point: 2, match_date: '2025/03/15', stadium: 'OldStadium' }),
+    ]);
+    const tooltiptext = result.graph[0].match(/<span class="tooltiptext[^"]*">(.*?)<\/span>/s);
+    expect(tooltiptext).not.toBeNull();
+    expect(tooltiptext![1]).toContain('OldStadium');
   });
 
   test('draw (1 pt) → short box', () => {
