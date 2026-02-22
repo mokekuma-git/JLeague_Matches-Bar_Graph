@@ -215,4 +215,19 @@ describe('parseCsvResults', () => {
       expect(td.goal_diff).toBe(1);
     });
   });
+
+  describe('old-two-points system', () => {
+    test('win earns 2 points under old-two-points', () => {
+      const result = parseCsvResults([makeRow()], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup', 'old-two-points');
+      expect(result['DefaultGroup']['TeamA'].df[0].point).toBe(2); // home wins 2-1
+      expect(result['DefaultGroup']['TeamB'].df[0].point).toBe(0); // away loses
+    });
+
+    test('draw earns 1 point under old-two-points', () => {
+      const row = makeRow({ home_goal: '1', away_goal: '1' });
+      const result = parseCsvResults([row], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup', 'old-two-points');
+      expect(result['DefaultGroup']['TeamA'].df[0].point).toBe(1);
+      expect(result['DefaultGroup']['TeamB'].df[0].point).toBe(1);
+    });
+  });
 });

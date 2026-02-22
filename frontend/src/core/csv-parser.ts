@@ -1,5 +1,6 @@
 // CSV parsing: converts PapaParse-processed rows into a TeamMap.
 
+import type { PointSystem } from '../types/config';
 import type { RawMatchRow, TeamMap, TeamMatch } from '../types/match';
 import { dateFormat } from './date-utils';
 import { getPointFromResult } from './point-calculator';
@@ -42,6 +43,7 @@ export function parseCsvResults(
   fields: string[],
   teamList: string[],
   defaultGroup: string | null = null,
+  pointSystem: PointSystem = 'standard',
 ): TeamMap {
   const teamMap: TeamMap = {};
 
@@ -78,7 +80,7 @@ export function parseCsvResults(
       pk_get: homePk,
       pk_lose: awayPk,
       has_result: hasResult,
-      point: getPointFromResult(match.home_goal, match.away_goal, false, homePk, awayPk),
+      point: getPointFromResult(match.home_goal, match.away_goal, false, homePk, awayPk, pointSystem),
       match_date: matchDateStr,
       section_no: match.section_no,
       stadium: match.stadium,
@@ -96,7 +98,7 @@ export function parseCsvResults(
       pk_get: awayPk,
       pk_lose: homePk,
       has_result: hasResult,
-      point: getPointFromResult(match.away_goal, match.home_goal, false, awayPk, homePk),
+      point: getPointFromResult(match.away_goal, match.home_goal, false, awayPk, homePk, pointSystem),
       match_date: matchDateStr,
       section_no: match.section_no,
       stadium: match.stadium,

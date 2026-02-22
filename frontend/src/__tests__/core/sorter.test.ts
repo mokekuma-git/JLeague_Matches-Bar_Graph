@@ -207,4 +207,15 @@ describe('getSelfPossibleLine', () => {
     };
     expect(getSelfPossibleLine(1, 'TeamA', false, teams)).toBe(0);
   });
+
+  test('old-two-points: reduces opponents by 2pt per game instead of 3', () => {
+    const teams = {
+      TeamA: makeStats({ avlbl_pt: 20, rest_games: { TeamB: 2 } }),
+      TeamB: makeStats({ avlbl_pt: 18, rest_games: { TeamA: 2 } }),
+      TeamC: makeStats({ avlbl_pt: 10, rest_games: {} }),
+    };
+    // TeamA wins 2 vs TeamB → TeamB loses 2*2=4pt → 18-4=14
+    const selfLine = getSelfPossibleLine(1, 'TeamA', false, teams, 'old-two-points');
+    expect(selfLine).toBe(14);
+  });
 });

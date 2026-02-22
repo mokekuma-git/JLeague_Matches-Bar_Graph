@@ -1,6 +1,8 @@
 // Sorting and line-calculation utilities for team standings.
 
+import type { PointSystem } from '../types/config';
 import type { TeamData } from '../types/match';
+import { getMaxPointsPerGame } from './point-calculator';
 
 // Numeric fields extracted from TeamData for point/relegation line calculations.
 // All fields are guaranteed to exist once makeHtmlColumn has run.
@@ -170,6 +172,7 @@ export function getSelfPossibleLine(
   teamName: string,
   disp: boolean,
   teams: Record<string, TeamData>,
+  pointSystem: PointSystem = 'standard',
 ): number {
   const avlblPtKey: AvlblPtKey = disp ? 'disp_avlbl_pt' : 'avlbl_pt';
   const restGamesKey = disp ? 'disp_rest_games' : 'rest_games';
@@ -184,7 +187,7 @@ export function getSelfPossibleLine(
   const restGames = teams[teamName][restGamesKey] ?? {};
   for (const opponent of Object.keys(restGames)) {
     if (cache[opponent] !== undefined) {
-      cache[opponent][avlblPtKey] -= 3 * (restGames[opponent] ?? 0);
+      cache[opponent][avlblPtKey] -= getMaxPointsPerGame(pointSystem) * (restGames[opponent] ?? 0);
     }
   }
 

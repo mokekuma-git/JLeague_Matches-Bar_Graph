@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { calculateTeamStats, sortTeamMatches } from '../../ranking/stats-calculator';
+import { calculateTeamStats, classifyResult, sortTeamMatches } from '../../ranking/stats-calculator';
 import { makeMatch, makeTeamData } from '../fixtures/match-data';
 
 const TARGET = '2025/03/31';
@@ -225,5 +225,62 @@ describe('sortTeamMatches', () => {
     // comparison returns 0 for both invalid dates; stable sort preserves insertion order
     expect(td.df[0]).toBe(m1);
     expect(td.df[1]).toBe(m2);
+  });
+});
+
+describe('classifyResult', () => {
+  test('standard: 3pt → win', () => {
+    expect(classifyResult(3, null, 'standard')).toBe('win');
+  });
+
+  test('standard: 2pt with PK → pk_win', () => {
+    expect(classifyResult(2, 5, 'standard')).toBe('pk_win');
+  });
+
+  test('standard: 1pt with PK → pk_loss', () => {
+    expect(classifyResult(1, 3, 'standard')).toBe('pk_loss');
+  });
+
+  test('standard: 1pt without PK → draw', () => {
+    expect(classifyResult(1, null, 'standard')).toBe('draw');
+  });
+
+  test('standard: 0pt → loss', () => {
+    expect(classifyResult(0, null, 'standard')).toBe('lose');
+  });
+
+  test('old-two-points: 2pt → win', () => {
+    expect(classifyResult(2, null, 'old-two-points')).toBe('win');
+  });
+
+  test('old-two-points: 1pt → draw', () => {
+    expect(classifyResult(1, null, 'old-two-points')).toBe('draw');
+  });
+
+  test('old-two-points: 0pt → loss', () => {
+    expect(classifyResult(0, null, 'old-two-points')).toBe('lose');
+  });
+});
+
+describe('calculateTeamStats with old-two-points', () => {
+  test('win earns 2pt, unplayed adds 2pt to avlbl_pt', () => {
+    const td = makeTeamData([
+      makeMatch({ goal_get: '2', goal_lose: '0', point: 2, match_date: '2025/03/01' }),
+      makeMatch({ has_result: false, goal_get: '', goal_lose: '', point: 0, opponent: 'TeamC', match_date: '2025/05/01' }),
+    ]);
+    calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
+    expect(td.point).toBe(2);
+    expect(td.win).toBe(1);
+    expect(td.avlbl_pt).toBe(4); // 2 (win) + 2 (future max)
+  });
+
+  test('draw earns 1pt under old-two-points', () => {
+    const td = makeTeamData([
+      makeMatch({ goal_get: '1', goal_lose: '1', point: 1, match_date: '2025/03/01' }),
+    ]);
+    calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
+    expect(td.point).toBe(1);
+    expect(td.draw).toBe(1);
+    expect(td.avlbl_pt).toBe(1);
   });
 });

@@ -197,7 +197,7 @@ function renderFromCache(
   }
 
   for (const teamData of Object.values(groupData)) {
-    calculateTeamStats(teamData, targetDate, matchSortKey);
+    calculateTeamStats(teamData, targetDate, matchSortKey, seasonInfo.pointSystem);
   }
 
   const sortedTeams = getSortedTeamList(groupData, sortKey);
@@ -270,9 +270,11 @@ function loadAndRender(seasonMap: SeasonMap): void {
         results.meta.fields ?? [],
         seasonInfo.teams,
         'matches',
+        seasonInfo.pointSystem,
       );
       const groupData = teamMap['matches'] ?? {};
-      const hasPk = (results.meta.fields ?? []).includes('home_pk_score');
+      const fields = results.meta.fields ?? [];
+      const hasPk = fields.includes('home_pk_score') || fields.includes('home_pk');
 
       const newCache = { key: csvKey, groupData, teamCount: seasonInfo.teamCount, hasPk };
       teamMapCache = newCache;
