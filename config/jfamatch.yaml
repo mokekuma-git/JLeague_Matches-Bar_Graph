@@ -20,12 +20,12 @@ competitions:
     csv_path: ../docs/csv/2025_allmatch_result-PrincePremierW.csv
   WC2026AFC_F:
     schedule_url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/final_q_2026/group{}/match/schedule.json
-    csv_path: ../docs/csv/2026_allmatch_result-wcafc_final.csv
+    csv_path: ../docs/csv/2026_allmatch_result-WC_AFC.csv
     groups: C
     match_in_section: 3
   WC2022:
     schedule_url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2022/group{}/match/schedule.json
-    csv_path: ../docs/csv/2022_allmatch_result-wc_group.csv
+    csv_path: ../docs/csv/2022_allmatch_result-WC_GS.csv
     groups: A, B, C, D, E, F, G, H
     match_in_section: 3
     timezone_diff: 06:00
