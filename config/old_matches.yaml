@@ -44,5 +44,5 @@ match_data:
   card_id_pattern: "/SFMS02/\\?match_card_id=(\\d+)"
   url_format: "https://data.j-league.or.jp/SFMS01/search?competition_years={year}&tv_relay_station_name="
   csv_path_format: "../csv/{year}.csv"
-  league_csv_path: "../docs/csv/{season}_allmatch_result-J{category}.csv"
+  league_csv_path: "../docs/csv/{season}_allmatch_result-{competition}.csv"
   encoding: "utf-8"
