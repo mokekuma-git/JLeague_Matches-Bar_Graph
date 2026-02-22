@@ -1,19 +1,20 @@
 // Unified viewer entry point.
 //
-// Differences from j_points.ts (J-league-only dev page):
-//   - Category dropdown is populated dynamically from season_map.json keys.
-//   - URL parameters (?category=1&season=2026) are read on init and written on change.
-//   - User preferences (category, season, target_date, sort keys, appearance) are persisted
-//     via localStorage and restored on reload.
-//   - Data timestamp is loaded from csv/csv_timestamp.csv and displayed.
-//   - A "reset preferences" button clears localStorage.
+// Navigates the 4-tier season_map.json hierarchy:
+//   group → competition → seasons → entry
+//
+// - Competition dropdown is populated dynamically with group separators.
+// - URL parameters (?competition=J1&season=2026East) are read on init and written on change.
+// - User preferences are persisted via localStorage and restored on reload.
+// - Data timestamp is loaded from csv/csv_timestamp.csv and displayed.
 
 import Papa from 'papaparse';
 import type { RawMatchRow, TeamData } from './types/match';
 import type { SeasonMap } from './types/season';
-import { loadSeasonMap, getCsvFilename } from './config/season-map';
+import {
+  loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
+} from './config/season-map';
 import { parseCsvResults } from './core/csv-parser';
-import { parseSeasonEntry } from './types/season';
 import { getSortedTeamList } from './core/sorter';
 import { calculateTeamStats } from './ranking/stats-calculator';
 import type { MatchSortKey } from './ranking/stats-calculator';
@@ -22,14 +23,7 @@ import { renderBarGraph, findSliderIndex } from './graph/renderer';
 import { getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
 
-const DEFAULT_CATEGORY = '1';
-
-// ---- Category helpers --------------------------------------------------
-
-/** Derives a display name from a category key. e.g. "1" → "J1リーグ" */
-function categoryName(category: string): string {
-  return `J${category}リーグ`;
-}
+const DEFAULT_COMPETITION = 'J1';
 
 // ---- DOM helpers -------------------------------------------------------
 
@@ -44,14 +38,8 @@ function setStatus(msg: string): void {
 
 // ---- Timestamp management ----------------------------------------------
 
-// Cache: CSV filename (e.g. "csv/2026_allmatch_result-J1.csv") → timestamp string
 let timestampMap: Record<string, string> | null = null;
 
-/**
- * Loads csv/csv_timestamp.csv once and caches the result.
- * The "file" column uses "../docs/csv/..." paths; we strip "../docs/" to
- * match the paths returned by getCsvFilename().
- */
 async function loadTimestampMap(): Promise<Record<string, string>> {
   if (timestampMap !== null) return timestampMap;
   try {
@@ -65,7 +53,6 @@ async function loadTimestampMap(): Promise<Record<string, string>> {
     const map: Record<string, string> = {};
     for (const row of result.data) {
       const key = row.file.replace('../docs/', '');
-      // Format: "2026-01-01 12:34:56.789+09:00" → "2026/01/01 12:34"
       const d = new Date(row.date.replace(' ', 'T'));
       map[key] = isNaN(d.getTime()) ? row.date : formatTimestamp(d);
     }
@@ -89,17 +76,17 @@ function showTimestamp(csvFilename: string): void {
 
 // ---- URL parameter management ------------------------------------------
 
-function readUrlParams(): { category: string; season?: string } {
+function readUrlParams(): { competition: string; season?: string } {
   const params = new URLSearchParams(location.search);
   return {
-    category: params.get('category') ?? '',
+    competition: params.get('competition') ?? '',
     season: params.get('season') ?? undefined,
   };
 }
 
-function writeUrlParams(category: string, season: string): void {
+function writeUrlParams(competition: string, season: string): void {
   const url = new URL(location.href);
-  url.searchParams.set('category', category);
+  url.searchParams.set('competition', competition);
   url.searchParams.set('season', season);
   history.replaceState(null, '', url.toString());
 }
@@ -114,25 +101,39 @@ function isBottomFirst(uiValue: string): boolean {
   return ['old_bottom', 'first_bottom'].includes(uiValue);
 }
 
-// ---- Category pulldown population --------------------------------------
+// ---- Competition pulldown population -----------------------------------
 
-function populateCategoryPulldown(seasonMap: SeasonMap): void {
-  const sel = document.getElementById('category_key') as HTMLSelectElement;
+function populateCompetitionPulldown(seasonMap: SeasonMap): void {
+  const sel = document.getElementById('competition_key') as HTMLSelectElement;
   sel.innerHTML = '';
-  for (const cat of Object.keys(seasonMap).sort()) {
-    const opt = document.createElement('option');
-    opt.value = cat;
-    opt.textContent = categoryName(cat);
-    sel.appendChild(opt);
+  const groups = Object.entries(seasonMap);
+  const multiGroup = groups.length > 1;
+  for (const [, group] of groups) {
+    if (multiGroup) {
+      // Disabled separator showing group name (only when multiple groups exist)
+      const sep = document.createElement('option');
+      sep.disabled = true;
+      sep.textContent = `── ${group.display_name} ──`;
+      sel.appendChild(sep);
+    }
+
+    for (const [compKey, comp] of Object.entries(group.competitions)) {
+      const opt = document.createElement('option');
+      opt.value = compKey;
+      opt.textContent = comp.league_display ?? compKey;
+      sel.appendChild(opt);
+    }
   }
 }
 
 // ---- Season pulldown population ----------------------------------------
 
-function populateSeasonPulldown(seasonMap: SeasonMap, category: string): void {
+function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void {
   const sel = document.getElementById('season_key') as HTMLSelectElement;
   sel.innerHTML = '';
-  const seasons = Object.keys(seasonMap[category] ?? {}).sort().reverse();
+  const found = findCompetition(seasonMap, competition);
+  if (!found) return;
+  const seasons = Object.keys(found.competition.seasons).sort().reverse();
   for (const s of seasons) {
     const opt = document.createElement('option');
     opt.value = s;
@@ -157,7 +158,6 @@ function resetDateSlider(matchDates: string[], targetDate: string): void {
 
   const postEl = document.getElementById('post_date_slider');
   if (postEl) postEl.textContent = matchDates[matchDates.length - 1] ?? '';
-
 }
 
 // ---- Cached TeamMap ----------------------------------------------------
@@ -177,7 +177,7 @@ let heightUnit = 20;
 function renderFromCache(
   cache: TeamMapCache,
   seasonMap: SeasonMap,
-  category: string,
+  competition: string,
   season: string,
   targetDate: string,
   sortKey: string,
@@ -185,9 +185,11 @@ function renderFromCache(
   bottomFirst: boolean,
   disp: boolean,
 ): void {
-  const seasonEntry = seasonMap[category]?.[season];
-  if (!seasonEntry) return;
-  const seasonInfo = parseSeasonEntry(seasonEntry);
+  const found = findCompetition(seasonMap, competition);
+  if (!found) return;
+  const entry = found.competition.seasons[season];
+  if (!entry) return;
+  const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry);
 
   const groupData: Record<string, TeamData> = {};
   for (const [name, td] of Object.entries(cache.groupData)) {
@@ -220,9 +222,9 @@ function renderFromCache(
 }
 
 function loadAndRender(seasonMap: SeasonMap): void {
-  const category = getSelectValue('category_key');
-  const season   = getSelectValue('season_key');
-  const csvKey   = `${category}/${season}`;
+  const competition = getSelectValue('competition_key');
+  const season      = getSelectValue('season_key');
+  const csvKey      = `${competition}/${season}`;
 
   const targetDateRaw = (document.getElementById('target_date') as HTMLInputElement).value;
   const targetDate    = targetDateRaw.replace(/-/g, '/');
@@ -233,21 +235,23 @@ function loadAndRender(seasonMap: SeasonMap): void {
   const bottomFirst      = isBottomFirst(matchSortUiValue);
   const disp             = sortKey.startsWith('disp_');
 
-  const seasonEntry = seasonMap[category]?.[season];
-  if (!seasonEntry) {
-    setStatus(`シーズン情報なし: ${category}/${season}`);
+  const found = findCompetition(seasonMap, competition);
+  if (!found || !found.competition.seasons[season]) {
+    setStatus(`シーズン情報なし: ${competition}/${season}`);
     return;
   }
 
-  writeUrlParams(category, season);
-  savePrefs({ category, season, targetDate: targetDateRaw, teamSortKey: sortKey, matchSortKey: matchSortUiValue });
+  const leagueDisplay = resolveSeasonInfo(found.group, found.competition, found.competition.seasons[season]).leagueDisplay;
 
-  const filename = getCsvFilename(category, season);
+  writeUrlParams(competition, season);
+  savePrefs({ competition, season, targetDate: targetDateRaw, teamSortKey: sortKey, matchSortKey: matchSortUiValue });
+
+  const filename = getCsvFilename(competition, season);
 
   if (teamMapCache?.key === csvKey) {
-    renderFromCache(teamMapCache!, seasonMap, category, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
+    renderFromCache(teamMapCache!, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
     showTimestamp(filename);
-    setStatus(`${categoryName(category)} ${season} (cached)`);
+    setStatus(`${leagueDisplay} ${season} (cached)`);
     return;
   }
 
@@ -259,22 +263,23 @@ function loadAndRender(seasonMap: SeasonMap): void {
     skipEmptyLines: 'greedy',
     download: true,
     complete: (results) => {
-      const parseSeasonInfo = parseSeasonEntry(seasonMap[category]![season]!);
+      const entry = found.competition.seasons[season];
+      const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry);
       const teamMap = parseCsvResults(
         results.data,
         results.meta.fields ?? [],
-        parseSeasonInfo.teams,
+        seasonInfo.teams,
         'matches',
       );
       const groupData = teamMap['matches'] ?? {};
       const hasPk = (results.meta.fields ?? []).includes('home_pk_score');
 
-      const newCache = { key: csvKey, groupData, teamCount: parseSeasonInfo.teamCount, hasPk };
+      const newCache = { key: csvKey, groupData, teamCount: seasonInfo.teamCount, hasPk };
       teamMapCache = newCache;
 
-      renderFromCache(newCache, seasonMap, category, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
+      renderFromCache(newCache, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
       showTimestamp(filename);
-      setStatus(`${categoryName(category)} ${season} — ${results.data.length} 行`);
+      setStatus(`${leagueDisplay} ${season} — ${results.data.length} 行`);
     },
     error: (err: unknown) => {
       setStatus(`CSV読み込みエラー: ${String(err)}`);
@@ -285,34 +290,33 @@ function loadAndRender(seasonMap: SeasonMap): void {
 // ---- Initialization & event wiring ------------------------------------
 
 async function main(): Promise<void> {
-  // Match result file timestamp fetch in parallel with season map load.
   void loadTimestampMap();
   const seasonMap = await loadSeasonMap();
 
   const unit = getHeightUnit();
   if (unit > 0) heightUnit = unit;
 
-  // Populate category dropdown from season_map.json keys
-  populateCategoryPulldown(seasonMap);
+  populateCompetitionPulldown(seasonMap);
 
-  // Determine initial category/season from URL params → localStorage → default
+  // Determine initial competition/season from URL params → localStorage → default
   const urlParams = readUrlParams();
   const prefs     = loadPrefs();
 
-  const categorySel = document.getElementById('category_key') as HTMLSelectElement;
-  const initCategory = (urlParams.category && seasonMap[urlParams.category])
-    ? urlParams.category
-    : (prefs.category && seasonMap[prefs.category])
-    ? prefs.category
-    : DEFAULT_CATEGORY;
-  categorySel.value = initCategory;
+  const competitionSel = document.getElementById('competition_key') as HTMLSelectElement;
+  const initCompetition = (urlParams.competition && findCompetition(seasonMap, urlParams.competition))
+    ? urlParams.competition
+    : (prefs.competition && findCompetition(seasonMap, prefs.competition))
+    ? prefs.competition
+    : DEFAULT_COMPETITION;
+  competitionSel.value = initCompetition;
 
-  populateSeasonPulldown(seasonMap, initCategory);
+  populateSeasonPulldown(seasonMap, initCompetition);
 
   const seasonSel = document.getElementById('season_key') as HTMLSelectElement;
-  const initSeason = (urlParams.season && seasonMap[initCategory]?.[urlParams.season])
+  const found = findCompetition(seasonMap, initCompetition);
+  const initSeason = (urlParams.season && found?.competition.seasons[urlParams.season])
     ? urlParams.season
-    : (prefs.season && seasonMap[initCategory]?.[prefs.season])
+    : (prefs.season && found?.competition.seasons[prefs.season])
     ? prefs.season
     : seasonSel.options[0]?.value ?? '';
   seasonSel.value = initSeason;
@@ -331,8 +335,6 @@ async function main(): Promise<void> {
   if (spaceColorEl    && prefs.spaceColor)    spaceColorEl.value    = prefs.spaceColor;
   if (scaleSliderEl   && prefs.scale)         scaleSliderEl.value   = prefs.scale;
 
-  // Apply restored values to CSS rules and update display spans.
-  // updateSlider=false because the inputs were already set above.
   setFutureOpacity(futureOpacityEl?.value ?? '0.1', false);
   if (prefs.spaceColor) setSpace(prefs.spaceColor, false);
 
@@ -347,9 +349,9 @@ async function main(): Promise<void> {
 
   // ---- Event listeners ----
 
-  categorySel.addEventListener('change', () => {
+  competitionSel.addEventListener('change', () => {
     teamMapCache = null;
-    populateSeasonPulldown(seasonMap, categorySel.value);
+    populateSeasonPulldown(seasonMap, competitionSel.value);
     loadAndRender(seasonMap);
   });
 
@@ -360,7 +362,6 @@ async function main(): Promise<void> {
 
   for (const id of ['target_date', 'team_sort_key', 'match_sort_key']) {
     document.getElementById(id)?.addEventListener('change', () => {
-      // targetDate is saved inside loadAndRender via savePrefs
       loadAndRender(seasonMap);
     });
   }
@@ -417,7 +418,7 @@ async function main(): Promise<void> {
   // Reset preferences
   document.getElementById('reset_prefs')?.addEventListener('click', () => {
     clearPrefs();
-    location.assign(location.pathname); // reload without URL params
+    location.assign(location.pathname);
   });
 
   // Initial render

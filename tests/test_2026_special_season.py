@@ -187,16 +187,20 @@ class TestJ2J3_2026(unittest.TestCase):
 
 
 class TestGetSubSeasons(unittest.TestCase):
-    """Test get_sub_seasons with 2026 season_map data."""
+    """Test get_sub_seasons with 2026 season_map data (4-tier format)."""
 
     def setUp(self):
         with open(SEASON_MAP_PATH, 'r', encoding='utf-8') as f:
-            self.season_map = json.load(f)
+            raw = json.load(f)
+        # Extract jleague competitions as the flattened season_map
+        jleague = raw.get('jleague', {}).get('competitions', {})
+        self.season_map = {comp_key: comp.get('seasons', {})
+                           for comp_key, comp in jleague.items()}
 
     def test_j1_sub_seasons(self):
         from read_jleague_matches import get_sub_seasons
         with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
-            subs = get_sub_seasons(1)
+            subs = get_sub_seasons('J1')
         self.assertEqual(len(subs), 2)
         self.assertEqual(subs[0]['name'], '2026East')
         self.assertEqual(subs[1]['name'], '2026West')
@@ -208,23 +212,23 @@ class TestGetSubSeasons(unittest.TestCase):
         self.assertNotIn('url_category', subs[1])
 
     def test_j3_no_2026_entry_returns_none(self):
-        """Category 3 has no 2026 entry → get_sub_seasons returns None (skip)."""
+        """J3 has no 2026 entry -> get_sub_seasons returns None (skip)."""
         from read_jleague_matches import get_sub_seasons
         with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
-            result = get_sub_seasons(3)
+            result = get_sub_seasons('J3')
         self.assertIsNone(result)
 
-    def test_unknown_category_returns_none(self):
-        """Category not in season_map at all → None."""
+    def test_unknown_competition_returns_none(self):
+        """Competition not in season_map at all -> None."""
         from read_jleague_matches import get_sub_seasons
         with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
-            result = get_sub_seasons(9)
+            result = get_sub_seasons('J9')
         self.assertIsNone(result)
 
     def test_j2_sub_seasons(self):
         from read_jleague_matches import get_sub_seasons
         with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
-            subs = get_sub_seasons(2)
+            subs = get_sub_seasons('J2')
         self.assertEqual(len(subs), 4)
         names = [s['name'] for s in subs]
         self.assertEqual(names, ['2026EastA', '2026EastB', '2026WestA', '2026WestB'])
@@ -254,7 +258,7 @@ class TestCalcSectionRange(unittest.TestCase):
     """Test _calc_section_range uses max team_count across sub-seasons."""
 
     def test_uses_max_team_count(self):
-        # max is 10 (even) → (10-1)*2 = 18 sections, ignores smaller sub
+        # max is 10 (even) -> (10-1)*2 = 18 sections, ignores smaller sub
         subs = [{'team_count': 8}, {'team_count': 10}]
         self.assertEqual(_calc_section_range(subs), range(1, 19))
 
@@ -263,7 +267,7 @@ class TestCalcSectionRange(unittest.TestCase):
         self.assertEqual(_calc_section_range(subs), range(1, 19))
 
     def test_all_same_team_count(self):
-        # 4 groups of 10 teams each → range(1, 19)
+        # 4 groups of 10 teams each -> range(1, 19)
         subs = [{'team_count': 10}] * 4
         self.assertEqual(_calc_section_range(subs), range(1, 19))
 
@@ -303,9 +307,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
         west_df = self._make_match_df('WEST', ['B1', 'B2', 'B3', 'B4', 'B5'])
         mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
-        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+        mock_csv_path.side_effect = lambda comp, season: f'/tmp/{season}.csv'
 
-        update_sub_season_matches(1, self._make_sub_seasons(), force_update=True)
+        update_sub_season_matches('J1', self._make_sub_seasons(), force_update=True)
 
         # read_matches_range called once (shared fetch for both sub-seasons)
         mock_read_range.assert_called_once()
@@ -323,9 +327,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         east_df = self._make_match_df('EAST', east_teams)
         west_df = self._make_match_df('WEST', west_teams)
         mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
-        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+        mock_csv_path.side_effect = lambda comp, season: f'/tmp/{season}.csv'
 
-        update_sub_season_matches(1, self._make_sub_seasons(), force_update=True)
+        update_sub_season_matches('J1', self._make_sub_seasons(), force_update=True)
 
         self.assertEqual(mock_update.call_count, 2)
         written = {call.args[1]: call.args[0] for call in mock_update.call_args_list}
@@ -344,9 +348,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
         west_df = self._make_match_df('WEST', ['B1', 'B2', 'B3', 'B4', 'B5'])
         mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
-        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+        mock_csv_path.side_effect = lambda comp, season: f'/tmp/{season}.csv'
 
-        update_sub_season_matches(1, self._make_sub_seasons(), force_update=True)
+        update_sub_season_matches('J1', self._make_sub_seasons(), force_update=True)
 
         for call in mock_update.call_args_list:
             written_df = call.args[0]
@@ -363,9 +367,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         combined = pd.concat([east_df, west_df], ignore_index=True)
         combined['match_index_in_section'] = range(1, 11)
         mock_read_range.return_value = combined
-        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+        mock_csv_path.side_effect = lambda comp, season: f'/tmp/{season}.csv'
 
-        update_sub_season_matches(1, self._make_sub_seasons(), force_update=True)
+        update_sub_season_matches('J1', self._make_sub_seasons(), force_update=True)
 
         written = {call.args[1]: call.args[0] for call in mock_update.call_args_list}
         for path, df in written.items():
@@ -380,7 +384,7 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
         west_df = self._make_match_df('WEST', ['B1', 'B2', 'B3', 'B4', 'B5'])
         mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
-        mock_csv_path.side_effect = lambda cat, season: f'/tmp/{season}.csv'
+        mock_csv_path.side_effect = lambda comp, season: f'/tmp/{season}.csv'
 
         # Simulate existing CSVs for the merge path
         existing_east = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
@@ -392,7 +396,7 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
              patch('read_jleague_matches.matches_differ', return_value=True):
             mock_path_cls.return_value.exists.return_value = True
 
-            update_sub_season_matches(1, self._make_sub_seasons(), need_update={3, 4})
+            update_sub_season_matches('J1', self._make_sub_seasons(), need_update={3, 4})
 
         # Should have fetched only sections {3, 4}
         call_range = mock_read_range.call_args.args[1]

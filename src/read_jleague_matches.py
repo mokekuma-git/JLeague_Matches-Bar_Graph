@@ -69,44 +69,52 @@ def _normalize_df_for_csv(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_season_map() -> dict:
-    """Load season_map.json.
+    """Load season_map.json and extract jleague competitions.
+
+    The 4-tier JSON has the structure:
+        { "jleague": { "competitions": { "J1": { "seasons": {...} }, ... } } }
+
+    This function flattens it to:
+        { "J1": { "2026East": [...], ... }, "J2": {...}, ... }
 
     Returns:
-        dict: Season map data keyed by category string ('1', '2', '3')
+        dict: Competition key -> {season_name: RawSeasonEntry}
     """
     season_map_path = config.get_path('paths.season_map_file')
     with open(season_map_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        raw = json.load(f)
+    jleague = raw.get('jleague', {}).get('competitions', {})
+    return {comp_key: comp.get('seasons', {})
+            for comp_key, comp in jleague.items()}
 
 
-def get_sub_seasons(category: int) -> list[dict] | None:
-    """Get sub-seasons for the given category from season_map.json.
+def get_sub_seasons(competition: str) -> list[dict] | None:
+    """Get sub-seasons for the given competition from season_map.json.
 
     For years with multiple sub-seasons (e.g. 2026East/2026West),
     returns a list of sub-season info dicts. For single-season years,
-    returns an empty list. If no season entry exists for this category,
-    returns None (caller should skip this category entirely).
+    returns an empty list. If no season entry exists for this competition,
+    returns None (caller should skip this competition entirely).
 
     Args:
-        category (int): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
 
     Returns:
         list[dict] | None:
-            None       — no season entry for config.season → skip
-            []         — single season → use update_all_matches
-            [dict,...] — multi-group season → use update_sub_season_matches
+            None       -- no season entry for config.season -> skip
+            []         -- single season -> use update_all_matches
+            [dict,...] -- multi-group season -> use update_sub_season_matches
     """
     season_map = load_season_map()
-    cat_str = str(category)
-    if cat_str not in season_map:
+    if competition not in season_map:
         return None
 
     season_str = str(config.season)
-    cat_map = season_map[cat_str]
-    sub_keys = sorted(k for k in cat_map if k.startswith(season_str) and k != season_str)
+    comp_seasons = season_map[competition]
+    sub_keys = sorted(k for k in comp_seasons if k.startswith(season_str) and k != season_str)
 
     # No entry at all for this season (neither bare key nor sub-keys)
-    if not sub_keys and season_str not in cat_map:
+    if not sub_keys and season_str not in comp_seasons:
         return None
 
     if len(sub_keys) <= 1:
@@ -114,28 +122,29 @@ def get_sub_seasons(category: int) -> list[dict] | None:
 
     result = []
     for k in sub_keys:
-        entry = cat_map[k]
+        entry = comp_seasons[k]
         info = {
             'name': k,
             'teams': entry[3],
             'team_count': entry[0],
             'group': k[len(season_str):],
         }
-        # Read season-specific overrides from index 5
-        if len(entry) > 5 and isinstance(entry[5], dict):
-            if 'group_display' in entry[5]:
-                info['group_display'] = entry[5]['group_display']
-            if 'url_category' in entry[5]:
-                info['url_category'] = entry[5]['url_category']
+        # Read season-specific overrides from index 4 (merged optional dict)
+        if len(entry) > 4 and isinstance(entry[4], dict):
+            opts = entry[4]
+            if 'group_display' in opts:
+                info['group_display'] = opts['group_display']
+            if 'url_category' in opts:
+                info['url_category'] = opts['url_category']
         result.append(info)
     return result
 
 
-def get_csv_path(category: str, season: str = None) -> str:
+def get_csv_path(competition: str, season: str = None) -> str:
     """Get the path of CSV file from config file.
 
     Args:
-        category (str): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
         season (str, optional): Season name (e.g. '2026East'). Defaults to config.season.
 
     Returns:
@@ -147,7 +156,25 @@ def get_csv_path(category: str, season: str = None) -> str:
     if season is None:
         season = config.season
     # CSV file path is also the key of Timestamp file, so handle it as a string
-    return config.get_format_str('paths.csv_format', season=season, category=category)
+    return config.get_format_str('paths.csv_format', season=season, competition=competition)
+
+
+def _url_segment_from_competition(competition: str) -> str:
+    """Extract URL segment from competition key for J-League URLs.
+
+    J-League URLs use the pattern j{segment}/{section}/.
+    For competition keys like 'J1', 'J2', 'J3', the segment is the
+    numeric part (e.g. '1', '2', '3').
+
+    Args:
+        competition (str): Competition key (e.g. 'J1')
+
+    Returns:
+        str: URL segment (e.g. '1')
+    """
+    if competition.upper().startswith('J'):
+        return competition[1:]
+    return competition
 
 
 def get_season_from_date(reference_date: date = None) -> str:
@@ -179,16 +206,16 @@ def get_season_from_date(reference_date: date = None) -> str:
     if year == 2026 and month <= 6:
         return "2026"
 
-    # two‑digit year season (2026 Jul+ or 2027+)
+    # two-digit year season (2026 Jul+ or 2027+)
     start_year = year if month >= 7 else year - 1
     return f"{start_year % 100:02d}-{(start_year + 1) % 100:02d}"
 
 
-def read_teams(category: int) -> list[str]:
+def read_teams(competition: str) -> list[str]:
     """Get the list of teams from the web.
 
     Args:
-        category (int): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
 
     Returns:
         list[str]: List of team names
@@ -196,18 +223,19 @@ def read_teams(category: int) -> list[str]:
     Raises:
         KeyError: If the key 'urls.standing_url_format' is not found in the config file
     """
-    _url = config.get_format_str('urls.standing_url_format', category)
+    _url = config.get_format_str('urls.standing_url_format',
+                                 _url_segment_from_competition(competition))
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
-    return read_teams_from_web(soup, category)
+    return read_teams_from_web(soup, competition)
 
 
-def read_teams_from_web(soup: BeautifulSoup, category: int) -> list[str]:
+def read_teams_from_web(soup: BeautifulSoup, competition: str) -> list[str]:
     """Get the list of teams from the web data.
 
     Args:
         soup (BeautifulSoup): BeautifulSoup object containing the web data
-        category (int): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
 
     Returns:
         list[str]: List of team names
@@ -215,23 +243,24 @@ def read_teams_from_web(soup: BeautifulSoup, category: int) -> list[str]:
     Raises:
         KeyError: If the key 'urls.standing_url_format' is not found in the config file
     """
-    standings = soup.find('table', class_=f'J{category}table')
+    standings = soup.find('table', class_=f'{competition}table')
     if not standings:
-        print(f'Can\'t find J{category} teams...')
+        print(f'Can\'t find {competition} teams...')
         return []
     td_teams = standings.find_all('td', class_='tdTeam')
     return [list(_td.stripped_strings)[1] for _td in td_teams]
 
 
-def read_match(category: int, sec: int, url_category: str = None) -> pd.DataFrame:
-    """Read match data for a specified category and section from the web.
+def read_match(competition: str, sec: int, url_category: str = None) -> pd.DataFrame:
+    """Read match data for a specified competition and section from the web.
 
     Args:
-        category (int): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
         sec (int): Section number
         url_category (str, optional): Override category value for URL construction.
-            The source_url_format 'j{}/{}/' normally uses the category number,
-            e.g. 'j1/1/'. When url_category='2j3', it becomes 'j2j3/1/' instead of 'j2/1/'.
+            The source_url_format 'j{}/{}/' normally uses the numeric part of
+            the competition key, e.g. 'j1/1/'. When url_category='2j3', it
+            becomes 'j2j3/1/' instead.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
@@ -239,7 +268,7 @@ def read_match(category: int, sec: int, url_category: str = None) -> pd.DataFram
     Raises:
         KeyError: If the key 'urls.source_url_format' is not found in the config file
     """
-    cat_for_url = url_category if url_category else category
+    cat_for_url = url_category if url_category else _url_segment_from_competition(competition)
     _url = config.get_format_str('urls.source_url_format', cat_for_url, sec)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
@@ -340,17 +369,17 @@ def convert_jleague_date(match_date: str) -> str:
     return _date.strftime(config.standard_date_format)
 
 
-def read_all_matches(category: int, url_category: str = None) -> pd.DataFrame:
-    """Read all match data for specified category via web.
+def read_all_matches(competition: str, url_category: str = None) -> pd.DataFrame:
+    """Read all match data for specified competition via web.
 
     Args:
-        category (int): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
         url_category (str, optional): Override category value for URL construction.
 
     Returns:
         pd.DataFrame: DataFrame containing all match data
     """
-    return read_matches_range(category, url_category=url_category)
+    return read_matches_range(competition, url_category=url_category)
 
 
 def _team_count_to_section_range(team_count: int) -> range:
@@ -367,12 +396,12 @@ def _team_count_to_section_range(team_count: int) -> range:
     return range(1, (team_count - 1) * 2 + 1)
 
 
-def read_matches_range(category: int, _range: list[int] = None,
+def read_matches_range(competition: str, _range: list[int] = None,
                        url_category: str = None) -> pd.DataFrame:
-    """Read match data for specified category and section list from the web.
+    """Read match data for specified competition and section list from the web.
 
     Args:
-        category (int): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
         _range (list[int], optional): List of section numbers. Defaults to None.
         url_category (str, optional): Override category value for URL construction.
 
@@ -381,11 +410,11 @@ def read_matches_range(category: int, _range: list[int] = None,
     """
     _matches = pd.DataFrame()
     if not _range:
-        teams_count = len(read_teams(category))
+        teams_count = len(read_teams(competition))
         _range = _team_count_to_section_range(teams_count)
 
     for _i in _range:
-        result_list = read_match(category, _i, url_category=url_category)
+        result_list = read_match(competition, _i, url_category=url_category)
         _matches = pd.concat([_matches, pd.DataFrame(result_list)])
     # A common mistake is not saving the result of sort or reset_index operations
     _matches = _matches.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
@@ -486,13 +515,13 @@ def get_sections_to_update(all_matches: pd.DataFrame,
     return target_sec
 
 
-def read_latest_allmatches_csv(category: int) -> pd.DataFrame:
-    """Read the latest CSV file for the specified category and return it as a DataFrame.
+def read_latest_allmatches_csv(competition: str) -> pd.DataFrame:
+    """Read the latest CSV file for the specified competition and return it as a DataFrame.
 
     If no matching file exists, return an empty DataFrame.
 
     Args:
-        category (int): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
 
     Returns:
         pd.DataFrame: DataFrame containing match data, or an empty DataFrame if no file exists
@@ -500,7 +529,7 @@ def read_latest_allmatches_csv(category: int) -> pd.DataFrame:
     Raises:
         KeyError: If the key 'paths.csv_format' is not found in the config file
     """
-    filename = get_csv_path(category)  # Treat as a string since it is also the key of Timestamp file
+    filename = get_csv_path(competition)  # Treat as a string since it is also the key of Timestamp file
     if Path(filename).exists():
         return read_allmatches_csv(filename)
     return pd.DataFrame()
@@ -638,22 +667,22 @@ def _get_sections_for_sub_group(subs: list[dict]) -> set[int] | None:
     """Determine which sections need fetching for a group of sub-seasons sharing a url_category.
 
     Returns:
-        None  — at least one CSV is missing → fetch all sections
-        set() — all CSVs are up-to-date → skip
-        {5,6} — union of sections that need updating across all sub-seasons
+        None  -- at least one CSV is missing -> fetch all sections
+        set() -- all CSVs are up-to-date -> skip
+        {5,6} -- union of sections that need updating across all sub-seasons
     """
     _now = datetime.now().astimezone(config.timezone)
     sections_needed: set[int] = set()
     for sub in subs:
-        csv_path = get_csv_path(sub['category'], sub['name'])
+        csv_path = get_csv_path(sub['competition'], sub['name'])
         if not Path(csv_path).exists():
-            return None  # Missing CSV → need full fetch
+            return None  # Missing CSV -> need full fetch
         current = read_allmatches_csv(csv_path)
         sections_needed |= _get_sections_since(csv_path, current, _now)
     return sections_needed
 
 
-def update_sub_season_matches(category: int, sub_seasons: list[dict],
+def update_sub_season_matches(competition: str, sub_seasons: list[dict],
                               force_update: bool = False,
                               need_update: set[int] = None) -> None:
     """Fetch and distribute match data for a multi-group season.
@@ -663,19 +692,19 @@ def update_sub_season_matches(category: int, sub_seasons: list[dict],
     written to separate CSVs.
 
     Args:
-        category (int): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
         sub_seasons (list[dict]): Sub-season info from get_sub_seasons().
         force_update (bool): If True, re-fetch all sections regardless of timestamps.
         need_update (set[int]): If given, fetch only these sections (differential update).
     """
-    # Attach category to each sub for _get_sections_for_sub_group
+    # Attach competition to each sub for _get_sections_for_sub_group
     for sub in sub_seasons:
-        sub['category'] = category
+        sub['competition'] = competition
 
     # Group sub-seasons by url_category
     url_cat_groups: dict[str, list[dict]] = {}
     for sub in sub_seasons:
-        url_cat = sub.get('url_category', str(category))
+        url_cat = sub.get('url_category', _url_segment_from_competition(competition))
         url_cat_groups.setdefault(url_cat, []).append(sub)
 
     for url_cat, subs in url_cat_groups.items():
@@ -699,7 +728,7 @@ def update_sub_season_matches(category: int, sub_seasons: list[dict],
                 do_merge = True
 
         print(f'  Fetching sections {list(fetch_range)} for url_category={url_cat}...')
-        fetched = read_matches_range(category, fetch_range, url_category=url_cat)
+        fetched = read_matches_range(competition, fetch_range, url_category=url_cat)
 
         # Distribute fetched data to each sub-season CSV
         for sub in subs:
@@ -709,7 +738,7 @@ def update_sub_season_matches(category: int, sub_seasons: list[dict],
             else:
                 sub_data = fetched.copy()
 
-            # Drop 'group' column — sub-season is identified by filename
+            # Drop 'group' column -- sub-season is identified by filename
             if 'group' in sub_data.columns:
                 sub_data = sub_data.drop(columns=['group'])
 
@@ -718,7 +747,7 @@ def update_sub_season_matches(category: int, sub_seasons: list[dict],
             sub_data['match_index_in_section'] = sub_data.groupby('section_no').cumcount() + 1
             sub_data = sub_data.reset_index(drop=True)
 
-            csv_path = get_csv_path(category, sub['name'])
+            csv_path = get_csv_path(competition, sub['name'])
             if do_merge and Path(csv_path).exists():
                 current = read_allmatches_csv(csv_path)
                 old = current[current['section_no'].isin(fetch_range)]
@@ -733,7 +762,7 @@ def update_sub_season_matches(category: int, sub_seasons: list[dict],
                 update_if_diff(sub_data, csv_path)
 
 
-def update_all_matches(category: int, force_update: bool = False,
+def update_all_matches(competition: str, force_update: bool = False,
                        need_update: set[int] = None,
                        url_category: str = None) -> pd.DataFrame:
     """
@@ -745,7 +774,7 @@ def update_all_matches(category: int, force_update: bool = False,
     - When changes are detected, save a new timestamped CSV.
 
     Args:
-        category (int): Category of J-League (1, 2, 3)
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
         force_update (bool): Force update all matches regardless of changes
         need_update (set[int]): Sections to be updated
         url_category (str, optional): Override category value for URL construction.
@@ -761,11 +790,11 @@ def update_all_matches(category: int, force_update: bool = False,
         ParserError: the date data is not in the correct format (date, string except for '未定')
         ValueError: the date data is not in the correct format (date, string except for '未定')
     """
-    latest_file = get_csv_path(category)
+    latest_file = get_csv_path(competition)
 
     # If the file does not exist, read all matches and save them
     if (not Path(latest_file).exists()) or force_update:
-        all_matches = read_all_matches(category, url_category=url_category)
+        all_matches = read_all_matches(competition, url_category=url_category)
         update_if_diff(all_matches, latest_file)
         return all_matches
 
@@ -779,7 +808,7 @@ def update_all_matches(category: int, force_update: bool = False,
         if not need_update:
             return current
 
-    diff_matches = read_matches_range(category, need_update, url_category=url_category)
+    diff_matches = read_matches_range(competition, need_update, url_category=url_category)
     old_matches = current[current['section_no'].isin(need_update)]
     if matches_differ(diff_matches, old_matches):
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \
@@ -963,10 +992,10 @@ def make_args() -> argparse.Namespace:
     """Argument parser"""
     parser = argparse.ArgumentParser(
         description='read_jleague_matches.py\n'
-                    'Read J-League match information for each category and convert to CSV')
+                    'Read J-League match information for each competition and convert to CSV')
 
-    parser.add_argument('category', default=['1-3'], nargs='*',
-                        help='League category (numeric, multiple categories can be specified with - [default: 1-3])')
+    parser.add_argument('competition', default=['J1', 'J2', 'J3'], nargs='*',
+                        help='Competition key (e.g. J1 J2 J3)')
     parser.add_argument('-f', '--force_update_all', action='store_true',
                         help='Force update all matches regardless of changes')
     parser.add_argument('-s', '--sections', type=parse_range_args,
@@ -992,15 +1021,15 @@ if __name__ == '__main__':
             stacklevel=1
         )
 
-    for _category in parse_range_list(_args.category):
-        print(f'Start read J{_category} matches...')
-        _sub_seasons = get_sub_seasons(_category)
+    for _comp in _args.competition:
+        print(f'Start read {_comp} matches...')
+        _sub_seasons = get_sub_seasons(_comp)
         if _sub_seasons is None:
-            print(f'  No {config.season} season entry for J{_category} in season_map, skipping.')
+            print(f'  No {config.season} season entry for {_comp} in season_map, skipping.')
         elif _sub_seasons:
-            update_sub_season_matches(_category, _sub_seasons,
+            update_sub_season_matches(_comp, _sub_seasons,
                                       force_update=_args.force_update_all,
                                       need_update=_args.sections)
         else:
-            update_all_matches(_category, force_update=_args.force_update_all,
+            update_all_matches(_comp, force_update=_args.force_update_all,
                                need_update=_args.sections)

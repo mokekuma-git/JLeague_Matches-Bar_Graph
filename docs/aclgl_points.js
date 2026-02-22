@@ -122,7 +122,7 @@ function clear_cookies() {
 }
 
 function refresh_match_data() {
-  read_inputs('csv/2022_allmatch_result-ACL_GL.csv');
+  read_inputs('csv/2022_allmatch_result-ACL_GS.csv');
 }
 
 function toggle_4th_team_display() {

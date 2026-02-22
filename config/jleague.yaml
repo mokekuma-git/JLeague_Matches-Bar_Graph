@@ -8,7 +8,7 @@ standard_date_format: "%Y/%m/%d"
 jleague_date_format: "%Y年%m月%d日"
 
 paths:
-  csv_format: "../docs/csv/{season}_allmatch_result-J{category}.csv"
+  csv_format: "../docs/csv/{season}_allmatch_result-{competition}.csv"
   timestamp_file: "../docs/csv/csv_timestamp.csv"
   season_map_file: "../docs/json/season_map.json"
 

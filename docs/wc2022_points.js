@@ -97,7 +97,7 @@ function clear_cookies() {
 }
 
 function refresh_match_data() {
-  read_inputs('csv/2022_allmatch_result-wc_group.csv');
+  read_inputs('csv/2022_allmatch_result-WC_GS.csv');
 }
 
 function read_inputs(filename) {

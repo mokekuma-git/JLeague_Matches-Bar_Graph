@@ -115,7 +115,7 @@ function get_csv_filename(category, season=null) {
 
 function read_seasonmap() {
   const xhr = new XMLHttpRequest();
-  xhr.open('GET', './json/season_map.json');
+  xhr.open('GET', './json/season_map_legacy.json');
   xhr.send();
   xhr.onload = ()=> {
     SEASON_MAP = JSON.parse(xhr.responseText);

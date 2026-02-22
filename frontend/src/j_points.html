@@ -14,13 +14,14 @@
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@riversun/sortable-table/lib/sortable-table.js"></script>
   <link rel="stylesheet" href="j_points.css">
   <link rel="stylesheet" href="team_style.css">
+  <link rel="stylesheet" href="national_team_style.css">
 </head>
 <body>
 
 <section id="controls" style="margin:1em; display:flex; gap:1.5em; flex-wrap:wrap; align-items:center;">
   <label>
-    カテゴリ:
-    <select id="category_key">
+    大会:
+    <select id="competition_key">
       <!-- populated dynamically from season_map.json -->
     </select>
   </label>
@@ -29,11 +30,7 @@
     <select id="season_key"></select>
   </label>
   <label>
-    表示日:
-    <input type="date" id="target_date">
-  </label>
-  <label>
-    チームソート:
+    チーム順:
     <select id="team_sort_key">
       <option value="disp_point" selected>勝点(表示時)</option>
       <option value="disp_avlbl_pt">最大勝点(表示時)</option>
@@ -42,7 +39,7 @@
     </select>
   </label>
   <label>
-    試合ソート:
+    試合順:
     <select id="match_sort_key">
       <option value="old_bottom" selected>古い試合が下</option>
       <option value="new_bottom">新しい試合が下</option>
@@ -61,6 +58,10 @@
   <button id="date_slider_up">＞</button>
   <span id="post_date_slider"></span>
   <button id="reset_date_slider">最新にリセット</button>
+  <label>
+    表示日:
+    <input type="date" id="target_date">
+  </label>
 </section>
 
 <!-- Appearance controls -->

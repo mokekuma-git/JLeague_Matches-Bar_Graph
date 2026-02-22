@@ -24,30 +24,54 @@ describe('loadPrefs', () => {
   });
 
   it('returns stored prefs after savePrefs', () => {
-    savePrefs({ category: '2', season: '2025' });
-    expect(loadPrefs()).toMatchObject({ category: '2', season: '2025' });
+    savePrefs({ competition: 'J2', season: '2025' });
+    expect(loadPrefs()).toMatchObject({ competition: 'J2', season: '2025' });
+  });
+
+  it('migrates legacy category to competition', () => {
+    // Simulate old prefs with numeric category key
+    localStorage.setItem(
+      'jleague_viewer_prefs',
+      JSON.stringify({ category: '1', season: '2025' }),
+    );
+    const prefs = loadPrefs();
+    expect(prefs.competition).toBe('J1');
+    expect(prefs).not.toHaveProperty('category');
+    // Verify migration is persisted
+    const raw = JSON.parse(localStorage.getItem('jleague_viewer_prefs')!);
+    expect(raw.competition).toBe('J1');
+    expect(raw).not.toHaveProperty('category');
+  });
+
+  it('does not overwrite existing competition with legacy category', () => {
+    localStorage.setItem(
+      'jleague_viewer_prefs',
+      JSON.stringify({ category: '2', competition: 'J1' }),
+    );
+    const prefs = loadPrefs();
+    expect(prefs.competition).toBe('J1');
   });
 });
 
 describe('savePrefs', () => {
   it('merges new values with existing prefs', () => {
-    savePrefs({ category: '1' });
+    savePrefs({ competition: 'J1' });
     savePrefs({ season: '2026' });
     const prefs = loadPrefs();
-    expect(prefs.category).toBe('1');
+    expect(prefs.competition).toBe('J1');
     expect(prefs.season).toBe('2026');
   });
 
   it('overwrites existing keys', () => {
-    savePrefs({ category: '1' });
-    savePrefs({ category: '3' });
-    expect(loadPrefs().category).toBe('3');
+    savePrefs({ competition: 'J1' });
+    savePrefs({ competition: 'J3' });
+    expect(loadPrefs().competition).toBe('J3');
   });
 });
 
 describe('clearPrefs', () => {
   it('removes all stored prefs', () => {
-    savePrefs({ category: '1', season: '2026' });
+    savePrefs({ competition: 'J1', season: '2026' });
     clearPrefs();
     expect(loadPrefs()).toEqual({});
   });
