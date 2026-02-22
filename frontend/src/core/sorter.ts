@@ -61,42 +61,196 @@ export function getPointSortedTeamList(
   });
 }
 
+// Known tiebreaker keys that can appear in tiebreak_order.
+const KNOWN_TIEBREAKERS = new Set(['head_to_head', 'goal_diff', 'goal_get', 'wins']);
+
 /**
- * Returns team names sorted by the given sort key, with goal_diff and goal_get as tiebreakers.
- * @param teams   - Single-group team map (team name → TeamData)
- * @param sortKey - Field name to sort by (e.g. 'point', 'disp_avlbl_pt')
+ * Groups team names by equal value of `keyFn`. Preserves order of the first
+ * occurrence of each distinct value.
+ */
+function groupByEqual(teamNames: string[], keyFn: (t: string) => number): string[][] {
+  const groups: string[][] = [];
+  const map = new Map<number, string[]>();
+  for (const t of teamNames) {
+    const v = keyFn(t);
+    let arr = map.get(v);
+    if (!arr) {
+      arr = [];
+      map.set(v, arr);
+      groups.push(arr);
+    }
+    arr.push(t);
+  }
+  return groups;
+}
+
+/**
+ * Computes head-to-head (H2H) mini-table points and goal difference
+ * among the given tied teams, using match data from the full team map.
+ *
+ * Returns a map of team name → { h2hPoints, h2hGoalDiff } or null
+ * if any pair has zero completed head-to-head matches (insufficient data).
+ */
+function computeH2H(
+  tiedTeams: string[],
+  allTeams: Record<string, TeamData>,
+  disp: boolean,
+): Map<string, { h2hPoints: number; h2hGoalDiff: number }> | null {
+  const tiedSet = new Set(tiedTeams);
+  const result = new Map<string, { h2hPoints: number; h2hGoalDiff: number }>();
+  for (const t of tiedTeams) {
+    result.set(t, { h2hPoints: 0, h2hGoalDiff: 0 });
+  }
+
+  // Track which pairs have at least one completed match
+  const pairHasMatch = new Set<string>();
+
+  for (const teamName of tiedTeams) {
+    const td = allTeams[teamName];
+    if (!td) continue;
+    for (const m of td.df) {
+      if (!tiedSet.has(m.opponent)) continue;
+      if (!m.has_result) continue;
+      // In disp mode, only count matches within the display window
+      // (matches after targetDate have has_result=true but we rely on
+      // the caller having already computed stats with the correct targetDate)
+      if (disp && m.match_date > (td as unknown as Record<string, string>)['_targetDate']) continue;
+
+      const pairKey = [teamName, m.opponent].sort().join('|');
+      pairHasMatch.add(pairKey);
+
+      const entry = result.get(teamName)!;
+      entry.h2hPoints += m.point;
+      const gGet = parseInt(m.goal_get) || 0;
+      const gLose = parseInt(m.goal_lose) || 0;
+      entry.h2hGoalDiff += gGet - gLose;
+    }
+  }
+
+  // Check that every pair of tied teams has at least one H2H match
+  for (let i = 0; i < tiedTeams.length; i++) {
+    for (let j = i + 1; j < tiedTeams.length; j++) {
+      const pairKey = [tiedTeams[i], tiedTeams[j]].sort().join('|');
+      if (!pairHasMatch.has(pairKey)) return null; // insufficient data
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Resolves a single tiebreaker for a group of tied teams, splitting them
+ * into sub-groups. Returns the list of sub-groups (each sorted internally).
+ */
+function applyTiebreaker(
+  tiedTeams: string[],
+  key: string,
+  allTeams: Record<string, TeamData>,
+  disp: boolean,
+): string[][] {
+  if (tiedTeams.length <= 1) return [tiedTeams];
+
+  if (key === 'head_to_head') {
+    const h2h = computeH2H(tiedTeams, allTeams, disp);
+    if (!h2h) return [tiedTeams]; // fallthrough: treat as still-tied
+
+    // First sort by H2H points, then by H2H goal difference
+    const sorted = [...tiedTeams].sort((a, b) => {
+      const diff = h2h.get(b)!.h2hPoints - h2h.get(a)!.h2hPoints;
+      if (diff !== 0) return diff;
+      return h2h.get(b)!.h2hGoalDiff - h2h.get(a)!.h2hGoalDiff;
+    });
+
+    return groupByEqual(sorted, (t) => {
+      const e = h2h.get(t)!;
+      // Combine points and goal diff into a single comparable value.
+      // Points have much higher weight to ensure they are compared first.
+      return e.h2hPoints * 10000 + e.h2hGoalDiff;
+    });
+  }
+
+  // Stat-based tiebreakers
+  const attrMap: Record<string, string> = {
+    goal_diff: 'goal_diff',
+    goal_get: 'goal_get',
+    wins: 'win',
+  };
+  const attr = attrMap[key];
+  if (!attr) {
+    console.warn(`Unknown tiebreaker key: "${key}" — skipping`);
+    return [tiedTeams];
+  }
+
+  const sorted = [...tiedTeams].sort((a, b) =>
+    calcCompare(getTeamAttr(allTeams[a], attr, disp), getTeamAttr(allTeams[b], attr, disp)),
+  );
+  return groupByEqual(sorted, (t) => getTeamAttr(allTeams[t], attr, disp));
+}
+
+/**
+ * Returns team names sorted by the given sort key, with configurable tiebreakers.
+ * @param teams         - Single-group team map (team name → TeamData)
+ * @param sortKey       - Field name to sort by (e.g. 'point', 'disp_avlbl_pt')
+ * @param tiebreakOrder - Ordered list of tiebreaker keys (default: ['goal_diff', 'goal_get'])
  * @returns Sorted list of team names, highest first
  */
 export function getSortedTeamList(
   teams: Record<string, TeamData>,
   sortKey: string,
+  tiebreakOrder: string[] = ['goal_diff', 'goal_get'],
 ): string[] {
   const disp = sortKey.startsWith('disp_');
-  return Object.keys(teams).sort((a, b) => {
+
+  // Warn about unknown tiebreaker keys (once per call)
+  for (const key of tiebreakOrder) {
+    if (!KNOWN_TIEBREAKERS.has(key)) {
+      console.warn(`Unknown tiebreaker key in tiebreak_order: "${key}"`);
+    }
+  }
+
+  // 1. Initial sort by primary key
+  const primarySorted = Object.keys(teams).sort((a, b) => {
     const getVal = (t: string) =>
       (teams[t] as unknown as Record<string, number | undefined>)[sortKey] ?? 0;
     let compare = calcCompare(getVal(a), getVal(b));
     if (compare !== 0) return compare;
 
+    // For avlbl_pt sort, use point as implicit secondary before tiebreakers
     if (sortKey.endsWith('avlbl_pt')) {
       const subKey = sortKey.replace('avlbl_pt', 'point');
       const getSubVal = (t: string) =>
         (teams[t] as unknown as Record<string, number | undefined>)[subKey] ?? 0;
       compare = calcCompare(getSubVal(a), getSubVal(b));
-      if (compare !== 0) return compare;
     }
-
-    compare = calcCompare(
-      getTeamAttr(teams[a], 'goal_diff', disp),
-      getTeamAttr(teams[b], 'goal_diff', disp),
-    );
-    if (compare !== 0) return compare;
-
-    return calcCompare(
-      getTeamAttr(teams[a], 'goal_get', disp),
-      getTeamAttr(teams[b], 'goal_get', disp),
-    );
+    return compare;
   });
+
+  // 2. Group by equal primary key value
+  let groups = groupByEqual(primarySorted, (t) => {
+    let val = (teams[t] as unknown as Record<string, number | undefined>)[sortKey] ?? 0;
+    if (sortKey.endsWith('avlbl_pt')) {
+      const subKey = sortKey.replace('avlbl_pt', 'point');
+      const subVal = (teams[t] as unknown as Record<string, number | undefined>)[subKey] ?? 0;
+      val = val * 100000 + subVal;
+    }
+    return val;
+  });
+
+  // 3. Apply tiebreakers to each group of tied teams
+  for (const key of tiebreakOrder) {
+    const newGroups: string[][] = [];
+    for (const group of groups) {
+      if (group.length <= 1) {
+        newGroups.push(group);
+      } else {
+        newGroups.push(...applyTiebreaker(group, key, teams, disp));
+      }
+    }
+    groups = newGroups;
+  }
+
+  // 4. Flatten
+  return groups.flat();
 }
 
 /**

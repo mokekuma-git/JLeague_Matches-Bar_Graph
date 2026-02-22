@@ -8,7 +8,8 @@ import {
   getPossibleLine,
   getSelfPossibleLine,
 } from '../../core/sorter';
-import { makeTeamData } from '../fixtures/match-data';
+import { makeTeamData, makeMatch } from '../fixtures/match-data';
+import type { TeamData, TeamMatch } from '../../types/match';
 
 // Helper: build TeamData with pre-filled stat fields (no matches needed for sorter tests).
 function makeStats(overrides: Record<string, number | Record<string, number>> = {}) {
@@ -22,9 +23,22 @@ function makeStats(overrides: Record<string, number | Record<string, number>> = 
     goal_get: 0,
     disp_goal_diff: 0,
     disp_goal_get: 0,
+    win: 0,
+    disp_win: 0,
     rest_games: {} as Record<string, number>,
     disp_rest_games: {} as Record<string, number>,
     ...overrides,
+  };
+}
+
+/** Build a TeamData with matches and pre-filled stats for H2H tests. */
+function makeTeamWithMatches(
+  matches: TeamMatch[],
+  stats: Record<string, number | Record<string, number>> = {},
+): TeamData {
+  return {
+    ...makeStats(stats),
+    df: matches,
   };
 }
 
@@ -217,5 +231,132 @@ describe('getSelfPossibleLine', () => {
     // TeamA wins 2 vs TeamB → TeamB loses 2*2=4pt → 18-4=14
     const selfLine = getSelfPossibleLine(1, 'TeamA', false, teams, 'old-two-points');
     expect(selfLine).toBe(14);
+  });
+});
+
+// ---- getSortedTeamList with tiebreakOrder ---------------------------------
+
+describe('getSortedTeamList tiebreakOrder', () => {
+  test('default tiebreakOrder ["goal_diff", "goal_get"] preserves existing behavior', () => {
+    const teams = {
+      TeamA: makeStats({ point: 20, goal_diff: 5, goal_get: 18 }),
+      TeamB: makeStats({ point: 20, goal_diff: 5, goal_get: 25 }),
+    };
+    const result = getSortedTeamList(teams, 'point');
+    expect(result[0]).toBe('TeamB');
+  });
+
+  test('tiebreakOrder ["goal_get"] skips goal_diff', () => {
+    const teams = {
+      TeamA: makeStats({ point: 20, goal_diff: 10, goal_get: 18 }),
+      TeamB: makeStats({ point: 20, goal_diff: 5, goal_get: 25 }),
+    };
+    // With only goal_get as tiebreaker, TeamB (25) beats TeamA (18)
+    // even though TeamA has a better goal_diff
+    const result = getSortedTeamList(teams, 'point', ['goal_get']);
+    expect(result[0]).toBe('TeamB');
+  });
+
+  test('tiebreakOrder ["wins", "goal_diff"] uses wins first', () => {
+    const teams = {
+      TeamA: makeStats({ point: 20, win: 6, goal_diff: 10, goal_get: 20 }),
+      TeamB: makeStats({ point: 20, win: 5, goal_diff: 15, goal_get: 25 }),
+    };
+    // wins: TeamA (6) > TeamB (5) → TeamA first
+    const result = getSortedTeamList(teams, 'point', ['wins', 'goal_diff']);
+    expect(result[0]).toBe('TeamA');
+  });
+
+  test('H2H 2 teams: direct result decides', () => {
+    // TeamA and TeamB tied on points, but TeamA beat TeamB 2-1
+    const teams = {
+      TeamA: makeTeamWithMatches(
+        [
+          makeMatch({ opponent: 'TeamB', goal_get: '2', goal_lose: '1', point: 3, is_home: true }),
+          makeMatch({ opponent: 'TeamC', goal_get: '0', goal_lose: '1', point: 0 }),
+        ],
+        { point: 3, goal_diff: 0, goal_get: 2, win: 1 },
+      ),
+      TeamB: makeTeamWithMatches(
+        [
+          makeMatch({ opponent: 'TeamA', goal_get: '1', goal_lose: '2', point: 0, is_home: false }),
+          makeMatch({ opponent: 'TeamC', goal_get: '3', goal_lose: '0', point: 3 }),
+        ],
+        { point: 3, goal_diff: 0, goal_get: 4, win: 1 },
+      ),
+      TeamC: makeTeamWithMatches([], { point: 0, goal_diff: -4, goal_get: 0 }),
+    };
+    // With default tiebreakers: goal_diff tied (0 = 0), goal_get TeamB > TeamA → TeamB first.
+    // With H2H: TeamA beat TeamB → TeamA first.
+    const result = getSortedTeamList(teams, 'point', ['head_to_head', 'goal_diff', 'goal_get']);
+    expect(result[0]).toBe('TeamA');
+    expect(result[1]).toBe('TeamB');
+  });
+
+  test('H2H 3 teams: mini-table decides', () => {
+    // Three-way tie: A beat B, B beat C, C beat A — all 3 pts each
+    // H2H mini-table: A(3pts,+1gd), B(3pts,+1gd), C(3pts,+1gd) → still tied
+    // But with different H2H goal differences we can distinguish:
+    // A beat B 2-0, B beat C 3-1, C beat A 1-0
+    // H2H: A: 3pts +2gd (from B) + 0pts -1gd (from C) = 3pts, +1gd
+    //       B: 0pts -2gd (from A) + 3pts +2gd (from C) = 3pts, 0gd
+    //       C: 3pts +1gd (from A) + 0pts -2gd (from B) = 3pts, -1gd
+    // All 3pts → sub-tie by H2H goal diff: A(+1) > B(0) > C(-1)
+    const teams = {
+      TeamA: makeTeamWithMatches(
+        [
+          makeMatch({ opponent: 'TeamB', goal_get: '2', goal_lose: '0', point: 3 }),
+          makeMatch({ opponent: 'TeamC', goal_get: '0', goal_lose: '1', point: 0 }),
+        ],
+        { point: 6, goal_diff: 5, goal_get: 10 },
+      ),
+      TeamB: makeTeamWithMatches(
+        [
+          makeMatch({ opponent: 'TeamA', goal_get: '0', goal_lose: '2', point: 0 }),
+          makeMatch({ opponent: 'TeamC', goal_get: '3', goal_lose: '1', point: 3 }),
+        ],
+        { point: 6, goal_diff: 5, goal_get: 10 },
+      ),
+      TeamC: makeTeamWithMatches(
+        [
+          makeMatch({ opponent: 'TeamA', goal_get: '1', goal_lose: '0', point: 3 }),
+          makeMatch({ opponent: 'TeamB', goal_get: '1', goal_lose: '3', point: 0 }),
+        ],
+        { point: 6, goal_diff: 5, goal_get: 10 },
+      ),
+    };
+    const result = getSortedTeamList(teams, 'point', ['head_to_head', 'goal_diff', 'goal_get']);
+    expect(result[0]).toBe('TeamA');
+    expect(result[1]).toBe('TeamB');
+    expect(result[2]).toBe('TeamC');
+  });
+
+  test('H2H fallthrough when no direct matches exist', () => {
+    // TeamA and TeamB tied on points but have not played each other
+    const teams = {
+      TeamA: makeTeamWithMatches(
+        [makeMatch({ opponent: 'TeamC', goal_get: '1', goal_lose: '0', point: 3 })],
+        { point: 3, goal_diff: 1, goal_get: 1 },
+      ),
+      TeamB: makeTeamWithMatches(
+        [makeMatch({ opponent: 'TeamC', goal_get: '3', goal_lose: '0', point: 3 })],
+        { point: 3, goal_diff: 3, goal_get: 3 },
+      ),
+      TeamC: makeTeamWithMatches([], { point: 0, goal_diff: -4, goal_get: 0 }),
+    };
+    // H2H returns null (no A vs B match) → falls through to goal_diff → TeamB first
+    const result = getSortedTeamList(teams, 'point', ['head_to_head', 'goal_diff', 'goal_get']);
+    expect(result[0]).toBe('TeamB');
+    expect(result[1]).toBe('TeamA');
+  });
+
+  test('unknown tiebreaker key is skipped (treated as no-op)', () => {
+    const teams = {
+      TeamA: makeStats({ point: 20, goal_diff: 5, goal_get: 20 }),
+      TeamB: makeStats({ point: 20, goal_diff: 10, goal_get: 25 }),
+    };
+    // 'unknown_key' is ignored, then goal_diff resolves
+    const result = getSortedTeamList(teams, 'point', ['unknown_key', 'goal_diff']);
+    expect(result[0]).toBe('TeamB');
   });
 });

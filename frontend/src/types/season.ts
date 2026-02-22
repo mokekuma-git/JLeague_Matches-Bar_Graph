@@ -32,6 +32,7 @@ export interface SeasonEntryOptions {
   point_system?: PointSystem;
   css_files?: string[];
   team_rename_map?: Record<string, string>;
+  tiebreak_order?: string[];
 }
 
 // Raw array format as loaded from season_map.json (tuple type).
@@ -79,6 +80,7 @@ export interface SeasonInfo {
   pointSystem: PointSystem;
   cssFiles: string[];
   teamRenameMap: Record<string, string>;
+  tiebreakOrder: string[];
 }
 
 // Converts a RawSeasonEntry tuple into a basic SeasonInfo object.
@@ -97,5 +99,6 @@ export function parseSeasonEntry(entry: RawSeasonEntry): SeasonInfo {
     pointSystem: opts.point_system ?? 'standard',
     cssFiles: opts.css_files ?? [],
     teamRenameMap: opts.team_rename_map ?? {},
+    tiebreakOrder: opts.tiebreak_order ?? ['goal_diff', 'goal_get'],
   };
 }

@@ -200,7 +200,7 @@ function renderFromCache(
     calculateTeamStats(teamData, targetDate, matchSortKey, seasonInfo.pointSystem);
   }
 
-  const sortedTeams = getSortedTeamList(groupData, sortKey);
+  const sortedTeams = getSortedTeamList(groupData, sortKey, seasonInfo.tiebreakOrder);
 
   const { hasPk } = cache;
 
