@@ -104,7 +104,7 @@ function isBottomFirst(uiValue: string): boolean {
 // ---- Competition pulldown population -----------------------------------
 
 function populateCompetitionPulldown(seasonMap: SeasonMap): void {
-  const sel = document.getElementById('category_key') as HTMLSelectElement;
+  const sel = document.getElementById('competition_key') as HTMLSelectElement;
   sel.innerHTML = '';
   for (const [, group] of Object.entries(seasonMap)) {
     // Disabled separator showing group name
@@ -218,7 +218,7 @@ function renderFromCache(
 }
 
 function loadAndRender(seasonMap: SeasonMap): void {
-  const competition = getSelectValue('category_key');
+  const competition = getSelectValue('competition_key');
   const season      = getSelectValue('season_key');
   const csvKey      = `${competition}/${season}`;
 
@@ -298,7 +298,7 @@ async function main(): Promise<void> {
   const urlParams = readUrlParams();
   const prefs     = loadPrefs();
 
-  const competitionSel = document.getElementById('category_key') as HTMLSelectElement;
+  const competitionSel = document.getElementById('competition_key') as HTMLSelectElement;
   const initCompetition = (urlParams.competition && findCompetition(seasonMap, urlParams.competition))
     ? urlParams.competition
     : (prefs.competition && findCompetition(seasonMap, prefs.competition))
