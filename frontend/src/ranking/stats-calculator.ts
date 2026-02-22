@@ -1,7 +1,9 @@
 // Stats accumulation for team data: port of the stats part of make_html_column.
 // Populates disp_* and latest fields on TeamData in place.
 
+import type { PointSystem } from '../types/config';
 import type { TeamData, TeamMatch } from '../types/match';
+import { getMaxPointsPerGame, getWinPoints } from '../core/point-calculator';
 
 // Priority for sorting postponed/future matches (lower = earlier in graph display).
 // 0: completed, 1: postponed (no result, past date), 2: scheduled future
@@ -37,6 +39,21 @@ export function sortTeamMatches(
   });
 }
 
+/**
+ * Classifies a match result into win/pk_win/pk_loss/draw/lose.
+ * Returns TeamData field names so the result can be used to index stat counters.
+ */
+export function classifyResult(
+  point: number, pkGet: number | null, pointSystem: PointSystem,
+): 'win' | 'pk_win' | 'pk_loss' | 'draw' | 'lose' {
+  const winPt = getWinPoints(pointSystem);
+  if (point >= winPt) return 'win';
+  if (point >= 2 && pkGet !== null) return 'pk_win';
+  if (point === 1 && pkGet !== null) return 'pk_loss';
+  if (point === 1) return 'draw';
+  return 'lose';
+}
+
 // Initializes all stat fields on teamData and accumulates them from teamData.df.
 // Also sorts teamData.df. Mutates teamData in place.
 // targetDate: 'YYYY/MM/DD' — matches on or before this date count toward disp_ stats.
@@ -44,7 +61,10 @@ export function calculateTeamStats(
   teamData: TeamData,
   targetDate: string,
   matchSortKey: MatchSortKey,
+  pointSystem: PointSystem = 'standard',
 ): void {
+  const maxPt = getMaxPointsPerGame(pointSystem);
+
   // Initialize latest stats
   teamData.point = 0;
   teamData.avlbl_pt = 0;
@@ -76,8 +96,8 @@ export function calculateTeamStats(
   for (const row of teamData.df) {
     if (!row.has_result) {
       // Unplayed match: counts as future for both latest and display views
-      teamData.avlbl_pt += 3;
-      teamData.disp_avlbl_pt += 3;
+      teamData.avlbl_pt += maxPt;
+      teamData.disp_avlbl_pt += maxPt;
       teamData.rest_games[row.opponent] = (teamData.rest_games[row.opponent] ?? 0) + 1;
       teamData.disp_rest_games[row.opponent] = (teamData.disp_rest_games[row.opponent] ?? 0) + 1;
     } else {
@@ -85,21 +105,15 @@ export function calculateTeamStats(
       teamData.point += row.point;
       teamData.avlbl_pt += row.point;
       teamData.all_game += 1;
-      if (row.point === 3) teamData.win += 1;
-      else if (row.point === 2) teamData.pk_win += 1;
-      else if (row.point === 1 && row.pk_get !== null) teamData.pk_loss += 1;
-      else if (row.point === 1) teamData.draw += 1;
-      else teamData.lose += 1;
+      const cls = classifyResult(row.point, row.pk_get, pointSystem);
+      (teamData[cls] as number) += 1;
       teamData.goal_diff += parseInt(row.goal_get) - parseInt(row.goal_lose);
       teamData.goal_get += parseInt(row.goal_get);
 
       if (row.match_date <= targetDate) {
         // Within display window: also counts toward disp_ stats
-        if (row.point === 3) teamData.disp_win += 1;
-        else if (row.point === 2) teamData.disp_pk_win += 1;
-        else if (row.point === 1 && row.pk_get !== null) teamData.disp_pk_loss += 1;
-        else if (row.point === 1) teamData.disp_draw += 1;
-        else teamData.disp_lose += 1;
+        const dispKey = ('disp_' + cls) as keyof TeamData;
+        (teamData[dispKey] as number) += 1;
         teamData.disp_all_game += 1;
         teamData.disp_point += row.point;
         teamData.disp_avlbl_pt += row.point;
@@ -107,7 +121,7 @@ export function calculateTeamStats(
         teamData.disp_goal_get += parseInt(row.goal_get);
       } else {
         // After display cutoff: treat as future for display purposes
-        teamData.disp_avlbl_pt += 3;
+        teamData.disp_avlbl_pt += maxPt;
         teamData.disp_rest_games[row.opponent] = (teamData.disp_rest_games[row.opponent] ?? 0) + 1;
       }
     }

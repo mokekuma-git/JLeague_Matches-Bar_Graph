@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { getPointFromResult } from '../../core/point-calculator';
+import { getPointFromResult, getMaxPointsPerGame, getWinPoints } from '../../core/point-calculator';
 
 describe('getPointFromResult', () => {
   describe('win / loss / draw', () => {
@@ -59,5 +59,43 @@ describe('getPointFromResult', () => {
       // String '9' > '10' because '9' > '1' at the first character.
       expect(getPointFromResult('9', '10')).toBe(3);
     });
+  });
+
+  describe('old-two-points system', () => {
+    test('win → 2 points', () => {
+      expect(getPointFromResult('2', '1', false, null, null, 'old-two-points')).toBe(2);
+    });
+
+    test('loss → 0 points', () => {
+      expect(getPointFromResult('0', '2', false, null, null, 'old-two-points')).toBe(0);
+    });
+
+    test('draw → 1 point', () => {
+      expect(getPointFromResult('1', '1', false, null, null, 'old-two-points')).toBe(1);
+    });
+  });
+});
+
+describe('getMaxPointsPerGame', () => {
+  test('standard → 3', () => {
+    expect(getMaxPointsPerGame('standard')).toBe(3);
+  });
+
+  test('old-two-points → 2', () => {
+    expect(getMaxPointsPerGame('old-two-points')).toBe(2);
+  });
+
+  test('defaults to standard (3)', () => {
+    expect(getMaxPointsPerGame()).toBe(3);
+  });
+});
+
+describe('getWinPoints', () => {
+  test('standard → 3', () => {
+    expect(getWinPoints('standard')).toBe(3);
+  });
+
+  test('old-two-points → 2', () => {
+    expect(getWinPoints('old-two-points')).toBe(2);
   });
 });

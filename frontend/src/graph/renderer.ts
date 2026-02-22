@@ -140,7 +140,7 @@ export function renderBarGraph(
   for (const teamName of sortedTeams) {
     const teamData = groupData[teamName];
     if (!teamData) continue;
-    const col = makeHtmlColumn(teamName, teamData, targetDate, disp, hasPk);
+    const col = makeHtmlColumn(teamName, teamData, targetDate, disp, hasPk, seasonInfo.pointSystem);
     columns[teamName] = col;
     maxAvblPt = Math.max(maxAvblPt, col.avlbl_pt);
     for (const d of col.matchDates) matchDateSet.add(d);
