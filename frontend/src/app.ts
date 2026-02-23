@@ -15,8 +15,7 @@ import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
 } from './config/season-map';
 import { parseCsvResults } from './core/csv-parser';
-import { getSortedTeamList } from './core/sorter';
-import { calculateTeamStats } from './ranking/stats-calculator';
+import { prepareRenderData } from './core/prepare-render';
 import type { MatchSortKey } from './ranking/stats-calculator';
 import { makeRankData, makeRankTable } from './ranking/rank-table';
 import { renderBarGraph, findSliderIndex } from './graph/renderer';
@@ -199,16 +198,9 @@ function renderFromCache(
   if (!entry) return;
   const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry);
 
-  const groupData: Record<string, TeamData> = {};
-  for (const [name, td] of Object.entries(cache.groupData)) {
-    groupData[name] = { ...td, df: [...td.df] };
-  }
-
-  for (const teamData of Object.values(groupData)) {
-    calculateTeamStats(teamData, targetDate, matchSortKey, seasonInfo.pointSystem);
-  }
-
-  const sortedTeams = getSortedTeamList(groupData, sortKey, seasonInfo.tiebreakOrder);
+  const { groupData, sortedTeams } = prepareRenderData({
+    groupData: cache.groupData, seasonInfo, targetDate, sortKey, matchSortKey,
+  });
 
   const { hasPk } = cache;
 
