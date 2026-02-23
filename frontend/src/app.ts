@@ -23,6 +23,30 @@ import { renderBarGraph, findSliderIndex } from './graph/renderer';
 import { getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
 
+// ---- Application state ------------------------------------------------
+
+interface TeamMapCache {
+  key: string;
+  groupData: Record<string, TeamData>;
+  teamCount: number;
+  hasPk: boolean;
+}
+
+/** Mutable application state collected in one place. */
+interface AppState {
+  timestampMap: Record<string, string> | null;
+  teamMapCache: TeamMapCache | null;
+  currentMatchDates: string[];
+  heightUnit: number;
+}
+
+const state: AppState = {
+  timestampMap: null,
+  teamMapCache: null,
+  currentMatchDates: [],
+  heightUnit: 20,
+};
+
 const DEFAULT_COMPETITION = 'J1';
 
 // ---- DOM helpers -------------------------------------------------------
@@ -38,13 +62,11 @@ function setStatus(msg: string): void {
 
 // ---- Timestamp management ----------------------------------------------
 
-let timestampMap: Record<string, string> | null = null;
-
 async function loadTimestampMap(): Promise<Record<string, string>> {
-  if (timestampMap !== null) return timestampMap;
+  if (state.timestampMap !== null) return state.timestampMap;
   try {
     const res = await fetch('./csv/csv_timestamp.csv');
-    if (!res.ok) return (timestampMap = {});
+    if (!res.ok) return (state.timestampMap = {});
     const text = await res.text();
     const result = Papa.parse<{ file: string; date: string }>(text, {
       header: true,
@@ -56,9 +78,9 @@ async function loadTimestampMap(): Promise<Record<string, string>> {
       const d = new Date(row.date.replace(' ', 'T'));
       map[key] = isNaN(d.getTime()) ? row.date : formatTimestamp(d);
     }
-    return (timestampMap = map);
+    return (state.timestampMap = map);
   } catch {
-    return (timestampMap = {});
+    return (state.timestampMap = {});
   }
 }
 
@@ -70,8 +92,8 @@ function formatTimestamp(d: Date): string {
 
 function showTimestamp(csvFilename: string): void {
   const el = document.getElementById('data_timestamp');
-  if (!el || !timestampMap) return;
-  el.textContent = timestampMap[csvFilename] ?? '';
+  if (!el || !state.timestampMap) return;
+  el.textContent = state.timestampMap[csvFilename] ?? '';
 }
 
 // ---- URL parameter management ------------------------------------------
@@ -144,10 +166,8 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
 
 // ---- Date slider management --------------------------------------------
 
-let currentMatchDates: string[] = [];
-
 function resetDateSlider(matchDates: string[], targetDate: string): void {
-  currentMatchDates = matchDates;
+  state.currentMatchDates = matchDates;
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (!slider || matchDates.length === 0) return;
 
@@ -159,18 +179,6 @@ function resetDateSlider(matchDates: string[], targetDate: string): void {
   const postEl = document.getElementById('post_date_slider');
   if (postEl) postEl.textContent = matchDates[matchDates.length - 1] ?? '';
 }
-
-// ---- Cached TeamMap ----------------------------------------------------
-
-interface TeamMapCache {
-  key: string;
-  groupData: Record<string, TeamData>;
-  teamCount: number;
-  hasPk: boolean;
-}
-let teamMapCache: TeamMapCache | null = null;
-
-let heightUnit = 20;
 
 // ---- Core render pipeline ----------------------------------------------
 
@@ -208,7 +216,7 @@ function renderFromCache(
   if (boxCon) {
     const { html, matchDates } = renderBarGraph(
       groupData, sortedTeams, seasonInfo,
-      targetDate, disp, matchSortKey, bottomFirst, heightUnit, hasPk,
+      targetDate, disp, matchSortKey, bottomFirst, state.heightUnit, hasPk,
     );
     boxCon.innerHTML = html;
     const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
@@ -248,8 +256,8 @@ function loadAndRender(seasonMap: SeasonMap): void {
 
   const filename = getCsvFilename(competition, season);
 
-  if (teamMapCache?.key === csvKey) {
-    renderFromCache(teamMapCache!, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
+  if (state.teamMapCache?.key === csvKey) {
+    renderFromCache(state.teamMapCache, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
     showTimestamp(filename);
     setStatus(`${leagueDisplay} ${season} (cached)`);
     return;
@@ -277,7 +285,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const hasPk = fields.includes('home_pk_score') || fields.includes('home_pk');
 
       const newCache = { key: csvKey, groupData, teamCount: seasonInfo.teamCount, hasPk };
-      teamMapCache = newCache;
+      state.teamMapCache = newCache;
 
       renderFromCache(newCache, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
       showTimestamp(filename);
@@ -293,10 +301,18 @@ function loadAndRender(seasonMap: SeasonMap): void {
 
 async function main(): Promise<void> {
   void loadTimestampMap();
-  const seasonMap = await loadSeasonMap();
+
+  let seasonMap: SeasonMap;
+  try {
+    seasonMap = await loadSeasonMap();
+  } catch (err) {
+    setStatus('season_map.json の読み込みに失敗しました');
+    console.error('Failed to load season map:', err);
+    return;
+  }
 
   const unit = getHeightUnit();
-  if (unit > 0) heightUnit = unit;
+  if (unit > 0) state.heightUnit = unit;
 
   populateCompetitionPulldown(seasonMap);
 
@@ -349,16 +365,16 @@ async function main(): Promise<void> {
     dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   }
 
-  // ---- Event listeners ----
+  // ---- Data-selection events ----
 
   competitionSel.addEventListener('change', () => {
-    teamMapCache = null;
+    state.teamMapCache = null;
     populateSeasonPulldown(seasonMap, competitionSel.value);
     loadAndRender(seasonMap);
   });
 
   document.getElementById('season_key')?.addEventListener('change', () => {
-    teamMapCache = null;
+    state.teamMapCache = null;
     loadAndRender(seasonMap);
   });
 
@@ -368,11 +384,12 @@ async function main(): Promise<void> {
     });
   }
 
-  // Date slider
+  // ---- Date slider events ----
+
   const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (dateSlider) {
     const updateFromSlider = (): void => {
-      const date = currentMatchDates[parseInt(dateSlider.value)];
+      const date = state.currentMatchDates[parseInt(dateSlider.value)];
       if (!date) return;
       (document.getElementById('target_date') as HTMLInputElement).value = date.replace(/\//g, '-');
       loadAndRender(seasonMap);
@@ -396,7 +413,8 @@ async function main(): Promise<void> {
     });
   }
 
-  // Appearance sliders
+  // ---- Appearance events ----
+
   const boxCon = document.getElementById('box_container') as HTMLElement;
 
   document.getElementById('scale_slider')?.addEventListener('input', (e) => {
@@ -417,7 +435,8 @@ async function main(): Promise<void> {
     savePrefs({ spaceColor: v });
   });
 
-  // Reset preferences
+  // ---- Reset ----
+
   document.getElementById('reset_prefs')?.addEventListener('click', () => {
     clearPrefs();
     location.assign(location.pathname);
