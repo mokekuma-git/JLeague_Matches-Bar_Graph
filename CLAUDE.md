@@ -231,6 +231,10 @@ npm run dev               # Vite開発サーバー起動
 - 順序は辞書順 (`East` < `West`, `EastA` < `EastB` < `WestA` < `WestB`)
 - CSVファイル検索の正規表現: `r"(\d{4}[A-Za-z]*|\d{2}-\d{2}[A-Za-z]*)_allmatch_result-J(\d+).csv"`
 
+## 開発プラクティス
+
+- **リファクタリング時のビルド確認**: テスト (`vitest`) 通過だけでなく `npm run build` (`vite build`) も各段階で確認する。CI の `test-typescript.yaml` は typecheck + vitest のみで、ビルド自体は PR 時に自動検証されないため、ローカルでの確認を習慣とする
+
 ## 設計上の決定事項
 
 - **JFA JSON APIはCSVカラム設計の重要な参考情報源** — 新カラムを追加する際はJFA JSON構造を参照して名称を決める
