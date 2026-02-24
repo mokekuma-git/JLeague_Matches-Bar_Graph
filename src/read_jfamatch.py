@@ -98,7 +98,7 @@ def read_match_json(_url: str) -> Dict[str, Any]:
     """
     result = None
     counter = 0
-    while result is None or counter > 10:
+    while result is None and counter < 10:
         try:
             print(f'access {_url} ...')
             result = json.loads(requests.get(_url, timeout=config.http_timeout).text)

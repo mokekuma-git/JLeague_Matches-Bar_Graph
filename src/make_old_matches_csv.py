@@ -71,9 +71,9 @@ def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
     if year <= 1998:  # Until 1998, there was a penalty kick rule
         matches['away_goal'] = matches['away_goal'].str.replace(r'\(PK.*', '', regex=True)
         matches['home_pk'] = matches['スコア'].str.extract(r'\(PK(\d+)\-', expand=False)
-        matches['home_pk'].fillna('')
+        matches['home_pk'] = matches['home_pk'].fillna('')
         matches['away_pk'] = matches['スコア'].str.extract(r'\(PK\d+\-(\d+)\)', expand=False)
-        matches['away_pk'].fillna('')
+        matches['away_pk'] = matches['away_pk'].fillna('')
         columns_list.extend(['home_pk', 'away_pk'])
     matches['attendance'] = matches['attendance'].astype('int')
 
