@@ -37,7 +37,7 @@ export function getCssRule(selector: string): CSSStyleRule | undefined {
 export function getHeightUnit(): number {
   const rule = getCssRule('.short');
   if (!rule) return 0;
-  return parseInt(rule.style.height) || 0;
+  return parseInt(rule.style.height, 10) || 0;
 }
 
 /**

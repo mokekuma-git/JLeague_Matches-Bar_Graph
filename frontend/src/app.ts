@@ -381,7 +381,7 @@ async function main(): Promise<void> {
   const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (dateSlider) {
     const updateFromSlider = (): void => {
-      const date = state.currentMatchDates[parseInt(dateSlider.value)];
+      const date = state.currentMatchDates[parseInt(dateSlider.value, 10)];
       if (!date) return;
       (document.getElementById('target_date') as HTMLInputElement).value = date.replace(/\//g, '-');
       loadAndRender(seasonMap);
@@ -390,11 +390,11 @@ async function main(): Promise<void> {
     dateSlider.addEventListener('change', updateFromSlider);
 
     document.getElementById('date_slider_down')?.addEventListener('click', () => {
-      dateSlider.value = String(Math.max(0, parseInt(dateSlider.value) - 1));
+      dateSlider.value = String(Math.max(0, parseInt(dateSlider.value, 10) - 1));
       updateFromSlider();
     });
     document.getElementById('date_slider_up')?.addEventListener('click', () => {
-      dateSlider.value = String(Math.min(parseInt(dateSlider.max), parseInt(dateSlider.value) + 1));
+      dateSlider.value = String(Math.min(parseInt(dateSlider.max, 10), parseInt(dateSlider.value, 10) + 1));
       updateFromSlider();
     });
     document.getElementById('reset_date_slider')?.addEventListener('click', () => {
