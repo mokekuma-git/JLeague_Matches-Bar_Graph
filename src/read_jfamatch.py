@@ -188,10 +188,10 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
         if '【中止】' in _match_data['venueFullName']:
             _row['status'] = '試合中止'
             if config.debug:
-                print('Cancel Game## ' + _match_data['venueFullName'])
+                print(f'Cancel Game## {_match_data["venueFullName"]}')
         else:
             if config.debug:
-                print('No Cancel## ' + _match_data['venueFullName'])
+                print(f'No Cancel## {_match_data["venueFullName"]}')
 
         _row['extraTime'] = str(_row['extraTime'])  # Stringify for comparison with old style CSV
         _row['match_date'] = to_datetime_aspossible(_row['match_date'])

@@ -2,6 +2,7 @@
 import argparse
 from datetime import datetime
 import os
+from pathlib import Path
 import re
 from typing import Any
 
@@ -107,7 +108,7 @@ def make_args() -> argparse.Namespace:
 
 
 if __name__ == '__main__':
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.chdir(Path(__file__).parent)
 
     ARGS = make_args()
     if ARGS.debug:
