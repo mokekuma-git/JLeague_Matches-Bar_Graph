@@ -10,7 +10,7 @@ from set_config import load_config
 config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
 
 
-def make_old_matches_csv(competition: str, years: int = None) -> None:
+def make_old_matches_csv(competition: str, years: list[int] | None = None) -> None:
     """Convert match results of the specified years for the given competition into CSV format
 
     Args:

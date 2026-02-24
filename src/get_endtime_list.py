@@ -45,7 +45,7 @@ def _is_current_or_future_season(season_name: str) -> bool:
     return False
 
 
-def read_match_csv(file_path):
+def read_match_csv(file_path: Path) -> pd.DataFrame:
     """Read a match CSV file and return a DataFrame."""
     df = pd.read_csv(file_path, index_col=0)
     # Convert match_date to datetime if it's not already
@@ -119,7 +119,7 @@ def read_match_times_from_file(file: Path) -> list[datetime]:
     return list(match_times)
 
 
-def datetime_to_cron(dt, offset_minutes=0):
+def datetime_to_cron(dt: datetime, offset_minutes: int = 0) -> str:
     """Convert a datetime to a cron expression with an offset.
 
     Adjusts the time from JST to GitHub server time (UTC) by subtracting 15 hours.
@@ -135,7 +135,7 @@ def datetime_to_cron(dt, offset_minutes=0):
     return f"{dt.minute} {dt.hour} {dt.day} {dt.month} *"
 
 
-def update_workflow_file(match_times):
+def update_workflow_file(match_times: list[datetime]) -> bool:
     """Update the GitHub workflow file with cron schedules."""
     with open(WORKFLOW_FILE, 'r', encoding='utf-8') as f:
         workflow_content = f.read()

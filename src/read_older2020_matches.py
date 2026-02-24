@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import sys
 
+import bs4
 from bs4 import BeautifulSoup
 import pandas as pd
 import requests
@@ -17,7 +18,7 @@ config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
 MATCH_CARD_ID = re.compile(config.match_data.card_id_pattern)
 
 
-def read_href(td_tag) -> str | None:
+def read_href(td_tag: bs4.element.Tag) -> str | None:
     """Get href of a tag in given td tag
 
     Args:

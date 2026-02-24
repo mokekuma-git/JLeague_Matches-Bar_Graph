@@ -55,7 +55,7 @@ def _prepare_config() -> Config:
     """
     new_conf = load_config(Path(__file__).parent / '../config/jfamatch.yaml')
 
-    def is_string_list(obj):
+    def is_string_list(obj: Any) -> bool:
         if not isinstance(obj, list):
             return False
         return all(isinstance(item, str) for item in obj)
