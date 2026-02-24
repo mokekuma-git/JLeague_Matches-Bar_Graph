@@ -61,13 +61,6 @@ p {
 .live {
   border: 5px dashed red;
 }
-/*
-.live_border {
-  background-color: white;
-  border-top: 5px dashed red;
-}
-*/
-
 .promoted {
   background-color: #CFF3C0;
 }
@@ -82,15 +75,8 @@ p {
 }
 
 #box_container {
-  display:-webkit-box;
-  display:-ms-flexbox;
-  display:flex;
-  -webkit-box-orient: horizontal;
-  -webkit-box-direction: normal;
-  -ms-flex-direction: row;
+  display: flex;
   flex-direction: row;
-  -webkit-box-align: end;
-  -ms-flex-align: end;
   align-items: flex-end;
   transform-origin: left bottom;
   margin-bottom: 25px;
