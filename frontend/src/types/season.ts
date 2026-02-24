@@ -66,8 +66,7 @@ export interface GroupEntry {
 export type SeasonMap = Record<string, GroupEntry>;
 
 // Object form of a fully resolved season entry.
-// Use parseSeasonEntry() for basic tuple→object conversion,
-// or resolveSeasonInfo() (in season-map.ts) for full cascade resolution.
+// Use resolveSeasonInfo() (in season-map.ts) for cascade resolution.
 export interface SeasonInfo {
   teamCount: number;
   promotionCount: number;
@@ -81,24 +80,4 @@ export interface SeasonInfo {
   cssFiles: string[];
   teamRenameMap: Record<string, string>;
   tiebreakOrder: string[];
-}
-
-// Converts a RawSeasonEntry tuple into a basic SeasonInfo object.
-// For full cascade-resolved properties, use resolveSeasonInfo() instead.
-export function parseSeasonEntry(entry: RawSeasonEntry): SeasonInfo {
-  const opts = entry[4] ?? {};
-  return {
-    teamCount: entry[0],
-    promotionCount: entry[1],
-    relegationCount: entry[2],
-    teams: entry[3],
-    rankClass: opts.rank_properties ?? {},
-    groupDisplay: opts.group_display,
-    urlCategory: opts.url_category,
-    leagueDisplay: opts.league_display ?? '',
-    pointSystem: opts.point_system ?? 'standard',
-    cssFiles: opts.css_files ?? [],
-    teamRenameMap: opts.team_rename_map ?? {},
-    tiebreakOrder: opts.tiebreak_order ?? ['goal_diff', 'goal_get'],
-  };
 }
