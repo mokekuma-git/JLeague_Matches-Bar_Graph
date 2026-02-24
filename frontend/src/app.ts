@@ -15,7 +15,7 @@ import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
 } from './config/season-map';
 import { parseCsvResults } from './core/csv-parser';
-import { dateInputFormat } from './core/date-utils';
+import { dateFormat } from './core/date-utils';
 import { prepareRenderData } from './core/prepare-render';
 import type { MatchSortKey } from './ranking/stats-calculator';
 import { makeRankData, makeRankTable } from './ranking/rank-table';
@@ -354,7 +354,7 @@ async function main(): Promise<void> {
 
   // Restore target date from prefs; fall back to today.
   const dateInput = document.getElementById('target_date') as HTMLInputElement;
-  dateInput.value = prefs.targetDate ?? dateInputFormat(new Date());
+  dateInput.value = prefs.targetDate ?? dateFormat(new Date(), '-');
 
   // ---- Data-selection events ----
 
@@ -397,7 +397,7 @@ async function main(): Promise<void> {
       updateFromSlider();
     });
     document.getElementById('reset_date_slider')?.addEventListener('click', () => {
-      (document.getElementById('target_date') as HTMLInputElement).value = dateInputFormat(new Date());
+      (document.getElementById('target_date') as HTMLInputElement).value = dateFormat(new Date(), '-');
       loadAndRender(seasonMap);
     });
   }

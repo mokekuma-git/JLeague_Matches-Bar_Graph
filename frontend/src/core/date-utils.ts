@@ -1,18 +1,17 @@
 // Utility functions for date and time formatting.
 
-/** Zero-pads number `m` to `n` digits. */
-export function dgt(m: number, n: number): string {
-  const longstr = '0000' + m;
-  return longstr.substring(longstr.length - n);
+/** Zero-pads a number to 2 digits. */
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
 }
 
 /**
- * Formats a Date object as "YYYY/MM/DD".
+ * Formats a Date as "YYYY/MM/DD" (default) or "YYYY-MM-DD" (sep='-').
  * If a string is given, returns it as-is (already formatted).
  */
-export function dateFormat(date: Date | string): string {
+export function dateFormat(date: Date | string, sep = '/'): string {
   if (typeof date === 'string') return date;
-  return [date.getFullYear(), dgt(date.getMonth() + 1, 2), dgt(date.getDate(), 2)].join('/');
+  return `${date.getFullYear()}${sep}${pad2(date.getMonth() + 1)}${sep}${pad2(date.getDate())}`;
 }
 
 /**
@@ -20,7 +19,7 @@ export function dateFormat(date: Date | string): string {
  */
 export function timeFormat(date: Date | string): string {
   if (typeof date === 'string') return date.replace(/(\d\d:\d\d):\d\d/, '$1');
-  return [dgt(date.getHours(), 2), dgt(date.getMinutes(), 2)].join(':');
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 }
 
 /**
@@ -29,11 +28,4 @@ export function timeFormat(date: Date | string): string {
  */
 export function dateOnly(dateStr: string): string {
   return dateStr.replace(/^\d{4}\//, '');
-}
-
-/**
- * Formats a Date as "YYYY-MM-DD" for HTML <input type="date"> elements.
- */
-export function dateInputFormat(d: Date): string {
-  return [d.getFullYear(), dgt(d.getMonth() + 1, 2), dgt(d.getDate(), 2)].join('-');
 }

@@ -1,27 +1,8 @@
 import { describe, test, expect } from 'vitest';
-import { dgt, dateFormat, timeFormat, dateOnly } from '../../core/date-utils';
-
-describe('dgt', () => {
-  test('pads single digit to 2 places', () => {
-    expect(dgt(5, 2)).toBe('05');
-    expect(dgt(0, 2)).toBe('00');
-    expect(dgt(9, 2)).toBe('09');
-  });
-
-  test('no padding needed', () => {
-    expect(dgt(12, 2)).toBe('12');
-    expect(dgt(31, 2)).toBe('31');
-  });
-
-  test('pads to 4 places', () => {
-    expect(dgt(25, 4)).toBe('0025');
-    expect(dgt(2025, 4)).toBe('2025');
-  });
-});
+import { dateFormat, timeFormat, dateOnly } from '../../core/date-utils';
 
 describe('dateFormat', () => {
-  test('formats a Date object as YYYY/MM/DD', () => {
-    // Use UTC offset-safe construction: new Date(year, month-1, day)
+  test('formats a Date object as YYYY/MM/DD by default', () => {
     const d = new Date(2025, 2, 15); // March 15, 2025
     expect(dateFormat(d)).toBe('2025/03/15');
   });
@@ -31,9 +12,14 @@ describe('dateFormat', () => {
     expect(dateFormat(d)).toBe('2025/01/05');
   });
 
-  test('passes a string through unchanged', () => {
+  test('formats with hyphen separator for HTML date input', () => {
+    const d = new Date(2025, 2, 15);
+    expect(dateFormat(d, '-')).toBe('2025-03-15');
+  });
+
+  test('passes a string through unchanged regardless of separator', () => {
     expect(dateFormat('2025/03/15')).toBe('2025/03/15');
-    expect(dateFormat('already-formatted')).toBe('already-formatted');
+    expect(dateFormat('already-formatted', '-')).toBe('already-formatted');
   });
 });
 
