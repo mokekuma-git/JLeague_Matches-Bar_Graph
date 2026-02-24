@@ -81,47 +81,48 @@ export function makeHtmlColumn(
     const matchDate = row.match_date === '' ? '未定' : row.match_date;
     if (matchDate !== '未定') matchDateSet.add(matchDate);
 
+    const statusSuffix = row.status ? `<br/>${row.status}` : '';
+
     if (!row.has_result || matchDate > targetDate) {
       // Unplayed or completed-after-cutoff: future (ghost) styling
       graph.push(
-        '<div class="' + futureClass + ' box"><div class="future bg ' + teamName + '"></div><p class="tooltip">'
+        `<div class="${futureClass} box"><div class="future bg ${teamName}"></div><p class="tooltip">`
         + makeWinContent(row, matchDate)
-        + '<span class="tooltiptext ' + teamName + '">(' + row.section_no + ') ' + timeFormat(row.start_time)
-        + (row.status ? '<br/>' + row.status : '') + '</span></p></div>\n',
+        + `<span class="tooltiptext ${teamName}">(${row.section_no}) ${timeFormat(row.start_time)}`
+        + `${statusSuffix}</span></p></div>\n`,
       );
     } else {
       const cls = classifyResult(row.point, row.pk_get, pointSystem);
+      const liveCls = row.live ? ' live' : '';
       if (cls === 'win') {
         const heightCls = boxHeightClass(winPt);
+        const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
         graph.push(
-          '<div class="' + heightCls + ' box' + (row.live ? ' live' : '') + '"><p class="tooltip '
-          + teamName + '">' + makeWinContent(row, matchDate)
-          + '<span class="tooltiptext halfW ' + teamName + '">(' + row.section_no + ') ' + timeFormat(row.start_time)
-          + (heightCls !== 'tall' ? '<br/>' + row.stadium : '')
-          + (row.status ? '<br/>' + row.status : '') + '</span></p></div>\n',
+          `<div class="${heightCls} box${liveCls}"><p class="tooltip ${teamName}">`
+          + makeWinContent(row, matchDate)
+          + `<span class="tooltiptext halfW ${teamName}">(${row.section_no}) ${timeFormat(row.start_time)}`
+          + `${stadiumLine}${statusSuffix}</span></p></div>\n`,
         );
       } else if (cls === 'pk_win') {
         graph.push(
-          '<div class="medium box' + (row.live ? ' live' : '') + '"><p class="tooltip '
-          + teamName + '">' + makePkWinContent(row, matchDate)
-          + '<span class="tooltiptext halfW ' + teamName + '">(' + row.section_no + ') ' + timeFormat(row.start_time)
-          + '<br/>' + row.stadium
-          + (row.status ? '<br/>' + row.status : '') + '</span></p></div>\n',
+          `<div class="medium box${liveCls}"><p class="tooltip ${teamName}">`
+          + makePkWinContent(row, matchDate)
+          + `<span class="tooltiptext halfW ${teamName}">(${row.section_no}) ${timeFormat(row.start_time)}`
+          + `<br/>${row.stadium}${statusSuffix}</span></p></div>\n`,
         );
       } else if (cls === 'draw' || cls === 'pk_loss') {
         graph.push(
-          '<div class="short box' + (row.live ? ' live' : '') + '"><p class="tooltip ' + teamName + '">'
+          `<div class="short box${liveCls}"><p class="tooltip ${teamName}">`
           + makeDrawContent(row, matchDate)
-          + '<span class="tooltiptext fullW ' + teamName + '">'
+          + `<span class="tooltiptext fullW ${teamName}">`
           + makeFullContent(row, matchDate)
-          + (row.status ? '<br/>' + row.status : '') + '</span></p></div>',
+          + `${statusSuffix}</span></p></div>`,
         );
       } else {
         // Loss (point === 0): no box; goes to loseBox for the stats tooltip
         let loseContent = makeFullContent(row, matchDate);
         if (row.live) {
-          loseContent = '<div class="live">' + loseContent
-            + (row.status ? '<br/>' + row.status : '') + '</div>';
+          loseContent = `<div class="live">${loseContent}${statusSuffix}</div>`;
         }
         loseBox.push(loseContent);
       }

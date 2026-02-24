@@ -11,7 +11,7 @@ import type {
  * @param season      - Season name (e.g. '2025', '2026East')
  */
 export function getCsvFilename(competition: string, season: string): string {
-  return 'csv/' + season + '_allmatch_result-' + competition + '.csv';
+  return `csv/${season}_allmatch_result-${competition}.csv`;
 }
 
 /**
