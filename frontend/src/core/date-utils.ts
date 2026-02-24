@@ -30,3 +30,10 @@ export function timeFormat(date: Date | string): string {
 export function dateOnly(dateStr: string): string {
   return dateStr.replace(/^\d{4}\//, '');
 }
+
+/**
+ * Formats a Date as "YYYY-MM-DD" for HTML <input type="date"> elements.
+ */
+export function dateInputFormat(d: Date): string {
+  return [d.getFullYear(), dgt(d.getMonth() + 1, 2), dgt(d.getDate(), 2)].join('-');
+}
