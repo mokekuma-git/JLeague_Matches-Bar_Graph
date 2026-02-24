@@ -208,7 +208,7 @@ function renderFromCache(
   if (boxCon) {
     const { html, matchDates } = renderBarGraph(
       groupData, sortedTeams, seasonInfo,
-      targetDate, disp, matchSortKey, bottomFirst, state.heightUnit, hasPk,
+      targetDate, disp, bottomFirst, state.heightUnit, hasPk,
     );
     boxCon.innerHTML = html;
     const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;

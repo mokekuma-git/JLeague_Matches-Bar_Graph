@@ -5,7 +5,6 @@
 
 import type { TeamData } from '../types/match';
 import type { SeasonInfo } from '../types/season';
-import type { MatchSortKey } from '../ranking/stats-calculator';
 import { makeHtmlColumn } from './bar-column';
 import type { ColumnResult } from './bar-column';
 import { getRankClass, joinLoseBox } from './tooltip';
@@ -106,7 +105,6 @@ export function appendSpaceCols(
  * @param seasonInfo   Season configuration.
  * @param targetDate   Display cutoff date 'YYYY/MM/DD'.
  * @param disp         true → use disp_avlbl_pt for column heights.
- * @param matchSortKey 'section_no' or 'match_date' (used by makeHtmlColumn internally).
  * @param bottomFirst  true → reverse graph order so older/earlier matches appear at bottom.
  * @param heightUnit   CSS height in px for one point box (from getHeightUnit()).
  */
@@ -116,7 +114,6 @@ export function renderBarGraph(
   seasonInfo: SeasonInfo,
   targetDate: string,
   disp: boolean,
-  _matchSortKey: MatchSortKey,
   bottomFirst: boolean,
   heightUnit: number,
   hasPk = false,
