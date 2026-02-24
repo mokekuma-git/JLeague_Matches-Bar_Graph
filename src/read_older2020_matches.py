@@ -5,8 +5,6 @@ import os
 from pathlib import Path
 import re
 import sys
-from typing import List
-from typing import Optional
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -19,7 +17,7 @@ config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
 MATCH_CARD_ID = re.compile(config.match_data.card_id_pattern)
 
 
-def read_href(td_tag) -> Optional[str]:
+def read_href(td_tag) -> str | None:
     """Get href of a tag in given td tag
 
     Args:
@@ -62,7 +60,7 @@ def store_year_data(year: int) -> None:
     print(f"Stored: {csv_file}")
 
 
-def process_years(years: List[int]) -> None:
+def process_years(years: list[int]) -> None:
     """Specified years of J-League match data are processed and stored.
 
     Args:
@@ -88,7 +86,7 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 
-def parse_years() -> List[int]:
+def parse_years() -> list[int]:
     """Parse years from command-line arguments.
 
     If no arguments are provided, default to all years from 1993 to the current year.

@@ -4,7 +4,6 @@ from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
 import re
-from typing import List
 
 import pandas as pd
 
@@ -55,7 +54,7 @@ def read_match_csv(file_path):
     return df
 
 
-def read_all_match_times(year: int = None, competition: str = "*") -> List[datetime]:
+def read_all_match_times(year: int = None, competition: str = "*") -> list[datetime]:
     """Get all match times from all J-League CSV files.
 
     Args:
@@ -89,7 +88,7 @@ def read_all_match_times(year: int = None, competition: str = "*") -> List[datet
     return all_times
 
 
-def read_match_times_from_file(file: Path) -> List[datetime]:
+def read_match_times_from_file(file: Path) -> list[datetime]:
     """Read match times from a specific CSV file.
 
     Args:

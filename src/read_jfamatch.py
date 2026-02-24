@@ -36,7 +36,6 @@ import os
 from pathlib import Path
 import re
 from typing import Any
-from typing import Dict
 
 import pandas as pd
 import requests
@@ -86,7 +85,7 @@ def _prepare_config() -> Config:
 config = _prepare_config()
 
 
-def read_match_json(_url: str) -> Dict[str, Any]:
+def read_match_json(_url: str) -> dict[str, Any]:
     """Read the match JSON data from the given URL
 
     Args:
@@ -221,7 +220,7 @@ def read_group(competition: str) -> None:
     update_if_diff(match_df, comp_conf.csv_path)
 
 
-def read_all_group(comp_conf: Dict[str, Any]) -> pd.DataFrame:
+def read_all_group(comp_conf: dict[str, Any]) -> pd.DataFrame:
     """Read the match data for all groups in the specified competition.
 
     Args:

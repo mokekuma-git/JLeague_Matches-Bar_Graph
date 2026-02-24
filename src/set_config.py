@@ -46,7 +46,6 @@ config.timezone = pytz.timezone(config.timezone)
 from os import PathLike
 from pathlib import Path
 from typing import Any
-from typing import Union
 
 import yaml
 
@@ -208,7 +207,7 @@ class Config:
             return format_str.format(**kwargs)
         return format_str
 
-    def get_from_keypath(self, key: str) -> Union[str, ConfigSection, Any]:
+    def get_from_keypath(self, key: str) -> str | ConfigSection | Any:
         """指定されたキーのパスを辿って値、またはConfigSectionを取得する
 
         キーはドット区切りでセクション名と共に指定する
