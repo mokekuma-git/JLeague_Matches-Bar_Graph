@@ -87,10 +87,10 @@ export function parseCsvResults(
     const matchDate = new Date(match.match_date);
     if (!isNaN(matchDate.getTime())) matchDateStr = dateFormat(matchDate);
 
-    const homePk = match.home_pk_score ? parseInt(match.home_pk_score) : null;
-    const awayPk = match.away_pk_score ? parseInt(match.away_pk_score) : null;
-    const homeScoreEx = match.home_score_ex ? parseInt(match.home_score_ex) : null;
-    const awayScoreEx = match.away_score_ex ? parseInt(match.away_score_ex) : null;
+    const homePk = match.home_pk_score ? parseInt(match.home_pk_score, 10) : null;
+    const awayPk = match.away_pk_score ? parseInt(match.away_pk_score, 10) : null;
+    const homeScoreEx = match.home_score_ex ? parseInt(match.home_score_ex, 10) : null;
+    const awayScoreEx = match.away_score_ex ? parseInt(match.away_score_ex, 10) : null;
     const hasResult = Boolean(match.home_goal && match.away_goal);
     const status = makeStatusAttr(match);
     const live = makeLiveAttr(match);

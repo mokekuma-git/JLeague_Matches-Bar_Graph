@@ -15,6 +15,7 @@ import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
 } from './config/season-map';
 import { parseCsvResults } from './core/csv-parser';
+import { dateFormat } from './core/date-utils';
 import { prepareRenderData } from './core/prepare-render';
 import type { MatchSortKey } from './ranking/stats-calculator';
 import { makeRankData, makeRankTable } from './ranking/rank-table';
@@ -47,6 +48,9 @@ const state: AppState = {
 };
 
 const DEFAULT_COMPETITION = 'J1';
+
+// CSV URL cache-busting: same bucket for requests within this window (seconds).
+const CACHE_BUST_WINDOW_SEC = 300; // 5 minutes
 
 // ---- DOM helpers -------------------------------------------------------
 
@@ -208,7 +212,7 @@ function renderFromCache(
   if (boxCon) {
     const { html, matchDates } = renderBarGraph(
       groupData, sortedTeams, seasonInfo,
-      targetDate, disp, matchSortKey, bottomFirst, state.heightUnit, hasPk,
+      targetDate, disp, bottomFirst, state.heightUnit, hasPk,
     );
     boxCon.innerHTML = html;
     const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
@@ -255,7 +259,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     return;
   }
 
-  const cachebuster = Math.floor(Date.now() / 1000 / 300);
+  const cachebuster = Math.floor(Date.now() / 1000 / CACHE_BUST_WINDOW_SEC);
   setStatus('CSVを読み込み中...');
 
   Papa.parse<RawMatchRow>(filename + '?_=' + cachebuster, {
@@ -350,12 +354,7 @@ async function main(): Promise<void> {
 
   // Restore target date from prefs; fall back to today.
   const dateInput = document.getElementById('target_date') as HTMLInputElement;
-  if (prefs.targetDate) {
-    dateInput.value = prefs.targetDate;
-  } else {
-    const today = new Date();
-    dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  }
+  dateInput.value = prefs.targetDate ?? dateFormat(new Date(), '-');
 
   // ---- Data-selection events ----
 
@@ -381,7 +380,7 @@ async function main(): Promise<void> {
   const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (dateSlider) {
     const updateFromSlider = (): void => {
-      const date = state.currentMatchDates[parseInt(dateSlider.value)];
+      const date = state.currentMatchDates[parseInt(dateSlider.value, 10)];
       if (!date) return;
       (document.getElementById('target_date') as HTMLInputElement).value = date.replace(/\//g, '-');
       loadAndRender(seasonMap);
@@ -390,17 +389,15 @@ async function main(): Promise<void> {
     dateSlider.addEventListener('change', updateFromSlider);
 
     document.getElementById('date_slider_down')?.addEventListener('click', () => {
-      dateSlider.value = String(Math.max(0, parseInt(dateSlider.value) - 1));
+      dateSlider.value = String(Math.max(0, parseInt(dateSlider.value, 10) - 1));
       updateFromSlider();
     });
     document.getElementById('date_slider_up')?.addEventListener('click', () => {
-      dateSlider.value = String(Math.min(parseInt(dateSlider.max), parseInt(dateSlider.value) + 1));
+      dateSlider.value = String(Math.min(parseInt(dateSlider.max, 10), parseInt(dateSlider.value, 10) + 1));
       updateFromSlider();
     });
     document.getElementById('reset_date_slider')?.addEventListener('click', () => {
-      const t = new Date();
-      (document.getElementById('target_date') as HTMLInputElement).value =
-        `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+      (document.getElementById('target_date') as HTMLInputElement).value = dateFormat(new Date(), '-');
       loadAndRender(seasonMap);
     });
   }

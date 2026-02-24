@@ -121,8 +121,8 @@ function computeH2H(
 
       const entry = result.get(teamName)!;
       entry.h2hPoints += m.point;
-      const gGet = parseInt(m.goal_get) || 0;
-      const gLose = parseInt(m.goal_lose) || 0;
+      const gGet = parseInt(m.goal_get, 10) || 0;
+      const gLose = parseInt(m.goal_lose, 10) || 0;
       entry.h2hGoalDiff += gGet - gLose;
     }
   }

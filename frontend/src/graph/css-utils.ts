@@ -37,7 +37,7 @@ export function getCssRule(selector: string): CSSStyleRule | undefined {
 export function getHeightUnit(): number {
   const rule = getCssRule('.short');
   if (!rule) return 0;
-  return parseInt(rule.style.height) || 0;
+  return parseInt(rule.style.height, 10) || 0;
 }
 
 /**
@@ -82,10 +82,10 @@ export function setSpace(value: string, updateColorPicker = true): void {
  * No localStorage writes (Phase 3b).
  */
 export function setScale(boxCon: HTMLElement, value: string, updateSlider = true): void {
-  boxCon.style.transform = 'scale(' + value + ')';
+  boxCon.style.transform = `scale(${value})`;
   const pointCol = boxCon.querySelector('.point_column');
   if (pointCol) {
-    boxCon.style.height = String((pointCol as HTMLElement).clientHeight * parseFloat(value)) + 'px';
+    boxCon.style.height = `${(pointCol as HTMLElement).clientHeight * parseFloat(value)}px`;
   }
   if (updateSlider) {
     const slider = document.getElementById('scale_slider') as HTMLInputElement | null;

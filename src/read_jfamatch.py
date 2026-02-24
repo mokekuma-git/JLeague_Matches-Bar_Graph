@@ -36,7 +36,6 @@ import os
 from pathlib import Path
 import re
 from typing import Any
-from typing import Dict
 
 import pandas as pd
 import requests
@@ -56,7 +55,7 @@ def _prepare_config() -> Config:
     """
     new_conf = load_config(Path(__file__).parent / '../config/jfamatch.yaml')
 
-    def is_string_list(obj):
+    def is_string_list(obj: Any) -> bool:
         if not isinstance(obj, list):
             return False
         return all(isinstance(item, str) for item in obj)
@@ -86,7 +85,7 @@ def _prepare_config() -> Config:
 config = _prepare_config()
 
 
-def read_match_json(_url: str) -> Dict[str, Any]:
+def read_match_json(_url: str) -> dict[str, Any]:
     """Read the match JSON data from the given URL
 
     Args:
@@ -98,7 +97,7 @@ def read_match_json(_url: str) -> Dict[str, Any]:
     """
     result = None
     counter = 0
-    while result is None or counter > 10:
+    while result is None and counter < 10:
         try:
             print(f'access {_url} ...')
             result = json.loads(requests.get(_url, timeout=config.http_timeout).text)
@@ -163,7 +162,6 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
         pd.DataFrame: DataFrame containing the match data
     """
     match_list = read_match_json(_url)[config.schedule_container][config.schedule_list]
-    # print(match_list)
     result_list = []
     match_index_dict = {}
     for (_count, _match_data) in enumerate(match_list):
@@ -190,10 +188,10 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
         if '【中止】' in _match_data['venueFullName']:
             _row['status'] = '試合中止'
             if config.debug:
-                print('Cancel Game## ' + _match_data['venueFullName'])
+                print(f'Cancel Game## {_match_data["venueFullName"]}')
         else:
             if config.debug:
-                print('No Cancel## ' + _match_data['venueFullName'])
+                print(f'No Cancel## {_match_data["venueFullName"]}')
 
         _row['extraTime'] = str(_row['extraTime'])  # Stringify for comparison with old style CSV
         _row['match_date'] = to_datetime_aspossible(_row['match_date'])
@@ -221,7 +219,7 @@ def read_group(competition: str) -> None:
     update_if_diff(match_df, comp_conf.csv_path)
 
 
-def read_all_group(comp_conf: Dict[str, Any]) -> pd.DataFrame:
+def read_all_group(comp_conf: dict[str, Any]) -> pd.DataFrame:
     """Read the match data for all groups in the specified competition.
 
     Args:

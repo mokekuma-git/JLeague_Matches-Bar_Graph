@@ -5,7 +5,6 @@
 
 import type { TeamData } from '../types/match';
 import type { SeasonInfo } from '../types/season';
-import type { MatchSortKey } from '../ranking/stats-calculator';
 import { makeHtmlColumn } from './bar-column';
 import type { ColumnResult } from './bar-column';
 import { getRankClass, joinLoseBox } from './tooltip';
@@ -42,11 +41,11 @@ export function makeInsertColumns(seasonInfo: SeasonInfo): number[] {
  */
 export function makePointColumn(maxAvblPt: number, bottomFirst: boolean): string {
   const boxList = Array.from({ length: maxAvblPt }, (_, i) => i + 1)
-    .map(i => '<div class="point box">' + i + '</div>');
+    .map(i => `<div class="point box">${i}</div>`);
   if (bottomFirst) boxList.reverse();
-  return '<div class="point_column"><div class="point box">順位</div><div class="point box">勝点</div>'
+  return `<div class="point_column"><div class="point box">順位</div><div class="point box">勝点</div>`
     + boxList.join('')
-    + '<div class="point box">勝点</div><div class="point box">順位</div></div>\n\n';
+    + `<div class="point box">勝点</div><div class="point box">順位</div></div>\n\n`;
 }
 
 /**
@@ -73,10 +72,7 @@ export function appendSpaceCols(
 
   const spaceCols = maxAvblPt - col.avlbl_pt;
   if (spaceCols > 0) {
-    graph.push(
-      '<div class="space box" style="height:' + heightUnit * spaceCols + 'px">('
-      + spaceCols + ')</div>',
-    );
+    graph.push(`<div class="space box" style="height:${heightUnit * spaceCols}px">(${spaceCols})</div>`);
   }
 
   if (bottomFirst) {
@@ -85,16 +81,12 @@ export function appendSpaceCols(
   }
 
   const rankClass = getRankClass(rank, seasonInfo);
-  const rankCell = '<div class="short box ' + rankClass + '">' + rank + '</div>';
-  const teamName = '<div class="short box tooltip ' + col.teamName + '">' + col.teamName
-    + '<span class=" tooltiptext fullW ' + col.teamName + '">'
-    + '成績情報:<hr/>' + col.stats
-    + '<hr/>敗戦記録:<hr/>'
-    + joinLoseBox(loseBox) + '</span></div>\n';
+  const rankCell = `<div class="short box ${rankClass}">${rank}</div>`;
+  const teamName = `<div class="short box tooltip ${col.teamName}">${col.teamName}`
+    + `<span class=" tooltiptext fullW ${col.teamName}">`
+    + `成績情報:<hr/>${col.stats}<hr/>敗戦記録:<hr/>${joinLoseBox(loseBox)}</span></div>\n`;
 
-  return '<div id="' + col.teamName + '_column">'
-    + rankCell + teamName + graph.join('') + teamName + rankCell
-    + '</div>\n\n';
+  return `<div id="${col.teamName}_column">${rankCell}${teamName}${graph.join('')}${teamName}${rankCell}</div>\n\n`;
 }
 
 /**
@@ -113,7 +105,6 @@ export function appendSpaceCols(
  * @param seasonInfo   Season configuration.
  * @param targetDate   Display cutoff date 'YYYY/MM/DD'.
  * @param disp         true → use disp_avlbl_pt for column heights.
- * @param matchSortKey 'section_no' or 'match_date' (used by makeHtmlColumn internally).
  * @param bottomFirst  true → reverse graph order so older/earlier matches appear at bottom.
  * @param heightUnit   CSS height in px for one point box (from getHeightUnit()).
  */
@@ -123,7 +114,6 @@ export function renderBarGraph(
   seasonInfo: SeasonInfo,
   targetDate: string,
   disp: boolean,
-  _matchSortKey: MatchSortKey,
   bottomFirst: boolean,
   heightUnit: number,
   hasPk = false,

@@ -177,7 +177,7 @@ describe('renderBarGraph', () => {
   test('matchDates always starts with sentinel 1970/01/01 for "開幕前" slider position', () => {
     const groupData = buildGroupData();
     const { matchDates } = renderBarGraph(
-      groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, 'section_no', false, 20,
+      groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, false, 20,
     );
     expect(matchDates[0]).toBe('1970/01/01');
   });
@@ -185,7 +185,7 @@ describe('renderBarGraph', () => {
   test('matchDates contains sentinel + actual match dates in sorted order', () => {
     const groupData = buildGroupData();
     const { matchDates } = renderBarGraph(
-      groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, 'section_no', false, 20,
+      groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, false, 20,
     );
     expect(matchDates).toEqual(['1970/01/01', '2025/03/01', '2025/04/01']);
   });
@@ -199,7 +199,7 @@ describe('renderBarGraph', () => {
       calculateTeamStats(td, TARGET, 'section_no');
     }
     const { matchDates } = renderBarGraph(
-      groupData, ['TeamA', 'TeamB'], info, TARGET, false, 'section_no', false, 20,
+      groupData, ['TeamA', 'TeamB'], info, TARGET, false, false, 20,
     );
     expect(matchDates).toEqual(['1970/01/01']);
   });
@@ -208,7 +208,7 @@ describe('renderBarGraph', () => {
     const groupData = buildGroupData();
     const sortedTeams = ['TeamA', 'TeamB', 'TeamC'];
     const { html } = renderBarGraph(
-      groupData, sortedTeams, info, TARGET, false, 'section_no', false, 20,
+      groupData, sortedTeams, info, TARGET, false, false, 20,
     );
     expect(html).toContain('id="TeamA_column"');
     expect(html).toContain('id="TeamB_column"');
@@ -218,7 +218,7 @@ describe('renderBarGraph', () => {
   test('html starts and ends with point_column', () => {
     const groupData = buildGroupData();
     const { html } = renderBarGraph(
-      groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, 'section_no', false, 20,
+      groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, false, 20,
     );
     const firstPt = html.indexOf('point_column');
     const lastPt = html.lastIndexOf('point_column');
@@ -231,7 +231,7 @@ describe('renderBarGraph', () => {
     // indices 1 and 2 get extra point columns
     const groupData = buildGroupData();
     const { html } = renderBarGraph(
-      groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, 'section_no', false, 20,
+      groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, false, 20,
     );
     // Count point_column occurrences: start + insertions + end ≥ 3
     const count = (html.match(/point_column/g) ?? []).length;

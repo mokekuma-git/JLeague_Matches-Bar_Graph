@@ -10,7 +10,7 @@ from set_config import load_config
 config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
 
 
-def make_old_matches_csv(competition: str, years: int = None) -> None:
+def make_old_matches_csv(competition: str, years: list[int] | None = None) -> None:
     """Convert match results of the specified years for the given competition into CSV format
 
     Args:
@@ -52,8 +52,6 @@ def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
     _df = pd.read_csv(filename, index_col=0)
     matches = _df[_df['大会'].isin(config.league_name[comp_index])].reset_index(drop=True)
     if matches.empty:
-        # print tournament counts for debugging
-        # print(matches['大会'].value_counts())
         return []
 
     year = matches['年度'].value_counts().keys()[0]
@@ -71,9 +69,9 @@ def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
     if year <= 1998:  # Until 1998, there was a penalty kick rule
         matches['away_goal'] = matches['away_goal'].str.replace(r'\(PK.*', '', regex=True)
         matches['home_pk'] = matches['スコア'].str.extract(r'\(PK(\d+)\-', expand=False)
-        matches['home_pk'].fillna('')
+        matches['home_pk'] = matches['home_pk'].fillna('')
         matches['away_pk'] = matches['スコア'].str.extract(r'\(PK\d+\-(\d+)\)', expand=False)
-        matches['away_pk'].fillna('')
+        matches['away_pk'] = matches['away_pk'].fillna('')
         columns_list.extend(['home_pk', 'away_pk'])
     matches['attendance'] = matches['attendance'].astype('int')
 
@@ -103,7 +101,6 @@ def init_season_dict(matches: pd.DataFrame, year: int) -> dict[str, str]:
     season_dict = {}
     season_names = matches['大会'].value_counts().keys()
     if len(season_names) > 1:
-        # print(f"Multiple tournaments in {year}: {season_names}")
         # ex) 1993: ['Ｊ１ サントリー', 'Ｊ１ ＮＩＣＯＳ']
         season_start = {}
         for _name in season_names:
