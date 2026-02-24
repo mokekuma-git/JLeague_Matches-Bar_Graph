@@ -75,7 +75,6 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
     for _section in match_groups:
         group = _section.find('header').text.strip()
         group = group.replace('グループ', '')
-        # print('Group: ', group)
 
         match_table = _section.find('tbody')
         _index = 0

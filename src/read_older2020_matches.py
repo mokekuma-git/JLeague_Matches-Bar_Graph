@@ -29,9 +29,7 @@ def read_href(td_tag: bs4.element.Tag) -> str | None:
     """
     a_tag = td_tag.find('a')
     if a_tag:
-        # print(a_tag['href'])
         return MATCH_CARD_ID.search(a_tag['href'])[1]
-    # print(_td)
     return None
 
 

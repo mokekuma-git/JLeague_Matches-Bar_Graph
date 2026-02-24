@@ -41,7 +41,6 @@ def parse_match_date_data(match: bs4.element.Tag) -> dict[str, str]:
         match: 日時データを示すTag要素
         フォーマットは、match_date, start_timeをキーとしたDict形式
     """
-    # display(match.contents[0].strip(), match.contents[2].strip())
     match_date = match.contents[0].strip()
     if datetime.strptime(match_date, DATE_FORMAT).date().month <= SEASON_THRESHOLD_MONTH:
         match_date = f'{SEASON + 1}/' + match_date
@@ -66,7 +65,6 @@ def read_match_from_web(soup: bs4.BeautifulSoup) -> list[dict[str, Any]]:
         section = MATCH_WEEK_REGEXP.match(match_box.get('id'))[1]
         for match_data in match_box.find_all('li', class_='matchContainer'):
             # 1試合分のmatchContainer内
-            # display(match_data)
             match_dict = {'section_no': section, 'match_index_in_section': _index}
 
             # 日時 (<span class="time">[空白類]9/12<span>(SUN)</span>10:01[空白類]</span>)

@@ -162,7 +162,6 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
         pd.DataFrame: DataFrame containing the match data
     """
     match_list = read_match_json(_url)[config.schedule_container][config.schedule_list]
-    # print(match_list)
     result_list = []
     match_index_dict = {}
     for (_count, _match_data) in enumerate(match_list):
