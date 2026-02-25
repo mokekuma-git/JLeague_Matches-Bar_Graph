@@ -80,6 +80,7 @@ JLeague_Matches-Bar_Graph/
 │   └── old_matches.yaml            #   過去データ設定
 ├── src/                             # Pythonスクリプト (データ取得・変換)
 │   ├── set_config.py               #   設定管理モジュール (YAML読み込み)
+│   ├── match_utils.py              #   共有ユーティリティ (CSV I/O, season_map読み込み, 日付計算)
 │   ├── read_jleague_matches.py     #   Jリーグ公式サイトからスクレイピング (BS4)
 │   ├── read_jfamatch.py            #   JFA JSON APIからデータ取得
 │   ├── read_older2020_matches.py   #   2020年以前の過去データ取得
@@ -242,7 +243,7 @@ TS 版 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階�
 | キー | 説明 | 例 |
 | ---- | --- | -- |
 | `group_display` | HTML上の表示グループ名 (groupHeadテキスト)。スクレイピング結果の `group` 列でフィルタしてCSVに振り分ける | `"EAST"`, `"EAST-A"` |
-| `url_category` | スクレイピングURL `j{category}/{sec}/` のカテゴリ部分を上書き (デフォルト: カテゴリキーをそのまま使用) | `"2j3"` → URL `j2j3/{sec}/` |
+| `url_category` | スクレイピングURL `{category}/{sec}/` のカテゴリ部分を上書き (デフォルト: competition key を小文字化。例: `J1` → `j1`) | `"j2j3"` → URL `j2j3/{sec}/` |
 | `rank_properties` | 順位→CSSクラスのマッピング | `{"3": "promoted_playoff"}` |
 
 ### シーズン命名規則
@@ -271,7 +272,7 @@ TS 版 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階�
   - `[]`: 通常の単一シーズン → `update_all_matches()` で従来通り更新
   - `[...]`: マルチグループシーズン → `update_sub_season_matches()` で各サブシーズン CSV に振り分け
   - season_map に新しい年のエントリを追加しない限り、そのカテゴリ・年は自動的にスキップされる
-- **`read_jleague_matches.py` は共通ライブラリを兼ねる** — `update_if_diff`, `to_datetime_aspossible`, `config` オブジェクトなどの共通関数を他スクリプト (`read_jfamatch`, `read_aclgl`, `read_we_league`) がインポートして使う
+- **`match_utils.py` が共通ライブラリ** — CSV I/O (`update_if_diff`, `read_allmatches_csv`), season_map 読み込み (`load_season_map`, `get_sub_seasons`, `get_csv_path`), 日付計算 (`get_season_from_date`, `to_datetime_aspossible`) などの共通関数を提供。他スクリプト (`read_jfamatch`, `read_aclgl`, `read_we_league`) がインポートして使う。`read_jleague_matches.py` は J-League 固有のスクレイピングと URL 構築 (`competition.lower()` で URL セグメント生成) のみを担当
 - **勝ち点システム (PointSystem)** — `'standard'` (勝3/PK勝2/PK負1/分1/負0) と `'old-two-points'` (勝2/分1/負0) の2種類。season_map.json の Competition 階層で `point_system` として指定可能 (デフォルト: `'standard'`)
 
 ## aclgl_points.json 構造

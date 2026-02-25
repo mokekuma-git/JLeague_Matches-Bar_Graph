@@ -25,7 +25,7 @@ const sampleGroup: GroupEntry = {
     J2: {
       league_display: 'J2リーグ',
       seasons: {
-        '2026EastA': [10, 0, 0, [], { group_display: 'EAST-A', url_category: '2j3' }],
+        '2026EastA': [10, 0, 0, [], { group_display: 'EAST-A', url_category: 'j2j3' }],
       },
     },
   },
@@ -122,11 +122,11 @@ describe('resolveSeasonInfo', () => {
   });
 
   test('season with group_display and url_category', () => {
-    const entry: RawSeasonEntry = [10, 0, 0, [], { group_display: 'EAST-A', url_category: '2j3' }];
+    const entry: RawSeasonEntry = [10, 0, 0, [], { group_display: 'EAST-A', url_category: 'j2j3' }];
     const info = resolveSeasonInfo(sampleGroup, sampleGroup.competitions.J2, entry);
 
     expect(info.groupDisplay).toBe('EAST-A');
-    expect(info.urlCategory).toBe('2j3');
+    expect(info.urlCategory).toBe('j2j3');
     expect(info.leagueDisplay).toBe('J2リーグ');
   });
 

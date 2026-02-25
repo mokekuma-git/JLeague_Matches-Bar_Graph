@@ -14,9 +14,9 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from match_utils import get_season_from_date, get_sub_seasons
 from read_jleague_matches import (
     read_match_from_web,
-    get_season_from_date,
     _team_count_to_section_range,
     _calc_section_range,
     update_sub_season_matches,
@@ -198,8 +198,7 @@ class TestGetSubSeasons(unittest.TestCase):
                            for comp_key, comp in jleague.items()}
 
     def test_j1_sub_seasons(self):
-        from read_jleague_matches import get_sub_seasons
-        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
+        with patch('match_utils.load_season_map', return_value=self.season_map):
             subs = get_sub_seasons('J1')
         self.assertEqual(len(subs), 2)
         self.assertEqual(subs[0]['name'], '2026East')
@@ -213,27 +212,24 @@ class TestGetSubSeasons(unittest.TestCase):
 
     def test_j3_no_2026_entry_returns_none(self):
         """J3 has no 2026 entry -> get_sub_seasons returns None (skip)."""
-        from read_jleague_matches import get_sub_seasons
-        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
+        with patch('match_utils.load_season_map', return_value=self.season_map):
             result = get_sub_seasons('J3')
         self.assertIsNone(result)
 
     def test_unknown_competition_returns_none(self):
         """Competition not in season_map at all -> None."""
-        from read_jleague_matches import get_sub_seasons
-        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
+        with patch('match_utils.load_season_map', return_value=self.season_map):
             result = get_sub_seasons('J9')
         self.assertIsNone(result)
 
     def test_j2_sub_seasons(self):
-        from read_jleague_matches import get_sub_seasons
-        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
+        with patch('match_utils.load_season_map', return_value=self.season_map):
             subs = get_sub_seasons('J2')
         self.assertEqual(len(subs), 4)
         names = [s['name'] for s in subs]
         self.assertEqual(names, ['2026EastA', '2026EastB', '2026WestA', '2026WestB'])
         for s in subs:
-            self.assertEqual(s['url_category'], '2j3')
+            self.assertEqual(s['url_category'], 'j2j3')
         displays = [s['group_display'] for s in subs]
         self.assertEqual(displays, ['EAST-A', 'EAST-B', 'WEST-A', 'WEST-B'])
 

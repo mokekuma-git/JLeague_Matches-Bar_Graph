@@ -1,9 +1,7 @@
 """Read match information of J-League and save as CSV"""
 import argparse
-from datetime import date
 from datetime import datetime
 from datetime import timedelta
-import json
 import os
 from pathlib import Path
 import re
@@ -17,7 +15,11 @@ import requests
 
 import match_utils
 from match_utils import (
+    get_csv_path,
+    get_season_from_date,
+    get_sub_seasons,
     get_timestamp_from_csv,
+    load_season_map,
     matches_differ,
     parse_range_args,
     read_allmatches_csv,
@@ -34,149 +36,6 @@ config.timezone = pytz.timezone(config.timezone)
 match_utils.config = config
 
 
-def load_season_map() -> dict:
-    """Load season_map.json and extract jleague competitions.
-
-    The 4-tier JSON has the structure:
-        { "jleague": { "competitions": { "J1": { "seasons": {...} }, ... } } }
-
-    This function flattens it to:
-        { "J1": { "2026East": [...], ... }, "J2": {...}, ... }
-
-    Returns:
-        dict: Competition key -> {season_name: RawSeasonEntry}
-    """
-    season_map_path = config.get_path('paths.season_map_file')
-    with open(season_map_path, 'r', encoding='utf-8') as f:
-        raw = json.load(f)
-    jleague = raw.get('jleague', {}).get('competitions', {})
-    return {comp_key: comp.get('seasons', {})
-            for comp_key, comp in jleague.items()}
-
-
-def get_sub_seasons(competition: str) -> list[dict] | None:
-    """Get sub-seasons for the given competition from season_map.json.
-
-    For years with multiple sub-seasons (e.g. 2026East/2026West),
-    returns a list of sub-season info dicts. For single-season years,
-    returns an empty list. If no season entry exists for this competition,
-    returns None (caller should skip this competition entirely).
-
-    Args:
-        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-
-    Returns:
-        list[dict] | None:
-            None       -- no season entry for config.season -> skip
-            []         -- single season -> use update_all_matches
-            [dict,...] -- multi-group season -> use update_sub_season_matches
-    """
-    season_map = load_season_map()
-    if competition not in season_map:
-        return None
-
-    season_str = str(config.season)
-    comp_seasons = season_map[competition]
-    sub_keys = sorted(k for k in comp_seasons if k.startswith(season_str) and k != season_str)
-
-    # No entry at all for this season (neither bare key nor sub-keys)
-    if not sub_keys and season_str not in comp_seasons:
-        return None
-
-    if len(sub_keys) <= 1:
-        return []
-
-    result = []
-    for k in sub_keys:
-        entry = comp_seasons[k]
-        info = {
-            'name': k,
-            'teams': entry[3],
-            'team_count': entry[0],
-            'group': k[len(season_str):],
-        }
-        # Read season-specific overrides from index 4 (merged optional dict)
-        if len(entry) > 4 and isinstance(entry[4], dict):
-            opts = entry[4]
-            if 'group_display' in opts:
-                info['group_display'] = opts['group_display']
-            if 'url_category' in opts:
-                info['url_category'] = opts['url_category']
-        result.append(info)
-    return result
-
-
-def get_csv_path(competition: str, season: str = None) -> str:
-    """Get the path of CSV file from config file.
-
-    Args:
-        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-        season (str, optional): Season name (e.g. '2026East'). Defaults to config.season.
-
-    Returns:
-        str: Path of CSV file
-
-    Raises:
-        KeyError: If the key 'paths.csv_format' is not found in the config file
-    """
-    if season is None:
-        season = config.season
-    # CSV file path is also the key of Timestamp file, so handle it as a string
-    return config.get_format_str('paths.csv_format', season=season, competition=competition)
-
-
-def _url_segment_from_competition(competition: str) -> str:
-    """Extract URL segment from competition key for J-League URLs.
-
-    J-League URLs use the pattern j{segment}/{section}/.
-    For competition keys like 'J1', 'J2', 'J3', the segment is the
-    numeric part (e.g. '1', '2', '3').
-
-    Args:
-        competition (str): Competition key (e.g. 'J1')
-
-    Returns:
-        str: URL segment (e.g. '1')
-    """
-    if competition.upper().startswith('J'):
-        return competition[1:]
-    return competition
-
-
-def get_season_from_date(reference_date: date = None) -> str:
-    """Return the season string for the given date.
-
-    Season naming rules:
-    - Up to 2025: "YYYY" (4-digit year, calendar-year seasons)
-    - 2026 Jan-Jun: "2026" (special transition season before autumn-spring schedule)
-    - 2026 Jul onwards: two-digit years format "YY-YY"
-    - The boundary month is July (seasons end in May, start in August;
-      June and earlier belong to the season that started in the previous calendar year,
-      July and later belong to the season starting this year)
-
-    Args:
-        reference_date: Date to use as reference. Defaults to today.
-
-    Returns:
-        str: Season string (e.g. "2025", "2026", "26-27", "27-28")
-    """
-    if reference_date is None:
-        reference_date = date.today()
-    year = reference_date.year
-    month = reference_date.month
-
-    if year <= 2025:
-        return str(year)
-
-    # 2026 special transition season (Jan-Jun)
-    if year == 2026 and month <= 6:
-        return "2026"
-
-    # two-digit year season (2026 Jul+ or 2027+)
-    start_year = year if month >= 7 else year - 1
-    return f"{start_year % 100:02d}-{(start_year + 1) % 100:02d}"
-
-
 def read_teams(competition: str) -> list[str]:
     """Get the list of teams from the web.
 
@@ -190,7 +49,7 @@ def read_teams(competition: str) -> list[str]:
         KeyError: If the key 'urls.standing_url_format' is not found in the config file
     """
     _url = config.get_format_str('urls.standing_url_format',
-                                 _url_segment_from_competition(competition))
+                                 competition.lower())
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
     return read_teams_from_web(soup, competition)
@@ -224,8 +83,8 @@ def read_match(competition: str, sec: int, url_category: str = None) -> pd.DataF
         competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
         sec (int): Section number
         url_category (str, optional): Override category value for URL construction.
-            The source_url_format 'j{}/{}/' normally uses the numeric part of
-            the competition key, e.g. 'j1/1/'. When url_category='2j3', it
+            The source_url_format '{}/{}/' normally uses the lowercased
+            competition key, e.g. 'j1/1/'. When url_category='j2j3', it
             becomes 'j2j3/1/' instead.
 
     Returns:
@@ -234,7 +93,7 @@ def read_match(competition: str, sec: int, url_category: str = None) -> pd.DataF
     Raises:
         KeyError: If the key 'urls.source_url_format' is not found in the config file
     """
-    cat_for_url = url_category if url_category else _url_segment_from_competition(competition)
+    cat_for_url = url_category if url_category else competition.lower()
     _url = config.get_format_str('urls.source_url_format', cat_for_url, sec)
     print(f'access {_url}...')
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
@@ -569,7 +428,7 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
     # Group sub-seasons by url_category
     url_cat_groups: dict[str, list[dict]] = {}
     for sub in sub_seasons:
-        url_cat = sub.get('url_category', _url_segment_from_competition(competition))
+        url_cat = sub.get('url_category', competition.lower())
         url_cat_groups.setdefault(url_cat, []).append(sub)
 
     for url_cat, subs in url_cat_groups.items():

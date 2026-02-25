@@ -13,5 +13,5 @@ paths:
   season_map_file: "../docs/json/season_map.json"
 
 urls:
-  source_url_format: "https://www.jleague.jp/match/section/j{}/{}/"
-  standing_url_format: "https://www.jleague.jp/standings/j{}/"
+  source_url_format: "https://www.jleague.jp/match/section/{}/{}/"
+  standing_url_format: "https://www.jleague.jp/standings/{}/"

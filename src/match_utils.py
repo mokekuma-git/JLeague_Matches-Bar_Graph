@@ -1,14 +1,16 @@
 """Shared utilities for match CSV processing across all competitions.
 
 Provides CSV I/O, timestamp management, DataFrame comparison, date parsing,
-and CLI argument parsing utilities.  Competition-specific logic lives in
-dedicated scripts (e.g. read_jleague_matches.py, read_jfamatch.py).
+season-map loading, and CLI argument parsing utilities.  Competition-specific
+logic lives in dedicated scripts (e.g. read_jleague_matches.py,
+read_jfamatch.py).
 
 Callers must set ``match_utils.config`` to a loaded Config instance before
 calling functions that depend on it (marked in docstrings).
 """
 from datetime import date
 from datetime import datetime
+import json
 from pathlib import Path
 import re
 
@@ -19,6 +21,147 @@ from set_config import Config
 
 # Module-level config -- set by the importing script (e.g. read_jleague_matches.py)
 config: Config | None = None
+
+
+# ---------------------------------------------------------------------------
+# Season-map loading
+# ---------------------------------------------------------------------------
+def load_season_map(group_key: str = 'jleague') -> dict:
+    """Load season_map.json and extract competitions for the given group.
+
+    The 4-tier JSON has the structure:
+        { group_key: { "competitions": { "J1": { "seasons": {...} }, ... } } }
+
+    This function flattens it to:
+        { "J1": { "2026East": [...], ... }, "J2": {...}, ... }
+
+    Requires: config set.
+
+    Args:
+        group_key: Top-level group key in season_map.json (default: 'jleague')
+
+    Returns:
+        dict: Competition key -> {season_name: RawSeasonEntry}
+    """
+    cfg = config
+    season_map_path = cfg.get_path('paths.season_map_file')
+    with open(season_map_path, 'r', encoding='utf-8') as f:
+        raw = json.load(f)
+    group = raw.get(group_key, {}).get('competitions', {})
+    return {comp_key: comp.get('seasons', {})
+            for comp_key, comp in group.items()}
+
+
+def get_sub_seasons(competition: str, group_key: str = 'jleague') -> list[dict] | None:
+    """Get sub-seasons for the given competition from season_map.json.
+
+    For years with multiple sub-seasons (e.g. 2026East/2026West),
+    returns a list of sub-season info dicts. For single-season years,
+    returns an empty list. If no season entry exists for this competition,
+    returns None (caller should skip this competition entirely).
+
+    Requires: config set.
+
+    Args:
+        competition: Competition key (e.g. 'J1', 'J2', 'J3')
+        group_key: Top-level group key in season_map.json (default: 'jleague')
+
+    Returns:
+        list[dict] | None:
+            None       -- no season entry for config.season -> skip
+            []         -- single season -> use standard update
+            [dict,...] -- multi-group season -> use sub-season update
+    """
+    cfg = config
+    season_map = load_season_map(group_key)
+    if competition not in season_map:
+        return None
+
+    season_str = str(cfg.season)
+    comp_seasons = season_map[competition]
+    sub_keys = sorted(k for k in comp_seasons if k.startswith(season_str) and k != season_str)
+
+    # No entry at all for this season (neither bare key nor sub-keys)
+    if not sub_keys and season_str not in comp_seasons:
+        return None
+
+    if len(sub_keys) <= 1:
+        return []
+
+    result = []
+    for k in sub_keys:
+        entry = comp_seasons[k]
+        info = {
+            'name': k,
+            'teams': entry[3],
+            'team_count': entry[0],
+            'group': k[len(season_str):],
+        }
+        # Read season-specific overrides from index 4 (merged optional dict)
+        if len(entry) > 4 and isinstance(entry[4], dict):
+            opts = entry[4]
+            if 'group_display' in opts:
+                info['group_display'] = opts['group_display']
+            if 'url_category' in opts:
+                info['url_category'] = opts['url_category']
+        result.append(info)
+    return result
+
+
+def get_csv_path(competition: str, season: str = None) -> str:
+    """Get the path of CSV file from config file.
+
+    Requires: config set.
+
+    Args:
+        competition: Competition key (e.g. 'J1', 'J2', 'J3')
+        season: Season name (e.g. '2026East'). Defaults to config.season.
+
+    Returns:
+        str: Path of CSV file
+
+    Raises:
+        KeyError: If the key 'paths.csv_format' is not found in the config file
+    """
+    cfg = config
+    if season is None:
+        season = cfg.season
+    # CSV file path is also the key of Timestamp file, so handle it as a string
+    return cfg.get_format_str('paths.csv_format', season=season, competition=competition)
+
+
+def get_season_from_date(reference_date: date = None) -> str:
+    """Return the season string for the given date.
+
+    Season naming rules:
+    - Up to 2025: "YYYY" (4-digit year, calendar-year seasons)
+    - 2026 Jan-Jun: "2026" (special transition season before autumn-spring schedule)
+    - 2026 Jul onwards: two-digit years format "YY-YY"
+    - The boundary month is July (seasons end in May, start in August;
+      June and earlier belong to the season that started in the previous calendar year,
+      July and later belong to the season starting this year)
+
+    Args:
+        reference_date: Date to use as reference. Defaults to today.
+
+    Returns:
+        str: Season string (e.g. "2025", "2026", "26-27", "27-28")
+    """
+    if reference_date is None:
+        reference_date = date.today()
+    year = reference_date.year
+    month = reference_date.month
+
+    if year <= 2025:
+        return str(year)
+
+    # 2026 special transition season (Jan-Jun)
+    if year == 2026 and month <= 6:
+        return "2026"
+
+    # two-digit year season (2026 Jul+ or 2027+)
+    start_year = year if month >= 7 else year - 1
+    return f"{start_year % 100:02d}-{(start_year + 1) % 100:02d}"
 
 
 # ---------------------------------------------------------------------------
