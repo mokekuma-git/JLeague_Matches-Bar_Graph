@@ -15,6 +15,14 @@ import pandas as pd
 import pytz
 import requests
 
+import match_utils
+from match_utils import (
+    get_timestamp_from_csv,
+    matches_differ,
+    parse_range_args,
+    read_allmatches_csv,
+    update_if_diff,
+)
 from set_config import load_config
 
 config = load_config(Path(__file__).parent / '../config/jleague.yaml')
@@ -22,50 +30,8 @@ config = load_config(Path(__file__).parent / '../config/jleague.yaml')
 # Type conversion of config values
 config.timezone = pytz.timezone(config.timezone)
 
-# Schema for CSV output columns: column_name -> type string.
-#   'int'          : always an integer (section_no, match_index_in_section, etc.)
-#   'nullable_int' : integer when the match has been played, empty string otherwise
-#                    (home_goal, away_goal, etc.)
-#   'str'          : plain string
-# Extend this dict whenever a new column is added to the CSV.
-CSV_COLUMN_SCHEMA: dict[str, str] = {
-    'match_date': 'str',
-    'section_no': 'int',
-    'match_index_in_section': 'int',
-    'start_time': 'str',
-    'stadium': 'str',
-    'home_team': 'str',
-    'home_goal': 'nullable_int',
-    'away_goal': 'nullable_int',
-    'away_team': 'str',
-    'status': 'str',
-    'group': 'str',
-}
-
-
-def _normalize_df_for_csv(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize DataFrame columns to their declared types before CSV output.
-
-    Converts 'nullable_int' columns from float-format strings (e.g. '2.0')
-    to plain integer strings ('2'), leaving empty strings unchanged.
-    Only columns present in the DataFrame and listed in CSV_COLUMN_SCHEMA
-    are processed.
-
-    Args:
-        df (pd.DataFrame): Match DataFrame to normalize.
-
-    Returns:
-        pd.DataFrame: Normalized copy of the DataFrame.
-    """
-    df = df.copy()
-    for col, dtype in CSV_COLUMN_SCHEMA.items():
-        if col not in df.columns:
-            continue
-        if dtype == 'nullable_int':
-            df[col] = df[col].fillna('').apply(
-                lambda x: str(int(float(x))) if x != '' else x
-            )
-    return df
+# Share the loaded config with match_utils
+match_utils.config = config
 
 
 def load_season_map() -> dict:
@@ -533,105 +499,6 @@ def read_latest_allmatches_csv(competition: str) -> pd.DataFrame:
     return pd.DataFrame()
 
 
-def read_allmatches_csv(matches_file: str) -> pd.DataFrame:
-    """Reconstruct the DataFrame structure by reading the CSV file output by read_jleague_matches.py.
-
-    Args:
-        matches_file: The name of the file to read
-
-    Returns:
-        pd.DataFrame: DataFrame containing match data
-
-    Raises:
-        FileNotFoundError: If the specified file does not exist
-        ValueError: If the date format is not recognized
-        TypeError: If the date format is not recognized
-        KeyError: If the DataFrame does not contain 'match_date' or 'section_no' columns
-    """
-    print(f'match file {matches_file} reading.')
-    all_matches = pd.read_csv(matches_file, index_col=0, dtype=str, na_values='')
-    if 'index' in all_matches.columns:
-        all_matches = all_matches.drop(columns=['index'])
-    all_matches['match_date'] = all_matches['match_date'].map(to_datetime_aspossible)
-    all_matches['home_goal'] = all_matches['home_goal'].fillna('')
-    all_matches['away_goal'] = all_matches['away_goal'].fillna('')
-    all_matches['section_no'] = all_matches['section_no'].astype('int')
-    all_matches['match_index_in_section'] = all_matches['match_index_in_section'].astype('int')
-    # Convert NaN to output as null in JSON
-    all_matches = all_matches.where(pd.notnull(all_matches), None)
-    return all_matches
-
-
-def to_datetime_aspossible(val: str) -> str:
-    """Convert to Timestamp format as much as possible and output in config.standard_date_format.
-
-    Return the original string if conversion is not possible.
-
-    Args:
-        val (str): Date string to be converted
-
-    Returns:
-        str: Converted date string in standard format or original string if conversion fails
-    """
-    try:
-        return pd.to_datetime(val).date().strftime(config.standard_date_format)
-    except (ValueError, TypeError):
-        return val
-
-
-def update_timestamp(filename: str) -> None:
-    """Read the timestamp record file and update the timestamp of the given filename to the current time.
-
-    Args:
-        filename (str): Name of the file to update the timestamp for
-
-    Raises:
-        ValueError:
-        TypeError:
-    """
-    timestamp_file = config.get_path('paths.timestamp_file')
-    if timestamp_file.exists():
-        timestamp = pd.read_csv(timestamp_file, index_col=0, parse_dates=[1])
-        timestamp['date'] = timestamp['date'].apply(
-            lambda x: x.tz_localize(config.timezone) if x.tz is None else x.tz_convert(config.timezone))
-        # If the timezone is not set, localize it to config.timezone
-        # The timezon from '+09:00' is pytz.FixedOffset(540),
-        # which is different from <DstTzInfo 'Asia/Tokyo' JST+9:00:00 STD>
-        # obtained from pytz.timezone('Asia/Tokyo'), so tz_convert must be used to convert it.
-        # Otherwise, pandas will issue a warning.
-        # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timezones
-
-    else:
-        timestamp = pd.DataFrame(columns=['date'])
-        timestamp.index.name = 'file'
-    timestamp.loc[filename] = datetime.now().astimezone(config.timezone)
-    if timestamp.index.duplicated().any():  # Check duplicate indexes, keep only the latest value
-        print("Notice: Duplicates in timestamp file were consolidated (keeping most recent values)")
-        timestamp = drop_duplicated_indexes(timestamp)
-    timestamp.to_csv(timestamp_file, lineterminator='\n')
-
-
-def drop_duplicated_indexes(df: pd.DataFrame) -> pd.DataFrame:
-    """For rows in the DataFrame with duplicate 'file' indexes, keep only the latest one based on 'date'.
-
-    Args:
-        df (pd.DataFrame): DataFrame with duplicate indexes
-
-    Returns:
-        pd.DataFrame: DataFrame with duplicate indexes removed, keeping only the latest one
-    """
-    # Reset the index to make 'file' a regular column
-    if df.index.name != 'file':
-        raise ValueError("DataFrame index must be named 'file'")
-    df = df.reset_index()
-    df = df.sort_values(['file', 'date'], ascending=[True, False])
-    df = df.drop_duplicates(subset=['file'], keep='first')
-
-    # Set 'file' back as the index
-    df = df.set_index('file')
-    return df
-
-
 def _calc_section_range(sub_seasons: list[dict]) -> range:
     """Calculate the full section range from team_count in season_map sub-seasons.
 
@@ -815,175 +682,6 @@ def update_all_matches(competition: str, force_update: bool = False,
         update_if_diff(new_matches, latest_file)
         return new_matches
     return None
-
-
-def matches_differ(foo_df: pd.DataFrame, bar_df: pd.DataFrame) -> bool:
-    """Return True if two match DataFrames differ (ignoring 'match_index_in_section' and NaNs)."""
-    _foo = foo_df.drop(columns=['match_index_in_section']).fillna('')
-    _bar = bar_df.drop(columns=['match_index_in_section']).fillna('')
-    _foo = _foo.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
-    _bar = _bar.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
-
-    if not _foo.equals(_bar):
-        if config.debug:
-            df_comp = _foo.compare(_bar)
-            for col_name in df_comp.columns.droplevel(1).unique():
-                print(col_name, df_comp[col_name].dropna())
-        return True
-    return False
-
-
-def update_if_diff(match_df: pd.DataFrame, filename: str) -> bool:
-    """
-    Receive a match DataFrame and filename; overwrite the file if contents differ.
-
-    Args:
-        match_df (pd.DataFrame): DataFrame containing match data
-        filename (str): Name of the file to be updated
-
-    Returns:
-        bool: True if the file was created or updated, False if no changes were found.
-
-    Raises:
-        ValueError: If no filename is provided.
-    """
-    # Raise error if filename is missing
-    if not filename:
-        raise ValueError("Filename is mandatory")
-
-    # If the old file doesn't exist, write new CSV and exit
-    if not Path(filename).exists():
-        update_csv(match_df, filename)
-        return True
-
-    old_df = read_allmatches_csv(filename)
-    # Overwrite if there are differences
-    if matches_differ(match_df, old_df):
-        update_csv(match_df, filename)
-        return True
-
-    # No changes found; do nothing
-    print(f'No changes found in {filename}')
-    return False
-
-
-def update_csv(match_df: pd.DataFrame, filename: str) -> None:
-    """Receive a match DataFrame and filename, and create or update the CSV file.
-
-    Args:
-        match_df (pd.DataFrame): DataFrame containing match data
-        filename (str): Name of the file to be updated
-
-    Raises:
-        ValueError: If no filename is provided
-        TypeError: If the timestamp already has a timezone
-    """
-    print(f'Update {filename}')
-    # Normalize column types (e.g. convert float-format goal strings to int strings).
-    match_df = _normalize_df_for_csv(match_df)
-    # When the match_date contains only date, it is converted and keeps the original format (date only),
-    # but when a string is also included, it seems to output both date and time,
-    # so convert the content of match_date to a string before outputting.
-    match_df['match_date'] = match_df['match_date'].map(lambda x: str(x) if isinstance(x, date) else x)
-    match_df.to_csv(filename, lineterminator='\n')
-    update_timestamp(filename)
-
-
-def get_timestamp_from_csv(filename: str) -> datetime:
-    """Read the acquisition time from the match data update timestamp CSV.
-
-    If the file does not exist, return the last modified time of the file.
-    If the timestamp is not found, return the last modified time of the file.
-
-    Args:
-        filename (str): Name of the file to read the timestamp from
-
-    Returns:
-        datetime: Timestamp of the file in local time
-
-    Raises:
-        ValueError: If the filename is not found in the timestamp file
-        TypeError: If the timestamp already has a timezone
-    """
-    timestamp_file = config.get_path('paths.timestamp_file')
-    if timestamp_file.exists():
-        timestamp = pd.read_csv(timestamp_file, index_col=0, parse_dates=[1])
-        timestamp = timestamp[~timestamp.index.duplicated(keep="first")]
-        if filename in timestamp.index:
-            return timestamp.loc[filename]['date']
-    # If the TIMESTAMP_FILE file does not exist, or the filename is not found in the file,
-    # return the last modified time of the file
-    return datetime.fromtimestamp(Path(filename).stat().st_mtime).astimezone(config.timezone)
-
-
-def parse_range_args(args: str) -> set[int]:
-    """Parse a comma-separated list of numeric arguments.
-
-    Accepts a list of numbers and ranges in the format "number-number" and creates a union of all elements.
-    '1-3,5,7-10' -> [1, 2, 3, 5, 7, 8, 9, 10]
-
-    Args:
-        args (str): Comma-separated list of arguments
-
-    Returns:
-        set[int]: Set of integers representing the parsed arguments
-
-    Raises:
-        ValueError: If the argument is not a valid integer or range
-        TypeError: If the argument is not a valid integer or range
-    """
-    return parse_range_list(args.split(','))
-
-
-def parse_range_list(args: str) -> set[int]:
-    """Parse a list of arguments.
-
-    Accepts a list of numbers and ranges in the format "number-number" and creates a union of all elements.
-    ['1-3', '5', '7-10'] -> [1, 2, 3, 5, 7, 8, 9, 10]
-
-    Args:
-        args (str): List of arguments to be parsed
-
-    Returns:
-        set[int]: Set of integers representing the parsed arguments
-
-    Raises:
-        ValueError: If the argument is not a valid integer or range
-        TypeError: If the argument is not a valid integer or range
-    """
-    result = set()
-    for arg in args:
-        result |= set(parse_range(arg))
-    return sorted(result)
-
-
-def parse_range(arg: str) -> list[int]:
-    """Parse an argument.
-
-    Accepts a number or a range in the format "number-number" and converts it to a list of numbers.
-    1-3 -> [1, 2, 3]
-
-    Args:
-        arg (str): Argument to be parsed
-
-    Returns:
-        list[int]: List of integers representing the parsed argument
-
-    Raises:
-        ValueError: If the argument is not a valid integer or range
-        TypeError: If the argument is not a valid integer or range
-    """
-    match = re.match(r'(\d+)\-(\d+)', arg)
-    try:
-        if match:
-            start = int(match[1])
-            end = int(match[2])
-            return list(range(start, end + 1))
-
-        return [int(arg)]
-    except (ValueError, TypeError) as exc:
-        print(f"Invalid integer format: {arg}. Must be an integer or a range like '1-3'.")
-        raise exc
 
 
 def make_args() -> argparse.Namespace:

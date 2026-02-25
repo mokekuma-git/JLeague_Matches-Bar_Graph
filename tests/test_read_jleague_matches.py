@@ -7,7 +7,7 @@ import unittest
 from bs4 import BeautifulSoup
 import pandas as pd
 
-from read_jleague_matches import drop_duplicated_indexes
+from match_utils import drop_duplicated_indexes
 from read_jleague_matches import read_match_from_web
 from read_jleague_matches import read_teams_from_web
 
