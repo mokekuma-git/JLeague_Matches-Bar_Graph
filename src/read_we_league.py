@@ -10,8 +10,8 @@ import bs4
 import pandas as pd
 import requests
 
+from match_utils import update_if_diff
 from read_jleague_matches import config
-from read_jleague_matches import update_if_diff
 
 WEL_MATCH_URL = 'https://weleague.jp/matches/'
 CSV_FILENAME = '../docs/csv/{}_allmatch_result-we.csv'

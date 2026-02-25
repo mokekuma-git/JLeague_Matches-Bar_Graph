@@ -8,8 +8,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 
+from match_utils import update_if_diff
 from read_jleague_matches import config
-from read_jleague_matches import update_if_diff
 
 ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
 HTTP_TIMEOUT = 60

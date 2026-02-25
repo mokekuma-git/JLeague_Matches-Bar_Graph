@@ -40,9 +40,9 @@ from typing import Any
 import pandas as pd
 import requests
 
+from match_utils import to_datetime_aspossible
+from match_utils import update_if_diff
 from read_jleague_matches import config as jl_config
-from read_jleague_matches import to_datetime_aspossible
-from read_jleague_matches import update_if_diff
 from set_config import Config
 from set_config import load_config
 
