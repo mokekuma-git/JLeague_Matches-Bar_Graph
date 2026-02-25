@@ -197,6 +197,7 @@ npm run dev               # Vite開発サーバー起動
   "jleague": {
     "display_name": "Jリーグ",
     "css_files": ["team_style.css"],
+    "season_start_month": 1,
     "competitions": {
       "J1": {
         "league_display": "J1リーグ",
@@ -215,9 +216,9 @@ npm run dev               # Vite開発サーバー起動
 
 ### 階層別のプロパティ
 
-**Group 階層** (`jleague` 等): `display_name`, `css_files?`
+**Group 階層** (`jleague` 等): `display_name`, `css_files?`, `season_start_month?`
 
-**Competition 階層** (`J1` 等): `league_display?`, `css_files?`, `point_system?`, `team_rename_map?`, `tiebreak_order?`, `seasons`
+**Competition 階層** (`J1` 等): `league_display?`, `css_files?`, `point_system?`, `team_rename_map?`, `tiebreak_order?`, `season_start_month?`, `seasons`
 
 **Season Entry** (配列): シーズンごとのチーム構成
 
@@ -245,6 +246,7 @@ TS 版 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階�
 | `group_display` | HTML上の表示グループ名 (groupHeadテキスト)。スクレイピング結果の `group` 列でフィルタしてCSVに振り分ける | `"EAST"`, `"EAST-A"` |
 | `url_category` | スクレイピングURL `{category}/{sec}/` のカテゴリ部分を上書き (デフォルト: competition key を小文字化。例: `J1` → `j1`) | `"j2j3"` → URL `j2j3/{sec}/` |
 | `rank_properties` | 順位→CSSクラスのマッピング | `{"3": "promoted_playoff"}` |
+| `season_start_month` | シーズン開始月 (1-12)。Group→Competition→SeasonEntry でカスケード。コードデフォルト: `7` (秋春制) | `1` (暦年), `7` (秋春制) |
 
 ### シーズン命名規則
 
@@ -253,7 +255,7 @@ TS 版 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階�
   - 年号: 4桁数値 (`2026` 等) または `26-27` のような2桁年ハイフン形式 (秋春制)
   - 追番: `A`/`B` (前後期)、`East`/`West` (地域)、`EastA`/`WestB` (地域+組) 等
   - 追番なし (素の年号) = 該当シーズンの全サブシーズンを結合した仮想結果
-- `get_season_from_date()` がシーズン文字列を自動算出 (7月を境界とし、2026年7月以降は `26-27` 形式)
+- `get_season_from_date(season_start_month=N)` がシーズン文字列を自動算出。`season_start_month=1` → `"YYYY"` (暦年)、それ以外 → `"YY-YY"` (跨年)。`resolve_season_start_month()` が season_map.json のカスケードから開始月を解決する
 - CSVファイル名: `{シーズン名}_allmatch_result-J{カテゴリ}.csv`
 - 順序は辞書順 (`East` < `West`, `EastA` < `EastB` < `WestA` < `WestB`)
 - CSVファイル検索の正規表現: `r"(\d{4}[A-Za-z]*|\d{2}-\d{2}[A-Za-z]*)_allmatch_result-J(\d+).csv"`

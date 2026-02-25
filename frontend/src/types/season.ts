@@ -33,6 +33,7 @@ export interface SeasonEntryOptions {
   css_files?: string[];
   team_rename_map?: Record<string, string>;
   tiebreak_order?: string[];
+  season_start_month?: number;
 }
 
 // Raw array format as loaded from season_map.json (tuple type).
@@ -52,6 +53,7 @@ export interface CompetitionEntry {
   point_system?: PointSystem;
   team_rename_map?: Record<string, string>;
   tiebreak_order?: string[];
+  season_start_month?: number;
   seasons: Record<string, RawSeasonEntry>;
 }
 
@@ -59,6 +61,7 @@ export interface CompetitionEntry {
 export interface GroupEntry {
   display_name: string;
   css_files?: string[];
+  season_start_month?: number;
   competitions: Record<string, CompetitionEntry>;
 }
 
@@ -80,4 +83,5 @@ export interface SeasonInfo {
   cssFiles: string[];
   teamRenameMap: Record<string, string>;
   tiebreakOrder: string[];
+  seasonStartMonth: number;
 }

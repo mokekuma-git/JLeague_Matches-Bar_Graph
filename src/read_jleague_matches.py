@@ -23,6 +23,7 @@ from match_utils import (
     matches_differ,
     parse_range_args,
     read_allmatches_csv,
+    resolve_season_start_month,
     update_if_diff,
 )
 from set_config import load_config
@@ -569,7 +570,8 @@ if __name__ == '__main__':
     if _args.debug:
         config.debug = True
 
-    _expected = get_season_from_date()
+    _start_month = resolve_season_start_month()
+    _expected = get_season_from_date(season_start_month=_start_month)
     if str(config.season) != _expected:
         warnings.warn(
             f'config.season={config.season!r} does not match expected season {_expected!r}',

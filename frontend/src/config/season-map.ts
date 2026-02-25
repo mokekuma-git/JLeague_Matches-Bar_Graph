@@ -94,6 +94,12 @@ export function resolveSeasonInfo(
     ?? comp.tiebreak_order
     ?? ['goal_diff', 'goal_get'];
 
+  // season_start_month: scalar cascade (lowest defined level wins, code default 7)
+  const seasonStartMonth: number = opts.season_start_month
+    ?? comp.season_start_month
+    ?? group.season_start_month
+    ?? 7;
+
   return {
     teamCount: entry[0],
     promotionCount: entry[1],
@@ -107,5 +113,6 @@ export function resolveSeasonInfo(
     cssFiles,
     teamRenameMap,
     tiebreakOrder,
+    seasonStartMonth,
   };
 }

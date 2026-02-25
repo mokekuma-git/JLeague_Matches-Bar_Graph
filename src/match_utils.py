@@ -130,19 +130,17 @@ def get_csv_path(competition: str, season: str = None) -> str:
     return cfg.get_format_str('paths.csv_format', season=season, competition=competition)
 
 
-def get_season_from_date(reference_date: date = None) -> str:
+def get_season_from_date(reference_date: date = None, season_start_month: int = 7) -> str:
     """Return the season string for the given date.
 
     Season naming rules:
-    - Up to 2025: "YYYY" (4-digit year, calendar-year seasons)
-    - 2026 Jan-Jun: "2026" (special transition season before autumn-spring schedule)
-    - 2026 Jul onwards: two-digit years format "YY-YY"
-    - The boundary month is July (seasons end in May, start in August;
-      June and earlier belong to the season that started in the previous calendar year,
-      July and later belong to the season starting this year)
+    - season_start_month == 1 (calendar-year): "YYYY" (e.g. "2025", "2026")
+    - season_start_month != 1 (cross-year): "YY-YY" (e.g. "26-27", "27-28")
+      Months before start_month belong to the previous season.
 
     Args:
         reference_date: Date to use as reference. Defaults to today.
+        season_start_month: Month when the season starts (1-12). Default 7.
 
     Returns:
         str: Season string (e.g. "2025", "2026", "26-27", "27-28")
@@ -152,16 +150,45 @@ def get_season_from_date(reference_date: date = None) -> str:
     year = reference_date.year
     month = reference_date.month
 
-    if year <= 2025:
+    if season_start_month == 1:
         return str(year)
 
-    # 2026 special transition season (Jan-Jun)
-    if year == 2026 and month <= 6:
-        return "2026"
-
-    # two-digit year season (2026 Jul+ or 2027+)
-    start_year = year if month >= 7 else year - 1
+    start_year = year if month >= season_start_month else year - 1
     return f"{start_year % 100:02d}-{(start_year + 1) % 100:02d}"
+
+
+def resolve_season_start_month(group_key: str = 'jleague') -> int:
+    """Resolve season_start_month for config.season via cascade.
+
+    Looks up the matching season entry in season_map.json and resolves
+    the season_start_month by cascading Group → Competition → SeasonEntry.
+    Code default is 7 (autumn-spring, world standard).
+
+    Requires: config set.
+
+    Args:
+        group_key: Top-level group key in season_map.json (default: 'jleague')
+
+    Returns:
+        int: The effective season_start_month for the current config.season.
+    """
+    cfg = config
+    season_map_path = cfg.get_path('paths.season_map_file')
+    with open(season_map_path, 'r', encoding='utf-8') as f:
+        raw = json.load(f)
+
+    group = raw.get(group_key, {})
+    group_val = group.get('season_start_month', 7)  # code default
+
+    season_str = str(cfg.season)
+    for comp in group.get('competitions', {}).values():
+        comp_val = comp.get('season_start_month', group_val)
+        for sk, entry in comp.get('seasons', {}).items():
+            if sk.startswith(season_str):
+                if len(entry) > 4 and isinstance(entry[4], dict):
+                    return entry[4].get('season_start_month', comp_val)
+                return comp_val
+    return group_val
 
 
 # ---------------------------------------------------------------------------

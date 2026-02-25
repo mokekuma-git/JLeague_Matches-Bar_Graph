@@ -405,35 +405,49 @@ class TestGetSeasonFromDate(unittest.TestCase):
     def _d(self, year, month, day=1):
         return date(year, month, day)
 
-    def test_pre_2026_returns_year_string(self):
-        self.assertEqual(get_season_from_date(self._d(2025, 1)), '2025')
-        self.assertEqual(get_season_from_date(self._d(2024, 12)), '2024')
-        self.assertEqual(get_season_from_date(self._d(2023, 6)), '2023')
+    # --- Calendar-year seasons (season_start_month=1) ---
 
-    def test_2026_jan_jun_returns_2026(self):
-        """Jan-Jun 2026 is the special transition season."""
-        self.assertEqual(get_season_from_date(self._d(2026, 1)), '2026')
-        self.assertEqual(get_season_from_date(self._d(2026, 6, 30)), '2026')
+    def test_calendar_year_returns_year_string(self):
+        """season_start_month=1 always returns 4-digit year."""
+        self.assertEqual(get_season_from_date(self._d(2025, 1), season_start_month=1), '2025')
+        self.assertEqual(get_season_from_date(self._d(2024, 12), season_start_month=1), '2024')
+        self.assertEqual(get_season_from_date(self._d(2026, 6), season_start_month=1), '2026')
+        self.assertEqual(get_season_from_date(self._d(2027, 3), season_start_month=1), '2027')
 
-    def test_2026_jul_dec_returns_26_27(self):
-        """Jul-Dec 2026 is the first European-style season."""
+    # --- Autumn-spring seasons (season_start_month=7, default) ---
+
+    def test_default_start_month_is_7(self):
+        """Default season_start_month is 7 (autumn-spring)."""
         self.assertEqual(get_season_from_date(self._d(2026, 7, 1)), '26-27')
-        self.assertEqual(get_season_from_date(self._d(2026, 12)), '26-27')
-
-    def test_2027_jan_jun_returns_26_27(self):
-        """Jan-Jun 2027 still belongs to the 26-27 season."""
-        self.assertEqual(get_season_from_date(self._d(2027, 1)), '26-27')
         self.assertEqual(get_season_from_date(self._d(2027, 6, 30)), '26-27')
 
-    def test_2027_jul_dec_returns_27_28(self):
-        """Jul-Dec 2027 starts the 27-28 season."""
-        self.assertEqual(get_season_from_date(self._d(2027, 7, 1)), '27-28')
-        self.assertEqual(get_season_from_date(self._d(2027, 12)), '27-28')
+    def test_jul_dec_returns_cross_year(self):
+        """Jul-Dec belongs to the season starting this year."""
+        self.assertEqual(get_season_from_date(self._d(2026, 7, 1), season_start_month=7), '26-27')
+        self.assertEqual(get_season_from_date(self._d(2026, 12), season_start_month=7), '26-27')
+
+    def test_jan_jun_returns_previous_cross_year(self):
+        """Jan-Jun belongs to the season that started last year."""
+        self.assertEqual(get_season_from_date(self._d(2027, 1), season_start_month=7), '26-27')
+        self.assertEqual(get_season_from_date(self._d(2027, 6, 30), season_start_month=7), '26-27')
+
+    def test_next_season_starts_in_jul(self):
+        """Jul starts a new season."""
+        self.assertEqual(get_season_from_date(self._d(2027, 7, 1), season_start_month=7), '27-28')
+        self.assertEqual(get_season_from_date(self._d(2027, 12), season_start_month=7), '27-28')
 
     def test_boundary_jun_vs_jul(self):
-        """June 30 and July 1 should differ for years after 2026."""
-        self.assertEqual(get_season_from_date(self._d(2028, 6, 30)), '27-28')
-        self.assertEqual(get_season_from_date(self._d(2028, 7, 1)), '28-29')
+        """June 30 and July 1 should differ."""
+        self.assertEqual(get_season_from_date(self._d(2028, 6, 30), season_start_month=7), '27-28')
+        self.assertEqual(get_season_from_date(self._d(2028, 7, 1), season_start_month=7), '28-29')
+
+    # --- Custom start month ---
+
+    def test_custom_start_month_8(self):
+        """season_start_month=8 for leagues starting in August."""
+        self.assertEqual(get_season_from_date(self._d(2025, 8, 1), season_start_month=8), '25-26')
+        self.assertEqual(get_season_from_date(self._d(2025, 7, 31), season_start_month=8), '24-25')
+        self.assertEqual(get_season_from_date(self._d(2026, 5, 1), season_start_month=8), '25-26')
 
     def test_defaults_to_today(self):
         """Called without arguments should not raise and return a non-empty string."""

@@ -2,6 +2,7 @@
   "jleague": {
     "display_name": "Jリーグ",
     "css_files": ["team_style.css"],
+    "season_start_month": 1,
     "competitions": {
       "J1": {
         "league_display": "J1リーグ",
