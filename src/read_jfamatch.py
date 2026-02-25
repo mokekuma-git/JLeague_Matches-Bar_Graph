@@ -40,11 +40,8 @@ from typing import Any
 import pandas as pd
 import requests
 
-from match_utils import to_datetime_aspossible
-from match_utils import update_if_diff
-from read_jleague_matches import config as jl_config
+from match_utils import mu
 from set_config import Config
-from set_config import load_config
 
 
 def _prepare_config() -> Config:
@@ -53,7 +50,7 @@ def _prepare_config() -> Config:
     Returns:
         Config: Configuration object with parsed settings
     """
-    new_conf = load_config(Path(__file__).parent / '../config/jfamatch.yaml')
+    new_conf = mu.init_config(Path(__file__).parent / '../config/jfamatch.yaml')
 
     def is_string_list(obj: Any) -> bool:
         if not isinstance(obj, list):
@@ -77,8 +74,6 @@ def _prepare_config() -> Config:
     # Type conversion
     new_conf.section_no = re.compile(new_conf.section_no)
 
-    # Inherited from jleague config
-    new_conf.standard_date_format = jl_config.standard_date_format
     return new_conf
 
 
@@ -194,7 +189,7 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
                 print(f'No Cancel## {_match_data["venueFullName"]}')
 
         _row['extraTime'] = str(_row['extraTime'])  # Stringify for comparison with old style CSV
-        _row['match_date'] = to_datetime_aspossible(_row['match_date'])
+        _row['match_date'] = mu.to_datetime_aspossible(_row['match_date'])
 
         result_list.append(_row)
 
@@ -216,7 +211,7 @@ def read_group(competition: str) -> None:
 
     if config.debug:
         print(match_df['status'])
-    update_if_diff(match_df, comp_conf.csv_path)
+    mu.update_if_diff(match_df, comp_conf.csv_path)
 
 
 def read_all_group(comp_conf: dict[str, Any]) -> pd.DataFrame:

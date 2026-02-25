@@ -1,31 +1,33 @@
 """2021 ACLグループステージの試合情報を読み込んでCSV, JSO化"""
 import datetime
+import os
 import re
 import sys
+from pathlib import Path
 from typing import Any
 
 from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 
-from match_utils import update_if_diff
-from read_jleague_matches import config
+from match_utils import mu
 
-ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
-HTTP_TIMEOUT = 60
-SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
-SEASON = datetime.datetime.now().year
-CSV_FILENAME = f'../docs/csv/{SEASON}_allmatch_result-ACL_GL.csv'
+def init() -> None:
+    """Load config and compute runtime values (season, csv path, etc.)."""
+    mu.init_config(Path(__file__).parent / '../config/aclgl.yaml')
+
+    mu.config.season = str(datetime.datetime.now().year)
+    mu.config.csv_filename = mu.config.get_format_str('paths.csv_format', season=mu.config.season)
 
 
 def read_match(section_id: str) -> list[dict[str, Any]]:
     """スポーツナビサイトから指定された節の各グループの試合リスト情報を読んで返す
 
-    1節～6節は、それぞれSECTION_ID_LISTに対応
+    1節～6節は、それぞれmu.config.section_idsに対応
     """
-    _url = ACL_MATCH_URL.format(section_id)
+    _url = mu.config.get_format_str('urls.source_url_format', section_id)
     print(f'access {_url}...')
-    soup = BeautifulSoup(requests.get(_url, timeout=HTTP_TIMEOUT).text, 'lxml')
+    soup = BeautifulSoup(requests.get(_url, timeout=mu.config.http_timeout).text, 'lxml')
     return read_match_from_web(soup)
 
 
@@ -36,7 +38,7 @@ def parse_match_date_data(text: str) -> dict[str, str]:
     Validationのため、一度datetimeに変換するが、返すのは文字列
     """
     (match_date, start_time) = text.split()
-    match_date = pd.to_datetime(SEASON + '/' + match_date[:match_date.index('（')]).date()
+    match_date = pd.to_datetime(mu.config.season + '/' + match_date[:match_date.index('（')]).date()
     try:
         start_time = pd.to_datetime(start_time).time()
     except (ValueError, pd.errors.ParserError):
@@ -102,17 +104,16 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
 
 
 if __name__ == '__main__':
-    import os
-    from pathlib import Path
     os.chdir(Path(__file__).parent.parent)
+    init()
 
     if '--debug' in sys.argv:
-        config.debug = True
+        mu.config.debug = True
 
     match_df = pd.DataFrame()
-    for section in SECTION_ID_LIST:
+    for section in mu.config.section_ids:
         match_df = pd.concat([match_df, pd.DataFrame(read_match(section))])
 
     match_df = match_df.sort_values(['section_no', 'match_index_in_section']) \
         .reset_index(drop=True)
-    update_if_diff(match_df, CSV_FILENAME)
+    mu.update_if_diff(match_df, mu.config.csv_filename)

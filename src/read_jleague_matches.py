@@ -13,28 +13,14 @@ import pandas as pd
 import pytz
 import requests
 
-import match_utils
-from match_utils import (
-    get_csv_path,
-    get_season_from_date,
-    get_sub_seasons,
-    get_timestamp_from_csv,
-    load_season_map,
-    matches_differ,
-    parse_range_args,
-    read_allmatches_csv,
-    resolve_season_start_month,
-    update_if_diff,
-)
-from set_config import load_config
+from match_utils import mu
+from match_utils import get_season_from_date
+from match_utils import parse_range_args
 
-config = load_config(Path(__file__).parent / '../config/jleague.yaml')
+config = mu.init_config(Path(__file__).parent / '../config/jleague.yaml')
 
 # Type conversion of config values
 config.timezone = pytz.timezone(config.timezone)
-
-# Share the loaded config with match_utils
-match_utils.config = config
 
 
 def read_teams(competition: str) -> list[str]:
@@ -353,9 +339,9 @@ def read_latest_allmatches_csv(competition: str) -> pd.DataFrame:
     Raises:
         KeyError: If the key 'paths.csv_format' is not found in the config file
     """
-    filename = get_csv_path(competition)  # Treat as a string since it is also the key of Timestamp file
+    filename = mu.get_csv_path(competition)  # Treat as a string since it is also the key of Timestamp file
     if Path(filename).exists():
-        return read_allmatches_csv(filename)
+        return mu.read_allmatches_csv(filename)
     return pd.DataFrame()
 
 
@@ -383,7 +369,7 @@ def _get_sections_since(csv_path: str, current: pd.DataFrame, now: datetime) -> 
     Returns:
         set[int]: Set of section numbers that need updating.
     """
-    lastupdate = get_timestamp_from_csv(csv_path)
+    lastupdate = mu.get_timestamp_from_csv(csv_path)
     print(f'  Check matches finished since {lastupdate}')
     return get_sections_to_update(current, lastupdate, now)
 
@@ -399,10 +385,10 @@ def _get_sections_for_sub_group(subs: list[dict]) -> set[int] | None:
     _now = datetime.now().astimezone(config.timezone)
     sections_needed: set[int] = set()
     for sub in subs:
-        csv_path = get_csv_path(sub['competition'], sub['name'])
+        csv_path = mu.get_csv_path(sub['competition'], sub['name'])
         if not Path(csv_path).exists():
             return None  # Missing CSV -> need full fetch
-        current = read_allmatches_csv(csv_path)
+        current = mu.read_allmatches_csv(csv_path)
         sections_needed |= _get_sections_since(csv_path, current, _now)
     return sections_needed
 
@@ -472,19 +458,19 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
             sub_data['match_index_in_section'] = sub_data.groupby('section_no').cumcount() + 1
             sub_data = sub_data.reset_index(drop=True)
 
-            csv_path = get_csv_path(competition, sub['name'])
+            csv_path = mu.get_csv_path(competition, sub['name'])
             if do_merge and Path(csv_path).exists():
-                current = read_allmatches_csv(csv_path)
+                current = mu.read_allmatches_csv(csv_path)
                 old = current[current['section_no'].isin(fetch_range)]
-                if not matches_differ(sub_data, old):
+                if not mu.matches_differ(sub_data, old):
                     print(f'  No changes detected for {sub["name"]}')
                     continue
                 merged = pd.concat([current[~current['section_no'].isin(fetch_range)], sub_data]) \
                            .sort_values(['section_no', 'match_index_in_section']) \
                            .reset_index(drop=True)
-                update_if_diff(merged, csv_path)
+                mu.update_if_diff(merged, csv_path)
             else:
-                update_if_diff(sub_data, csv_path)
+                mu.update_if_diff(sub_data, csv_path)
 
 
 def update_all_matches(competition: str, force_update: bool = False,
@@ -515,15 +501,15 @@ def update_all_matches(competition: str, force_update: bool = False,
         ParserError: the date data is not in the correct format (date, string except for '未定')
         ValueError: the date data is not in the correct format (date, string except for '未定')
     """
-    latest_file = get_csv_path(competition)
+    latest_file = mu.get_csv_path(competition)
 
     # If the file does not exist, read all matches and save them
     if (not Path(latest_file).exists()) or force_update:
         all_matches = read_all_matches(competition, url_category=url_category)
-        update_if_diff(all_matches, latest_file)
+        mu.update_if_diff(all_matches, latest_file)
         return all_matches
 
-    current = read_allmatches_csv(latest_file)
+    current = mu.read_allmatches_csv(latest_file)
     if not need_update:  # If no specific sections to update are provided, check automatically
         _now = datetime.now().astimezone(config.timezone)
         # undecided = get_undecided_section(current)
@@ -535,11 +521,11 @@ def update_all_matches(competition: str, force_update: bool = False,
 
     diff_matches = read_matches_range(competition, need_update, url_category=url_category)
     old_matches = current[current['section_no'].isin(need_update)]
-    if matches_differ(diff_matches, old_matches):
+    if mu.matches_differ(diff_matches, old_matches):
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \
                         .sort_values(['section_no', 'match_index_in_section']) \
                         .reset_index(drop=True)
-        update_if_diff(new_matches, latest_file)
+        mu.update_if_diff(new_matches, latest_file)
         return new_matches
     return None
 
@@ -570,7 +556,7 @@ if __name__ == '__main__':
     if _args.debug:
         config.debug = True
 
-    _start_month = resolve_season_start_month()
+    _start_month = mu.resolve_season_start_month()
     _expected = get_season_from_date(season_start_month=_start_month)
     if str(config.season) != _expected:
         warnings.warn(
@@ -580,7 +566,7 @@ if __name__ == '__main__':
 
     for _comp in _args.competition:
         print(f'Start read {_comp} matches...')
-        _sub_seasons = get_sub_seasons(_comp)
+        _sub_seasons = mu.get_sub_seasons(_comp)
         if _sub_seasons is None:
             print(f'  No {config.season} season entry for {_comp} in season_map, skipping.')
         elif _sub_seasons:

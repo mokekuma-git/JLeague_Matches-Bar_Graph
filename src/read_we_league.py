@@ -1,4 +1,4 @@
-"""2021 ACLグループステージの試合情報を読み込んでCSV, JSO化"""
+"""WEリーグの試合情報を読み込んでCSV化"""
 import argparse
 from datetime import datetime
 import os
@@ -10,27 +10,27 @@ import bs4
 import pandas as pd
 import requests
 
-from match_utils import update_if_diff
-from read_jleague_matches import config
+from match_utils import mu
 
-WEL_MATCH_URL = 'https://weleague.jp/matches/'
-CSV_FILENAME = '../docs/csv/{}_allmatch_result-we.csv'
-HTTP_TIMEOUT = 60  # seconds
+def init() -> None:
+    """Load config and compute runtime values (season, csv path, etc.)."""
+    mu.init_config(Path(__file__).parent / '../config/we_league.yaml')
 
-MATCH_WEEK_REGEXP = re.compile(r'matchweek(\d+)')
-DATE_FORMAT = '%m/%d'
-SEASON_THRESHOLD_MONTH = 6
-_TODAY = datetime.now().date()
-if _TODAY.month <= SEASON_THRESHOLD_MONTH:
-    SEASON = _TODAY.year - 1
-else:
-    SEASON = _TODAY.year
+    mu.config.match_week_regexp = re.compile(mu.config.match_week_pattern)
+    mu.config.today = datetime.now().date()
+    if mu.config.today.month < mu.config.season_start_month:
+        mu.config.season = mu.config.today.year - 1
+    else:
+        mu.config.season = mu.config.today.year
+    mu.config.csv_filename = mu.config.get_format_str(
+        'paths.csv_format', season=f'{mu.config.season} - {mu.config.season + 1}')
 
 
 def read_match() -> list[dict[str, Any]]:
     """WEリーグ公式Webから試合リスト情報を読んで返す"""
-    print(f'access {WEL_MATCH_URL}...')
-    soup = bs4.BeautifulSoup(requests.get(WEL_MATCH_URL, timeout=HTTP_TIMEOUT).text, 'lxml')
+    _url = mu.config.urls.source_url
+    print(f'access {_url}...')
+    soup = bs4.BeautifulSoup(requests.get(_url, timeout=mu.config.http_timeout).text, 'lxml')
     return read_match_from_web(soup)
 
 
@@ -43,10 +43,10 @@ def parse_match_date_data(match: bs4.element.Tag) -> dict[str, str]:
         フォーマットは、match_date, start_timeをキーとしたDict形式
     """
     match_date = match.contents[0].strip()
-    if datetime.strptime(match_date, DATE_FORMAT).date().month <= SEASON_THRESHOLD_MONTH:
-        match_date = f'{SEASON + 1}/' + match_date
+    if datetime.strptime(match_date, mu.config.date_format).date().month < mu.config.season_start_month:
+        match_date = f'{mu.config.season + 1}/' + match_date
     else:
-        match_date = f'{SEASON}/' + match_date
+        match_date = f'{mu.config.season}/' + match_date
     try:
         match_date = pd.to_datetime(match_date)
     except (ValueError, pd.errors.ParserError):
@@ -63,7 +63,7 @@ def read_match_from_web(soup: bs4.BeautifulSoup) -> list[dict[str, Any]]:
     for match_box in soup.find_all('div', class_='match-box'):
         # 1節分のmatch-box内
         _index = 1
-        section = MATCH_WEEK_REGEXP.match(match_box.get('id'))[1]
+        section = mu.config.match_week_regexp.match(match_box.get('id'))[1]
         for match_data in match_box.find_all('li', class_='matchContainer'):
             # 1試合分のmatchContainer内
             match_dict = {'section_no': section, 'match_index_in_section': _index}
@@ -109,9 +109,10 @@ def make_args() -> argparse.Namespace:
 
 if __name__ == '__main__':
     os.chdir(Path(__file__).parent)
+    init()
 
-    ARGS = make_args()
-    if ARGS.debug:
-        config.debug = True
+    _args = make_args()
+    if _args.debug:
+        mu.config.debug = True
 
-    update_if_diff(pd.DataFrame(read_match()), CSV_FILENAME.format(f'{SEASON} - {SEASON + 1}'))
+    mu.update_if_diff(pd.DataFrame(read_match()), mu.config.csv_filename)

@@ -14,7 +14,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 from bs4 import BeautifulSoup
 
-from match_utils import get_season_from_date, get_sub_seasons
+from match_utils import mu, get_season_from_date
 from read_jleague_matches import (
     read_match_from_web,
     _team_count_to_section_range,
@@ -198,8 +198,8 @@ class TestGetSubSeasons(unittest.TestCase):
                            for comp_key, comp in jleague.items()}
 
     def test_j1_sub_seasons(self):
-        with patch('match_utils.load_season_map', return_value=self.season_map):
-            subs = get_sub_seasons('J1')
+        with patch.object(mu, 'load_season_map', return_value=self.season_map):
+            subs = mu.get_sub_seasons('J1')
         self.assertEqual(len(subs), 2)
         self.assertEqual(subs[0]['name'], '2026East')
         self.assertEqual(subs[1]['name'], '2026West')
@@ -212,19 +212,19 @@ class TestGetSubSeasons(unittest.TestCase):
 
     def test_j3_no_2026_entry_returns_none(self):
         """J3 has no 2026 entry -> get_sub_seasons returns None (skip)."""
-        with patch('match_utils.load_season_map', return_value=self.season_map):
-            result = get_sub_seasons('J3')
+        with patch.object(mu, 'load_season_map', return_value=self.season_map):
+            result = mu.get_sub_seasons('J3')
         self.assertIsNone(result)
 
     def test_unknown_competition_returns_none(self):
         """Competition not in season_map at all -> None."""
-        with patch('match_utils.load_season_map', return_value=self.season_map):
-            result = get_sub_seasons('J9')
+        with patch.object(mu, 'load_season_map', return_value=self.season_map):
+            result = mu.get_sub_seasons('J9')
         self.assertIsNone(result)
 
     def test_j2_sub_seasons(self):
-        with patch('match_utils.load_season_map', return_value=self.season_map):
-            subs = get_sub_seasons('J2')
+        with patch.object(mu, 'load_season_map', return_value=self.season_map):
+            subs = mu.get_sub_seasons('J2')
         self.assertEqual(len(subs), 4)
         names = [s['name'] for s in subs]
         self.assertEqual(names, ['2026EastA', '2026EastB', '2026WestA', '2026WestB'])
@@ -295,9 +295,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
              'group_display': 'WEST'},
         ]
 
-    @patch('read_jleague_matches.update_if_diff')
+    @patch.object(mu, 'update_if_diff')
     @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'get_csv_path')
     def test_force_update_fetches_full_range(self, mock_csv_path, mock_read_range, mock_update):
         """force_update=True should fetch _calc_section_range sections."""
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
@@ -313,9 +313,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         call_range = mock_read_range.call_args.args[1]
         self.assertEqual(list(call_range), list(range(1, 19)))
 
-    @patch('read_jleague_matches.update_if_diff')
+    @patch.object(mu, 'update_if_diff')
     @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'get_csv_path')
     def test_group_filter_distributes_correctly(self, mock_csv_path, mock_read_range, mock_update):
         """Each sub-season CSV should receive only its own group's matches."""
         east_teams = ['A1', 'A2', 'A3', 'A4', 'A5']
@@ -336,9 +336,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         west_written = written['/tmp/2026West.csv']
         self.assertEqual(set(west_written['home_team']), set(west_teams))
 
-    @patch('read_jleague_matches.update_if_diff')
+    @patch.object(mu, 'update_if_diff')
     @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'get_csv_path')
     def test_group_column_dropped(self, mock_csv_path, mock_read_range, mock_update):
         """The 'group' column should not appear in written CSVs."""
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
@@ -352,9 +352,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
             written_df = call.args[0]
             self.assertNotIn('group', written_df.columns)
 
-    @patch('read_jleague_matches.update_if_diff')
+    @patch.object(mu, 'update_if_diff')
     @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'get_csv_path')
     def test_match_index_recalculated_per_sub_season(self, mock_csv_path, mock_read_range, mock_update):
         """match_index_in_section should be 1-based within each sub-season."""
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
@@ -372,9 +372,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
             indexes = sorted(df['match_index_in_section'].tolist())
             self.assertEqual(indexes, [1, 2, 3, 4, 5], f"{path}: indexes should be 1-5, got {indexes}")
 
-    @patch('read_jleague_matches.update_if_diff')
+    @patch.object(mu, 'update_if_diff')
     @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'get_csv_path')
     def test_need_update_uses_specified_sections(self, mock_csv_path, mock_read_range, mock_update):
         """need_update param should pass the specified sections to read_matches_range."""
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
@@ -388,8 +388,8 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         existing_east['match_index_in_section'] = range(1, 6)
 
         with patch('read_jleague_matches.Path') as mock_path_cls, \
-             patch('read_jleague_matches.read_allmatches_csv', return_value=existing_east), \
-             patch('read_jleague_matches.matches_differ', return_value=True):
+             patch.object(mu, 'read_allmatches_csv', return_value=existing_east), \
+             patch.object(mu, 'matches_differ', return_value=True):
             mock_path_cls.return_value.exists.return_value = True
 
             update_sub_season_matches('J1', self._make_sub_seasons(), need_update={3, 4})

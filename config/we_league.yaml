@@ -1,0 +1,16 @@
+debug: false
+
+http_timeout: 60
+timezone: "Asia/Tokyo"
+standard_date_format: "%Y/%m/%d"
+season_start_month: 7
+
+paths:
+  csv_format: "../docs/csv/{season}_allmatch_result-we.csv"
+  timestamp_file: "../docs/csv/csv_timestamp.csv"
+
+urls:
+  source_url: "https://weleague.jp/matches/"
+
+date_format: "%m/%d"
+match_week_pattern: "matchweek(\\d+)"
