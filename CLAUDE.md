@@ -32,7 +32,7 @@ GitHub Pages で公開: <https://mokekuma-git.github.io/JLeague_Matches-Bar_Grap
 ### カテゴリ・シーズン切り替え
 
 - ドロップダウンで J1/J2/J3 とシーズン (1993年〜) を切り替え
-- URL パラメータ (`?category=1&season=2026`) で状態を共有可能
+- URL パラメータ (`?competition=J1&season=2026East`) で状態を共有可能
 - ユーザー設定 (カテゴリ・シーズン・ソート・表示日・外観) は localStorage に保存し、再訪時に復元
 
 ### 外観カスタマイズ
@@ -52,6 +52,7 @@ JLeague_Matches-Bar_Graph/
 │   │   ├── core/
 │   │   │   ├── csv-parser.ts       #   CSV→TeamMap 変換
 │   │   │   ├── point-calculator.ts #   勝ち点計算ロジック
+│   │   │   ├── prepare-render.ts   #   レンダ前データ準備 (純粋関数)
 │   │   │   ├── sorter.ts           #   チーム・試合ソート
 │   │   │   └── date-utils.ts       #   日付ユーティリティ
 │   │   ├── graph/
@@ -111,7 +112,8 @@ JLeague_Matches-Bar_Graph/
 │       └── aclgl_points.json       #     ACL試合データ (独自JSON構造)
 ├── csv/                             # 年次アーカイブCSV (元データ保管)
 ├── scripts/
-│   └── call_update_csv.sh          #   CI/CD実行スクリプト
+│   ├── call_update_csv.sh          #   CI/CD実行スクリプト
+│   └── format_season_map.py        #   season_map.json カスタムフォーマッタ
 ├── image/                           # favicon等の画像素材
 ├── .github/workflows/
 │   ├── deploy-pages.yaml           #   GitHub Pages デプロイ (TS build + upload)
@@ -187,17 +189,36 @@ npm run dev               # Vite開発サーバー起動
 
 ## season_map.json 構造
 
-`docs/json/season_map.json` はカテゴリ別・シーズン別のチーム構成を定義する。
+`docs/json/season_map.json` は4階層構造: **Group → Competition → Seasons → Entry**。
 
 ```json
 {
-  "カテゴリ": {
-    "シーズン名": [チーム数, 昇格枠, 降格枠, [チームリスト], {順位プロパティ}, {シーズン固有情報}]
+  "jleague": {
+    "display_name": "Jリーグ",
+    "css_files": ["team_style.css"],
+    "competitions": {
+      "J1": {
+        "league_display": "J1リーグ",
+        "seasons": {
+          "2026East": [10, 1, 0,
+            ["鹿島", "柏", ...],
+            {"group_display": "EAST"}],
+          "2025": [20, 3, 3,
+            ["神戸", "広島", ...]]
+        }
+      }
+    }
   }
 }
 ```
 
-### 配列要素
+### 階層別のプロパティ
+
+**Group 階層** (`jleague` 等): `display_name`, `css_files?`
+
+**Competition 階層** (`J1` 等): `league_display?`, `css_files?`, `point_system?`, `team_rename_map?`, `tiebreak_order?`, `seasons`
+
+**Season Entry** (配列): シーズンごとのチーム構成
 
 | Index | 内容 | 必須 | 例 |
 | ----- | ---- | ---- | -- |
@@ -205,28 +226,33 @@ npm run dev               # Vite開発サーバー起動
 | 1 | 昇格枠数 | 必須 | `1` |
 | 2 | 降格枠数 | 必須 | `0` |
 | 3 | チームリスト (前年度成績順) | 必須 | `["鹿島", "柏", ...]` |
-| 4 | 順位プロパティ (順位→性質) | 省略可 | `{"3": "promoted_playoff"}` |
-| 5 | シーズン固有情報 | 省略可 | `{"group_display": "EAST", "url_category": "2j3"}` |
+| 4 | SeasonEntryOptions | 省略可 | `{"group_display": "EAST", "rank_properties": {"3": "promoted_playoff"}}` |
+
+### プロパティカスケード
+
+TS 版 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階層をマージして `SeasonInfo` を生成する。スカラ値は下位が上書き、配列 (`css_files`) は和集合、オブジェクト (`team_rename_map`) はマージ。
 
 ### チームリスト (index 3) の存在理由
 
-順位ソートのための情報がすべて一致している同順位のチームを並べる際のベース優先順位とする
-仮にここに出てこないチームが取得されてCSVなどに書き込まれた場合は、Warningを出しつつ、CSVでの登場順にこのリストに追加するものと考えて仮に動作させる
+順位ソートのための情報がすべて一致している同順位のチームを並べる際のベース優先順位とする。
+仮にここに出てこないチームが取得されてCSVなどに書き込まれた場合は、Warningを出しつつ、CSVでの登場順にこのリストに追加するものと考えて仮に動作させる。
 
-### シーズン固有情報 (index 5) のキー
+### SeasonEntryOptions の主要キー
 
 | キー | 説明 | 例 |
 | ---- | --- | -- |
 | `group_display` | HTML上の表示グループ名 (groupHeadテキスト)。スクレイピング結果の `group` 列でフィルタしてCSVに振り分ける | `"EAST"`, `"EAST-A"` |
 | `url_category` | スクレイピングURL `j{category}/{sec}/` のカテゴリ部分を上書き (デフォルト: カテゴリキーをそのまま使用) | `"2j3"` → URL `j2j3/{sec}/` |
+| `rank_properties` | 順位→CSSクラスのマッピング | `{"3": "promoted_playoff"}` |
 
 ### シーズン命名規則
 
 - **カテゴリ番号 (1, 2, 3) は不変** — 東西・グループの区別はシーズン名の追番で行う (カテゴリを増やさない)
 - シーズン名 = 年号 + 任意の追番
-  - 年号: 4桁数値 (`2026` 等)、将来は `25-26` のような欧州スタイルも想定
+  - 年号: 4桁数値 (`2026` 等) または `26-27` のような2桁年ハイフン形式 (秋春制)
   - 追番: `A`/`B` (前後期)、`East`/`West` (地域)、`EastA`/`WestB` (地域+組) 等
   - 追番なし (素の年号) = 該当シーズンの全サブシーズンを結合した仮想結果
+- `get_season_from_date()` がシーズン文字列を自動算出 (7月を境界とし、2026年7月以降は `26-27` 形式)
 - CSVファイル名: `{シーズン名}_allmatch_result-J{カテゴリ}.csv`
 - 順序は辞書順 (`East` < `West`, `EastA` < `EastB` < `WestA` < `WestB`)
 - CSVファイル検索の正規表現: `r"(\d{4}[A-Za-z]*|\d{2}-\d{2}[A-Za-z]*)_allmatch_result-J(\d+).csv"`
@@ -234,6 +260,7 @@ npm run dev               # Vite開発サーバー起動
 ## 開発プラクティス
 
 - **リファクタリング時のビルド確認**: テスト (`vitest`) 通過だけでなく `npm run build` (`vite build`) も各段階で確認する。CI の `test-typescript.yaml` は typecheck + vitest のみで、ビルド自体は PR 時に自動検証されないため、ローカルでの確認を習慣とする
+- **season_map.json 編集後のフォーマット**: `python scripts/format_season_map.py` でカスタム整形を実行する (標準 `json.dump` では1シーズンが縦に長くなりすぎるため)
 
 ## 設計上の決定事項
 
@@ -244,6 +271,8 @@ npm run dev               # Vite開発サーバー起動
   - `[]`: 通常の単一シーズン → `update_all_matches()` で従来通り更新
   - `[...]`: マルチグループシーズン → `update_sub_season_matches()` で各サブシーズン CSV に振り分け
   - season_map に新しい年のエントリを追加しない限り、そのカテゴリ・年は自動的にスキップされる
+- **`read_jleague_matches.py` は共通ライブラリを兼ねる** — `update_if_diff`, `to_datetime_aspossible`, `config` オブジェクトなどの共通関数を他スクリプト (`read_jfamatch`, `read_aclgl`, `read_we_league`) がインポートして使う
+- **勝ち点システム (PointSystem)** — `'standard'` (勝3/PK勝2/PK負1/分1/負0) と `'old-two-points'` (勝2/分1/負0) の2種類。season_map.json の Competition 階層で `point_system` として指定可能 (デフォルト: `'standard'`)
 
 ## aclgl_points.json 構造
 
