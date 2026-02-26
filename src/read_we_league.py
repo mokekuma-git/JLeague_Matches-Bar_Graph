@@ -1,4 +1,4 @@
-"""WEリーグの試合情報を読み込んでCSV化"""
+"""Read WE League match data and save as CSV"""
 import argparse
 from datetime import datetime
 import os
@@ -27,7 +27,7 @@ def init() -> None:
 
 
 def read_match() -> list[dict[str, Any]]:
-    """WEリーグ公式Webから試合リスト情報を読んで返す"""
+    """Read match list from WE League official website."""
     _url = mu.config.urls.source_url
     print(f'access {_url}...')
     soup = bs4.BeautifulSoup(requests.get(_url, timeout=mu.config.http_timeout).text, 'lxml')
@@ -35,12 +35,15 @@ def read_match() -> list[dict[str, Any]]:
 
 
 def parse_match_date_data(match: bs4.element.Tag) -> dict[str, str]:
-    r"""与えられた "日付<span>(曜日)</span>時間" を日付と時間に分けて返す
+    r"""Parse "date<span>(day-of-week)</span>time" Tag into date and time parts.
 
-    ex) <span class="time">[空白類]9/12<span>(SUN)</span>10:01[空白類]</span>
-    Argument:
-        match: 日時データを示すTag要素
-        フォーマットは、match_date, start_timeをキーとしたDict形式
+    ex) <span class="time"> 9/12<span>(SUN)</span>10:01 </span>
+
+    Args:
+        match: Tag element containing date/time data.
+
+    Returns:
+        dict with 'match_date', 'start_time', and 'dayofweek' keys.
     """
     match_date = match.contents[0].strip()
     if datetime.strptime(match_date, mu.config.date_format).date().month < mu.config.season_start_month:
@@ -57,38 +60,38 @@ def parse_match_date_data(match: bs4.element.Tag) -> dict[str, str]:
 
 
 def read_match_from_web(soup: bs4.BeautifulSoup) -> list[dict[str, Any]]:
-    """各グループの試合リスト情報をHTML内容から読み取る"""
+    """Parse match list from the HTML content."""
     result_list = []
 
     for match_box in soup.find_all('div', class_='match-box'):
-        # 1節分のmatch-box内
+        # Each match-box represents one section
         _index = 1
         section = mu.config.match_week_regexp.match(match_box.get('id'))[1]
         for match_data in match_box.find_all('li', class_='matchContainer'):
-            # 1試合分のmatchContainer内
+            # Each matchContainer represents one match
             match_dict = {'section_no': section, 'match_index_in_section': _index}
 
-            # 日時 (<span class="time">[空白類]9/12<span>(SUN)</span>10:01[空白類]</span>)
+            # Date & time
             match_dict.update(parse_match_date_data(match_data.find('span', class_='time')))
-            # スタジアム (ノエビアスタジアム神戸)
+            # Stadium
             match_dict['stadium'] = match_data.find('span', class_='stadium').text
 
             teams = match_data.find_all('div', class_='team')
-            # ホームチーム (INAC神戸レオネッサ)
+            # Home team
             match_dict['home_team'] = teams[0].find('span', class_='name').text
-            # ホーム得点 (<span>5</span>)
+            # Home goal
             home_goal = teams[0].find('span', class_='score')
             if home_goal:
                 match_dict['home_goal'] = home_goal.text
             else:
                 match_dict['home_goal'] = ''
-            # アウェイ得点 (<span>0</span>)
+            # Away goal
             away_goal = teams[1].find('span', class_='score')
             if away_goal:
                 match_dict['away_goal'] = away_goal.text
             else:
                 match_dict['away_goal'] = ''
-            # アウェイチーム (大宮アルディージャVENTUS)
+            # Away team
             match_dict['away_team'] = teams[1].find('span', class_='name').text
             result_list.append(match_dict)
             _index += 1
@@ -96,13 +99,13 @@ def read_match_from_web(soup: bs4.BeautifulSoup) -> list[dict[str, Any]]:
 
 
 def make_args() -> argparse.Namespace:
-    """引数チェッカ"""
+    """Argument parser."""
     parser = argparse.ArgumentParser(
         description='read_we-league.py\n'
-                    'WEリーグで公開される各大会の試合情報を読み込んでCSVを作成')
+                    'Read WE League match data and convert to CSV')
 
     parser.add_argument('-d', '--debug', action='store_true',
-                        help='デバッグ出力を表示')
+                        help='Enable debug output')
 
     return parser.parse_args()
 
