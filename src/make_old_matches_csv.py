@@ -6,11 +6,11 @@ from pathlib import Path
 import pandas as pd
 
 from read_older2020_matches import parse_years
-from set_config import load_config
+from set_config import Config
 
 logger = logging.getLogger(__name__)
 
-config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
+config = Config(Path(__file__).parent / '../config/old_matches.yaml')
 
 
 def make_old_matches_csv(competition: str, years: list[int] | None = None) -> None:

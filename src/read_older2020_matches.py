@@ -12,11 +12,11 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 
-from set_config import load_config
+from set_config import Config
 
 logger = logging.getLogger(__name__)
 
-config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
+config = Config(Path(__file__).parent / '../config/old_matches.yaml')
 
 MATCH_CARD_ID = re.compile(config.match_data.card_id_pattern)
 

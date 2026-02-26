@@ -23,7 +23,6 @@ import re
 import pandas as pd
 
 from set_config import Config
-from set_config import load_config as _load_config
 
 logger = logging.getLogger(__name__)
 
@@ -71,13 +70,23 @@ class MatchUtils:
         Returns:
             Config: The loaded config object (also stored as self.config).
         """
-        self.config = _load_config(config_path)
+        self.config = Config(config_path)
         return self.config
 
     # -------------------------------------------------------------------
     # Season-map loading
     # -------------------------------------------------------------------
-    def load_season_map(self, group_key: str = 'jleague') -> dict:
+    def load_season_map_raw(self) -> dict:
+        """Load season_map.json and return the full JSON dict.
+
+        Returns:
+            dict: The entire season_map.json content.
+        """
+        season_map_path = self.config.get_path('paths.season_map_file')
+        with open(season_map_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+
+    def load_season_map(self, group_key: str = None) -> dict:
         """Load season_map.json and extract competitions for the given group.
 
         The 4-tier JSON has the structure:
@@ -87,20 +96,20 @@ class MatchUtils:
             { "J1": { "2026East": [...], ... }, "J2": {...}, ... }
 
         Args:
-            group_key: Top-level group key in season_map.json (default: 'jleague')
+            group_key: Top-level group key in season_map.json.
+                       Defaults to the first group in the JSON.
 
         Returns:
             dict: Competition key -> {season_name: RawSeasonEntry}
         """
-        cfg = self.config
-        season_map_path = cfg.get_path('paths.season_map_file')
-        with open(season_map_path, 'r', encoding='utf-8') as f:
-            raw = json.load(f)
+        raw = self.load_season_map_raw()
+        if group_key is None:
+            group_key = next(iter(raw))
         group = raw.get(group_key, {}).get('competitions', {})
         return {comp_key: comp.get('seasons', {})
                 for comp_key, comp in group.items()}
 
-    def get_sub_seasons(self, competition: str, group_key: str = 'jleague') -> list[dict] | None:
+    def get_sub_seasons(self, competition: str, group_key: str = None) -> list[dict] | None:
         """Get sub-seasons for the given competition from season_map.json.
 
         For years with multiple sub-seasons (e.g. 2026East/2026West),
@@ -110,7 +119,8 @@ class MatchUtils:
 
         Args:
             competition: Competition key (e.g. 'J1', 'J2', 'J3')
-            group_key: Top-level group key in season_map.json (default: 'jleague')
+            group_key: Top-level group key in season_map.json.
+                       Defaults to the first group in the JSON.
 
         Returns:
             list[dict] | None:
@@ -172,7 +182,7 @@ class MatchUtils:
         # CSV file path is also the key of Timestamp file, so handle it as a string
         return cfg.get_format_str('paths.csv_format', season=season, competition=competition)
 
-    def resolve_season_start_month(self, group_key: str = 'jleague') -> int:
+    def resolve_season_start_month(self, group_key: str = None) -> int:
         """Resolve season_start_month for config.season via cascade.
 
         Looks up the matching season entry in season_map.json and resolves
@@ -180,20 +190,19 @@ class MatchUtils:
         Code default is 7 (autumn-spring, world standard).
 
         Args:
-            group_key: Top-level group key in season_map.json (default: 'jleague')
+            group_key: Top-level group key in season_map.json.
+                       Defaults to the first group in the JSON.
 
         Returns:
             int: The effective season_start_month for the current config.season.
         """
-        cfg = self.config
-        season_map_path = cfg.get_path('paths.season_map_file')
-        with open(season_map_path, 'r', encoding='utf-8') as f:
-            raw = json.load(f)
-
+        raw = self.load_season_map_raw()
+        if group_key is None:
+            group_key = next(iter(raw))
         group = raw.get(group_key, {})
         group_val = group.get('season_start_month', 7)  # code default
 
-        season_str = str(cfg.season)
+        season_str = str(self.config.season)
         for comp in group.get('competitions', {}).values():
             comp_val = comp.get('season_start_month', group_val)
             for sk, entry in comp.get('seasons', {}).items():

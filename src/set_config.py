@@ -15,9 +15,9 @@ urls:
 Usage:
 '''python
 import pytz
-from set_config import load_config
+from set_config import Config
 
-config = load_config('config.yaml')
+config = Config('config.yaml')
 
 # All of the following access methods are available:
 # 1. Dot notation (attribute access)
@@ -37,7 +37,6 @@ No type conversion is performed; convert as needed.
 config.season = int(config.season)
 config.timezone = pytz.timezone(config.timezone)
 """
-from os import PathLike
 from pathlib import Path
 from typing import Any
 
@@ -112,7 +111,11 @@ class Config:
             config_path: Path to the configuration file.
         """
         self.config_path = config_path
-        self._raw_config = self._load_config(config_path)
+        if not Path(config_path).exists():
+            raise FileNotFoundError(f'Config file not found: {config_path} current_dir: {Path().resolve()}')
+
+        with open(config_path, 'r', encoding='utf-8') as f:
+            self._raw_config = yaml.safe_load(f)
 
         # Set top-level sections as class attributes
         for section_name, section_data in self._raw_config.items():
@@ -120,15 +123,6 @@ class Config:
                 setattr(self, section_name, ConfigSection(section_data))
             else:
                 setattr(self, section_name, section_data)
-
-
-    def _load_config(self, config_path: str) -> dict[str, Any]:
-        """Load the configuration file."""
-        if not Path(config_path).exists():
-            raise FileNotFoundError(f'Config file not found: {config_path} current_dir: {Path().resolve()}')
-
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return yaml.safe_load(f)
 
     def __getitem__(self, key: str) -> Any:
         """Support dictionary-style access: config['section']"""
@@ -234,15 +228,3 @@ class Config:
             path = f'{path}.{part}' if path else part
             parent = result
         return result  # pylint: disable=unreachable
-
-
-def load_config(config_path: PathLike) -> Config:
-    """Load a configuration file and return a Config object.
-
-    Args:
-        config_path: Path to the configuration file.
-
-    Returns:
-        Config: The loaded configuration object.
-    """
-    return Config(config_path)
