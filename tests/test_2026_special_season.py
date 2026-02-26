@@ -191,14 +191,10 @@ class TestGetSubSeasons(unittest.TestCase):
 
     def setUp(self):
         with open(SEASON_MAP_PATH, 'r', encoding='utf-8') as f:
-            raw = json.load(f)
-        # Extract jleague competitions as the flattened season_map
-        jleague = raw.get('jleague', {}).get('competitions', {})
-        self.season_map = {comp_key: comp.get('seasons', {})
-                           for comp_key, comp in jleague.items()}
+            self.raw_season_map = json.load(f)
 
     def test_j1_sub_seasons(self):
-        with patch.object(mu, 'load_season_map', return_value=self.season_map):
+        with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):
             subs = mu.get_sub_seasons('J1')
         self.assertEqual(len(subs), 2)
         self.assertEqual(subs[0]['name'], '2026East')
@@ -212,18 +208,18 @@ class TestGetSubSeasons(unittest.TestCase):
 
     def test_j3_no_2026_entry_returns_none(self):
         """J3 has no 2026 entry -> get_sub_seasons returns None (skip)."""
-        with patch.object(mu, 'load_season_map', return_value=self.season_map):
+        with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):
             result = mu.get_sub_seasons('J3')
         self.assertIsNone(result)
 
     def test_unknown_competition_returns_none(self):
         """Competition not in season_map at all -> None."""
-        with patch.object(mu, 'load_season_map', return_value=self.season_map):
+        with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):
             result = mu.get_sub_seasons('J9')
         self.assertIsNone(result)
 
     def test_j2_sub_seasons(self):
-        with patch.object(mu, 'load_season_map', return_value=self.season_map):
+        with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):
             subs = mu.get_sub_seasons('J2')
         self.assertEqual(len(subs), 4)
         names = [s['name'] for s in subs]

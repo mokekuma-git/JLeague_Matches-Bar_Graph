@@ -276,6 +276,7 @@ TS 版 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階�
   - season_map に新しい年のエントリを追加しない限り、そのカテゴリ・年は自動的にスキップされる
 - **`match_utils.py` が共通ライブラリ** — CSV I/O (`update_if_diff`, `read_allmatches_csv`), season_map 読み込み (`load_season_map`, `get_sub_seasons`, `get_csv_path`), 日付計算 (`get_season_from_date`, `to_datetime_aspossible`) などの共通関数を提供。他スクリプト (`read_jfamatch`, `read_aclgl`, `read_we_league`) がインポートして使う。`read_jleague_matches.py` は J-League 固有のスクレイピングと URL 構築 (`competition.lower()` で URL セグメント生成) のみを担当
 - **勝ち点システム (PointSystem)** — `'standard'` (勝3/PK勝2/PK負1/分1/負0) と `'old-two-points'` (勝2/分1/負0) の2種類。season_map.json の Competition 階層で `point_system` として指定可能 (デフォルト: `'standard'`)
+- **SeasonEntry のバリデーション方針** — season_map.json は手動編集ファイルのため、読み込み時にバリデーションを行う。必須フィールド (配列 index 0〜3) の型不正・欠落はエラーで即停止。SeasonEntryOptions (index 4) の未知キーは Warning を出して無視する (新しい reader 向けオプションの試行錯誤を妨げない)
 
 ## aclgl_points.json 構造
 

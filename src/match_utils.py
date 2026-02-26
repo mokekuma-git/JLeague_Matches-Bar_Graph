@@ -19,6 +19,7 @@ import logging
 from os import PathLike
 from pathlib import Path
 import re
+from typing import Any
 
 import pandas as pd
 
@@ -49,6 +50,65 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
     'status': 'str',
     'group': 'str',
 }
+
+
+# ---------------------------------------------------------------------------
+# SeasonEntry: typed representation of a season_map.json entry
+# ---------------------------------------------------------------------------
+class SeasonEntry:
+    """Parsed season entry from season_map.json.
+
+    Corresponds to the raw JSON array:
+        [team_count, promotion_count, relegation_count, teams, options?]
+    """
+
+    KNOWN_OPTION_KEYS: set[str] = {
+        'rank_properties', 'group_display', 'url_category',
+        'league_display', 'point_system', 'css_files',
+        'team_rename_map', 'tiebreak_order', 'season_start_month',
+    }
+
+    def __init__(self, season_key: str, raw: list):
+        """Parse and validate a raw season entry array.
+
+        Args:
+            season_key: Season name (for error messages, e.g. '2026East').
+            raw: Raw JSON array from season_map.json.
+
+        Raises:
+            ValueError: If required elements are missing.
+            TypeError: If element types are wrong.
+        """
+        if len(raw) < 4:
+            raise ValueError(
+                f"Season '{season_key}': expected at least 4 elements, got {len(raw)}")
+
+        for i, label in enumerate(['team_count', 'promotion_count', 'relegation_count']):
+            if not isinstance(raw[i], int):
+                raise TypeError(
+                    f"Season '{season_key}': {label} (index {i}) must be int, "
+                    f"got {type(raw[i]).__name__}")
+
+        if not isinstance(raw[3], list):
+            raise TypeError(
+                f"Season '{season_key}': teams (index 3) must be list, "
+                f"got {type(raw[3]).__name__}")
+
+        self.team_count: int = raw[0]
+        self.promotion_count: int = raw[1]
+        self.relegation_count: int = raw[2]
+        self.teams: list[str] = raw[3]
+        self.options: dict[str, Any] = {}
+
+        if len(raw) > 4:
+            if not isinstance(raw[4], dict):
+                raise TypeError(
+                    f"Season '{season_key}': options (index 4) must be dict, "
+                    f"got {type(raw[4]).__name__}")
+            self.options = raw[4]
+            unknown = set(self.options.keys()) - self.KNOWN_OPTION_KEYS
+            if unknown:
+                logger.warning("Season '%s': unknown option keys: %s", season_key, unknown)
 
 
 class MatchUtils:
@@ -86,28 +146,33 @@ class MatchUtils:
         with open(season_map_path, 'r', encoding='utf-8') as f:
             return json.load(f)
 
-    def load_season_map(self, group_key: str = None) -> dict:
+    def load_season_map(self, group_key: str = None) -> dict[str, dict[str, SeasonEntry]]:
         """Load season_map.json and extract competitions for the given group.
 
         The 4-tier JSON has the structure:
             { group_key: { "competitions": { "J1": { "seasons": {...} }, ... } } }
 
-        This function flattens it to:
-            { "J1": { "2026East": [...], ... }, "J2": {...}, ... }
+        This function flattens and parses it to:
+            { "J1": { "2026East": SeasonEntry(...), ... }, "J2": {...}, ... }
 
         Args:
             group_key: Top-level group key in season_map.json.
                        Defaults to the first group in the JSON.
 
         Returns:
-            dict: Competition key -> {season_name: RawSeasonEntry}
+            dict: Competition key -> {season_name: SeasonEntry}
         """
         raw = self.load_season_map_raw()
         if group_key is None:
             group_key = next(iter(raw))
         group = raw.get(group_key, {}).get('competitions', {})
-        return {comp_key: comp.get('seasons', {})
-                for comp_key, comp in group.items()}
+        return {
+            comp_key: {
+                sk: SeasonEntry(sk, entry)
+                for sk, entry in comp.get('seasons', {}).items()
+            }
+            for comp_key, comp in group.items()
+        }
 
     def get_sub_seasons(self, competition: str, group_key: str = None) -> list[dict] | None:
         """Get sub-seasons for the given competition from season_map.json.
@@ -149,17 +214,15 @@ class MatchUtils:
             entry = comp_seasons[k]
             info = {
                 'name': k,
-                'teams': entry[3],
-                'team_count': entry[0],
+                'teams': entry.teams,
+                'team_count': entry.team_count,
                 'group': k[len(season_str):],
             }
-            # Read season-specific overrides from index 4 (merged optional dict)
-            if len(entry) > 4 and isinstance(entry[4], dict):
-                opts = entry[4]
-                if 'group_display' in opts:
-                    info['group_display'] = opts['group_display']
-                if 'url_category' in opts:
-                    info['url_category'] = opts['url_category']
+            opts = entry.options
+            if 'group_display' in opts:
+                info['group_display'] = opts['group_display']
+            if 'url_category' in opts:
+                info['url_category'] = opts['url_category']
             result.append(info)
         return result
 
@@ -205,11 +268,10 @@ class MatchUtils:
         season_str = str(self.config.season)
         for comp in group.get('competitions', {}).values():
             comp_val = comp.get('season_start_month', group_val)
-            for sk, entry in comp.get('seasons', {}).items():
+            for sk, raw_entry in comp.get('seasons', {}).items():
                 if sk.startswith(season_str):
-                    if len(entry) > 4 and isinstance(entry[4], dict):
-                        return entry[4].get('season_start_month', comp_val)
-                    return comp_val
+                    entry = SeasonEntry(sk, raw_entry)
+                    return entry.options.get('season_start_month', comp_val)
         return group_val
 
     # -------------------------------------------------------------------
