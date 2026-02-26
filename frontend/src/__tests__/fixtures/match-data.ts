@@ -44,6 +44,7 @@ export function makeSeasonInfo(overrides: Partial<SeasonInfo> = {}): SeasonInfo 
     cssFiles: [],
     teamRenameMap: {},
     tiebreakOrder: ['goal_diff', 'goal_get'],
+    seasonStartMonth: 7,
     ...overrides,
   };
 }

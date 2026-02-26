@@ -32,6 +32,7 @@ The `timezone_diff` is the time difference from JST.
 import argparse
 from datetime import timedelta
 import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -40,11 +41,10 @@ from typing import Any
 import pandas as pd
 import requests
 
-from match_utils import to_datetime_aspossible
-from match_utils import update_if_diff
-from read_jleague_matches import config as jl_config
+from match_utils import mu
 from set_config import Config
-from set_config import load_config
+
+logger = logging.getLogger(__name__)
 
 
 def _prepare_config() -> Config:
@@ -53,7 +53,7 @@ def _prepare_config() -> Config:
     Returns:
         Config: Configuration object with parsed settings
     """
-    new_conf = load_config(Path(__file__).parent / '../config/jfamatch.yaml')
+    new_conf = mu.init_config(Path(__file__).parent / '../config/jfamatch.yaml')
 
     def is_string_list(obj: Any) -> bool:
         if not isinstance(obj, list):
@@ -77,8 +77,6 @@ def _prepare_config() -> Config:
     # Type conversion
     new_conf.section_no = re.compile(new_conf.section_no)
 
-    # Inherited from jleague config
-    new_conf.standard_date_format = jl_config.standard_date_format
     return new_conf
 
 
@@ -99,15 +97,15 @@ def read_match_json(_url: str) -> dict[str, Any]:
     counter = 0
     while result is None and counter < 10:
         try:
-            print(f'access {_url} ...')
+            logger.info("Access %s", _url)
             result = json.loads(requests.get(_url, timeout=config.http_timeout).text)
         except (TypeError, json.JSONDecodeError) as _ex:
-            print((counter, _ex))
+            logger.warning("Retry %d/%d: %s", counter, 10, _ex)
 
         counter += 1
     if result is not None:
         return result
-    print(f'Failed to get match data for {_url} after {counter} tries')
+    logger.error("Failed to get match data for %s after %d tries", _url, counter)
     return json.loads('{"matchScheduleList":{"matchSchedule": []}}')
 
 
@@ -161,7 +159,9 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame containing the match data
     """
-    match_list = read_match_json(_url)[config.schedule_container][config.schedule_list]
+    raw = read_match_json(_url)
+    match_list = raw[config.schedule_container][config.schedule_list]
+    logger.info("Read %d matches from %s", len(match_list), _url)
     result_list = []
     match_index_dict = {}
     for (_count, _match_data) in enumerate(match_list):
@@ -187,14 +187,12 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
         # Temporary fix because JFA data set the suspended match information to 'venueFullName'
         if '【中止】' in _match_data['venueFullName']:
             _row['status'] = '試合中止'
-            if config.debug:
-                print(f'Cancel Game## {_match_data["venueFullName"]}')
+            logger.debug("Cancel Game: %s", _match_data["venueFullName"])
         else:
-            if config.debug:
-                print(f'No Cancel## {_match_data["venueFullName"]}')
+            logger.debug("No Cancel: %s", _match_data["venueFullName"])
 
         _row['extraTime'] = str(_row['extraTime'])  # Stringify for comparison with old style CSV
-        _row['match_date'] = to_datetime_aspossible(_row['match_date'])
+        _row['match_date'] = mu.to_datetime_aspossible(_row['match_date'])
 
         result_list.append(_row)
 
@@ -208,15 +206,14 @@ def read_group(competition: str) -> None:
         competition (str): Name of the competition
     """
     if competition not in config.competitions:
-        print(f'Unknown competion: "{competition}"\n{config.competition_names}')
+        logger.warning("Unknown competition: \"%s\" (available: %s)", competition, config.competition_names)
         return
 
     comp_conf = config.competitions[competition]
     match_df = read_all_group(comp_conf)
 
-    if config.debug:
-        print(match_df['status'])
-    update_if_diff(match_df, comp_conf.csv_path)
+    logger.debug("Match status:\n%s", match_df['status'])
+    mu.update_if_diff(match_df, comp_conf.csv_path)
 
 
 def read_all_group(comp_conf: dict[str, Any]) -> pd.DataFrame:
@@ -297,8 +294,11 @@ if __name__ == '__main__':
     os.chdir(Path(__file__).parent)
 
     args = make_args()
-    if args.debug:
-        config.debug = True
+    logging.basicConfig(
+        level=logging.DEBUG if args.debug else logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%H:%M:%S',
+    )
 
     for compt in args.competition:
         read_group(compt)

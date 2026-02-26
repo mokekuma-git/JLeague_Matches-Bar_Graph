@@ -1,42 +1,47 @@
-"""2021 ACLグループステージの試合情報を読み込んでCSV, JSO化"""
+"""Read ACL group stage match data and save as CSV/JSON"""
+import argparse
 import datetime
+import logging
+import os
 import re
-import sys
+from pathlib import Path
 from typing import Any
 
 from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 
-from match_utils import update_if_diff
-from read_jleague_matches import config
+from match_utils import mu
 
-ACL_MATCH_URL = 'https://soccer.yahoo.co.jp/jleague/category/acl/schedule/31194/{}/'
-HTTP_TIMEOUT = 60
-SECTION_ID_LIST = ['11', '21', '31', '42', '52', '62']
-SEASON = datetime.datetime.now().year
-CSV_FILENAME = f'../docs/csv/{SEASON}_allmatch_result-ACL_GL.csv'
+logger = logging.getLogger(__name__)
+
+def init() -> None:
+    """Load config and compute runtime values (season, csv path, etc.)."""
+    mu.init_config(Path(__file__).parent / '../config/aclgl.yaml')
+
+    mu.config.season = str(datetime.datetime.now().year)
+    mu.config.csv_filename = mu.config.get_format_str('paths.csv_format', season=mu.config.season)
 
 
 def read_match(section_id: str) -> list[dict[str, Any]]:
-    """スポーツナビサイトから指定された節の各グループの試合リスト情報を読んで返す
+    """Read match list for each group of the given section from スポーツナビ.
 
-    1節～6節は、それぞれSECTION_ID_LISTに対応
+    Sections 1-6 correspond to mu.config.section_ids respectively.
     """
-    _url = ACL_MATCH_URL.format(section_id)
-    print(f'access {_url}...')
-    soup = BeautifulSoup(requests.get(_url, timeout=HTTP_TIMEOUT).text, 'lxml')
+    _url = mu.config.get_format_str('urls.source_url_format', section_id)
+    logger.info("Access %s", _url)
+    soup = BeautifulSoup(requests.get(_url, timeout=mu.config.http_timeout).text, 'lxml')
     return read_match_from_web(soup)
 
 
 def parse_match_date_data(text: str) -> dict[str, str]:
-    r"""与えられた "日付(改行)時間" (4/16（金）\n4:00 など) を日付と時間に分けて返す
+    r"""Parse "date\ntime" text (e.g. 4/16（金）\n4:00) into date and time parts.
 
-    フォーマットは、match_date, start_timeをキーとしたDict形式
-    Validationのため、一度datetimeに変換するが、返すのは文字列
+    Returns a dict with 'match_date' and 'start_time' keys.
+    Values are converted via datetime for validation, then returned as strings.
     """
     (match_date, start_time) = text.split()
-    match_date = pd.to_datetime(SEASON + '/' + match_date[:match_date.index('（')]).date()
+    match_date = pd.to_datetime(mu.config.season + '/' + match_date[:match_date.index('（')]).date()
     try:
         start_time = pd.to_datetime(start_time).time()
     except (ValueError, pd.errors.ParserError):
@@ -45,21 +50,21 @@ def parse_match_date_data(text: str) -> dict[str, str]:
 
 
 def parse_match_result_data(text: str) -> dict[str, str]:
-    r"""勝敗結果データ ("3 - 1\n試合終了" や "- 試合前" など) をゴール数と状態に分けて返す
+    r"""Parse match result text (e.g. "3 - 1\n試合終了" or "- 試合前") into goals and status.
 
-    フォーマットは、home_goal, away_goal, statusをキーとしたDict形式
+    Returns a dict with 'home_goal', 'away_goal', and 'status' keys.
     """
-    # 3-1 のようにスペースが無いテキストが来てもOKなように
+    # Normalize spaceless format like "3-1" by inserting spaces around '-'
     text = text.replace('-', ' - ')
     result_list = text.split()
-    if len(result_list) <= 3:  # "- 試合前" スタイル
+    if len(result_list) <= 3:  # "- 試合前" style (pre-match)
         home_goal = ''
         away_goal = ''
-        # result_list[0] は '-'
+        # result_list[0] is '-'
         match_status = result_list[1]
-    else:  # "3 - 1\n試合終了" スタイル
+    else:  # "3 - 1\n試合終了" style (finished)
         home_goal = result_list[0]
-        # result_list[2] は '-'
+        # result_list[2] is '-'
         away_goal = result_list[2]
         match_status = result_list[3]
 
@@ -67,7 +72,7 @@ def parse_match_result_data(text: str) -> dict[str, str]:
 
 
 def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
-    """各グループの試合リスト情報をHTML内容から読み取る"""
+    """Parse match list for all groups from the HTML content."""
     result_list = []
 
     match_groups = soup.find_all('section', class_='sc-modCommon01')
@@ -80,39 +85,54 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
         _index = 0
         for _match in match_table.find_all('tr'):
             match_dict = {'group': group}
-            # 1試合分のtrタグ内
+            # Each <tr> represents one match
             td_list = _match.find_all('td')
-            # 日時 (4/16（金）\n4:00)
+            # Date & time (e.g. 4/16（金）\n4:00)
             match_dict.update(parse_match_date_data(td_list[0].text))
-            # 節 (第3節)
+            # Section (e.g. 第3節)
             match_dict['section_no'] = re.search(r'\d+', td_list[1].text)[0]
-            # ホームチーム (アルヒラル)
+            # Home team (e.g. アルヒラル)
             match_dict['home_team'] = td_list[2].text.strip()
-            # 試合結果 (2 - 2\n試合終了)
+            # Match result (e.g. 2 - 2\n試合終了)
             match_dict.update(parse_match_result_data(td_list[3].text))
-            # アウェイチーム (イスティクロル)
+            # Away team (e.g. イスティクロル)
             match_dict['away_team'] = td_list[4].text.strip()
-            # スタジアム (プリンスファイサルビンファハド)
+            # Stadium (e.g. プリンスファイサルビンファハド)
             match_dict['stadium'] = td_list[5].text.strip()
             match_dict['match_index_in_section'] = _index
 
             result_list.append(match_dict)
             _index += 1
+    logger.info("Read %d matches from %d groups", len(result_list), len(match_groups))
     return result_list
 
 
-if __name__ == '__main__':
-    import os
-    from pathlib import Path
-    os.chdir(Path(__file__).parent.parent)
+def make_args() -> argparse.Namespace:
+    """Argument parser."""
+    parser = argparse.ArgumentParser(
+        description='read_aclgl_matches.py\n'
+                    'Read ACL group stage match data and save as CSV/JSON')
+    parser.add_argument('-d', '--debug', action='store_true',
+                        help='Enable debug output')
+    return parser.parse_args()
 
-    if '--debug' in sys.argv:
-        config.debug = True
+
+if __name__ == '__main__':
+    os.chdir(Path(__file__).parent.parent)
+    init()
+
+    _args = make_args()
+    logging.basicConfig(
+        level=logging.DEBUG if _args.debug else logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%H:%M:%S',
+    )
 
     match_df = pd.DataFrame()
-    for section in SECTION_ID_LIST:
+    for section in mu.config.section_ids:
         match_df = pd.concat([match_df, pd.DataFrame(read_match(section))])
 
     match_df = match_df.sort_values(['section_no', 'match_index_in_section']) \
         .reset_index(drop=True)
-    update_if_diff(match_df, CSV_FILENAME)
+    logger.info("Total %d matches across %d sections", len(match_df), len(mu.config.section_ids))
+    mu.update_if_diff(match_df, mu.config.csv_filename)

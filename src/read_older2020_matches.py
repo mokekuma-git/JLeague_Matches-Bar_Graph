@@ -1,6 +1,7 @@
 """Read J-League match data and store it in CSV files"""
 import argparse
 from io import StringIO
+import logging
 import os
 from pathlib import Path
 import re
@@ -11,9 +12,11 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 
-from set_config import load_config
+from set_config import Config
 
-config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
+logger = logging.getLogger(__name__)
+
+config = Config(Path(__file__).parent / '../config/old_matches.yaml')
 
 MATCH_CARD_ID = re.compile(config.match_data.card_id_pattern)
 
@@ -41,7 +44,7 @@ def store_year_data(year: int) -> None:
     Args:
         year: Year to get match data for
     """
-    print(f"Read year: {year}")
+    logger.info("Read year: %d", year)
 
     _url = config.get_format_str('match_data.url_format', year=year)
     html_text = requests.request('GET', _url, timeout=config.http_timeout).text
@@ -56,7 +59,7 @@ def store_year_data(year: int) -> None:
 
     csv_file = config.get_path('match_data.csv_path_format', year=year)
     df.to_csv(csv_file, lineterminator='\n', encoding=config.match_data.encoding)
-    print(f"Stored: {csv_file}")
+    logger.info("Stored: %s", csv_file)
 
 
 def process_years(years: list[int]) -> None:
@@ -98,20 +101,20 @@ def parse_years() -> list[int]:
     if not any([args.year, args.range, args.list]):
         current_year = pd.Timestamp.now().year
         years = list(range(1993, current_year + 1))
-        print(f"Apply all years from 1993 to {current_year} as default")
+        logger.info("Apply all years from 1993 to %d as default", current_year)
     elif args.year:
         years = [args.year]
-        print(f"Target year: {args.year}")
+        logger.info("Target year: %d", args.year)
     elif args.range:
         start, end = args.range
         if start > end:
-            print(f"Start year {start} is greater than end year {end}.")
+            logger.error("Start year %d is greater than end year %d", start, end)
             sys.exit(1)
         years = list(range(start, end + 1))
-        print(f"Target year range: {start} to {end}")
+        logger.info("Target year range: %d to %d", start, end)
     elif args.list:
         years = sorted(args.list)
-        print(f"Target years: {years}")
+        logger.info("Target years: %s", years)
     return years
 
 
@@ -124,4 +127,9 @@ def main():
 
 if __name__ == '__main__':
     os.chdir(Path(__file__).parent)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%H:%M:%S',
+    )
     main()

@@ -14,9 +14,9 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 from bs4 import BeautifulSoup
 
+from match_utils import mu, get_season_from_date
 from read_jleague_matches import (
     read_match_from_web,
-    get_season_from_date,
     _team_count_to_section_range,
     _calc_section_range,
     update_sub_season_matches,
@@ -191,16 +191,11 @@ class TestGetSubSeasons(unittest.TestCase):
 
     def setUp(self):
         with open(SEASON_MAP_PATH, 'r', encoding='utf-8') as f:
-            raw = json.load(f)
-        # Extract jleague competitions as the flattened season_map
-        jleague = raw.get('jleague', {}).get('competitions', {})
-        self.season_map = {comp_key: comp.get('seasons', {})
-                           for comp_key, comp in jleague.items()}
+            self.raw_season_map = json.load(f)
 
     def test_j1_sub_seasons(self):
-        from read_jleague_matches import get_sub_seasons
-        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
-            subs = get_sub_seasons('J1')
+        with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):
+            subs = mu.get_sub_seasons('J1')
         self.assertEqual(len(subs), 2)
         self.assertEqual(subs[0]['name'], '2026East')
         self.assertEqual(subs[1]['name'], '2026West')
@@ -213,27 +208,24 @@ class TestGetSubSeasons(unittest.TestCase):
 
     def test_j3_no_2026_entry_returns_none(self):
         """J3 has no 2026 entry -> get_sub_seasons returns None (skip)."""
-        from read_jleague_matches import get_sub_seasons
-        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
-            result = get_sub_seasons('J3')
+        with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):
+            result = mu.get_sub_seasons('J3')
         self.assertIsNone(result)
 
     def test_unknown_competition_returns_none(self):
         """Competition not in season_map at all -> None."""
-        from read_jleague_matches import get_sub_seasons
-        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
-            result = get_sub_seasons('J9')
+        with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):
+            result = mu.get_sub_seasons('J9')
         self.assertIsNone(result)
 
     def test_j2_sub_seasons(self):
-        from read_jleague_matches import get_sub_seasons
-        with patch('read_jleague_matches.load_season_map', return_value=self.season_map):
-            subs = get_sub_seasons('J2')
+        with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):
+            subs = mu.get_sub_seasons('J2')
         self.assertEqual(len(subs), 4)
         names = [s['name'] for s in subs]
         self.assertEqual(names, ['2026EastA', '2026EastB', '2026WestA', '2026WestB'])
         for s in subs:
-            self.assertEqual(s['url_category'], '2j3')
+            self.assertEqual(s['url_category'], 'j2j3')
         displays = [s['group_display'] for s in subs]
         self.assertEqual(displays, ['EAST-A', 'EAST-B', 'WEST-A', 'WEST-B'])
 
@@ -299,9 +291,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
              'group_display': 'WEST'},
         ]
 
-    @patch('read_jleague_matches.update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'update_if_diff')
+    @patch('read_jleague_matches.read_matches')
+    @patch.object(mu, 'get_csv_path')
     def test_force_update_fetches_full_range(self, mock_csv_path, mock_read_range, mock_update):
         """force_update=True should fetch _calc_section_range sections."""
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
@@ -311,15 +303,15 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
 
         update_sub_season_matches('J1', self._make_sub_seasons(), force_update=True)
 
-        # read_matches_range called once (shared fetch for both sub-seasons)
+        # read_matches called once (shared fetch for both sub-seasons)
         mock_read_range.assert_called_once()
         # Section range for 10 even teams = 18 sections
         call_range = mock_read_range.call_args.args[1]
         self.assertEqual(list(call_range), list(range(1, 19)))
 
-    @patch('read_jleague_matches.update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'update_if_diff')
+    @patch('read_jleague_matches.read_matches')
+    @patch.object(mu, 'get_csv_path')
     def test_group_filter_distributes_correctly(self, mock_csv_path, mock_read_range, mock_update):
         """Each sub-season CSV should receive only its own group's matches."""
         east_teams = ['A1', 'A2', 'A3', 'A4', 'A5']
@@ -340,9 +332,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         west_written = written['/tmp/2026West.csv']
         self.assertEqual(set(west_written['home_team']), set(west_teams))
 
-    @patch('read_jleague_matches.update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'update_if_diff')
+    @patch('read_jleague_matches.read_matches')
+    @patch.object(mu, 'get_csv_path')
     def test_group_column_dropped(self, mock_csv_path, mock_read_range, mock_update):
         """The 'group' column should not appear in written CSVs."""
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
@@ -356,9 +348,9 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
             written_df = call.args[0]
             self.assertNotIn('group', written_df.columns)
 
-    @patch('read_jleague_matches.update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'update_if_diff')
+    @patch('read_jleague_matches.read_matches')
+    @patch.object(mu, 'get_csv_path')
     def test_match_index_recalculated_per_sub_season(self, mock_csv_path, mock_read_range, mock_update):
         """match_index_in_section should be 1-based within each sub-season."""
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
@@ -376,11 +368,11 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
             indexes = sorted(df['match_index_in_section'].tolist())
             self.assertEqual(indexes, [1, 2, 3, 4, 5], f"{path}: indexes should be 1-5, got {indexes}")
 
-    @patch('read_jleague_matches.update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
-    @patch('read_jleague_matches.get_csv_path')
+    @patch.object(mu, 'update_if_diff')
+    @patch('read_jleague_matches.read_matches')
+    @patch.object(mu, 'get_csv_path')
     def test_need_update_uses_specified_sections(self, mock_csv_path, mock_read_range, mock_update):
-        """need_update param should pass the specified sections to read_matches_range."""
+        """need_update param should pass the specified sections to read_matches."""
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
         west_df = self._make_match_df('WEST', ['B1', 'B2', 'B3', 'B4', 'B5'])
         mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
@@ -392,8 +384,8 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         existing_east['match_index_in_section'] = range(1, 6)
 
         with patch('read_jleague_matches.Path') as mock_path_cls, \
-             patch('read_jleague_matches.read_allmatches_csv', return_value=existing_east), \
-             patch('read_jleague_matches.matches_differ', return_value=True):
+             patch.object(mu, 'read_allmatches_csv', return_value=existing_east), \
+             patch.object(mu, 'matches_differ', return_value=True):
             mock_path_cls.return_value.exists.return_value = True
 
             update_sub_season_matches('J1', self._make_sub_seasons(), need_update={3, 4})
@@ -409,35 +401,49 @@ class TestGetSeasonFromDate(unittest.TestCase):
     def _d(self, year, month, day=1):
         return date(year, month, day)
 
-    def test_pre_2026_returns_year_string(self):
-        self.assertEqual(get_season_from_date(self._d(2025, 1)), '2025')
-        self.assertEqual(get_season_from_date(self._d(2024, 12)), '2024')
-        self.assertEqual(get_season_from_date(self._d(2023, 6)), '2023')
+    # --- Calendar-year seasons (season_start_month=1) ---
 
-    def test_2026_jan_jun_returns_2026(self):
-        """Jan-Jun 2026 is the special transition season."""
-        self.assertEqual(get_season_from_date(self._d(2026, 1)), '2026')
-        self.assertEqual(get_season_from_date(self._d(2026, 6, 30)), '2026')
+    def test_calendar_year_returns_year_string(self):
+        """season_start_month=1 always returns 4-digit year."""
+        self.assertEqual(get_season_from_date(self._d(2025, 1), season_start_month=1), '2025')
+        self.assertEqual(get_season_from_date(self._d(2024, 12), season_start_month=1), '2024')
+        self.assertEqual(get_season_from_date(self._d(2026, 6), season_start_month=1), '2026')
+        self.assertEqual(get_season_from_date(self._d(2027, 3), season_start_month=1), '2027')
 
-    def test_2026_jul_dec_returns_26_27(self):
-        """Jul-Dec 2026 is the first European-style season."""
+    # --- Autumn-spring seasons (season_start_month=7, default) ---
+
+    def test_default_start_month_is_7(self):
+        """Default season_start_month is 7 (autumn-spring)."""
         self.assertEqual(get_season_from_date(self._d(2026, 7, 1)), '26-27')
-        self.assertEqual(get_season_from_date(self._d(2026, 12)), '26-27')
-
-    def test_2027_jan_jun_returns_26_27(self):
-        """Jan-Jun 2027 still belongs to the 26-27 season."""
-        self.assertEqual(get_season_from_date(self._d(2027, 1)), '26-27')
         self.assertEqual(get_season_from_date(self._d(2027, 6, 30)), '26-27')
 
-    def test_2027_jul_dec_returns_27_28(self):
-        """Jul-Dec 2027 starts the 27-28 season."""
-        self.assertEqual(get_season_from_date(self._d(2027, 7, 1)), '27-28')
-        self.assertEqual(get_season_from_date(self._d(2027, 12)), '27-28')
+    def test_jul_dec_returns_cross_year(self):
+        """Jul-Dec belongs to the season starting this year."""
+        self.assertEqual(get_season_from_date(self._d(2026, 7, 1), season_start_month=7), '26-27')
+        self.assertEqual(get_season_from_date(self._d(2026, 12), season_start_month=7), '26-27')
+
+    def test_jan_jun_returns_previous_cross_year(self):
+        """Jan-Jun belongs to the season that started last year."""
+        self.assertEqual(get_season_from_date(self._d(2027, 1), season_start_month=7), '26-27')
+        self.assertEqual(get_season_from_date(self._d(2027, 6, 30), season_start_month=7), '26-27')
+
+    def test_next_season_starts_in_jul(self):
+        """Jul starts a new season."""
+        self.assertEqual(get_season_from_date(self._d(2027, 7, 1), season_start_month=7), '27-28')
+        self.assertEqual(get_season_from_date(self._d(2027, 12), season_start_month=7), '27-28')
 
     def test_boundary_jun_vs_jul(self):
-        """June 30 and July 1 should differ for years after 2026."""
-        self.assertEqual(get_season_from_date(self._d(2028, 6, 30)), '27-28')
-        self.assertEqual(get_season_from_date(self._d(2028, 7, 1)), '28-29')
+        """June 30 and July 1 should differ."""
+        self.assertEqual(get_season_from_date(self._d(2028, 6, 30), season_start_month=7), '27-28')
+        self.assertEqual(get_season_from_date(self._d(2028, 7, 1), season_start_month=7), '28-29')
+
+    # --- Custom start month ---
+
+    def test_custom_start_month_8(self):
+        """season_start_month=8 for leagues starting in August."""
+        self.assertEqual(get_season_from_date(self._d(2025, 8, 1), season_start_month=8), '25-26')
+        self.assertEqual(get_season_from_date(self._d(2025, 7, 31), season_start_month=8), '24-25')
+        self.assertEqual(get_season_from_date(self._d(2026, 5, 1), season_start_month=8), '25-26')
 
     def test_defaults_to_today(self):
         """Called without arguments should not raise and return a non-empty string."""

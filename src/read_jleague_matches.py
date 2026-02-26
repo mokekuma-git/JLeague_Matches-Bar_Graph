@@ -1,180 +1,28 @@
 """Read match information of J-League and save as CSV"""
 import argparse
-from datetime import date
 from datetime import datetime
 from datetime import timedelta
-import json
+import logging
 import os
 from pathlib import Path
 import re
 from typing import Any
-import warnings
 
 from bs4 import BeautifulSoup
 import pandas as pd
 import pytz
 import requests
 
-import match_utils
-from match_utils import (
-    get_timestamp_from_csv,
-    matches_differ,
-    parse_range_args,
-    read_allmatches_csv,
-    update_if_diff,
-)
-from set_config import load_config
+from match_utils import mu
+from match_utils import get_season_from_date
+from match_utils import parse_range_args
 
-config = load_config(Path(__file__).parent / '../config/jleague.yaml')
+logger = logging.getLogger(__name__)
+
+config = mu.init_config(Path(__file__).parent / '../config/jleague.yaml')
 
 # Type conversion of config values
 config.timezone = pytz.timezone(config.timezone)
-
-# Share the loaded config with match_utils
-match_utils.config = config
-
-
-def load_season_map() -> dict:
-    """Load season_map.json and extract jleague competitions.
-
-    The 4-tier JSON has the structure:
-        { "jleague": { "competitions": { "J1": { "seasons": {...} }, ... } } }
-
-    This function flattens it to:
-        { "J1": { "2026East": [...], ... }, "J2": {...}, ... }
-
-    Returns:
-        dict: Competition key -> {season_name: RawSeasonEntry}
-    """
-    season_map_path = config.get_path('paths.season_map_file')
-    with open(season_map_path, 'r', encoding='utf-8') as f:
-        raw = json.load(f)
-    jleague = raw.get('jleague', {}).get('competitions', {})
-    return {comp_key: comp.get('seasons', {})
-            for comp_key, comp in jleague.items()}
-
-
-def get_sub_seasons(competition: str) -> list[dict] | None:
-    """Get sub-seasons for the given competition from season_map.json.
-
-    For years with multiple sub-seasons (e.g. 2026East/2026West),
-    returns a list of sub-season info dicts. For single-season years,
-    returns an empty list. If no season entry exists for this competition,
-    returns None (caller should skip this competition entirely).
-
-    Args:
-        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-
-    Returns:
-        list[dict] | None:
-            None       -- no season entry for config.season -> skip
-            []         -- single season -> use update_all_matches
-            [dict,...] -- multi-group season -> use update_sub_season_matches
-    """
-    season_map = load_season_map()
-    if competition not in season_map:
-        return None
-
-    season_str = str(config.season)
-    comp_seasons = season_map[competition]
-    sub_keys = sorted(k for k in comp_seasons if k.startswith(season_str) and k != season_str)
-
-    # No entry at all for this season (neither bare key nor sub-keys)
-    if not sub_keys and season_str not in comp_seasons:
-        return None
-
-    if len(sub_keys) <= 1:
-        return []
-
-    result = []
-    for k in sub_keys:
-        entry = comp_seasons[k]
-        info = {
-            'name': k,
-            'teams': entry[3],
-            'team_count': entry[0],
-            'group': k[len(season_str):],
-        }
-        # Read season-specific overrides from index 4 (merged optional dict)
-        if len(entry) > 4 and isinstance(entry[4], dict):
-            opts = entry[4]
-            if 'group_display' in opts:
-                info['group_display'] = opts['group_display']
-            if 'url_category' in opts:
-                info['url_category'] = opts['url_category']
-        result.append(info)
-    return result
-
-
-def get_csv_path(competition: str, season: str = None) -> str:
-    """Get the path of CSV file from config file.
-
-    Args:
-        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-        season (str, optional): Season name (e.g. '2026East'). Defaults to config.season.
-
-    Returns:
-        str: Path of CSV file
-
-    Raises:
-        KeyError: If the key 'paths.csv_format' is not found in the config file
-    """
-    if season is None:
-        season = config.season
-    # CSV file path is also the key of Timestamp file, so handle it as a string
-    return config.get_format_str('paths.csv_format', season=season, competition=competition)
-
-
-def _url_segment_from_competition(competition: str) -> str:
-    """Extract URL segment from competition key for J-League URLs.
-
-    J-League URLs use the pattern j{segment}/{section}/.
-    For competition keys like 'J1', 'J2', 'J3', the segment is the
-    numeric part (e.g. '1', '2', '3').
-
-    Args:
-        competition (str): Competition key (e.g. 'J1')
-
-    Returns:
-        str: URL segment (e.g. '1')
-    """
-    if competition.upper().startswith('J'):
-        return competition[1:]
-    return competition
-
-
-def get_season_from_date(reference_date: date = None) -> str:
-    """Return the season string for the given date.
-
-    Season naming rules:
-    - Up to 2025: "YYYY" (4-digit year, calendar-year seasons)
-    - 2026 Jan-Jun: "2026" (special transition season before autumn-spring schedule)
-    - 2026 Jul onwards: two-digit years format "YY-YY"
-    - The boundary month is July (seasons end in May, start in August;
-      June and earlier belong to the season that started in the previous calendar year,
-      July and later belong to the season starting this year)
-
-    Args:
-        reference_date: Date to use as reference. Defaults to today.
-
-    Returns:
-        str: Season string (e.g. "2025", "2026", "26-27", "27-28")
-    """
-    if reference_date is None:
-        reference_date = date.today()
-    year = reference_date.year
-    month = reference_date.month
-
-    if year <= 2025:
-        return str(year)
-
-    # 2026 special transition season (Jan-Jun)
-    if year == 2026 and month <= 6:
-        return "2026"
-
-    # two-digit year season (2026 Jul+ or 2027+)
-    start_year = year if month >= 7 else year - 1
-    return f"{start_year % 100:02d}-{(start_year + 1) % 100:02d}"
 
 
 def read_teams(competition: str) -> list[str]:
@@ -190,10 +38,12 @@ def read_teams(competition: str) -> list[str]:
         KeyError: If the key 'urls.standing_url_format' is not found in the config file
     """
     _url = config.get_format_str('urls.standing_url_format',
-                                 _url_segment_from_competition(competition))
-    print(f'access {_url}...')
+                                 competition.lower())
+    logger.info("Access %s", _url)
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
-    return read_teams_from_web(soup, competition)
+    teams = read_teams_from_web(soup, competition)
+    logger.info("Read %d teams for %s", len(teams), competition)
+    return teams
 
 
 def read_teams_from_web(soup: BeautifulSoup, competition: str) -> list[str]:
@@ -211,7 +61,7 @@ def read_teams_from_web(soup: BeautifulSoup, competition: str) -> list[str]:
     """
     standings = soup.find('table', class_=f'{competition}table')
     if not standings:
-        print(f'Can\'t find {competition} teams...')
+        logger.warning("Can't find %s teams", competition)
         return []
     td_teams = standings.find_all('td', class_='tdTeam')
     return [list(_td.stripped_strings)[1] for _td in td_teams]
@@ -224,8 +74,8 @@ def read_match(competition: str, sec: int, url_category: str = None) -> pd.DataF
         competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
         sec (int): Section number
         url_category (str, optional): Override category value for URL construction.
-            The source_url_format 'j{}/{}/' normally uses the numeric part of
-            the competition key, e.g. 'j1/1/'. When url_category='2j3', it
+            The source_url_format '{}/{}/' normally uses the lowercased
+            competition key, e.g. 'j1/1/'. When url_category='j2j3', it
             becomes 'j2j3/1/' instead.
 
     Returns:
@@ -234,9 +84,9 @@ def read_match(competition: str, sec: int, url_category: str = None) -> pd.DataF
     Raises:
         KeyError: If the key 'urls.source_url_format' is not found in the config file
     """
-    cat_for_url = url_category if url_category else _url_segment_from_competition(competition)
+    cat_for_url = url_category if url_category else competition.lower()
     _url = config.get_format_str('urls.source_url_format', cat_for_url, sec)
-    print(f'access {_url}...')
+    logger.info("Access %s", _url)
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
     return read_match_from_web(soup)
 
@@ -270,7 +120,7 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
                 raise ValueError(
                     f'Could not parse section_no from "{section_no_text}" '
                     'but match data exists on the page')
-            print(f'Warning: No match data in section "{section_no_text}", skipping')
+            logger.warning("No match data in section \"%s\", skipping", section_no_text)
             continue
         section_no = section_no_match[1]
         group = None  # Track current group from groupHead headers (e.g., EAST, WEST)
@@ -306,11 +156,10 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
             match_dict['home_pk_score'] = str(int(pk_match[1])) if pk_match else ''
             match_dict['away_pk_score'] = str(int(pk_match[2])) if pk_match else ''
 
-            if config.debug:
-                print(match_dict)
+            logger.debug("%s", match_dict)
             result_list.append(match_dict)
             _index += 1
-    print(f'  Read {len(result_list)} matches in section {section_no}')
+    logger.info("Read %d matches in section %s", len(result_list), section_no)
     return result_list
 
 
@@ -333,19 +182,6 @@ def convert_jleague_date(match_date: str) -> str:
     return _date.strftime(config.standard_date_format)
 
 
-def read_all_matches(competition: str, url_category: str = None) -> pd.DataFrame:
-    """Read all match data for specified competition via web.
-
-    Args:
-        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-        url_category (str, optional): Override category value for URL construction.
-
-    Returns:
-        pd.DataFrame: DataFrame containing all match data
-    """
-    return read_matches_range(competition, url_category=url_category)
-
-
 def _team_count_to_section_range(team_count: int) -> range:
     """Convert team count to full home-and-away section range (1-based).
 
@@ -360,24 +196,26 @@ def _team_count_to_section_range(team_count: int) -> range:
     return range(1, (team_count - 1) * 2 + 1)
 
 
-def read_matches_range(competition: str, _range: list[int] = None,
-                       url_category: str = None) -> pd.DataFrame:
-    """Read match data for specified competition and section list from the web.
+def read_matches(competition: str, sections: list[int] = None,
+                 url_category: str = None) -> pd.DataFrame:
+    """Read match data for specified competition from the web.
+
+    When sections is None, fetches all sections (derived from team count).
 
     Args:
         competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-        _range (list[int], optional): List of section numbers. Defaults to None.
+        sections (list[int], optional): Section numbers to fetch. Defaults to all.
         url_category (str, optional): Override category value for URL construction.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
     """
     _matches = pd.DataFrame()
-    if not _range:
+    if not sections:
         teams_count = len(read_teams(competition))
-        _range = _team_count_to_section_range(teams_count)
+        sections = _team_count_to_section_range(teams_count)
 
-    for _i in _range:
+    for _i in sections:
         result_list = read_match(competition, _i, url_category=url_category)
         _matches = pd.concat([_matches, pd.DataFrame(result_list)])
     # A common mistake is not saving the result of sort or reset_index operations
@@ -472,7 +310,8 @@ def get_sections_to_update(all_matches: pd.DataFrame,
         for _start in _dates:
             _end = _start + timedelta(hours=2)
             if lastupdate <= _end and _start <= current_time:
-                print(f'add "{_sec}" (for match at {_start}-{_end}) between {lastupdate} - {current_time}')
+                logger.info("Add section \"%s\" (match at %s-%s) between %s - %s",
+                            _sec, _start, _end, lastupdate, current_time)
                 target_sec.add(_sec)
     target_sec = list(target_sec)
     target_sec.sort()
@@ -493,9 +332,9 @@ def read_latest_allmatches_csv(competition: str) -> pd.DataFrame:
     Raises:
         KeyError: If the key 'paths.csv_format' is not found in the config file
     """
-    filename = get_csv_path(competition)  # Treat as a string since it is also the key of Timestamp file
+    filename = mu.get_csv_path(competition)  # Treat as a string since it is also the key of Timestamp file
     if Path(filename).exists():
-        return read_allmatches_csv(filename)
+        return mu.read_allmatches_csv(filename)
     return pd.DataFrame()
 
 
@@ -523,8 +362,8 @@ def _get_sections_since(csv_path: str, current: pd.DataFrame, now: datetime) -> 
     Returns:
         set[int]: Set of section numbers that need updating.
     """
-    lastupdate = get_timestamp_from_csv(csv_path)
-    print(f'  Check matches finished since {lastupdate}')
+    lastupdate = mu.get_timestamp_from_csv(csv_path)
+    logger.info("Check matches finished since %s", lastupdate)
     return get_sections_to_update(current, lastupdate, now)
 
 
@@ -539,10 +378,10 @@ def _get_sections_for_sub_group(subs: list[dict]) -> set[int] | None:
     _now = datetime.now().astimezone(config.timezone)
     sections_needed: set[int] = set()
     for sub in subs:
-        csv_path = get_csv_path(sub['competition'], sub['name'])
+        csv_path = mu.get_csv_path(sub['competition'], sub['name'])
         if not Path(csv_path).exists():
             return None  # Missing CSV -> need full fetch
-        current = read_allmatches_csv(csv_path)
+        current = mu.read_allmatches_csv(csv_path)
         sections_needed |= _get_sections_since(csv_path, current, _now)
     return sections_needed
 
@@ -569,7 +408,7 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
     # Group sub-seasons by url_category
     url_cat_groups: dict[str, list[dict]] = {}
     for sub in sub_seasons:
-        url_cat = sub.get('url_category', _url_segment_from_competition(competition))
+        url_cat = sub.get('url_category', competition.lower())
         url_cat_groups.setdefault(url_cat, []).append(sub)
 
     for url_cat, subs in url_cat_groups.items():
@@ -586,14 +425,14 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
                 fetch_range = _calc_section_range(subs)
                 do_merge = False
             elif not sections:
-                print(f'  No updates needed for url_category={url_cat}')
+                logger.info("No updates needed for url_category=%s", url_cat)
                 continue
             else:
                 fetch_range = sections
                 do_merge = True
 
-        print(f'  Fetching sections {list(fetch_range)} for url_category={url_cat}...')
-        fetched = read_matches_range(competition, fetch_range, url_category=url_cat)
+        logger.info("Fetching sections %s for url_category=%s", list(fetch_range), url_cat)
+        fetched = read_matches(competition, fetch_range, url_category=url_cat)
 
         # Distribute fetched data to each sub-season CSV
         for sub in subs:
@@ -612,19 +451,19 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
             sub_data['match_index_in_section'] = sub_data.groupby('section_no').cumcount() + 1
             sub_data = sub_data.reset_index(drop=True)
 
-            csv_path = get_csv_path(competition, sub['name'])
+            csv_path = mu.get_csv_path(competition, sub['name'])
             if do_merge and Path(csv_path).exists():
-                current = read_allmatches_csv(csv_path)
+                current = mu.read_allmatches_csv(csv_path)
                 old = current[current['section_no'].isin(fetch_range)]
-                if not matches_differ(sub_data, old):
-                    print(f'  No changes detected for {sub["name"]}')
+                if not mu.matches_differ(sub_data, old):
+                    logger.info("No changes detected for %s", sub["name"])
                     continue
                 merged = pd.concat([current[~current['section_no'].isin(fetch_range)], sub_data]) \
                            .sort_values(['section_no', 'match_index_in_section']) \
                            .reset_index(drop=True)
-                update_if_diff(merged, csv_path)
+                mu.update_if_diff(merged, csv_path)
             else:
-                update_if_diff(sub_data, csv_path)
+                mu.update_if_diff(sub_data, csv_path)
 
 
 def update_all_matches(competition: str, force_update: bool = False,
@@ -655,15 +494,15 @@ def update_all_matches(competition: str, force_update: bool = False,
         ParserError: the date data is not in the correct format (date, string except for '未定')
         ValueError: the date data is not in the correct format (date, string except for '未定')
     """
-    latest_file = get_csv_path(competition)
+    latest_file = mu.get_csv_path(competition)
 
     # If the file does not exist, read all matches and save them
     if (not Path(latest_file).exists()) or force_update:
-        all_matches = read_all_matches(competition, url_category=url_category)
-        update_if_diff(all_matches, latest_file)
+        all_matches = read_matches(competition, url_category=url_category)
+        mu.update_if_diff(all_matches, latest_file)
         return all_matches
 
-    current = read_allmatches_csv(latest_file)
+    current = mu.read_allmatches_csv(latest_file)
     if not need_update:  # If no specific sections to update are provided, check automatically
         _now = datetime.now().astimezone(config.timezone)
         # undecided = get_undecided_section(current)
@@ -673,13 +512,13 @@ def update_all_matches(competition: str, force_update: bool = False,
         if not need_update:
             return current
 
-    diff_matches = read_matches_range(competition, need_update, url_category=url_category)
+    diff_matches = read_matches(competition, need_update, url_category=url_category)
     old_matches = current[current['section_no'].isin(need_update)]
-    if matches_differ(diff_matches, old_matches):
+    if mu.matches_differ(diff_matches, old_matches):
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \
                         .sort_values(['section_no', 'match_index_in_section']) \
                         .reset_index(drop=True)
-        update_if_diff(new_matches, latest_file)
+        mu.update_if_diff(new_matches, latest_file)
         return new_matches
     return None
 
@@ -707,21 +546,24 @@ if __name__ == '__main__':
     os.chdir(Path(__file__).parent)
 
     _args = make_args()
-    if _args.debug:
-        config.debug = True
+    logging.basicConfig(
+        level=logging.DEBUG if _args.debug else logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%H:%M:%S',
+    )
 
-    _expected = get_season_from_date()
+    _start_month = mu.resolve_season_start_month()
+    _expected = get_season_from_date(season_start_month=_start_month)
     if str(config.season) != _expected:
-        warnings.warn(
-            f'config.season={config.season!r} does not match expected season {_expected!r}',
-            stacklevel=1
-        )
+        logger.warning("config.season=%r does not match expected season %r",
+                        config.season, _expected)
 
     for _comp in _args.competition:
-        print(f'Start read {_comp} matches...')
-        _sub_seasons = get_sub_seasons(_comp)
+        logger.info("Start read %s matches", _comp)
+        _sub_seasons = mu.get_sub_seasons(_comp)
         if _sub_seasons is None:
-            print(f'  No {config.season} season entry for {_comp} in season_map, skipping.')
+            logger.info("No %s season entry for %s in season_map, skipping",
+                        config.season, _comp)
         elif _sub_seasons:
             update_sub_season_matches(_comp, _sub_seasons,
                                       force_update=_args.force_update_all,

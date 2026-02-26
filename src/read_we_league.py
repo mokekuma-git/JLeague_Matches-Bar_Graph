@@ -1,6 +1,7 @@
-"""2021 ACLグループステージの試合情報を読み込んでCSV, JSO化"""
+"""Read WE League match data and save as CSV"""
 import argparse
 from datetime import datetime
+import logging
 import os
 from pathlib import Path
 import re
@@ -10,108 +11,118 @@ import bs4
 import pandas as pd
 import requests
 
-from match_utils import update_if_diff
-from read_jleague_matches import config
+from match_utils import mu
 
-WEL_MATCH_URL = 'https://weleague.jp/matches/'
-CSV_FILENAME = '../docs/csv/{}_allmatch_result-we.csv'
-HTTP_TIMEOUT = 60  # seconds
+logger = logging.getLogger(__name__)
 
-MATCH_WEEK_REGEXP = re.compile(r'matchweek(\d+)')
-DATE_FORMAT = '%m/%d'
-SEASON_THRESHOLD_MONTH = 6
-_TODAY = datetime.now().date()
-if _TODAY.month <= SEASON_THRESHOLD_MONTH:
-    SEASON = _TODAY.year - 1
-else:
-    SEASON = _TODAY.year
+def init() -> None:
+    """Load config and compute runtime values (season, csv path, etc.)."""
+    mu.init_config(Path(__file__).parent / '../config/we_league.yaml')
+
+    mu.config.match_week_regexp = re.compile(mu.config.match_week_pattern)
+    mu.config.today = datetime.now().date()
+    if mu.config.today.month < mu.config.season_start_month:
+        mu.config.season = mu.config.today.year - 1
+    else:
+        mu.config.season = mu.config.today.year
+    mu.config.csv_filename = mu.config.get_format_str(
+        'paths.csv_format', season=f'{mu.config.season} - {mu.config.season + 1}')
 
 
 def read_match() -> list[dict[str, Any]]:
-    """WEリーグ公式Webから試合リスト情報を読んで返す"""
-    print(f'access {WEL_MATCH_URL}...')
-    soup = bs4.BeautifulSoup(requests.get(WEL_MATCH_URL, timeout=HTTP_TIMEOUT).text, 'lxml')
+    """Read match list from WE League official website."""
+    _url = mu.config.urls.source_url
+    logger.info("Access %s", _url)
+    soup = bs4.BeautifulSoup(requests.get(_url, timeout=mu.config.http_timeout).text, 'lxml')
     return read_match_from_web(soup)
 
 
 def parse_match_date_data(match: bs4.element.Tag) -> dict[str, str]:
-    r"""与えられた "日付<span>(曜日)</span>時間" を日付と時間に分けて返す
+    r"""Parse "date<span>(day-of-week)</span>time" Tag into date and time parts.
 
-    ex) <span class="time">[空白類]9/12<span>(SUN)</span>10:01[空白類]</span>
-    Argument:
-        match: 日時データを示すTag要素
-        フォーマットは、match_date, start_timeをキーとしたDict形式
+    ex) <span class="time"> 9/12<span>(SUN)</span>10:01 </span>
+
+    Args:
+        match: Tag element containing date/time data.
+
+    Returns:
+        dict with 'match_date', 'start_time', and 'dayofweek' keys.
     """
     match_date = match.contents[0].strip()
-    if datetime.strptime(match_date, DATE_FORMAT).date().month <= SEASON_THRESHOLD_MONTH:
-        match_date = f'{SEASON + 1}/' + match_date
+    if datetime.strptime(match_date, mu.config.date_format).date().month < mu.config.season_start_month:
+        match_date = f'{mu.config.season + 1}/' + match_date
     else:
-        match_date = f'{SEASON}/' + match_date
+        match_date = f'{mu.config.season}/' + match_date
     try:
         match_date = pd.to_datetime(match_date)
     except (ValueError, pd.errors.ParserError):
-        pass
+        logger.warning("Failed to parse date: %s", match_date)
     return {'match_date': match_date,
             'start_time': match.contents[2].strip(),
             'dayofweek': match.contents[1].text.strip('()')}
 
 
 def read_match_from_web(soup: bs4.BeautifulSoup) -> list[dict[str, Any]]:
-    """各グループの試合リスト情報をHTML内容から読み取る"""
+    """Parse match list from the HTML content."""
     result_list = []
 
     for match_box in soup.find_all('div', class_='match-box'):
-        # 1節分のmatch-box内
+        # Each match-box represents one section
         _index = 1
-        section = MATCH_WEEK_REGEXP.match(match_box.get('id'))[1]
+        section = mu.config.match_week_regexp.match(match_box.get('id'))[1]
         for match_data in match_box.find_all('li', class_='matchContainer'):
-            # 1試合分のmatchContainer内
+            # Each matchContainer represents one match
             match_dict = {'section_no': section, 'match_index_in_section': _index}
 
-            # 日時 (<span class="time">[空白類]9/12<span>(SUN)</span>10:01[空白類]</span>)
+            # Date & time
             match_dict.update(parse_match_date_data(match_data.find('span', class_='time')))
-            # スタジアム (ノエビアスタジアム神戸)
+            # Stadium
             match_dict['stadium'] = match_data.find('span', class_='stadium').text
 
             teams = match_data.find_all('div', class_='team')
-            # ホームチーム (INAC神戸レオネッサ)
+            # Home team
             match_dict['home_team'] = teams[0].find('span', class_='name').text
-            # ホーム得点 (<span>5</span>)
+            # Home goal
             home_goal = teams[0].find('span', class_='score')
             if home_goal:
                 match_dict['home_goal'] = home_goal.text
             else:
                 match_dict['home_goal'] = ''
-            # アウェイ得点 (<span>0</span>)
+            # Away goal
             away_goal = teams[1].find('span', class_='score')
             if away_goal:
                 match_dict['away_goal'] = away_goal.text
             else:
                 match_dict['away_goal'] = ''
-            # アウェイチーム (大宮アルディージャVENTUS)
+            # Away team
             match_dict['away_team'] = teams[1].find('span', class_='name').text
             result_list.append(match_dict)
             _index += 1
+    logger.info("Read %d matches", len(result_list))
     return result_list
 
 
 def make_args() -> argparse.Namespace:
-    """引数チェッカ"""
+    """Argument parser."""
     parser = argparse.ArgumentParser(
         description='read_we-league.py\n'
-                    'WEリーグで公開される各大会の試合情報を読み込んでCSVを作成')
+                    'Read WE League match data and convert to CSV')
 
     parser.add_argument('-d', '--debug', action='store_true',
-                        help='デバッグ出力を表示')
+                        help='Enable debug output')
 
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     os.chdir(Path(__file__).parent)
+    init()
 
-    ARGS = make_args()
-    if ARGS.debug:
-        config.debug = True
+    _args = make_args()
+    logging.basicConfig(
+        level=logging.DEBUG if _args.debug else logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%H:%M:%S',
+    )
 
-    update_if_diff(pd.DataFrame(read_match()), CSV_FILENAME.format(f'{SEASON} - {SEASON + 1}'))
+    mu.update_if_diff(pd.DataFrame(read_match()), mu.config.csv_filename)

@@ -80,6 +80,7 @@ JLeague_Matches-Bar_Graph/
 │   └── old_matches.yaml            #   過去データ設定
 ├── src/                             # Pythonスクリプト (データ取得・変換)
 │   ├── set_config.py               #   設定管理モジュール (YAML読み込み)
+│   ├── match_utils.py              #   共有ユーティリティ (CSV I/O, season_map読み込み, 日付計算)
 │   ├── read_jleague_matches.py     #   Jリーグ公式サイトからスクレイピング (BS4)
 │   ├── read_jfamatch.py            #   JFA JSON APIからデータ取得
 │   ├── read_older2020_matches.py   #   2020年以前の過去データ取得
@@ -196,6 +197,7 @@ npm run dev               # Vite開発サーバー起動
   "jleague": {
     "display_name": "Jリーグ",
     "css_files": ["team_style.css"],
+    "season_start_month": 1,
     "competitions": {
       "J1": {
         "league_display": "J1リーグ",
@@ -214,9 +216,9 @@ npm run dev               # Vite開発サーバー起動
 
 ### 階層別のプロパティ
 
-**Group 階層** (`jleague` 等): `display_name`, `css_files?`
+**Group 階層** (`jleague` 等): `display_name`, `css_files?`, `season_start_month?`
 
-**Competition 階層** (`J1` 等): `league_display?`, `css_files?`, `point_system?`, `team_rename_map?`, `tiebreak_order?`, `seasons`
+**Competition 階層** (`J1` 等): `league_display?`, `css_files?`, `point_system?`, `team_rename_map?`, `tiebreak_order?`, `season_start_month?`, `seasons`
 
 **Season Entry** (配列): シーズンごとのチーム構成
 
@@ -242,8 +244,9 @@ TS 版 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階�
 | キー | 説明 | 例 |
 | ---- | --- | -- |
 | `group_display` | HTML上の表示グループ名 (groupHeadテキスト)。スクレイピング結果の `group` 列でフィルタしてCSVに振り分ける | `"EAST"`, `"EAST-A"` |
-| `url_category` | スクレイピングURL `j{category}/{sec}/` のカテゴリ部分を上書き (デフォルト: カテゴリキーをそのまま使用) | `"2j3"` → URL `j2j3/{sec}/` |
+| `url_category` | スクレイピングURL `{category}/{sec}/` のカテゴリ部分を上書き (デフォルト: competition key を小文字化。例: `J1` → `j1`) | `"j2j3"` → URL `j2j3/{sec}/` |
 | `rank_properties` | 順位→CSSクラスのマッピング | `{"3": "promoted_playoff"}` |
+| `season_start_month` | シーズン開始月 (1-12)。Group→Competition→SeasonEntry でカスケード。コードデフォルト: `7` (秋春制) | `1` (暦年), `7` (秋春制) |
 
 ### シーズン命名規則
 
@@ -252,7 +255,7 @@ TS 版 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階�
   - 年号: 4桁数値 (`2026` 等) または `26-27` のような2桁年ハイフン形式 (秋春制)
   - 追番: `A`/`B` (前後期)、`East`/`West` (地域)、`EastA`/`WestB` (地域+組) 等
   - 追番なし (素の年号) = 該当シーズンの全サブシーズンを結合した仮想結果
-- `get_season_from_date()` がシーズン文字列を自動算出 (7月を境界とし、2026年7月以降は `26-27` 形式)
+- `get_season_from_date(season_start_month=N)` がシーズン文字列を自動算出。`season_start_month=1` → `"YYYY"` (暦年)、それ以外 → `"YY-YY"` (跨年)。`resolve_season_start_month()` が season_map.json のカスケードから開始月を解決する
 - CSVファイル名: `{シーズン名}_allmatch_result-J{カテゴリ}.csv`
 - 順序は辞書順 (`East` < `West`, `EastA` < `EastB` < `WestA` < `WestB`)
 - CSVファイル検索の正規表現: `r"(\d{4}[A-Za-z]*|\d{2}-\d{2}[A-Za-z]*)_allmatch_result-J(\d+).csv"`
@@ -271,8 +274,9 @@ TS 版 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階�
   - `[]`: 通常の単一シーズン → `update_all_matches()` で従来通り更新
   - `[...]`: マルチグループシーズン → `update_sub_season_matches()` で各サブシーズン CSV に振り分け
   - season_map に新しい年のエントリを追加しない限り、そのカテゴリ・年は自動的にスキップされる
-- **`read_jleague_matches.py` は共通ライブラリを兼ねる** — `update_if_diff`, `to_datetime_aspossible`, `config` オブジェクトなどの共通関数を他スクリプト (`read_jfamatch`, `read_aclgl`, `read_we_league`) がインポートして使う
+- **`match_utils.py` が共通ライブラリ** — CSV I/O (`update_if_diff`, `read_allmatches_csv`), season_map 読み込み (`load_season_map`, `get_sub_seasons`, `get_csv_path`), 日付計算 (`get_season_from_date`, `to_datetime_aspossible`) などの共通関数を提供。他スクリプト (`read_jfamatch`, `read_aclgl`, `read_we_league`) がインポートして使う。`read_jleague_matches.py` は J-League 固有のスクレイピングと URL 構築 (`competition.lower()` で URL セグメント生成) のみを担当
 - **勝ち点システム (PointSystem)** — `'standard'` (勝3/PK勝2/PK負1/分1/負0) と `'old-two-points'` (勝2/分1/負0) の2種類。season_map.json の Competition 階層で `point_system` として指定可能 (デフォルト: `'standard'`)
+- **SeasonEntry のバリデーション方針** — season_map.json は手動編集ファイルのため、読み込み時にバリデーションを行う。必須フィールド (配列 index 0〜3) の型不正・欠落はエラーで即停止。SeasonEntryOptions (index 4) の未知キーは Warning を出して無視する (新しい reader 向けオプションの試行錯誤を妨げない)
 
 ## aclgl_points.json 構造
 

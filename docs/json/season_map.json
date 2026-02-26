@@ -2,6 +2,7 @@
   "jleague": {
     "display_name": "Jリーグ",
     "css_files": ["team_style.css"],
+    "season_start_month": 1,
     "competitions": {
       "J1": {
         "league_display": "J1リーグ",
@@ -146,16 +147,16 @@
         "seasons": {
           "2026EastA": [10, 0, 0,
             ["横浜FC", "湘南", "仙台", "山形", "秋田", "栃木Ｃ", "八戸", "栃木SC", "相模原", "群馬"],
-            {"group_display": "EAST-A", "url_category": "2j3"}],
+            {"group_display": "EAST-A", "url_category": "j2j3"}],
           "2026EastB": [10, 0, 0,
             ["磐田", "大宮", "いわき", "札幌", "甲府", "藤枝", "福島", "岐阜", "松本", "長野"],
-            {"group_display": "EAST-B", "url_category": "2j3"}],
+            {"group_display": "EAST-B", "url_category": "j2j3"}],
           "2026WestA": [10, 0, 0,
             ["新潟", "徳島", "今治", "富山", "愛媛", "FC大阪", "金沢", "奈良", "讃岐", "高知"],
-            {"group_display": "WEST-A", "url_category": "2j3"}],
+            {"group_display": "WEST-A", "url_category": "j2j3"}],
           "2026WestB": [10, 0, 0,
             ["鳥栖", "大分", "宮崎", "熊本", "山口", "鹿児島", "北九州", "鳥取", "琉球", "滋賀"],
-            {"group_display": "WEST-B", "url_category": "2j3"}],
+            {"group_display": "WEST-B", "url_category": "j2j3"}],
           "2025": [20, 6, 3,
             ["磐田", "札幌", "鳥栖", "長崎", "山形", "仙台", "千葉", "徳島", "いわき", "秋田", "山口", "熊本", "藤枝", "甲府", "水戸", "大分", "愛媛", "大宮", "今治", "富山"],
             {"rank_properties": {"3": "promoted_playoff", "4": "promoted_playoff", "5": "promoted_playoff", "6": "promoted_playoff"}}],

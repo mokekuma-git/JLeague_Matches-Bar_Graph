@@ -1,13 +1,16 @@
 """Process and save J-League match results from data.j-league.or.jp into CSV files"""
+import logging
 import os
 from pathlib import Path
 
 import pandas as pd
 
 from read_older2020_matches import parse_years
-from set_config import load_config
+from set_config import Config
 
-config = load_config(Path(__file__).parent / '../config/old_matches.yaml')
+logger = logging.getLogger(__name__)
+
+config = Config(Path(__file__).parent / '../config/old_matches.yaml')
 
 
 def make_old_matches_csv(competition: str, years: list[int] | None = None) -> None:
@@ -24,14 +27,14 @@ def make_old_matches_csv(competition: str, years: list[int] | None = None) -> No
     for year in years:
         filename = config.get_path('match_data.csv_path_format', year=year)
         if not filename.exists():
-            print(f"File not found: {filename}")
+            logger.warning("File not found: %s", filename)
             continue
         df_dict = make_each_csv(filename, comp_index)
         if not df_dict:
             continue
         for (season, df) in df_dict.items():
             outfile = config.get_path('match_data.league_csv_path', season=season, competition=competition)
-            print(outfile, len(df))
+            logger.info("Stored: %s (%d rows)", outfile, len(df))
             df.to_csv(outfile, lineterminator='\n', encoding=config.match_data.encoding)
 
 
@@ -109,11 +112,16 @@ def init_season_dict(matches: pd.DataFrame, year: int) -> dict[str, str]:
             season_dict[str(year) + config.season_suffix[_i]] = _season[0]
     else:
         season_dict[str(year)] = season_names[0]
-    print(season_dict)
+    logger.debug("Season dict: %s", season_dict)
     return season_dict
 
 
 if __name__ == '__main__':
     os.chdir(Path(__file__).parent)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%H:%M:%S',
+    )
     for _comp in ['J1', 'J2', 'J3']:
         make_old_matches_csv(_comp, parse_years())

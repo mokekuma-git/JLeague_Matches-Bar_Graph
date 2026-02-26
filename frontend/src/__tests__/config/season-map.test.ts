@@ -25,7 +25,7 @@ const sampleGroup: GroupEntry = {
     J2: {
       league_display: 'J2リーグ',
       seasons: {
-        '2026EastA': [10, 0, 0, [], { group_display: 'EAST-A', url_category: '2j3' }],
+        '2026EastA': [10, 0, 0, [], { group_display: 'EAST-A', url_category: 'j2j3' }],
       },
     },
   },
@@ -112,6 +112,7 @@ describe('resolveSeasonInfo', () => {
     expect(info.cssFiles).toEqual(['team_style.css']);
     expect(info.teamRenameMap).toEqual({});
     expect(info.groupDisplay).toBeUndefined();
+    expect(info.seasonStartMonth).toBe(7);
   });
 
   test('season with rank_properties', () => {
@@ -122,11 +123,11 @@ describe('resolveSeasonInfo', () => {
   });
 
   test('season with group_display and url_category', () => {
-    const entry: RawSeasonEntry = [10, 0, 0, [], { group_display: 'EAST-A', url_category: '2j3' }];
+    const entry: RawSeasonEntry = [10, 0, 0, [], { group_display: 'EAST-A', url_category: 'j2j3' }];
     const info = resolveSeasonInfo(sampleGroup, sampleGroup.competitions.J2, entry);
 
     expect(info.groupDisplay).toBe('EAST-A');
-    expect(info.urlCategory).toBe('2j3');
+    expect(info.urlCategory).toBe('j2j3');
     expect(info.leagueDisplay).toBe('J2リーグ');
   });
 
@@ -220,5 +221,48 @@ describe('resolveSeasonInfo', () => {
     const info = resolveSeasonInfo(sampleGroup, comp, entry);
 
     expect(info.tiebreakOrder).toEqual(['goal_diff', 'wins']);
+  });
+
+  test('seasonStartMonth defaults to 7 when not set anywhere', () => {
+    const group: GroupEntry = { display_name: 'Test', competitions: {} };
+    const comp: CompetitionEntry = { seasons: {} };
+    const entry: RawSeasonEntry = [10, 0, 0, []];
+    const info = resolveSeasonInfo(group, comp, entry);
+
+    expect(info.seasonStartMonth).toBe(7);
+  });
+
+  test('cascade: season_start_month from group level', () => {
+    const group: GroupEntry = {
+      display_name: 'Jリーグ',
+      season_start_month: 1,
+      competitions: {},
+    };
+    const comp: CompetitionEntry = { seasons: {} };
+    const entry: RawSeasonEntry = [20, 3, 3, []];
+    const info = resolveSeasonInfo(group, comp, entry);
+
+    expect(info.seasonStartMonth).toBe(1);
+  });
+
+  test('cascade: season_start_month from competition overrides group', () => {
+    const group: GroupEntry = {
+      display_name: 'Test',
+      season_start_month: 1,
+      competitions: {},
+    };
+    const comp: CompetitionEntry = { season_start_month: 8, seasons: {} };
+    const entry: RawSeasonEntry = [10, 0, 0, []];
+    const info = resolveSeasonInfo(group, comp, entry);
+
+    expect(info.seasonStartMonth).toBe(8);
+  });
+
+  test('cascade: season_start_month from season overrides competition', () => {
+    const comp: CompetitionEntry = { season_start_month: 1, seasons: {} };
+    const entry: RawSeasonEntry = [10, 0, 0, [], { season_start_month: 7 }];
+    const info = resolveSeasonInfo(sampleGroup, comp, entry);
+
+    expect(info.seasonStartMonth).toBe(7);
   });
 });
