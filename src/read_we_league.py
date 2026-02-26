@@ -1,6 +1,7 @@
 """Read WE League match data and save as CSV"""
 import argparse
 from datetime import datetime
+import logging
 import os
 from pathlib import Path
 import re
@@ -11,6 +12,8 @@ import pandas as pd
 import requests
 
 from match_utils import mu
+
+logger = logging.getLogger(__name__)
 
 def init() -> None:
     """Load config and compute runtime values (season, csv path, etc.)."""
@@ -29,7 +32,7 @@ def init() -> None:
 def read_match() -> list[dict[str, Any]]:
     """Read match list from WE League official website."""
     _url = mu.config.urls.source_url
-    print(f'access {_url}...')
+    logger.info("Access %s", _url)
     soup = bs4.BeautifulSoup(requests.get(_url, timeout=mu.config.http_timeout).text, 'lxml')
     return read_match_from_web(soup)
 
@@ -53,7 +56,7 @@ def parse_match_date_data(match: bs4.element.Tag) -> dict[str, str]:
     try:
         match_date = pd.to_datetime(match_date)
     except (ValueError, pd.errors.ParserError):
-        pass
+        logger.warning("Failed to parse date: %s", match_date)
     return {'match_date': match_date,
             'start_time': match.contents[2].strip(),
             'dayofweek': match.contents[1].text.strip('()')}
@@ -95,6 +98,7 @@ def read_match_from_web(soup: bs4.BeautifulSoup) -> list[dict[str, Any]]:
             match_dict['away_team'] = teams[1].find('span', class_='name').text
             result_list.append(match_dict)
             _index += 1
+    logger.info("Read %d matches", len(result_list))
     return result_list
 
 
@@ -115,7 +119,10 @@ if __name__ == '__main__':
     init()
 
     _args = make_args()
-    if _args.debug:
-        mu.config.debug = True
+    logging.basicConfig(
+        level=logging.DEBUG if _args.debug else logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%H:%M:%S',
+    )
 
     mu.update_if_diff(pd.DataFrame(read_match()), mu.config.csv_filename)

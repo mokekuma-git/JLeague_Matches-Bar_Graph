@@ -15,6 +15,7 @@ Usage::
 from datetime import date
 from datetime import datetime
 import json
+import logging
 from os import PathLike
 from pathlib import Path
 import re
@@ -23,6 +24,8 @@ import pandas as pd
 
 from set_config import Config
 from set_config import load_config as _load_config
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -238,7 +241,7 @@ class MatchUtils:
             TypeError: If the date format is not recognized
             KeyError: If the DataFrame does not contain 'match_date' or 'section_no' columns
         """
-        print(f'match file {matches_file} reading.')
+        logger.info("Reading match file %s", matches_file)
         all_matches = pd.read_csv(matches_file, index_col=0, dtype=str, na_values='')
         if 'index' in all_matches.columns:
             all_matches = all_matches.drop(columns=['index'])
@@ -262,7 +265,7 @@ class MatchUtils:
             ValueError: If no filename is provided
             TypeError: If the timestamp already has a timezone
         """
-        print(f'Update {filename}')
+        logger.info("Update %s", filename)
         # Normalize column types (e.g. convert float-format goal strings to int strings).
         match_df = _normalize_df_for_csv(match_df)
         # When the match_date contains only date, it is converted and keeps the original format
@@ -277,17 +280,16 @@ class MatchUtils:
     # -------------------------------------------------------------------
     def matches_differ(self, foo_df: pd.DataFrame, bar_df: pd.DataFrame) -> bool:
         """Return True if two match DataFrames differ (ignoring 'match_index_in_section' and NaNs)."""
-        cfg = self.config
         _foo = foo_df.drop(columns=['match_index_in_section']).fillna('')
         _bar = bar_df.drop(columns=['match_index_in_section']).fillna('')
         _foo = _foo.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
         _bar = _bar.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
 
         if not _foo.equals(_bar):
-            if cfg.debug:
+            if logger.isEnabledFor(logging.DEBUG):
                 df_comp = _foo.compare(_bar)
                 for col_name in df_comp.columns.droplevel(1).unique():
-                    print(col_name, df_comp[col_name].dropna())
+                    logger.debug("%s\n%s", col_name, df_comp[col_name].dropna())
             return True
         return False
 
@@ -320,7 +322,7 @@ class MatchUtils:
             return True
 
         # No changes found; do nothing
-        print(f'No changes found in {filename}')
+        logger.info("No changes found in %s", filename)
         return False
 
     # -------------------------------------------------------------------
@@ -347,7 +349,7 @@ class MatchUtils:
             timestamp.index.name = 'file'
         timestamp.loc[filename] = datetime.now().astimezone(cfg.timezone)
         if timestamp.index.duplicated().any():
-            print("Notice: Duplicates in timestamp file were consolidated (keeping most recent values)")
+            logger.warning("Duplicates in timestamp file were consolidated (keeping most recent values)")
             timestamp = drop_duplicated_indexes(timestamp)
         timestamp.to_csv(timestamp_file, lineterminator='\n')
 
@@ -374,6 +376,7 @@ class MatchUtils:
             timestamp = timestamp[~timestamp.index.duplicated(keep="first")]
             if filename in timestamp.index:
                 return timestamp.loc[filename]['date']
+        logger.info("Timestamp fallback to file mtime for %s", filename)
         return datetime.fromtimestamp(Path(filename).stat().st_mtime).astimezone(cfg.timezone)
 
 
@@ -520,5 +523,5 @@ def parse_range(arg: str) -> list[int]:
 
         return [int(arg)]
     except (ValueError, TypeError) as exc:
-        print(f"Invalid integer format: {arg}. Must be an integer or a range like '1-3'.")
+        logger.error("Invalid integer format: %s. Must be an integer or a range like '1-3'.", arg)
         raise exc

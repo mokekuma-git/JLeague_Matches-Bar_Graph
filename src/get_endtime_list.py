@@ -2,10 +2,13 @@
 import argparse
 from datetime import datetime
 from datetime import timedelta
+import logging
 from pathlib import Path
 import re
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 # Constants
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -97,7 +100,7 @@ def read_match_times_from_file(file: Path) -> list[datetime]:
     Returns:
         List[datetime]: List of match start times.
     """
-    print(f"Processing {file.name}...")
+    logger.info("Processing %s", file.name)
     df = read_match_csv(file)
     match_times = set()
 
@@ -115,7 +118,7 @@ def read_match_times_from_file(file: Path) -> list[datetime]:
             match_datetime = match_datetime.replace(hour=hour, minute=minute)
             match_times.add(match_datetime)
         except (ValueError, AttributeError) as e:
-            print(f"Error processing match time {start_time} on {match_date}: {e}")
+            logger.error("Error processing match time %s on %s: %s", start_time, match_date, e)
     return list(match_times)
 
 
@@ -144,7 +147,7 @@ def update_workflow_file(match_times: list[datetime]) -> bool:
     schedule_match = re.search(schedule_pattern, workflow_content, re.DOTALL)
 
     if not schedule_match:
-        print("Could not find schedule section in workflow file.")
+        logger.error("Could not find schedule section in workflow file")
         return False
 
     cron_expressions = []
@@ -169,7 +172,7 @@ def update_workflow_file(match_times: list[datetime]) -> bool:
             f.write(new_workflow_content)
         return True
     except OSError as e:
-        print(f"Error writing to workflow file: {e}")
+        logger.error("Error writing to workflow file: %s", e)
         return False
 
 
@@ -195,20 +198,26 @@ def make_argparse() -> argparse.ArgumentParser:
 
 def main():
     """Main function."""
-    print("Getting match times from CSV files...")
     args = make_argparse()
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%H:%M:%S',
+    )
 
+    logger.info("Getting match times from CSV files")
     match_times = read_all_match_times(args.year, args.competition)
-    print(f"Found {len(match_times)} future matches.")
+    logger.info("Found %d future matches", len(match_times))
 
     if match_times:
-        print("Updating workflow file...")
+        logger.info("Updating workflow file")
         if update_workflow_file(match_times):
-            print(f"Successfully updated {WORKFLOW_FILE} with {len(match_times) * 2} new cron schedules.")
+            logger.info("Successfully updated %s with %d new cron schedules",
+                        WORKFLOW_FILE, len(match_times) * 2)
         else:
-            print("Failed to update workflow file.")
+            logger.error("Failed to update workflow file")
     else:
-        print("No future matches found. Workflow file not updated.")
+        logger.info("No future matches found. Workflow file not updated")
 
 
 if __name__ == "__main__":

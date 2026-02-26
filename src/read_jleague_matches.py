@@ -2,11 +2,11 @@
 import argparse
 from datetime import datetime
 from datetime import timedelta
+import logging
 import os
 from pathlib import Path
 import re
 from typing import Any
-import warnings
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -16,6 +16,8 @@ import requests
 from match_utils import mu
 from match_utils import get_season_from_date
 from match_utils import parse_range_args
+
+logger = logging.getLogger(__name__)
 
 config = mu.init_config(Path(__file__).parent / '../config/jleague.yaml')
 
@@ -37,9 +39,11 @@ def read_teams(competition: str) -> list[str]:
     """
     _url = config.get_format_str('urls.standing_url_format',
                                  competition.lower())
-    print(f'access {_url}...')
+    logger.info("Access %s", _url)
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
-    return read_teams_from_web(soup, competition)
+    teams = read_teams_from_web(soup, competition)
+    logger.info("Read %d teams for %s", len(teams), competition)
+    return teams
 
 
 def read_teams_from_web(soup: BeautifulSoup, competition: str) -> list[str]:
@@ -57,7 +61,7 @@ def read_teams_from_web(soup: BeautifulSoup, competition: str) -> list[str]:
     """
     standings = soup.find('table', class_=f'{competition}table')
     if not standings:
-        print(f'Can\'t find {competition} teams...')
+        logger.warning("Can't find %s teams", competition)
         return []
     td_teams = standings.find_all('td', class_='tdTeam')
     return [list(_td.stripped_strings)[1] for _td in td_teams]
@@ -82,7 +86,7 @@ def read_match(competition: str, sec: int, url_category: str = None) -> pd.DataF
     """
     cat_for_url = url_category if url_category else competition.lower()
     _url = config.get_format_str('urls.source_url_format', cat_for_url, sec)
-    print(f'access {_url}...')
+    logger.info("Access %s", _url)
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
     return read_match_from_web(soup)
 
@@ -116,7 +120,7 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
                 raise ValueError(
                     f'Could not parse section_no from "{section_no_text}" '
                     'but match data exists on the page')
-            print(f'Warning: No match data in section "{section_no_text}", skipping')
+            logger.warning("No match data in section \"%s\", skipping", section_no_text)
             continue
         section_no = section_no_match[1]
         group = None  # Track current group from groupHead headers (e.g., EAST, WEST)
@@ -152,11 +156,10 @@ def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
             match_dict['home_pk_score'] = str(int(pk_match[1])) if pk_match else ''
             match_dict['away_pk_score'] = str(int(pk_match[2])) if pk_match else ''
 
-            if config.debug:
-                print(match_dict)
+            logger.debug("%s", match_dict)
             result_list.append(match_dict)
             _index += 1
-    print(f'  Read {len(result_list)} matches in section {section_no}')
+    logger.info("Read %d matches in section %s", len(result_list), section_no)
     return result_list
 
 
@@ -318,7 +321,8 @@ def get_sections_to_update(all_matches: pd.DataFrame,
         for _start in _dates:
             _end = _start + timedelta(hours=2)
             if lastupdate <= _end and _start <= current_time:
-                print(f'add "{_sec}" (for match at {_start}-{_end}) between {lastupdate} - {current_time}')
+                logger.info("Add section \"%s\" (match at %s-%s) between %s - %s",
+                            _sec, _start, _end, lastupdate, current_time)
                 target_sec.add(_sec)
     target_sec = list(target_sec)
     target_sec.sort()
@@ -370,7 +374,7 @@ def _get_sections_since(csv_path: str, current: pd.DataFrame, now: datetime) -> 
         set[int]: Set of section numbers that need updating.
     """
     lastupdate = mu.get_timestamp_from_csv(csv_path)
-    print(f'  Check matches finished since {lastupdate}')
+    logger.info("Check matches finished since %s", lastupdate)
     return get_sections_to_update(current, lastupdate, now)
 
 
@@ -432,13 +436,13 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
                 fetch_range = _calc_section_range(subs)
                 do_merge = False
             elif not sections:
-                print(f'  No updates needed for url_category={url_cat}')
+                logger.info("No updates needed for url_category=%s", url_cat)
                 continue
             else:
                 fetch_range = sections
                 do_merge = True
 
-        print(f'  Fetching sections {list(fetch_range)} for url_category={url_cat}...')
+        logger.info("Fetching sections %s for url_category=%s", list(fetch_range), url_cat)
         fetched = read_matches_range(competition, fetch_range, url_category=url_cat)
 
         # Distribute fetched data to each sub-season CSV
@@ -463,7 +467,7 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
                 current = mu.read_allmatches_csv(csv_path)
                 old = current[current['section_no'].isin(fetch_range)]
                 if not mu.matches_differ(sub_data, old):
-                    print(f'  No changes detected for {sub["name"]}')
+                    logger.info("No changes detected for %s", sub["name"])
                     continue
                 merged = pd.concat([current[~current['section_no'].isin(fetch_range)], sub_data]) \
                            .sort_values(['section_no', 'match_index_in_section']) \
@@ -553,22 +557,24 @@ if __name__ == '__main__':
     os.chdir(Path(__file__).parent)
 
     _args = make_args()
-    if _args.debug:
-        config.debug = True
+    logging.basicConfig(
+        level=logging.DEBUG if _args.debug else logging.INFO,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%H:%M:%S',
+    )
 
     _start_month = mu.resolve_season_start_month()
     _expected = get_season_from_date(season_start_month=_start_month)
     if str(config.season) != _expected:
-        warnings.warn(
-            f'config.season={config.season!r} does not match expected season {_expected!r}',
-            stacklevel=1
-        )
+        logger.warning("config.season=%r does not match expected season %r",
+                        config.season, _expected)
 
     for _comp in _args.competition:
-        print(f'Start read {_comp} matches...')
+        logger.info("Start read %s matches", _comp)
         _sub_seasons = mu.get_sub_seasons(_comp)
         if _sub_seasons is None:
-            print(f'  No {config.season} season entry for {_comp} in season_map, skipping.')
+            logger.info("No %s season entry for %s in season_map, skipping",
+                        config.season, _comp)
         elif _sub_seasons:
             update_sub_season_matches(_comp, _sub_seasons,
                                       force_update=_args.force_update_all,
