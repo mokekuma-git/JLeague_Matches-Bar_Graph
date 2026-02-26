@@ -115,7 +115,8 @@ class MatchUtils:
     """Stateful utilities for match CSV processing.
 
     Holds a loaded Config instance and provides methods that depend on it.
-    Use the module-level singleton ``mu`` rather than creating new instances.
+    Use the module-level singleton ``mu`` and call ``mu.init_config(path)``
+    before using any other methods.
     """
 
     def __init__(self):
