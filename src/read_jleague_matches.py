@@ -182,19 +182,6 @@ def convert_jleague_date(match_date: str) -> str:
     return _date.strftime(config.standard_date_format)
 
 
-def read_all_matches(competition: str, url_category: str = None) -> pd.DataFrame:
-    """Read all match data for specified competition via web.
-
-    Args:
-        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-        url_category (str, optional): Override category value for URL construction.
-
-    Returns:
-        pd.DataFrame: DataFrame containing all match data
-    """
-    return read_matches_range(competition, url_category=url_category)
-
-
 def _team_count_to_section_range(team_count: int) -> range:
     """Convert team count to full home-and-away section range (1-based).
 
@@ -209,24 +196,26 @@ def _team_count_to_section_range(team_count: int) -> range:
     return range(1, (team_count - 1) * 2 + 1)
 
 
-def read_matches_range(competition: str, _range: list[int] = None,
-                       url_category: str = None) -> pd.DataFrame:
-    """Read match data for specified competition and section list from the web.
+def read_matches(competition: str, sections: list[int] = None,
+                 url_category: str = None) -> pd.DataFrame:
+    """Read match data for specified competition from the web.
+
+    When sections is None, fetches all sections (derived from team count).
 
     Args:
         competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-        _range (list[int], optional): List of section numbers. Defaults to None.
+        sections (list[int], optional): Section numbers to fetch. Defaults to all.
         url_category (str, optional): Override category value for URL construction.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
     """
     _matches = pd.DataFrame()
-    if not _range:
+    if not sections:
         teams_count = len(read_teams(competition))
-        _range = _team_count_to_section_range(teams_count)
+        sections = _team_count_to_section_range(teams_count)
 
-    for _i in _range:
+    for _i in sections:
         result_list = read_match(competition, _i, url_category=url_category)
         _matches = pd.concat([_matches, pd.DataFrame(result_list)])
     # A common mistake is not saving the result of sort or reset_index operations
@@ -443,7 +432,7 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
                 do_merge = True
 
         logger.info("Fetching sections %s for url_category=%s", list(fetch_range), url_cat)
-        fetched = read_matches_range(competition, fetch_range, url_category=url_cat)
+        fetched = read_matches(competition, fetch_range, url_category=url_cat)
 
         # Distribute fetched data to each sub-season CSV
         for sub in subs:
@@ -509,7 +498,7 @@ def update_all_matches(competition: str, force_update: bool = False,
 
     # If the file does not exist, read all matches and save them
     if (not Path(latest_file).exists()) or force_update:
-        all_matches = read_all_matches(competition, url_category=url_category)
+        all_matches = read_matches(competition, url_category=url_category)
         mu.update_if_diff(all_matches, latest_file)
         return all_matches
 
@@ -523,7 +512,7 @@ def update_all_matches(competition: str, force_update: bool = False,
         if not need_update:
             return current
 
-    diff_matches = read_matches_range(competition, need_update, url_category=url_category)
+    diff_matches = read_matches(competition, need_update, url_category=url_category)
     old_matches = current[current['section_no'].isin(need_update)]
     if mu.matches_differ(diff_matches, old_matches):
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \

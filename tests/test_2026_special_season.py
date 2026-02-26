@@ -296,7 +296,7 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         ]
 
     @patch.object(mu, 'update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.read_matches')
     @patch.object(mu, 'get_csv_path')
     def test_force_update_fetches_full_range(self, mock_csv_path, mock_read_range, mock_update):
         """force_update=True should fetch _calc_section_range sections."""
@@ -307,14 +307,14 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
 
         update_sub_season_matches('J1', self._make_sub_seasons(), force_update=True)
 
-        # read_matches_range called once (shared fetch for both sub-seasons)
+        # read_matches called once (shared fetch for both sub-seasons)
         mock_read_range.assert_called_once()
         # Section range for 10 even teams = 18 sections
         call_range = mock_read_range.call_args.args[1]
         self.assertEqual(list(call_range), list(range(1, 19)))
 
     @patch.object(mu, 'update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.read_matches')
     @patch.object(mu, 'get_csv_path')
     def test_group_filter_distributes_correctly(self, mock_csv_path, mock_read_range, mock_update):
         """Each sub-season CSV should receive only its own group's matches."""
@@ -337,7 +337,7 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
         self.assertEqual(set(west_written['home_team']), set(west_teams))
 
     @patch.object(mu, 'update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.read_matches')
     @patch.object(mu, 'get_csv_path')
     def test_group_column_dropped(self, mock_csv_path, mock_read_range, mock_update):
         """The 'group' column should not appear in written CSVs."""
@@ -353,7 +353,7 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
             self.assertNotIn('group', written_df.columns)
 
     @patch.object(mu, 'update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.read_matches')
     @patch.object(mu, 'get_csv_path')
     def test_match_index_recalculated_per_sub_season(self, mock_csv_path, mock_read_range, mock_update):
         """match_index_in_section should be 1-based within each sub-season."""
@@ -373,10 +373,10 @@ class TestUpdateSubSeasonMatches(unittest.TestCase):
             self.assertEqual(indexes, [1, 2, 3, 4, 5], f"{path}: indexes should be 1-5, got {indexes}")
 
     @patch.object(mu, 'update_if_diff')
-    @patch('read_jleague_matches.read_matches_range')
+    @patch('read_jleague_matches.read_matches')
     @patch.object(mu, 'get_csv_path')
     def test_need_update_uses_specified_sections(self, mock_csv_path, mock_read_range, mock_update):
-        """need_update param should pass the specified sections to read_matches_range."""
+        """need_update param should pass the specified sections to read_matches."""
         east_df = self._make_match_df('EAST', ['A1', 'A2', 'A3', 'A4', 'A5'])
         west_df = self._make_match_df('WEST', ['B1', 'B2', 'B3', 'B4', 'B5'])
         mock_read_range.return_value = pd.concat([east_df, west_df], ignore_index=True)
