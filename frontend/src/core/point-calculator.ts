@@ -3,14 +3,8 @@
 // Each PointSystem defines a mapping from MatchResult to points awarded.
 // New scoring systems can be added by extending POINT_MAPS.
 
+import { POINT_MAPS } from '../types/config';
 import type { PointSystem } from '../types/config';
-import type { MatchResult } from '../types/match';
-
-/** Points awarded for each match result under each scoring system. */
-const POINT_MAPS: Record<PointSystem, Record<MatchResult, number>> = {
-  'standard':       { win: 3, pk_win: 2, pk_loss: 1, draw: 1, loss: 0 },
-  'old-two-points': { win: 2, pk_win: 1, pk_loss: 1, draw: 1, loss: 0 },
-};
 
 /** Returns the maximum points earnable per game under the given point system. */
 export function getMaxPointsPerGame(ps: PointSystem = 'standard'): number {

@@ -1,10 +1,12 @@
-// Types for competition configuration.
+// Types and constants for competition configuration.
 
-// Points calculation rule.
-// PK win/loss is detected automatically from the presence of
-// home_pk_score/away_pk_score columns in the CSV, so it is not included here.
-// Head-to-head tiebreaking is configured via tiebreak_order, not PointSystem.
-export type PointSystem =
-  | 'standard'        // win 3 / draw 1 / loss 0  (standard J.League rule)
-  | 'old-two-points'  // win 2 / draw 1 / loss 0  (pre-1995 world football)
-  ;
+import type { MatchResult } from './match';
+
+/** Points awarded for each match result under each scoring system. */
+export const POINT_MAPS = {
+  'standard':       { win: 3, pk_win: 2, pk_loss: 1, draw: 1, loss: 0 },
+  'old-two-points': { win: 2, pk_win: 1, pk_loss: 1, draw: 1, loss: 0 },
+} satisfies Record<string, Record<MatchResult, number>>;
+
+// Derived from POINT_MAPS keys. To add a new scoring system, add an entry above.
+export type PointSystem = keyof typeof POINT_MAPS;
