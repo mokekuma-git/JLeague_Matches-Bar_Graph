@@ -48,9 +48,26 @@ const state: AppState = {
 };
 
 const DEFAULT_COMPETITION = 'J1';
+const DEFAULT_GROUP = 'matches';
 
 // CSV URL cache-busting: same bucket for requests within this window (seconds).
 const CACHE_BUST_WINDOW_SEC = 300; // 5 minutes
+
+// ---- Fixed dropdown options (generated into HTML by TS) ------------------
+
+const TEAM_SORT_OPTIONS = [
+  { value: 'disp_point',    label: '勝点(表示時)' },
+  { value: 'disp_avlbl_pt', label: '最大勝点(表示時)' },
+  { value: 'point',         label: '勝点(最新)' },
+  { value: 'avlbl_pt',      label: '最大勝点(最新)' },
+] as const;
+
+const MATCH_SORT_OPTIONS = [
+  { value: 'old_bottom',   label: '古い試合が下' },
+  { value: 'new_bottom',   label: '新しい試合が下' },
+  { value: 'first_bottom', label: '第1節が下' },
+  { value: 'last_bottom',  label: '最終節が下' },
+] as const;
 
 // ---- DOM helpers -------------------------------------------------------
 
@@ -116,14 +133,35 @@ function writeUrlParams(competition: string, season: string): void {
   history.replaceState(null, '', url.toString());
 }
 
+// ---- Fixed dropdown population -----------------------------------------
+
+type MatchSortUiValue = typeof MATCH_SORT_OPTIONS[number]['value'];
+
+function populateFixedSelect(
+  id: string,
+  options: ReadonlyArray<{ readonly value: string; readonly label: string }>,
+): void {
+  const sel = document.getElementById(id) as HTMLSelectElement | null;
+  if (!sel) return;
+  sel.innerHTML = '';
+  for (const { value, label } of options) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = label;
+    sel.appendChild(opt);
+  }
+}
+
 // ---- Match sort key mapping --------------------------------------------
 
 function getMatchSortKey(uiValue: string): MatchSortKey {
-  return ['first_bottom', 'last_bottom'].includes(uiValue) ? 'section_no' : 'match_date';
+  const v = uiValue as MatchSortUiValue;
+  return (v === 'first_bottom' || v === 'last_bottom') ? 'section_no' : 'match_date';
 }
 
 function isBottomFirst(uiValue: string): boolean {
-  return ['old_bottom', 'first_bottom'].includes(uiValue);
+  const v = uiValue as MatchSortUiValue;
+  return (v === 'old_bottom' || v === 'first_bottom');
 }
 
 // ---- Competition pulldown population -----------------------------------
@@ -138,7 +176,7 @@ function populateCompetitionPulldown(seasonMap: SeasonMap): void {
       // Disabled separator showing group name (only when multiple groups exist)
       const sep = document.createElement('option');
       sep.disabled = true;
-      sep.textContent = `── ${group.display_name} ──`;
+      sep.textContent = `── ${group.display_name} `;
       sel.appendChild(sep);
     }
 
@@ -273,10 +311,10 @@ function loadAndRender(seasonMap: SeasonMap): void {
         results.data,
         results.meta.fields ?? [],
         seasonInfo.teams,
-        'matches',
+        DEFAULT_GROUP,
         seasonInfo.pointSystem,
       );
-      const groupData = teamMap['matches'] ?? {};
+      const groupData = teamMap[DEFAULT_GROUP] ?? {};
       const fields = results.meta.fields ?? [];
       const hasPk = fields.includes('home_pk_score') || fields.includes('home_pk');
 
@@ -311,6 +349,8 @@ async function main(): Promise<void> {
   if (unit > 0) state.heightUnit = unit;
 
   populateCompetitionPulldown(seasonMap);
+  populateFixedSelect('team_sort_key', TEAM_SORT_OPTIONS);
+  populateFixedSelect('match_sort_key', MATCH_SORT_OPTIONS);
 
   // Determine initial competition/season from URL params → localStorage → default
   const urlParams = readUrlParams();
