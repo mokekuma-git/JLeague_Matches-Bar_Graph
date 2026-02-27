@@ -26,7 +26,7 @@ describe('makeHtmlColumn – box class per result type', () => {
     ]);
     expect(result.graph).toHaveLength(1);
     expect(result.graph[0]).toContain('"tall box"');
-    expect(result.loseBox).toHaveLength(0);
+    expect(result.lossBox).toHaveLength(0);
   });
 
   test('win box contains team CSS class', () => {
@@ -59,12 +59,12 @@ describe('makeHtmlColumn – box class per result type', () => {
     expect(result.graph[0]).toContain('"short box"');
   });
 
-  test('loss (0 pt) → no graph entry, one loseBox entry', () => {
+  test('loss (0 pt) → no graph entry, one lossBox entry', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: '0', goal_lose: '2', point: 0, match_date: '2025/03/15' }),
     ]);
     expect(result.graph).toHaveLength(0);
-    expect(result.loseBox).toHaveLength(1);
+    expect(result.lossBox).toHaveLength(1);
   });
 });
 
@@ -111,11 +111,11 @@ describe('makeHtmlColumn – live match styling', () => {
     expect(result.graph[0]).toContain('"short box live"');
   });
 
-  test('live loss → loseBox entry wrapped in <div class="live">', () => {
+  test('live loss → lossBox entry wrapped in <div class="live">', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: '0', goal_lose: '1', point: 0, match_date: '2025/03/15', live: true }),
     ]);
-    expect(result.loseBox[0]).toContain('<div class="live">');
+    expect(result.lossBox[0]).toContain('<div class="live">');
   });
 });
 
@@ -182,27 +182,27 @@ describe('makeHtmlColumn – matchDates', () => {
   });
 });
 
-// ─── loseBox content ───────────────────────────────────────────────────────────
+// ─── lossBox content ───────────────────────────────────────────────────────────
 
-describe('makeHtmlColumn – loseBox content', () => {
-  test('loseBox entry contains match details from makeFullContent', () => {
+describe('makeHtmlColumn – lossBox content', () => {
+  test('lossBox entry contains match details from makeFullContent', () => {
     const { result } = buildColumn([
       makeMatch({
         goal_get: '0', goal_lose: '2', point: 0, match_date: '2025/03/15',
         opponent: 'TeamB', stadium: 'LossStadium', section_no: '4',
       }),
     ]);
-    expect(result.loseBox[0]).toContain('TeamB');
-    expect(result.loseBox[0]).toContain('LossStadium');
-    expect(result.loseBox[0]).toContain('(4)');
+    expect(result.lossBox[0]).toContain('TeamB');
+    expect(result.lossBox[0]).toContain('LossStadium');
+    expect(result.lossBox[0]).toContain('(4)');
   });
 
-  test('multiple losses accumulate in loseBox order', () => {
+  test('multiple losses accumulate in lossBox order', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: '0', goal_lose: '1', point: 0, match_date: '2025/03/01', section_no: '1' }),
       makeMatch({ goal_get: '0', goal_lose: '2', point: 0, match_date: '2025/03/08', section_no: '2' }),
     ]);
-    expect(result.loseBox).toHaveLength(2);
+    expect(result.lossBox).toHaveLength(2);
   });
 });
 
@@ -246,11 +246,11 @@ describe('makeHtmlColumn – old-two-points system', () => {
     expect(result.graph[0]).toContain('"medium box"');
   });
 
-  test('loss (0 pt) → goes to loseBox', () => {
+  test('loss (0 pt) → goes to lossBox', () => {
     const { result } = buildOldColumn([
       makeMatch({ goal_get: '0', goal_lose: '2', point: 0, match_date: '2025/03/15' }),
     ]);
     expect(result.graph).toHaveLength(0);
-    expect(result.loseBox).toHaveLength(1);
+    expect(result.lossBox).toHaveLength(1);
   });
 });

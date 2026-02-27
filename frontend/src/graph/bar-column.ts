@@ -31,7 +31,7 @@ export interface ColumnResult {
   avlbl_pt: number;
   teamName: string;
   /** Full-match content strings for loss matches (shown in team stats tooltip). */
-  loseBox: string[];
+  lossBox: string[];
   /** Pre-rendered stats HTML for the team name tooltip. */
   stats: string;
   /** Sorted unique YYYY/MM/DD match dates encountered (for the date slider). */
@@ -45,7 +45,7 @@ export interface ColumnResult {
  *   tall (.tall)   – win (3 pt) or any display-future match
  *   medium (.medium) – PK win (2 pt)
  *   short (.short)   – draw / PK loss (1 pt)
- *   (none)           – loss (0 pt) → goes to loseBox only
+ *   (none)           – loss (0 pt) → goes to lossBox only
  *
  * Under old-two-points (2-1-0):
  *   medium (.medium) – win (2 pt) or display-future match
@@ -71,7 +71,7 @@ export function makeHtmlColumn(
   pointSystem: PointSystem = 'standard',
 ): ColumnResult {
   const graph: string[] = [];
-  const loseBox: string[] = [];
+  const lossBox: string[] = [];
   const matchDateSet = new Set<string>();
   const winPt = getWinPoints(pointSystem);
   const futureClass = boxHeightClass(winPt);
@@ -119,12 +119,12 @@ export function makeHtmlColumn(
           + `${statusSuffix}</span></p></div>`,
         );
       } else {
-        // Loss (point === 0): no box; goes to loseBox for the stats tooltip
-        let loseContent = makeFullContent(row, matchDate);
+        // Loss (point === 0): no box; goes to lossBox for the stats tooltip
+        let lossContent = makeFullContent(row, matchDate);
         if (row.live) {
-          loseContent = `<div class="live">${loseContent}${statusSuffix}</div>`;
+          lossContent = `<div class="live">${lossContent}${statusSuffix}</div>`;
         }
-        loseBox.push(loseContent);
+        lossBox.push(lossContent);
       }
     }
   }
@@ -136,7 +136,7 @@ export function makeHtmlColumn(
     graph,
     avlbl_pt,
     teamName,
-    loseBox,
+    lossBox,
     stats: makeTeamStats(teamData, disp, hasPk),
     matchDates: [...matchDateSet].sort(),
   };

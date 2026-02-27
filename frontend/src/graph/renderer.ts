@@ -7,7 +7,7 @@ import type { TeamData } from '../types/match';
 import type { SeasonInfo } from '../types/season';
 import { makeHtmlColumn } from './bar-column';
 import type { ColumnResult } from './bar-column';
-import { getRankClass, joinLoseBox } from './tooltip';
+import { getRankClass, joinLossBox } from './tooltip';
 
 /** Return value of renderBarGraph, consumed by j_points.ts. */
 export interface RenderResult {
@@ -53,7 +53,7 @@ export function makePointColumn(maxAvblPt: number, bottomFirst: boolean): string
  *
  * Steps:
  *   1. Add a space box at the top (height = (maxAvblPt - col.avlbl_pt) × heightUnit px).
- *   2. If bottomFirst, reverse graph[] and loseBox[].
+ *   2. If bottomFirst, reverse graph[] and lossBox[].
  *   3. Wrap with rank_cell (top/bottom) and team_name tooltip boxes.
  *
  * Returns: <div id="TEAM_column">rank + name + boxes + name + rank</div>
@@ -68,7 +68,7 @@ export function appendSpaceCols(
 ): string {
   // Clone arrays so we don't mutate the original ColumnResult.
   const graph = [...col.graph];
-  const loseBox = [...col.loseBox];
+  const lossBox = [...col.lossBox];
 
   const spaceCols = maxAvblPt - col.avlbl_pt;
   if (spaceCols > 0) {
@@ -77,14 +77,14 @@ export function appendSpaceCols(
 
   if (bottomFirst) {
     graph.reverse();
-    loseBox.reverse();
+    lossBox.reverse();
   }
 
   const rankClass = getRankClass(rank, seasonInfo);
   const rankCell = `<div class="short box ${rankClass}">${rank}</div>`;
   const teamName = `<div class="short box tooltip ${col.teamName}">${col.teamName}`
     + `<span class=" tooltiptext fullW ${col.teamName}">`
-    + `成績情報:<hr/>${col.stats}<hr/>敗戦記録:<hr/>${joinLoseBox(loseBox)}</span></div>\n`;
+    + `成績情報:<hr/>${col.stats}<hr/>敗戦記録:<hr/>${joinLossBox(lossBox)}</span></div>\n`;
 
   return `<div id="${col.teamName}_column">${rankCell}${teamName}${graph.join('')}${teamName}${rankCell}</div>\n\n`;
 }

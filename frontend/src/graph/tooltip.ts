@@ -43,8 +43,8 @@ export function makeTeamStats(teamData: TeamData, disp: boolean, hasPk = false):
 }
 
 /** Joins loss-match content strings with <hr/> dividers. */
-export function joinLoseBox(loseBox: string[]): string {
-  return loseBox.join('<hr/>');
+export function joinLossBox(lossBox: string[]): string {
+  return lossBox.join('<hr/>');
 }
 
 /**
