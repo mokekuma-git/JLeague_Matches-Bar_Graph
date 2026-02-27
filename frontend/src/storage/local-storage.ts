@@ -16,27 +16,11 @@ export interface ViewerPrefs {
   scale?: string;
 }
 
-// Legacy prefs stored `category` (numeric string like "1") instead of
-// `competition` (key like "J1").  Detect and migrate on first load.
-interface LegacyPrefs extends ViewerPrefs {
-  category?: string;
-}
-
-const CATEGORY_TO_COMPETITION: Record<string, string> = {
-  '1': 'J1', '2': 'J2', '3': 'J3',
-};
-
 export function loadPrefs(): ViewerPrefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
-    const parsed = JSON.parse(raw) as LegacyPrefs;
-    if (parsed.category && !parsed.competition) {
-      parsed.competition = CATEGORY_TO_COMPETITION[parsed.category] ?? parsed.category;
-      delete parsed.category;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-    }
-    return parsed;
+    return JSON.parse(raw) as ViewerPrefs;
   } catch {
     return {};
   }
