@@ -21,8 +21,8 @@ export interface RankRow {
   rank: number;
   name: string;      // HTML string: '<div class="TeamName">TeamName</div>'
   win: number;
-  pk_win: number;
-  pk_loss: number;
+  pk_win?: number;
+  pk_loss?: number;
   draw: number;
   lose: number;
   point: number;
@@ -55,6 +55,7 @@ export function makeRankData(
   teamList: string[],
   seasonInfo: SeasonInfo,
   disp: boolean,
+  hasPk: boolean = false,
 ): RankRow[] {
   const { teamCount, promotionCount, relegationCount } = seasonInfo;
   const relegationRank = teamCount - relegationCount;
@@ -90,8 +91,10 @@ export function makeRankData(
       rank,
       name: `<div class="${teamName}">${teamName}</div>`,
       win:         getTeamAttr(td, 'win',      disp),
-      pk_win:      getTeamAttr(td, 'pk_win',   disp),
-      pk_loss:     getTeamAttr(td, 'pk_loss',  disp),
+      ...(hasPk ? {
+        pk_win:    getTeamAttr(td, 'pk_win',   disp),
+        pk_loss:   getTeamAttr(td, 'pk_loss',  disp),
+      } : {}),
       draw:        getTeamAttr(td, 'draw',     disp),
       lose:        getTeamAttr(td, 'lose',     disp),
       point,

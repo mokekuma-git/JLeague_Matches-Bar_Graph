@@ -258,7 +258,7 @@ function renderFromCache(
     resetDateSlider(matchDates, targetDate);
   }
 
-  const rankData = makeRankData(groupData, sortedTeams, seasonInfo, disp);
+  const rankData = makeRankData(groupData, sortedTeams, seasonInfo, disp, cache.hasPk);
   const tableEl = document.getElementById('ranktable');
   if (tableEl) makeRankTable(tableEl, rankData, hasPk);
 }
