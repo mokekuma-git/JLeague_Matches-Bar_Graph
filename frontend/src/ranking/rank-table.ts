@@ -24,7 +24,7 @@ export interface RankRow {
   pk_win?: number;
   pk_loss?: number;
   draw: number;
-  lose: number;
+  loss: number;
   point: number;
   avlbl_pt: number;
   avrg_pt: string;   // toFixed(2) string for display
@@ -96,7 +96,7 @@ export function makeRankData(
         pk_loss:   getTeamAttr(td, 'pk_loss',  disp),
       } : {}),
       draw:        getTeamAttr(td, 'draw',     disp),
-      lose:        getTeamAttr(td, 'lose',     disp),
+      loss:        getTeamAttr(td, 'loss',     disp),
       point,
       avlbl_pt:    avlblPt,
       avrg_pt:     avrgPt.toFixed(2),
@@ -178,7 +178,7 @@ function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean): void {
       { id: 'pk_loss', label: 'PK負', sortable: true as true },
     ] : []),
     { id: 'draw',        label: '分',        sortable: true },
-    { id: 'lose',        label: '負',        sortable: true },
+    { id: 'loss',        label: '負',        sortable: true },
     { id: 'goal_get',    label: '得点',      sortable: true },
     { id: 'goal_lose',   label: '失点',      sortable: true },
     { id: 'goal_diff',   label: '点差',      sortable: true },

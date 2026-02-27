@@ -36,7 +36,7 @@ export function makeTeamStats(teamData: TeamData, disp: boolean, hasPk = false):
   const p = (key: string): number =>
     (teamData as unknown as Record<string, number>)[pre + key] ?? 0;
   const pkLine = hasPk ? `${p('pk_win')}PK勝 ${p('pk_loss')}PK負 ` : '';
-  return `${label}<br/>${p('win')}勝 ${pkLine}${p('draw')}分 ${p('lose')}敗<br/>`
+  return `${label}<br/>${p('win')}勝 ${pkLine}${p('draw')}分 ${p('loss')}敗<br/>`
     + `勝点${p('point')}, 最大${p('avlbl_pt')}<br/>`
     + `${p('goal_get')}得点, ${p('goal_get') - p('goal_diff')}失点<br/>`
     + `得失点差: ${p('goal_diff')}`;

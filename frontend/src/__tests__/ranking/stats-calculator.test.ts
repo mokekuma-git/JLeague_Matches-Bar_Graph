@@ -12,7 +12,7 @@ describe('calculateTeamStats', () => {
       expect(td.point).toBe(3);
       expect(td.win).toBe(1);
       expect(td.draw).toBe(0);
-      expect(td.lose).toBe(0);
+      expect(td.loss).toBe(0);
       expect(td.all_game).toBe(1);
       expect(td.goal_diff).toBe(2);
       expect(td.goal_get).toBe(2);
@@ -26,11 +26,11 @@ describe('calculateTeamStats', () => {
       expect(td.win).toBe(0);
     });
 
-    test('loss: point=0, lose=1', () => {
+    test('loss: point=0, loss=1', () => {
       const td = makeTeamData([makeMatch({ goal_get: '0', goal_lose: '2', point: 0 })]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.point).toBe(0);
-      expect(td.lose).toBe(1);
+      expect(td.loss).toBe(1);
       expect(td.win).toBe(0);
     });
 
@@ -129,16 +129,16 @@ describe('calculateTeamStats', () => {
       expect(td.rest_games).toEqual({}); // completed in latest view
     });
 
-    test('disp_win/disp_draw/disp_lose only count within cutoff', () => {
+    test('disp_win/disp_draw/disp_loss only count within cutoff', () => {
       const td = makeTeamData([
         makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/01', section_no: '1' }), // win, in range
         makeMatch({ goal_get: '0', goal_lose: '1', point: 0, match_date: '2025/04/01', section_no: '2' }), // loss, out of range
       ]);
       calculateTeamStats(td, '2025/03/31', 'section_no');
       expect(td.disp_win).toBe(1);
-      expect(td.disp_lose).toBe(0);
+      expect(td.disp_loss).toBe(0);
       expect(td.win).toBe(1);
-      expect(td.lose).toBe(1);
+      expect(td.loss).toBe(1);
     });
 
     test('disp_avrg_pt differs from avrg_pt when games span the cutoff date', () => {
@@ -246,7 +246,7 @@ describe('classifyResult', () => {
   });
 
   test('standard: 0pt → loss', () => {
-    expect(classifyResult(0, null, 'standard')).toBe('lose');
+    expect(classifyResult(0, null, 'standard')).toBe('loss');
   });
 
   test('old-two-points: 2pt → win', () => {
@@ -258,7 +258,7 @@ describe('classifyResult', () => {
   });
 
   test('old-two-points: 0pt → loss', () => {
-    expect(classifyResult(0, null, 'old-two-points')).toBe('lose');
+    expect(classifyResult(0, null, 'old-two-points')).toBe('loss');
   });
 });
 

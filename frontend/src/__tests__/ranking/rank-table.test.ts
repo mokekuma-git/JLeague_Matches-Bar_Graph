@@ -22,7 +22,7 @@ function makeStatsTeam(opts: {
   goal_get?: number;
   win?: number;
   draw?: number;
-  lose?: number;
+  loss?: number;
   pk_win?: number;
   pk_loss?: number;
   avrg_pt?: number;
@@ -34,7 +34,7 @@ function makeStatsTeam(opts: {
   disp_goal_get?: number;
   disp_win?: number;
   disp_draw?: number;
-  disp_lose?: number;
+  disp_loss?: number;
   disp_pk_win?: number;
   disp_pk_loss?: number;
   disp_avrg_pt?: number;
@@ -62,7 +62,7 @@ function makeStatsTeam(opts: {
     pk_win: opts.pk_win ?? 0,
     pk_loss: opts.pk_loss ?? 0,
     draw: opts.draw ?? 0,
-    lose: opts.lose ?? 0,
+    loss: opts.loss ?? 0,
     avrg_pt: opts.avrg_pt ?? (all_game > 0 ? opts.point / all_game : 0),
     rest_games,
     disp_point: opts.disp_point ?? opts.point,
@@ -74,7 +74,7 @@ function makeStatsTeam(opts: {
     disp_pk_win: opts.disp_pk_win ?? opts.pk_win ?? 0,
     disp_pk_loss: opts.disp_pk_loss ?? opts.pk_loss ?? 0,
     disp_draw: opts.disp_draw ?? opts.draw ?? 0,
-    disp_lose: opts.disp_lose ?? opts.lose ?? 0,
+    disp_loss: opts.disp_loss ?? opts.loss ?? 0,
     disp_avrg_pt: opts.disp_avrg_pt ?? (opts.disp_all_game ?? all_game) > 0
       ? (opts.disp_point ?? opts.point) / (opts.disp_all_game ?? all_game)
       : 0,
@@ -90,9 +90,9 @@ describe('makeRankData – season finished', () => {
 
   const groupData: Record<string, TeamData> = {
     TeamA: makeStatsTeam({ point: 9, avlbl_pt: 9, all_game: 3, win: 3, rest_games: {} }),
-    TeamB: makeStatsTeam({ point: 6, avlbl_pt: 6, all_game: 3, win: 2, lose: 1, rest_games: {} }),
-    TeamC: makeStatsTeam({ point: 3, avlbl_pt: 3, all_game: 3, win: 1, lose: 2, rest_games: {} }),
-    TeamD: makeStatsTeam({ point: 0, avlbl_pt: 0, all_game: 3, lose: 3, rest_games: {} }),
+    TeamB: makeStatsTeam({ point: 6, avlbl_pt: 6, all_game: 3, win: 2, loss: 1, rest_games: {} }),
+    TeamC: makeStatsTeam({ point: 3, avlbl_pt: 3, all_game: 3, win: 1, loss: 2, rest_games: {} }),
+    TeamD: makeStatsTeam({ point: 0, avlbl_pt: 0, all_game: 3, loss: 3, rest_games: {} }),
   };
   const teamList = ['TeamA', 'TeamB', 'TeamC', 'TeamD'];
 
@@ -509,7 +509,7 @@ describe('makeRankData – row shape', () => {
       goal_diff: 3, avrg_pt: 3.0, rest_games: {}, dfLength: 2,
     }),
     TeamB: makeStatsTeam({
-      point: 0, avlbl_pt: 0, all_game: 2, lose: 2, goal_get: 1,
+      point: 0, avlbl_pt: 0, all_game: 2, loss: 2, goal_get: 1,
       goal_diff: -3, avrg_pt: 0.0, rest_games: {}, dfLength: 2,
     }),
   };
@@ -566,7 +566,7 @@ describe('makeRankTable – thead hasPk=false', () => {
     expect(ids).not.toContain('pk_loss');
   });
 
-  test('includes standard columns: rank, name, win, draw, lose, point', () => {
+  test('includes standard columns: rank, name, win, draw, loss, point', () => {
     const table = makeTableEl();
     makeRankTable(table, [], false);
     const ids = getHeaderIds(table);
@@ -574,7 +574,7 @@ describe('makeRankTable – thead hasPk=false', () => {
     expect(ids).toContain('name');
     expect(ids).toContain('win');
     expect(ids).toContain('draw');
-    expect(ids).toContain('lose');
+    expect(ids).toContain('loss');
     expect(ids).toContain('point');
   });
 });

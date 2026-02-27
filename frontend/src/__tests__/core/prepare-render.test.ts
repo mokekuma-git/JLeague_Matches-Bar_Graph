@@ -33,7 +33,7 @@ describe('prepareRenderData', () => {
     // TeamA: 3 + 0 = 3pt, TeamB: 0 + 1 = 1pt, TeamC: 3 + 1 = 4pt
     expect(result.groupData.TeamA.point).toBe(3);
     expect(result.groupData.TeamA.win).toBe(1);
-    expect(result.groupData.TeamA.lose).toBe(1);
+    expect(result.groupData.TeamA.loss).toBe(1);
     expect(result.groupData.TeamB.point).toBe(1);
     expect(result.groupData.TeamB.draw).toBe(1);
     expect(result.groupData.TeamC.point).toBe(4);
@@ -177,7 +177,7 @@ describe('prepareRenderData with pointSystem', () => {
 
     // old-two-points uses the point values from matches (which the caller
     // would have set to the old-two-points scale). Here we verify the system
-    // correctly uses the pointSystem for classification (win/draw/lose).
+    // correctly uses the pointSystem for classification (win/draw/loss).
     const oldResult = prepareRenderData({
       groupData: {
         TeamA: makeTeamData([
@@ -199,7 +199,7 @@ describe('prepareRenderData with pointSystem', () => {
     expect(oldResult.groupData.TeamA.win).toBe(1);
     expect(oldResult.groupData.TeamA.draw).toBe(1);
     expect(oldResult.groupData.TeamB.win).toBe(1);
-    expect(oldResult.groupData.TeamB.lose).toBe(1);
+    expect(oldResult.groupData.TeamB.loss).toBe(1);
   });
 });
 
