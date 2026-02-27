@@ -47,21 +47,15 @@ export type RawSeasonEntry = [
 ];
 
 // A single competition within a group (e.g., J1 within jleague).
-export interface CompetitionEntry {
-  league_display?: string;
-  css_files?: string[];
-  point_system?: PointSystem;
-  team_rename_map?: Record<string, string>;
-  tiebreak_order?: string[];
-  season_start_month?: number;
+// Extends SeasonEntryOptions because cascade allows any option at this level.
+export interface CompetitionEntry extends SeasonEntryOptions {
   seasons: Record<string, RawSeasonEntry>;
 }
 
 // A top-level group (e.g., jleague, international).
-export interface GroupEntry {
-  display_name: string;
-  css_files?: string[];
-  season_start_month?: number;
+// Extends SeasonEntryOptions because cascade allows any option at this level.
+export interface GroupEntry extends SeasonEntryOptions {
+  display_name?: string;  // defaults to group key when omitted
   competitions: Record<string, CompetitionEntry>;
 }
 

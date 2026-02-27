@@ -1,8 +1,9 @@
 import { describe, test, expect } from 'vitest';
 import {
   makeWinContent, makePkWinContent, makeDrawContent, makeFullContent,
-  makeTeamStats, joinLoseBox, getRankClass, getBright,
+  makeTeamStats, joinLossBox, getRankClass,
 } from '../../graph/tooltip';
+import { getBright } from '../../graph/css-utils';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
 import { makeMatch, makeTeamData, makeSeasonInfo } from '../fixtures/match-data';
 
@@ -122,19 +123,19 @@ describe('makeTeamStats', () => {
   });
 });
 
-// ─── joinLoseBox ───────────────────────────────────────────────────────────────
+// ─── joinLossBox ───────────────────────────────────────────────────────────────
 
-describe('joinLoseBox', () => {
+describe('joinLossBox', () => {
   test('joins entries with <hr/>', () => {
-    expect(joinLoseBox(['loss1', 'loss2', 'loss3'])).toBe('loss1<hr/>loss2<hr/>loss3');
+    expect(joinLossBox(['loss1', 'loss2', 'loss3'])).toBe('loss1<hr/>loss2<hr/>loss3');
   });
 
   test('single entry: no <hr/>', () => {
-    expect(joinLoseBox(['only'])).toBe('only');
+    expect(joinLossBox(['only'])).toBe('only');
   });
 
   test('empty array: empty string', () => {
-    expect(joinLoseBox([])).toBe('');
+    expect(joinLossBox([])).toBe('');
   });
 });
 

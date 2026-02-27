@@ -1,48 +1,48 @@
 import { describe, test, expect } from 'vitest';
 import {
-  makeInsertColumns,
+  getScaleColumnPositions,
   makePointColumn,
-  appendSpaceCols,
+  assembleTeamColumn,
   renderBarGraph,
   findSliderIndex,
   formatSliderDate,
 } from '../../graph/renderer';
-import { makeHtmlColumn } from '../../graph/bar-column';
+import { buildTeamColumn } from '../../graph/bar-column';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
 import { makeMatch, makeTeamData, makeSeasonInfo } from '../fixtures/match-data';
 import type { ColumnResult } from '../../graph/bar-column';
 
-// ─── makeInsertColumns ──────────────────────────────────────────────────────
+// ─── getScaleColumnPositions ──────────────────────────────────────────────────────
 
-describe('makeInsertColumns', () => {
+describe('getScaleColumnPositions', () => {
   test('promotion=0, relegation=0 → mid only', () => {
     const info = makeSeasonInfo({ teamCount: 10, promotionCount: 0, relegationCount: 0 });
-    expect(makeInsertColumns(info)).toEqual([5]);
+    expect(getScaleColumnPositions(info)).toEqual([5]);
   });
 
   test('teamCount=4 with promotion=1, relegation=1 → [1, 2, 3]', () => {
     const info = makeSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
-    expect(makeInsertColumns(info)).toEqual([1, 2, 3]);
+    expect(getScaleColumnPositions(info)).toEqual([1, 2, 3]);
   });
 
   test('teamCount=20, promotion=3, relegation=4 → [3, 10, 16]', () => {
     const info = makeSeasonInfo({ teamCount: 20, promotionCount: 3, relegationCount: 4 });
-    expect(makeInsertColumns(info)).toEqual([3, 10, 16]);
+    expect(getScaleColumnPositions(info)).toEqual([3, 10, 16]);
   });
 
   test('promotion only (relegation=0) → [promotionCount, mid]', () => {
     const info = makeSeasonInfo({ teamCount: 10, promotionCount: 3, relegationCount: 0 });
-    expect(makeInsertColumns(info)).toEqual([3, 5]);
+    expect(getScaleColumnPositions(info)).toEqual([3, 5]);
   });
 
   test('relegation only (promotion=0) → [mid, relegationCutoff]', () => {
     const info = makeSeasonInfo({ teamCount: 10, promotionCount: 0, relegationCount: 2 });
-    expect(makeInsertColumns(info)).toEqual([5, 8]);
+    expect(getScaleColumnPositions(info)).toEqual([5, 8]);
   });
 
   test('odd teamCount uses floor: teamCount=11 → mid=5', () => {
     const info = makeSeasonInfo({ teamCount: 11, promotionCount: 0, relegationCount: 0 });
-    expect(makeInsertColumns(info)).toEqual([5]);
+    expect(getScaleColumnPositions(info)).toEqual([5]);
   });
 });
 
@@ -77,9 +77,9 @@ describe('makePointColumn', () => {
   });
 });
 
-// ─── appendSpaceCols ────────────────────────────────────────────────────────
+// ─── assembleTeamColumn ────────────────────────────────────────────────────────
 
-/** Build a ColumnResult from matches using the real makeHtmlColumn pipeline. */
+/** Build a ColumnResult from matches using the real buildTeamColumn pipeline. */
 function buildCol(
   teamName: string,
   matches: ReturnType<typeof makeMatch>[],
@@ -88,16 +88,16 @@ function buildCol(
 ): ColumnResult {
   const td = makeTeamData(matches);
   calculateTeamStats(td, targetDate, 'section_no');
-  return makeHtmlColumn(teamName, td, targetDate, disp);
+  return buildTeamColumn(teamName, td, targetDate, disp);
 }
 
-describe('appendSpaceCols', () => {
+describe('assembleTeamColumn', () => {
   const info = makeSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
 
   test('space box added when avlbl_pt < maxAvblPt', () => {
     const col = buildCol('TeamA', [makeMatch({ point: 3, has_result: true })]);
     // avlbl_pt = 3, maxAvblPt = 6 → space = 3
-    const html = appendSpaceCols(col, 1, 6, 20, false, info);
+    const html = assembleTeamColumn(col, 1, 6, 20, false, info);
     expect(html).toContain('class="space box"');
     expect(html).toContain('height:60px'); // 3 × 20
   });
@@ -105,38 +105,38 @@ describe('appendSpaceCols', () => {
   test('no space box when avlbl_pt === maxAvblPt', () => {
     const col = buildCol('TeamA', [makeMatch({ point: 3, has_result: true })]);
     const maxAvblPt = col.avlbl_pt;
-    const html = appendSpaceCols(col, 1, maxAvblPt, 20, false, info);
+    const html = assembleTeamColumn(col, 1, maxAvblPt, 20, false, info);
     expect(html).not.toContain('class="space box"');
   });
 
   test('team column has correct id attribute', () => {
     const col = buildCol('TeamA', [makeMatch({ point: 3 })]);
-    const html = appendSpaceCols(col, 1, col.avlbl_pt, 20, false, info);
+    const html = assembleTeamColumn(col, 1, col.avlbl_pt, 20, false, info);
     expect(html).toContain('id="TeamA_column"');
   });
 
   test('rank=1 → promoted CSS class', () => {
     const col = buildCol('TeamA', []);
-    const html = appendSpaceCols(col, 1, 0, 20, false, info);
+    const html = assembleTeamColumn(col, 1, 0, 20, false, info);
     expect(html).toContain('promoted');
   });
 
   test('rank=4 (last, relegationCount=1) → relegated CSS class', () => {
     const col = buildCol('TeamD', []);
-    const html = appendSpaceCols(col, 4, 0, 20, false, info);
+    const html = assembleTeamColumn(col, 4, 0, 20, false, info);
     expect(html).toContain('relegated');
   });
 
   test('rank=2 → no promotion/relegation class', () => {
     const col = buildCol('TeamB', []);
-    const html = appendSpaceCols(col, 2, 0, 20, false, info);
+    const html = assembleTeamColumn(col, 2, 0, 20, false, info);
     expect(html).not.toContain('"promoted"');
     expect(html).not.toContain('"relegated"');
   });
 
   test('bottomFirst=true → does not throw and still produces column HTML', () => {
     const col = buildCol('TeamA', [makeMatch({ point: 3 })]);
-    const html = appendSpaceCols(col, 1, col.avlbl_pt, 20, true, info);
+    const html = assembleTeamColumn(col, 1, col.avlbl_pt, 20, true, info);
     expect(html).toContain('TeamA_column');
   });
 
@@ -146,7 +146,7 @@ describe('appendSpaceCols', () => {
       makeMatch({ point: 0, match_date: '2025/04/01', goal_get: '0', goal_lose: '1' }),
     ]);
     const originalGraphLength = col.graph.length;
-    appendSpaceCols(col, 1, col.avlbl_pt, 20, true, info);
+    assembleTeamColumn(col, 1, col.avlbl_pt, 20, true, info);
     expect(col.graph).toHaveLength(originalGraphLength);
   });
 });

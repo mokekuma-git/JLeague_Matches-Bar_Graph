@@ -46,8 +46,12 @@ export interface TeamMatch {
   live: boolean;
 }
 
-// Aggregated statistics written onto TeamData by make_html_column.
-// All fields are optional because they do not exist until make_html_column runs.
+// Classification of a single match result.
+// Used as both classifyResult() return type and TeamStats counter field names.
+export type MatchResult = 'win' | 'pk_win' | 'pk_loss' | 'draw' | 'loss';
+
+// Aggregated statistics written onto TeamData by calculateTeamStats.
+// All fields are optional because they do not exist until calculateTeamStats runs.
 export interface TeamStats {
   point?: number;
   avlbl_pt?: number;
@@ -60,13 +64,13 @@ export interface TeamStats {
   win?: number;
   pk_win?: number;
   pk_loss?: number;
-  lose?: number;
+  loss?: number;
   draw?: number;
   all_game?: number;
   disp_win?: number;
   disp_pk_win?: number;
   disp_pk_loss?: number;
-  disp_lose?: number;
+  disp_loss?: number;
   disp_draw?: number;
   disp_all_game?: number;
   rest_games?: Record<string, number>;      // opponent → remaining matches

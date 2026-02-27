@@ -1,19 +1,19 @@
 // Point calculation logic from match results.
 //
-// Scoring rules vary by PointSystem:
-//   standard:       Win 3 / Draw 1 / Loss 0 / PK-win 2 / PK-loss 1
-//   old-two-points: Win 2 / Draw 1 / Loss 0  (no PK in this system)
+// Each PointSystem defines a mapping from MatchResult to points awarded.
+// New scoring systems can be added by extending POINT_MAPS.
 
+import { POINT_MAPS } from '../types/config';
 import type { PointSystem } from '../types/config';
 
 /** Returns the maximum points earnable per game under the given point system. */
 export function getMaxPointsPerGame(ps: PointSystem = 'standard'): number {
-  return ps === 'old-two-points' ? 2 : 3;
+  return POINT_MAPS[ps].win;
 }
 
 /** Returns the points awarded for a win under the given point system. */
 export function getWinPoints(ps: PointSystem = 'standard'): number {
-  return ps === 'old-two-points' ? 2 : 3;
+  return POINT_MAPS[ps].win;
 }
 
 /**
@@ -35,12 +35,12 @@ export function getPointFromResult(
   pointSystem: PointSystem = 'standard',
 ): number {
   if (!(goalGet && goalLose)) return 0;
-  const winPts = getWinPoints(pointSystem);
-  if (goalGet > goalLose) return winPts;
-  if (goalGet < goalLose) return 0;
+  const map = POINT_MAPS[pointSystem];
+  if (goalGet > goalLose) return map.win;
+  if (goalGet < goalLose) return map.loss;
   // Draw after 90 min → determine by PK result
   if (pkGet !== null && pkLose !== null) {
-    return pkGet > pkLose ? winPts - 1 : 1;
+    return pkGet > pkLose ? map.pk_win : map.pk_loss;
   }
-  return 1;
+  return map.draw;
 }

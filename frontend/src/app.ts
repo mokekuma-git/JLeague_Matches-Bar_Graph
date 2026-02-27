@@ -20,7 +20,7 @@ import { prepareRenderData } from './core/prepare-render';
 import type { MatchSortKey } from './ranking/stats-calculator';
 import { makeRankData, makeRankTable } from './ranking/rank-table';
 import { renderBarGraph, findSliderIndex } from './graph/renderer';
-import { getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
+import { DEFAULT_HEIGHT_UNIT, getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
 
 // ---- Application state ------------------------------------------------
@@ -44,13 +44,30 @@ const state: AppState = {
   timestampMap: null,
   teamMapCache: null,
   currentMatchDates: [],
-  heightUnit: 20,
+  heightUnit: DEFAULT_HEIGHT_UNIT,
 };
 
 const DEFAULT_COMPETITION = 'J1';
+const DEFAULT_GROUP = 'matches';
 
 // CSV URL cache-busting: same bucket for requests within this window (seconds).
 const CACHE_BUST_WINDOW_SEC = 300; // 5 minutes
+
+// ---- Fixed dropdown options (generated into HTML by TS) ------------------
+
+const TEAM_SORT_OPTIONS = [
+  { value: 'disp_point',    label: '勝点(表示時)' },
+  { value: 'disp_avlbl_pt', label: '最大勝点(表示時)' },
+  { value: 'point',         label: '勝点(最新)' },
+  { value: 'avlbl_pt',      label: '最大勝点(最新)' },
+] as const;
+
+const MATCH_SORT_OPTIONS = [
+  { value: 'old_bottom',   label: '古い試合が下' },
+  { value: 'new_bottom',   label: '新しい試合が下' },
+  { value: 'first_bottom', label: '第1節が下' },
+  { value: 'last_bottom',  label: '最終節が下' },
+] as const;
 
 // ---- DOM helpers -------------------------------------------------------
 
@@ -116,14 +133,35 @@ function writeUrlParams(competition: string, season: string): void {
   history.replaceState(null, '', url.toString());
 }
 
+// ---- Fixed dropdown population -----------------------------------------
+
+type MatchSortUiValue = typeof MATCH_SORT_OPTIONS[number]['value'];
+
+function populateFixedSelect(
+  id: string,
+  options: ReadonlyArray<{ readonly value: string; readonly label: string }>,
+): void {
+  const sel = document.getElementById(id) as HTMLSelectElement | null;
+  if (!sel) return;
+  sel.innerHTML = '';
+  for (const { value, label } of options) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = label;
+    sel.appendChild(opt);
+  }
+}
+
 // ---- Match sort key mapping --------------------------------------------
 
 function getMatchSortKey(uiValue: string): MatchSortKey {
-  return ['first_bottom', 'last_bottom'].includes(uiValue) ? 'section_no' : 'match_date';
+  const v = uiValue as MatchSortUiValue;
+  return (v === 'first_bottom' || v === 'last_bottom') ? 'section_no' : 'match_date';
 }
 
 function isBottomFirst(uiValue: string): boolean {
-  return ['old_bottom', 'first_bottom'].includes(uiValue);
+  const v = uiValue as MatchSortUiValue;
+  return (v === 'old_bottom' || v === 'first_bottom');
 }
 
 // ---- Competition pulldown population -----------------------------------
@@ -133,12 +171,12 @@ function populateCompetitionPulldown(seasonMap: SeasonMap): void {
   sel.innerHTML = '';
   const groups = Object.entries(seasonMap);
   const multiGroup = groups.length > 1;
-  for (const [, group] of groups) {
+  for (const [groupKey, group] of groups) {
     if (multiGroup) {
       // Disabled separator showing group name (only when multiple groups exist)
       const sep = document.createElement('option');
       sep.disabled = true;
-      sep.textContent = `── ${group.display_name} ──`;
+      sep.textContent = `── ${group.display_name ?? groupKey} `;
       sel.appendChild(sep);
     }
 
@@ -200,7 +238,7 @@ function renderFromCache(
   if (!found) return;
   const entry = found.competition.seasons[season];
   if (!entry) return;
-  const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry);
+  const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry, found.groupKey);
 
   const { groupData, sortedTeams } = prepareRenderData({
     groupData: cache.groupData, seasonInfo, targetDate, sortKey, matchSortKey,
@@ -220,7 +258,7 @@ function renderFromCache(
     resetDateSlider(matchDates, targetDate);
   }
 
-  const rankData = makeRankData(groupData, sortedTeams, seasonInfo, disp);
+  const rankData = makeRankData(groupData, sortedTeams, seasonInfo, disp, cache.hasPk);
   const tableEl = document.getElementById('ranktable');
   if (tableEl) makeRankTable(tableEl, rankData, hasPk);
 }
@@ -245,7 +283,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     return;
   }
 
-  const leagueDisplay = resolveSeasonInfo(found.group, found.competition, found.competition.seasons[season]).leagueDisplay;
+  const leagueDisplay = resolveSeasonInfo(found.group, found.competition, found.competition.seasons[season], found.groupKey).leagueDisplay;
 
   writeUrlParams(competition, season);
   savePrefs({ competition, season, targetDate: targetDateRaw, teamSortKey: sortKey, matchSortKey: matchSortUiValue });
@@ -268,15 +306,15 @@ function loadAndRender(seasonMap: SeasonMap): void {
     download: true,
     complete: (results) => {
       const entry = found.competition.seasons[season];
-      const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry);
+      const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry, found.groupKey);
       const teamMap = parseCsvResults(
         results.data,
         results.meta.fields ?? [],
         seasonInfo.teams,
-        'matches',
+        DEFAULT_GROUP,
         seasonInfo.pointSystem,
       );
-      const groupData = teamMap['matches'] ?? {};
+      const groupData = teamMap[DEFAULT_GROUP] ?? {};
       const fields = results.meta.fields ?? [];
       const hasPk = fields.includes('home_pk_score') || fields.includes('home_pk');
 
@@ -307,10 +345,11 @@ async function main(): Promise<void> {
     return;
   }
 
-  const unit = getHeightUnit();
-  if (unit > 0) state.heightUnit = unit;
+  state.heightUnit = getHeightUnit();
 
   populateCompetitionPulldown(seasonMap);
+  populateFixedSelect('team_sort_key', TEAM_SORT_OPTIONS);
+  populateFixedSelect('match_sort_key', MATCH_SORT_OPTIONS);
 
   // Determine initial competition/season from URL params → localStorage → default
   const urlParams = readUrlParams();

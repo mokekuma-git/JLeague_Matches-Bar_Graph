@@ -1,4 +1,4 @@
-// Pure HTML-generation helpers: tooltip content, team stats, rank class, and CSS brightness.
+// Pure HTML-generation helpers: tooltip content, team stats, and rank class.
 // None of these functions access the DOM or global state.
 
 import type { TeamData, TeamMatch } from '../types/match';
@@ -36,15 +36,15 @@ export function makeTeamStats(teamData: TeamData, disp: boolean, hasPk = false):
   const p = (key: string): number =>
     (teamData as unknown as Record<string, number>)[pre + key] ?? 0;
   const pkLine = hasPk ? `${p('pk_win')}PK勝 ${p('pk_loss')}PK負 ` : '';
-  return `${label}<br/>${p('win')}勝 ${pkLine}${p('draw')}分 ${p('lose')}敗<br/>`
+  return `${label}<br/>${p('win')}勝 ${pkLine}${p('draw')}分 ${p('loss')}敗<br/>`
     + `勝点${p('point')}, 最大${p('avlbl_pt')}<br/>`
     + `${p('goal_get')}得点, ${p('goal_get') - p('goal_diff')}失点<br/>`
     + `得失点差: ${p('goal_diff')}`;
 }
 
 /** Joins loss-match content strings with <hr/> dividers. */
-export function joinLoseBox(loseBox: string[]): string {
-  return loseBox.join('<hr/>');
+export function joinLossBox(lossBox: string[]): string {
+  return lossBox.join('<hr/>');
 }
 
 /**
@@ -59,21 +59,3 @@ export function getRankClass(rank: number, seasonInfo: SeasonInfo): string {
   return '';
 }
 
-/**
- * Calculates perceived brightness of a hex color code with per-channel modifiers.
- * Returns 0.0 (darkest) to 1.0 (brightest). Useful for auto-selecting text color
- * (white on dark, black on light backgrounds).
- */
-export function getBright(
-  colorcode: string,
-  rgbMod: { r?: number; g?: number; b?: number },
-): number {
-  const code = colorcode.startsWith('#') ? colorcode.slice(1) : colorcode;
-  const channelLen = Math.floor(code.length / 3);
-  if (channelLen < 1) return 0;
-  const rgb = [0, 1, 2].map(i => parseInt(code.slice(channelLen * i, channelLen * (i + 1)), 16));
-  const rmod = rgbMod.r ?? 1;
-  const gmod = rgbMod.g ?? 1;
-  const bmod = rgbMod.b ?? 1;
-  return Math.max(rgb[0] * rmod, rgb[1] * gmod, rgb[2] * bmod) / 255;
-}

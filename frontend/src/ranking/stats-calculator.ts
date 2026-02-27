@@ -2,7 +2,7 @@
 // Populates disp_* and latest fields on TeamData in place.
 
 import type { PointSystem } from '../types/config';
-import type { TeamData, TeamMatch } from '../types/match';
+import type { MatchResult, TeamData, TeamMatch } from '../types/match';
 import { getMaxPointsPerGame, getWinPoints } from '../core/point-calculator';
 
 // Priority for sorting postponed/future matches (lower = earlier in graph display).
@@ -40,18 +40,18 @@ export function sortTeamMatches(
 }
 
 /**
- * Classifies a match result into win/pk_win/pk_loss/draw/lose.
+ * Classifies a match result into win/pk_win/pk_loss/draw/loss.
  * Returns TeamData field names so the result can be used to index stat counters.
  */
 export function classifyResult(
   point: number, pkGet: number | null, pointSystem: PointSystem,
-): 'win' | 'pk_win' | 'pk_loss' | 'draw' | 'lose' {
+): MatchResult {
   const winPt = getWinPoints(pointSystem);
   if (point >= winPt) return 'win';
   if (point >= 2 && pkGet !== null) return 'pk_win';
   if (point === 1 && pkGet !== null) return 'pk_loss';
   if (point === 1) return 'draw';
-  return 'lose';
+  return 'loss';
 }
 
 // Initializes all stat fields on teamData and accumulates them from teamData.df.
@@ -73,7 +73,7 @@ export function calculateTeamStats(
   teamData.win = 0;
   teamData.pk_win = 0;
   teamData.pk_loss = 0;
-  teamData.lose = 0;
+  teamData.loss = 0;
   teamData.draw = 0;
   teamData.all_game = 0;
   teamData.rest_games = {};
@@ -86,7 +86,7 @@ export function calculateTeamStats(
   teamData.disp_win = 0;
   teamData.disp_pk_win = 0;
   teamData.disp_pk_loss = 0;
-  teamData.disp_lose = 0;
+  teamData.disp_loss = 0;
   teamData.disp_draw = 0;
   teamData.disp_all_game = 0;
   teamData.disp_rest_games = {};

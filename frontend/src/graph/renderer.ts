@@ -5,9 +5,9 @@
 
 import type { TeamData } from '../types/match';
 import type { SeasonInfo } from '../types/season';
-import { makeHtmlColumn } from './bar-column';
+import { buildTeamColumn } from './bar-column';
 import type { ColumnResult } from './bar-column';
-import { getRankClass, joinLoseBox } from './tooltip';
+import { getRankClass, joinLossBox } from './tooltip';
 
 /** Return value of renderBarGraph, consumed by j_points.ts. */
 export interface RenderResult {
@@ -26,7 +26,7 @@ export interface RenderResult {
  *
  * Example: teamCount=20, promotion=3, relegation=4 → [3, 10, 16]
  */
-export function makeInsertColumns(seasonInfo: SeasonInfo): number[] {
+export function getScaleColumnPositions(seasonInfo: SeasonInfo): number[] {
   const columns: number[] = [Math.floor(seasonInfo.teamCount / 2)];
   if (seasonInfo.promotionCount !== 0) columns.unshift(seasonInfo.promotionCount);
   if (seasonInfo.relegationCount !== 0) columns.push(seasonInfo.teamCount - seasonInfo.relegationCount);
@@ -53,12 +53,12 @@ export function makePointColumn(maxAvblPt: number, bottomFirst: boolean): string
  *
  * Steps:
  *   1. Add a space box at the top (height = (maxAvblPt - col.avlbl_pt) × heightUnit px).
- *   2. If bottomFirst, reverse graph[] and loseBox[].
+ *   2. If bottomFirst, reverse graph[] and lossBox[].
  *   3. Wrap with rank_cell (top/bottom) and team_name tooltip boxes.
  *
  * Returns: <div id="TEAM_column">rank + name + boxes + name + rank</div>
  */
-export function appendSpaceCols(
+export function assembleTeamColumn(
   col: ColumnResult,
   rank: number,
   maxAvblPt: number,
@@ -68,7 +68,7 @@ export function appendSpaceCols(
 ): string {
   // Clone arrays so we don't mutate the original ColumnResult.
   const graph = [...col.graph];
-  const loseBox = [...col.loseBox];
+  const lossBox = [...col.lossBox];
 
   const spaceCols = maxAvblPt - col.avlbl_pt;
   if (spaceCols > 0) {
@@ -77,14 +77,14 @@ export function appendSpaceCols(
 
   if (bottomFirst) {
     graph.reverse();
-    loseBox.reverse();
+    lossBox.reverse();
   }
 
   const rankClass = getRankClass(rank, seasonInfo);
   const rankCell = `<div class="short box ${rankClass}">${rank}</div>`;
   const teamName = `<div class="short box tooltip ${col.teamName}">${col.teamName}`
     + `<span class=" tooltiptext fullW ${col.teamName}">`
-    + `成績情報:<hr/>${col.stats}<hr/>敗戦記録:<hr/>${joinLoseBox(loseBox)}</span></div>\n`;
+    + `成績情報:<hr/>${col.stats}<hr/>敗戦記録:<hr/>${joinLossBox(lossBox)}</span></div>\n`;
 
   return `<div id="${col.teamName}_column">${rankCell}${teamName}${graph.join('')}${teamName}${rankCell}</div>\n\n`;
 }
@@ -93,13 +93,13 @@ export function appendSpaceCols(
  * Generates the complete bar graph HTML.
  *
  * Pipeline:
- *   1. For each team, run makeHtmlColumn → collect ColumnResult and matchDates.
+ *   1. For each team, run buildTeamColumn → collect ColumnResult and matchDates.
  *   2. Compute max_avlbl_pt across all teams.
- *   3. Determine point column insertion positions (makeInsertColumns).
+ *   3. Determine point column insertion positions (getScaleColumnPositions).
  *   4. Assemble: point_column + [team columns with interleaved point columns] + point_column.
  *   5. Return { html, matchDates } — no DOM writes.
  *
- * @param groupData    TeamData map (stats NOT yet computed — computed inside makeHtmlColumn's
+ * @param groupData    TeamData map (stats NOT yet computed — computed inside buildTeamColumn's
  *                     caller calculateTeamStats, which must be called before this function).
  * @param sortedTeams  Team names in display order.
  * @param seasonInfo   Season configuration.
@@ -130,7 +130,7 @@ export function renderBarGraph(
   for (const teamName of sortedTeams) {
     const teamData = groupData[teamName];
     if (!teamData) continue;
-    const col = makeHtmlColumn(teamName, teamData, targetDate, disp, hasPk, seasonInfo.pointSystem);
+    const col = buildTeamColumn(teamName, teamData, targetDate, disp, hasPk, seasonInfo.pointSystem);
     columns[teamName] = col;
     maxAvblPt = Math.max(maxAvblPt, col.avlbl_pt);
     for (const d of col.matchDates) matchDateSet.add(d);
@@ -140,7 +140,7 @@ export function renderBarGraph(
 
   // Step 2: Build point column and insertion index set.
   const pointColumn = makePointColumn(maxAvblPt, bottomFirst);
-  const insertIndices = new Set(makeInsertColumns(seasonInfo));
+  const insertIndices = new Set(getScaleColumnPositions(seasonInfo));
 
   // Step 3: Assemble full HTML.
   let html = pointColumn;
@@ -148,7 +148,7 @@ export function renderBarGraph(
     if (insertIndices.has(index)) html += pointColumn;
     const col = columns[teamName];
     if (col) {
-      html += appendSpaceCols(col, index + 1, maxAvblPt, heightUnit, bottomFirst, seasonInfo);
+      html += assembleTeamColumn(col, index + 1, maxAvblPt, heightUnit, bottomFirst, seasonInfo);
     }
   });
   html += pointColumn;

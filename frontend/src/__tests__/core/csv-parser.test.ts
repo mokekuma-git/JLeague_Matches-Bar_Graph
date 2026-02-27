@@ -283,7 +283,7 @@ describe('parseCsvResults', () => {
       const td = result['DefaultGroup']['TeamB'];
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.point).toBe(0);
-      expect(td.lose).toBe(2);
+      expect(td.loss).toBe(2);
       expect(td.goal_get).toBe(1);
       expect(td.goal_diff).toBe(-2);
     });
