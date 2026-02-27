@@ -171,12 +171,12 @@ function populateCompetitionPulldown(seasonMap: SeasonMap): void {
   sel.innerHTML = '';
   const groups = Object.entries(seasonMap);
   const multiGroup = groups.length > 1;
-  for (const [, group] of groups) {
+  for (const [groupKey, group] of groups) {
     if (multiGroup) {
       // Disabled separator showing group name (only when multiple groups exist)
       const sep = document.createElement('option');
       sep.disabled = true;
-      sep.textContent = `── ${group.display_name} `;
+      sep.textContent = `── ${group.display_name ?? groupKey} `;
       sel.appendChild(sep);
     }
 
@@ -238,7 +238,7 @@ function renderFromCache(
   if (!found) return;
   const entry = found.competition.seasons[season];
   if (!entry) return;
-  const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry);
+  const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry, found.groupKey);
 
   const { groupData, sortedTeams } = prepareRenderData({
     groupData: cache.groupData, seasonInfo, targetDate, sortKey, matchSortKey,
@@ -283,7 +283,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     return;
   }
 
-  const leagueDisplay = resolveSeasonInfo(found.group, found.competition, found.competition.seasons[season]).leagueDisplay;
+  const leagueDisplay = resolveSeasonInfo(found.group, found.competition, found.competition.seasons[season], found.groupKey).leagueDisplay;
 
   writeUrlParams(competition, season);
   savePrefs({ competition, season, targetDate: targetDateRaw, teamSortKey: sortKey, matchSortKey: matchSortUiValue });
@@ -306,7 +306,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     download: true,
     complete: (results) => {
       const entry = found.competition.seasons[season];
-      const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry);
+      const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry, found.groupKey);
       const teamMap = parseCsvResults(
         results.data,
         results.meta.fields ?? [],

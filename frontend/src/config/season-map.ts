@@ -61,6 +61,7 @@ export function resolveSeasonInfo(
   group: GroupEntry,
   comp: CompetitionEntry,
   entry: RawSeasonEntry,
+  groupKey: string = '',
 ): SeasonInfo {
   const opts = entry[4] ?? {};
 
@@ -83,7 +84,8 @@ export function resolveSeasonInfo(
   // Scalars: lowest defined level wins
   const leagueDisplay = opts.league_display
     ?? comp.league_display
-    ?? group.display_name;
+    ?? group.display_name
+    ?? groupKey;
 
   const pointSystem: PointSystem = opts.point_system
     ?? comp.point_system

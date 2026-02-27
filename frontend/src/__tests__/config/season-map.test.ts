@@ -192,6 +192,15 @@ describe('resolveSeasonInfo', () => {
     expect(info.leagueDisplay).toBe('Test Group');
   });
 
+  test('fallback to groupKey when no display_name and no league_display', () => {
+    const comp: CompetitionEntry = { seasons: {} };
+    const group: GroupEntry = { competitions: {} };
+    const entry: RawSeasonEntry = [10, 0, 0, []];
+    const info = resolveSeasonInfo(group, comp, entry, 'my_group');
+
+    expect(info.leagueDisplay).toBe('my_group');
+  });
+
   test('tiebreakOrder defaults to ["goal_diff", "goal_get"]', () => {
     const entry: RawSeasonEntry = [20, 3, 3, []];
     const info = resolveSeasonInfo(sampleGroup, sampleGroup.competitions.J1, entry);
