@@ -1,6 +1,6 @@
 // Bar graph column builder: generates box-graph HTML for a single team.
 //
-// Precondition: call calculateTeamStats(teamData, ...) before makeHtmlColumn.
+// Precondition: call calculateTeamStats(teamData, ...) before buildTeamColumn.
 // calculateTeamStats handles stat accumulation and sorts teamData.df in place.
 
 import type { PointSystem } from '../types/config';
@@ -17,13 +17,19 @@ import {
 } from './tooltip';
 
 /** CSS class name for box height based on point value. */
+const BOX_HEIGHT_CLASS: Record<number, string> = {
+  3: 'tall',
+  2: 'medium',
+  1: 'short',
+};
+
 function boxHeightClass(pointValue: number): string {
-  if (pointValue >= 3) return 'tall';
-  if (pointValue === 2) return 'medium';
-  return 'short';
+  const cls = BOX_HEIGHT_CLASS[pointValue];
+  if (!cls) throw new Error(`No CSS height class for point value ${pointValue}`);
+  return cls;
 }
 
-/** Result returned by makeHtmlColumn, consumed by appendSpaceCols (renderer). */
+/** Result returned by buildTeamColumn, consumed by assembleTeamColumn (renderer). */
 export interface ColumnResult {
   /** Box HTML strings in display order (before any reversal by the renderer). */
   graph: string[];
@@ -62,7 +68,7 @@ export interface ColumnResult {
  * @param hasPk      true → PK columns exist in the CSV.
  * @param pointSystem Scoring system.
  */
-export function makeHtmlColumn(
+export function buildTeamColumn(
   teamName: string,
   teamData: TeamData,
   targetDate: string,

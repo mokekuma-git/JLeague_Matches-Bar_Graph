@@ -5,7 +5,7 @@ import type { TeamData } from '../types/match';
 import { getMaxPointsPerGame } from './point-calculator';
 
 // Numeric fields extracted from TeamData for point/relegation line calculations.
-// All fields are guaranteed to exist once makeHtmlColumn has run.
+// All fields are guaranteed to exist once buildTeamColumn has run.
 export interface PointCacheEntry {
   point: number;
   avlbl_pt: number;

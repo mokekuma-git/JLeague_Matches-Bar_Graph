@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { makeHtmlColumn } from '../../graph/bar-column';
+import { buildTeamColumn } from '../../graph/bar-column';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
 import { makeMatch, makeTeamData } from '../fixtures/match-data';
 
@@ -14,12 +14,12 @@ function buildColumn(
 ) {
   const td = makeTeamData(matches);
   calculateTeamStats(td, target, 'section_no');
-  return { result: makeHtmlColumn(TEAM, td, target, disp), td };
+  return { result: buildTeamColumn(TEAM, td, target, disp), td };
 }
 
 // ─── box class per result type ─────────────────────────────────────────────────
 
-describe('makeHtmlColumn – box class per result type', () => {
+describe('buildTeamColumn – box class per result type', () => {
   test('win (3 pt, within cutoff) → tall box in graph', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/15' }),
@@ -70,7 +70,7 @@ describe('makeHtmlColumn – box class per result type', () => {
 
 // ─── future / display-future matches ──────────────────────────────────────────
 
-describe('makeHtmlColumn – future and display-future boxes', () => {
+describe('buildTeamColumn – future and display-future boxes', () => {
   test('unplayed match → tall box with "future bg" class', () => {
     const { result } = buildColumn([
       makeMatch({ has_result: false, goal_get: '', goal_lose: '', point: 0, match_date: '2025/05/01' }),
@@ -96,7 +96,7 @@ describe('makeHtmlColumn – future and display-future boxes', () => {
 
 // ─── live match flag ───────────────────────────────────────────────────────────
 
-describe('makeHtmlColumn – live match styling', () => {
+describe('buildTeamColumn – live match styling', () => {
   test('live win → "tall box live" CSS class', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: '1', goal_lose: '0', point: 3, match_date: '2025/03/15', live: true, status: '前半' }),
@@ -121,7 +121,7 @@ describe('makeHtmlColumn – live match styling', () => {
 
 // ─── avlbl_pt always equals disp_avlbl_pt ──────────────────────────────────────
 
-describe('makeHtmlColumn – avlbl_pt is always disp_avlbl_pt', () => {
+describe('buildTeamColumn – avlbl_pt is always disp_avlbl_pt', () => {
   // Win in March (within cutoff) + loss in April (after cutoff):
   //   avlbl_pt     = 3   (win only; April loss contributes 0 to latest)
   //   disp_avlbl_pt = 6  (3 win + 3 potential for April gray box)
@@ -147,15 +147,15 @@ describe('makeHtmlColumn – avlbl_pt is always disp_avlbl_pt', () => {
   test('disp flag does not change avlbl_pt (both use disp_avlbl_pt)', () => {
     const td = makeTeamData(MATCHES);
     calculateTeamStats(td, TARGET, 'section_no');
-    const latestAP = makeHtmlColumn(TEAM, td, TARGET, false).avlbl_pt;
-    const dispAP   = makeHtmlColumn(TEAM, td, TARGET, true).avlbl_pt;
+    const latestAP = buildTeamColumn(TEAM, td, TARGET, false).avlbl_pt;
+    const dispAP   = buildTeamColumn(TEAM, td, TARGET, true).avlbl_pt;
     expect(latestAP).toBe(dispAP); // both = disp_avlbl_pt = 6
   });
 });
 
 // ─── matchDates collection ─────────────────────────────────────────────────────
 
-describe('makeHtmlColumn – matchDates', () => {
+describe('buildTeamColumn – matchDates', () => {
   test('collects YYYY/MM/DD dates from played matches', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: '1', goal_lose: '0', point: 3, match_date: '2025/03/01' }),
@@ -184,7 +184,7 @@ describe('makeHtmlColumn – matchDates', () => {
 
 // ─── lossBox content ───────────────────────────────────────────────────────────
 
-describe('makeHtmlColumn – lossBox content', () => {
+describe('buildTeamColumn – lossBox content', () => {
   test('lossBox entry contains match details from makeFullContent', () => {
     const { result } = buildColumn([
       makeMatch({
@@ -208,11 +208,11 @@ describe('makeHtmlColumn – lossBox content', () => {
 
 // ─── old-two-points system ─────────────────────────────────────────────────────
 
-describe('makeHtmlColumn – old-two-points system', () => {
+describe('buildTeamColumn – old-two-points system', () => {
   function buildOldColumn(matches: ReturnType<typeof makeMatch>[]) {
     const td = makeTeamData(matches);
     calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
-    return { result: makeHtmlColumn(TEAM, td, TARGET, false, false, 'old-two-points'), td };
+    return { result: buildTeamColumn(TEAM, td, TARGET, false, false, 'old-two-points'), td };
   }
 
   test('win (2 pt) → medium box', () => {
