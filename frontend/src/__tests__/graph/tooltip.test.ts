@@ -1,8 +1,9 @@
 import { describe, test, expect } from 'vitest';
 import {
   makeWinContent, makePkWinContent, makeDrawContent, makeFullContent,
-  makeTeamStats, joinLossBox, getRankClass, getBright,
+  makeTeamStats, joinLossBox, getRankClass,
 } from '../../graph/tooltip';
+import { getBright } from '../../graph/css-utils';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
 import { makeMatch, makeTeamData, makeSeasonInfo } from '../fixtures/match-data';
 

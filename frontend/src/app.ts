@@ -20,7 +20,7 @@ import { prepareRenderData } from './core/prepare-render';
 import type { MatchSortKey } from './ranking/stats-calculator';
 import { makeRankData, makeRankTable } from './ranking/rank-table';
 import { renderBarGraph, findSliderIndex } from './graph/renderer';
-import { getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
+import { DEFAULT_HEIGHT_UNIT, getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
 
 // ---- Application state ------------------------------------------------
@@ -44,7 +44,7 @@ const state: AppState = {
   timestampMap: null,
   teamMapCache: null,
   currentMatchDates: [],
-  heightUnit: 20,
+  heightUnit: DEFAULT_HEIGHT_UNIT,
 };
 
 const DEFAULT_COMPETITION = 'J1';
@@ -345,8 +345,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const unit = getHeightUnit();
-  if (unit > 0) state.heightUnit = unit;
+  state.heightUnit = getHeightUnit();
 
   populateCompetitionPulldown(seasonMap);
   populateFixedSelect('team_sort_key', TEAM_SORT_OPTIONS);

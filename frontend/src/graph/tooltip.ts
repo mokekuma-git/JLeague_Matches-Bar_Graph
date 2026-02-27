@@ -1,4 +1,4 @@
-// Pure HTML-generation helpers: tooltip content, team stats, rank class, and CSS brightness.
+// Pure HTML-generation helpers: tooltip content, team stats, and rank class.
 // None of these functions access the DOM or global state.
 
 import type { TeamData, TeamMatch } from '../types/match';
@@ -59,21 +59,3 @@ export function getRankClass(rank: number, seasonInfo: SeasonInfo): string {
   return '';
 }
 
-/**
- * Calculates perceived brightness of a hex color code with per-channel modifiers.
- * Returns 0.0 (darkest) to 1.0 (brightest). Useful for auto-selecting text color
- * (white on dark, black on light backgrounds).
- */
-export function getBright(
-  colorcode: string,
-  rgbMod: { r?: number; g?: number; b?: number },
-): number {
-  const code = colorcode.startsWith('#') ? colorcode.slice(1) : colorcode;
-  const channelLen = Math.floor(code.length / 3);
-  if (channelLen < 1) return 0;
-  const rgb = [0, 1, 2].map(i => parseInt(code.slice(channelLen * i, channelLen * (i + 1)), 16));
-  const rmod = rgbMod.r ?? 1;
-  const gmod = rgbMod.g ?? 1;
-  const bmod = rgbMod.b ?? 1;
-  return Math.max(rgb[0] * rmod, rgb[1] * gmod, rgb[2] * bmod) / 255;
-}

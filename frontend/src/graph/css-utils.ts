@@ -1,12 +1,33 @@
-// CSS rule manipulation for j_points.css dynamic styles.
-//
-// All functions require a browser environment (CSSStyleSheet API).
-// No unit tests — DOM-only; vitest runs in node environment.
+// CSS rule manipulation and color utilities for j_points.css dynamic styles.
 
-import { getBright } from './tooltip';
+// ---- Pure helpers (no DOM) ------------------------------------------------
+
+/**
+ * Calculates perceived brightness of a hex color code with per-channel modifiers.
+ * Returns 0.0 (darkest) to 1.0 (brightest). Used for auto-selecting text color
+ * (white on dark, black on light backgrounds).
+ */
+export function getBright(
+  colorcode: string,
+  rgbMod: { r?: number; g?: number; b?: number },
+): number {
+  const code = colorcode.startsWith('#') ? colorcode.slice(1) : colorcode;
+  const channelLen = Math.floor(code.length / 3);
+  if (channelLen < 1) return 0;
+  const rgb = [0, 1, 2].map(i => parseInt(code.slice(channelLen * i, channelLen * (i + 1)), 16));
+  const rmod = rgbMod.r ?? 1;
+  const gmod = rgbMod.g ?? 1;
+  const bmod = rgbMod.b ?? 1;
+  return Math.max(rgb[0] * rmod, rgb[1] * gmod, rgb[2] * bmod) / 255;
+}
 
 // Per-channel brightness modifiers for text-color auto-selection on .space backgrounds.
 const RGB_MOD = { r: 0.9, g: 0.8, b: 0.4 } as const;
+
+// Fallback when .short CSS rule is not found (matches j_points.css default).
+export const DEFAULT_HEIGHT_UNIT = 20;
+
+// ---- DOM-dependent functions ----------------------------------------------
 
 /**
  * Finds and returns the CSSStyleRule matching `selector` in j_points.css.
@@ -15,7 +36,7 @@ const RGB_MOD = { r: 0.9, g: 0.8, b: 0.4 } as const;
 export function getCssRule(selector: string): CSSStyleRule | undefined {
   let sheet: CSSStyleSheet | undefined;
   for (const s of Array.from(document.styleSheets)) {
-    if (s.href && s.href.endsWith('j_points.css')) {
+    if (s.href && s.href.endsWith('/j_points.css')) {
       sheet = s;
       break;
     }
@@ -31,20 +52,19 @@ export function getCssRule(selector: string): CSSStyleRule | undefined {
 
 /**
  * Returns the height in px of the `.short` CSS class (used as HEIGHT_UNIT).
- * Returns 0 if the rule is not found or has no height set.
+ * Falls back to DEFAULT_HEIGHT_UNIT if the rule is not found or has no height set.
  * Call once after CSS has loaded.
  */
 export function getHeightUnit(): number {
   const rule = getCssRule('.short');
-  if (!rule) return 0;
-  return parseInt(rule.style.height, 10) || 0;
+  if (!rule) return DEFAULT_HEIGHT_UNIT;
+  return parseInt(rule.style.height, 10) || DEFAULT_HEIGHT_UNIT;
 }
 
 /**
  * Sets the opacity of the `.future` CSS class.
  * updateSlider=true (default) → also updates #future_opacity slider value and
  * writes current value to #current_opacity display span.
- * No localStorage writes (Phase 3b).
  */
 export function setFutureOpacity(value: string, updateSlider = true): void {
   const rule = getCssRule('.future');
@@ -62,7 +82,6 @@ export function setFutureOpacity(value: string, updateSlider = true): void {
  * Sets the background color of the `.space` CSS class.
  * Automatically chooses black or white text based on perceived brightness.
  * updateColorPicker=true (default) → also updates #space_color picker value.
- * No localStorage writes (Phase 3b).
  */
 export function setSpace(value: string, updateColorPicker = true): void {
   const rule = getCssRule('.space');
@@ -79,7 +98,6 @@ export function setSpace(value: string, updateColorPicker = true): void {
  * Applies CSS transform scale to boxCon and adjusts its height.
  * Height is set to .point_column clientHeight × scale to prevent overflow.
  * updateSlider=true (default) → also updates #scale_slider value and #current_scale display.
- * No localStorage writes (Phase 3b).
  */
 export function setScale(boxCon: HTMLElement, value: string, updateSlider = true): void {
   boxCon.style.transform = `scale(${value})`;
