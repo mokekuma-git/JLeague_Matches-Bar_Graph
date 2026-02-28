@@ -125,13 +125,75 @@ describe('getSortedTeamList', () => {
     expect(result[0]).toBe('TeamB');
   });
 
-  test('avlbl_pt sort uses point as secondary tiebreaker', () => {
+  test('avlbl_pt sort applies tiebreakers (not implicit point)', () => {
     const teams = {
-      TeamA: makeStats({ avlbl_pt: 30, point: 10, goal_diff: 0, goal_get: 0 }),
-      TeamB: makeStats({ avlbl_pt: 30, point: 20, goal_diff: 0, goal_get: 0 }),
+      TeamA: makeStats({ avlbl_pt: 30, point: 10, goal_diff: 8, goal_get: 15 }),
+      TeamB: makeStats({ avlbl_pt: 30, point: 20, goal_diff: 3, goal_get: 10 }),
     };
+    // Same avlbl_pt → default tiebreakers: goal_diff TeamA(8) > TeamB(3)
+    // TeamA wins despite lower point
     const result = getSortedTeamList(teams, 'avlbl_pt');
-    expect(result[0]).toBe('TeamB'); // same avlbl_pt, higher point wins
+    expect(result[0]).toBe('TeamA');
+    expect(result[1]).toBe('TeamB');
+  });
+
+  test('avlbl_pt sort: different values sort descending', () => {
+    const teams = {
+      TeamA: makeStats({ avlbl_pt: 50 }),
+      TeamB: makeStats({ avlbl_pt: 30 }),
+      TeamC: makeStats({ avlbl_pt: 40 }),
+    };
+    expect(getSortedTeamList(teams, 'avlbl_pt')).toEqual(['TeamA', 'TeamC', 'TeamB']);
+  });
+
+  test('avlbl_pt sort respects custom tiebreakOrder', () => {
+    const teams = {
+      TeamA: makeStats({ avlbl_pt: 30, point: 10, goal_diff: 5, goal_get: 18, win: 3 }),
+      TeamB: makeStats({ avlbl_pt: 30, point: 20, goal_diff: 8, goal_get: 15, win: 6 }),
+    };
+    // ['wins', 'goal_diff']: wins TeamB(6) > TeamA(3) → TeamB first
+    const result = getSortedTeamList(teams, 'avlbl_pt', ['wins', 'goal_diff']);
+    expect(result[0]).toBe('TeamB');
+  });
+
+  test('avlbl_pt sort: H2H tiebreaker works for tied avlbl_pt teams', () => {
+    const teams = {
+      TeamA: makeTeamWithMatches(
+        [makeMatch({ opponent: 'TeamB', goal_get: 2, goal_lose: 1, point: 3 })],
+        { avlbl_pt: 30, point: 10, goal_diff: 0, goal_get: 2, win: 1 },
+      ),
+      TeamB: makeTeamWithMatches(
+        [makeMatch({ opponent: 'TeamA', goal_get: 1, goal_lose: 2, point: 0, is_home: false })],
+        { avlbl_pt: 30, point: 20, goal_diff: 0, goal_get: 4, win: 1 },
+      ),
+    };
+    // H2H: TeamA beat TeamB → TeamA first (despite lower point)
+    const result = getSortedTeamList(teams, 'avlbl_pt', ['head_to_head', 'goal_diff']);
+    expect(result[0]).toBe('TeamA');
+  });
+
+  test('disp_avlbl_pt sort applies tiebreakers using displayStats', () => {
+    const teams = {
+      TeamA: makeStats(
+        { avlbl_pt: 50, goal_diff: 2 },
+        { avlbl_pt: 30, goal_diff: 8 },
+      ),
+      TeamB: makeStats(
+        { avlbl_pt: 50, goal_diff: 10 },
+        { avlbl_pt: 30, goal_diff: 3 },
+      ),
+    };
+    // disp_avlbl_pt → displayStats: same avlbl_pt(30), goal_diff TeamA(8) > TeamB(3)
+    const result = getSortedTeamList(teams, 'disp_avlbl_pt');
+    expect(result[0]).toBe('TeamA');
+  });
+
+  test('avlbl_pt sort: fully tied teams preserve insertion order', () => {
+    const teams = {
+      TeamA: makeStats({ avlbl_pt: 30, goal_diff: 0, goal_get: 0 }),
+      TeamB: makeStats({ avlbl_pt: 30, goal_diff: 0, goal_get: 0 }),
+    };
+    expect(getSortedTeamList(teams, 'avlbl_pt')).toEqual(['TeamA', 'TeamB']);
   });
 
   test('disp_ variants use displayStats for tiebreakers', () => {
