@@ -6,6 +6,7 @@ import type { MatchResult } from './match';
 export const POINT_MAPS = {
   'standard':       { win: 3, pk_win: 2, pk_loss: 1, draw: 1, loss: 0 },
   'old-two-points': { win: 2, pk_win: 1, pk_loss: 1, draw: 1, loss: 0 },
+  'victory-count':  { win: 3, pk_win: 3, pk_loss: 0, draw: 0, loss: 0 },
 } satisfies Record<string, Record<MatchResult, number>>;
 
 // Derived from POINT_MAPS keys. To add a new scoring system, add an entry above.

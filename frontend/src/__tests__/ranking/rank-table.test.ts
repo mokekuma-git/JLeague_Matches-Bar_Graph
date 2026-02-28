@@ -608,21 +608,29 @@ describe('makeRankTable – thead hasPk=true', () => {
     expect(ids).toContain('pk_loss');
   });
 
-  test('pk_win appears immediately after win, pk_loss after pk_win', () => {
+  test('pk_win appears immediately after loss, pk_loss after pk_win', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], true);
+    const ids = getHeaderIds(table);
+    const lossIdx   = ids.indexOf('loss');
+    const pkWinIdx  = ids.indexOf('pk_win');
+    const pkLossIdx = ids.indexOf('pk_loss');
+    expect(pkWinIdx).toBe(lossIdx + 1);
+    expect(pkLossIdx).toBe(pkWinIdx + 1);
+  });
+
+  test('column order is win → draw → loss → pk_win → pk_loss when hasPk=true', () => {
     const table = makeTableEl();
     makeRankTable(table, [], true);
     const ids = getHeaderIds(table);
     const winIdx    = ids.indexOf('win');
+    const drawIdx   = ids.indexOf('draw');
+    const lossIdx   = ids.indexOf('loss');
     const pkWinIdx  = ids.indexOf('pk_win');
     const pkLossIdx = ids.indexOf('pk_loss');
-    expect(pkWinIdx).toBe(winIdx + 1);
+    expect(drawIdx).toBe(winIdx + 1);
+    expect(lossIdx).toBe(drawIdx + 1);
+    expect(pkWinIdx).toBe(lossIdx + 1);
     expect(pkLossIdx).toBe(pkWinIdx + 1);
-  });
-
-  test('draw comes after pk_loss when hasPk=true', () => {
-    const table = makeTableEl();
-    makeRankTable(table, [], true);
-    const ids = getHeaderIds(table);
-    expect(ids.indexOf('draw')).toBe(ids.indexOf('pk_loss') + 1);
   });
 });
