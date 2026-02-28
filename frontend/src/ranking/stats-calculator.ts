@@ -1,7 +1,8 @@
 // Stats accumulation for team data: port of the stats part of make_html_column.
-// Populates disp_* and latest fields on TeamData in place.
+// Populates latestStats and displayStats on TeamData in place.
 
 import type { PointSystem } from '../types/config';
+import { TeamStats } from '../types/match';
 import type { MatchResult, TeamData, TeamMatch } from '../types/match';
 import { getMaxPointsPerGame, getWinPoints } from '../core/point-calculator';
 
@@ -41,7 +42,6 @@ export function sortTeamMatches(
 
 /**
  * Classifies a match result into win/pk_win/pk_loss/draw/loss.
- * Returns TeamData field names so the result can be used to index stat counters.
  */
 export function classifyResult(
   point: number, pkGet: number | null, pointSystem: PointSystem,
@@ -54,9 +54,9 @@ export function classifyResult(
   return 'loss';
 }
 
-// Initializes all stat fields on teamData and accumulates them from teamData.df.
+// Initializes latestStats/displayStats on teamData and accumulates them from teamData.df.
 // Also sorts teamData.df. Mutates teamData in place.
-// targetDate: 'YYYY/MM/DD' — matches on or before this date count toward disp_ stats.
+// targetDate: 'YYYY/MM/DD' — matches on or before this date count toward displayStats.
 export function calculateTeamStats(
   teamData: TeamData,
   targetDate: string,
@@ -64,69 +64,25 @@ export function calculateTeamStats(
   pointSystem: PointSystem = 'standard',
 ): void {
   const maxPt = getMaxPointsPerGame(pointSystem);
-
-  // Initialize latest stats
-  teamData.point = 0;
-  teamData.avlbl_pt = 0;
-  teamData.goal_diff = 0;
-  teamData.goal_get = 0;
-  teamData.win = 0;
-  teamData.pk_win = 0;
-  teamData.pk_loss = 0;
-  teamData.loss = 0;
-  teamData.draw = 0;
-  teamData.all_game = 0;
-  teamData.rest_games = {};
-
-  // Initialize display-time stats
-  teamData.disp_avlbl_pt = 0;
-  teamData.disp_point = 0;
-  teamData.disp_goal_diff = 0;
-  teamData.disp_goal_get = 0;
-  teamData.disp_win = 0;
-  teamData.disp_pk_win = 0;
-  teamData.disp_pk_loss = 0;
-  teamData.disp_loss = 0;
-  teamData.disp_draw = 0;
-  teamData.disp_all_game = 0;
-  teamData.disp_rest_games = {};
+  teamData.latestStats = new TeamStats();
+  teamData.displayStats = new TeamStats();
 
   sortTeamMatches(teamData, targetDate, matchSortKey);
 
   for (const row of teamData.df) {
     if (!row.has_result) {
-      // Unplayed match: counts as future for both latest and display views
-      teamData.avlbl_pt += maxPt;
-      teamData.disp_avlbl_pt += maxPt;
-      teamData.rest_games[row.opponent] = (teamData.rest_games[row.opponent] ?? 0) + 1;
-      teamData.disp_rest_games[row.opponent] = (teamData.disp_rest_games[row.opponent] ?? 0) + 1;
+      teamData.latestStats.addUnplayedMatch(row.opponent, maxPt);
+      teamData.displayStats.addUnplayedMatch(row.opponent, maxPt);
     } else {
-      // Completed match: always counts toward latest stats
-      teamData.point += row.point;
-      teamData.avlbl_pt += row.point;
-      teamData.all_game += 1;
       const cls = classifyResult(row.point, row.pk_get, pointSystem);
-      (teamData[cls] as number) += 1;
-      teamData.goal_diff += (row.goal_get ?? 0) - (row.goal_lose ?? 0);
-      teamData.goal_get += row.goal_get ?? 0;
-
+      teamData.latestStats.recordMatch(cls, row.goal_get ?? 0, row.goal_lose ?? 0, row.point);
       if (row.match_date <= targetDate) {
-        // Within display window: also counts toward disp_ stats
-        const dispKey = ('disp_' + cls) as keyof TeamData;
-        (teamData[dispKey] as number) += 1;
-        teamData.disp_all_game += 1;
-        teamData.disp_point += row.point;
-        teamData.disp_avlbl_pt += row.point;
-        teamData.disp_goal_diff += (row.goal_get ?? 0) - (row.goal_lose ?? 0);
-        teamData.disp_goal_get += row.goal_get ?? 0;
+        teamData.displayStats.recordMatch(cls, row.goal_get ?? 0, row.goal_lose ?? 0, row.point);
       } else {
-        // After display cutoff: treat as future for display purposes
-        teamData.disp_avlbl_pt += maxPt;
-        teamData.disp_rest_games[row.opponent] = (teamData.disp_rest_games[row.opponent] ?? 0) + 1;
+        teamData.displayStats.addUnplayedMatch(row.opponent, maxPt);
       }
     }
   }
-
-  teamData.avrg_pt = teamData.all_game === 0 ? 0 : teamData.point / teamData.all_game;
-  teamData.disp_avrg_pt = teamData.disp_all_game === 0 ? 0 : teamData.disp_point / teamData.disp_all_game;
+  teamData.latestStats.finalize();
+  teamData.displayStats.finalize();
 }

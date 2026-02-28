@@ -133,18 +133,18 @@ describe('buildTeamColumn – avlbl_pt is always disp_avlbl_pt', () => {
     makeMatch({ goal_get: 0, goal_lose: 1, point: 0, match_date: '2025/04/15', section_no: 2 }),
   ];
 
-  test('disp=false → avlbl_pt equals disp_avlbl_pt (not latest avlbl_pt)', () => {
+  test('disp=false → avlbl_pt equals displayStats.avlbl_pt (not latestStats.avlbl_pt)', () => {
     const { result, td } = buildColumn(MATCHES, false);
-    expect(result.avlbl_pt).toBe(td.disp_avlbl_pt); // 6
-    expect(result.avlbl_pt).not.toBe(td.avlbl_pt);  // not 3
+    expect(result.avlbl_pt).toBe(td.displayStats.avlbl_pt); // 6
+    expect(result.avlbl_pt).not.toBe(td.latestStats.avlbl_pt);  // not 3
   });
 
-  test('disp=true → avlbl_pt also equals disp_avlbl_pt', () => {
+  test('disp=true → avlbl_pt also equals displayStats.avlbl_pt', () => {
     const { result, td } = buildColumn(MATCHES, true);
-    expect(result.avlbl_pt).toBe(td.disp_avlbl_pt); // 6
+    expect(result.avlbl_pt).toBe(td.displayStats.avlbl_pt); // 6
   });
 
-  test('disp flag does not change avlbl_pt (both use disp_avlbl_pt)', () => {
+  test('disp flag does not change avlbl_pt (both use displayStats.avlbl_pt)', () => {
     const td = makeTeamData(MATCHES);
     calculateTeamStats(td, TARGET, 'section_no');
     const latestAP = buildTeamColumn(TEAM, td, TARGET, false).avlbl_pt;

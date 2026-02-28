@@ -1,6 +1,7 @@
 // CSV parsing: converts PapaParse-processed rows into a TeamMap.
 
 import type { PointSystem } from '../types/config';
+import { TeamStats } from '../types/match';
 import type { RawMatchRow, TeamMap, TeamMatch } from '../types/match';
 import { dateFormat } from './date-utils';
 import { getPointFromResult } from './point-calculator';
@@ -77,11 +78,11 @@ export function parseCsvResults(
     if (!(group in teamMap)) {
       teamMap[group] = {};
       for (const teamName of teamList) {
-        teamMap[group][teamName] = { df: [] };
+        teamMap[group][teamName] = { df: [], latestStats: new TeamStats(), displayStats: new TeamStats() };
       }
     }
-    if (!(match.home_team in teamMap[group])) teamMap[group][match.home_team] = { df: [] };
-    if (!(match.away_team in teamMap[group])) teamMap[group][match.away_team] = { df: [] };
+    if (!(match.home_team in teamMap[group])) teamMap[group][match.home_team] = { df: [], latestStats: new TeamStats(), displayStats: new TeamStats() };
+    if (!(match.away_team in teamMap[group])) teamMap[group][match.away_team] = { df: [], latestStats: new TeamStats(), displayStats: new TeamStats() };
 
     let matchDateStr = match.match_date;
     const matchDate = new Date(match.match_date);

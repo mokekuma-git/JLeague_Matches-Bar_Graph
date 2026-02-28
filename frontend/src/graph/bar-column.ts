@@ -33,7 +33,7 @@ function boxHeightClass(pointValue: number): string {
 export interface ColumnResult {
   /** Box HTML strings in display order (before any reversal by the renderer). */
   graph: string[];
-  /** Display-mode maximum points (disp_avlbl_pt or avlbl_pt). Used for space calculation. */
+  /** Maximum points (displayStats.avlbl_pt). Used for space calculation. */
   avlbl_pt: number;
   teamName: string;
   /** Full-match content strings for loss matches (shown in team stats tooltip). */
@@ -64,7 +64,7 @@ export interface ColumnResult {
  * @param teamName   Team identifier (used as CSS class on boxes and tooltips).
  * @param teamData   TeamData with stats already computed by calculateTeamStats.
  * @param targetDate Display cutoff date 'YYYY/MM/DD'.
- * @param disp       true → column height uses disp_avlbl_pt; false → avlbl_pt.
+ * @param disp       true → tooltip uses displayStats; false → latestStats.
  * @param hasPk      true → PK columns exist in the CSV.
  * @param pointSystem Scoring system.
  */
@@ -135,15 +135,12 @@ export function buildTeamColumn(
     }
   }
 
-  // Always use disp_avlbl_pt for the column height, regardless of the disp flag.
-  const avlbl_pt = teamData.disp_avlbl_pt ?? 0;
-
   return {
     graph,
-    avlbl_pt,
+    avlbl_pt: teamData.displayStats.avlbl_pt,
     teamName,
     lossBox,
-    stats: makeTeamStats(teamData, disp, hasPk),
+    stats: makeTeamStats(disp ? teamData.displayStats : teamData.latestStats, disp, hasPk),
     matchDates: [...matchDateSet].sort(),
   };
 }

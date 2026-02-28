@@ -1,6 +1,7 @@
 // Shared factory functions for test data.
 
 import type { TeamData, TeamMatch } from '../../types/match';
+import { TeamStats } from '../../types/match';
 import type { SeasonInfo } from '../../types/season';
 
 /** Creates a TeamMatch with sensible defaults; override any field as needed. */
@@ -28,7 +29,7 @@ export function makeMatch(overrides: Partial<TeamMatch> = {}): TeamMatch {
 
 /** Creates a TeamData with an optional match list; stats are NOT pre-calculated. */
 export function makeTeamData(matches: TeamMatch[] = []): TeamData {
-  return { df: matches };
+  return { df: matches, latestStats: new TeamStats(), displayStats: new TeamStats() };
 }
 
 /** Creates a SeasonInfo for a 4-team season with 1 promotion and 1 relegation slot. */

@@ -104,7 +104,7 @@ export function assembleTeamColumn(
  * @param sortedTeams  Team names in display order.
  * @param seasonInfo   Season configuration.
  * @param targetDate   Display cutoff date 'YYYY/MM/DD'.
- * @param disp         true → use disp_avlbl_pt for column heights.
+ * @param disp         true → use displayStats for tooltip; false → latestStats.
  * @param bottomFirst  true → reverse graph order so older/earlier matches appear at bottom.
  * @param heightUnit   CSS height in px for one point box (from getHeightUnit()).
  */

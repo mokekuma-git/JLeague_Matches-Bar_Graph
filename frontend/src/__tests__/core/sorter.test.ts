@@ -1,44 +1,56 @@
 import { describe, test, expect } from 'vitest';
 import {
   calcCompare,
-  getTeamAttr,
+  getStats,
   getSortedTeamList,
-  getPointSortedTeamList,
   getSafetyLine,
   getPossibleLine,
   getSelfPossibleLine,
 } from '../../core/sorter';
 import { makeTeamData, makeMatch } from '../fixtures/match-data';
 import type { TeamData, TeamMatch } from '../../types/match';
+import { TeamStats } from '../../types/match';
 
-// Helper: build TeamData with pre-filled stat fields (no matches needed for sorter tests).
-function makeStats(overrides: Record<string, number | Record<string, number>> = {}) {
+/** Populate a TeamStats instance from a partial spec. */
+interface StatsInput {
+  point?: number;
+  avlbl_pt?: number;
+  goal_diff?: number;
+  goal_get?: number;
+  win?: number;
+  rest_games?: Record<string, number>;
+}
+
+function buildTeamStats(input: StatsInput = {}): TeamStats {
+  const s = new TeamStats();
+  s.point = input.point ?? 0;
+  s.avlbl_pt = input.avlbl_pt ?? 0;
+  s.goal_diff = input.goal_diff ?? 0;
+  s.goal_get = input.goal_get ?? 0;
+  if (input.win !== undefined) s.resultCounts.win = input.win;
+  if (input.rest_games) s.rest_games = input.rest_games;
+  return s;
+}
+
+// Helper: build TeamData with pre-filled latestStats and displayStats.
+function makeStats(latest: StatsInput = {}, display?: StatsInput): TeamData {
   return {
-    ...makeTeamData(),
-    point: 0,
-    avlbl_pt: 0,
-    disp_point: 0,
-    disp_avlbl_pt: 0,
-    goal_diff: 0,
-    goal_get: 0,
-    disp_goal_diff: 0,
-    disp_goal_get: 0,
-    win: 0,
-    disp_win: 0,
-    rest_games: {} as Record<string, number>,
-    disp_rest_games: {} as Record<string, number>,
-    ...overrides,
+    df: [],
+    latestStats: buildTeamStats(latest),
+    displayStats: buildTeamStats(display ?? latest),
   };
 }
 
 /** Build a TeamData with matches and pre-filled stats for H2H tests. */
 function makeTeamWithMatches(
   matches: TeamMatch[],
-  stats: Record<string, number | Record<string, number>> = {},
+  latest: StatsInput = {},
+  display?: StatsInput,
 ): TeamData {
   return {
-    ...makeStats(stats),
     df: matches,
+    latestStats: buildTeamStats(latest),
+    displayStats: buildTeamStats(display ?? latest),
   };
 }
 
@@ -59,43 +71,23 @@ describe('calcCompare', () => {
   });
 });
 
-describe('getTeamAttr', () => {
-  test('returns the plain attribute when disp=false', () => {
-    const td = makeStats({ goal_diff: 5, disp_goal_diff: 99 });
-    expect(getTeamAttr(td, 'goal_diff', false)).toBe(5);
+describe('getStats', () => {
+  test('returns latestStats when disp=false', () => {
+    const td = makeStats({ goal_diff: 5 }, { goal_diff: 99 });
+    const s = getStats(td, false);
+    expect(s.goal_diff).toBe(5);
   });
 
-  test('returns the disp_ attribute when disp=true', () => {
-    const td = makeStats({ goal_diff: 5, disp_goal_diff: 99 });
-    expect(getTeamAttr(td, 'goal_diff', true)).toBe(99);
+  test('returns displayStats when disp=true', () => {
+    const td = makeStats({ goal_diff: 5 }, { goal_diff: 99 });
+    const s = getStats(td, true);
+    expect(s.goal_diff).toBe(99);
   });
 
-  test('returns 0 for missing attribute', () => {
+  test('returns zero-initialized stats for fresh TeamData', () => {
     const td = makeTeamData();
-    expect(getTeamAttr(td, 'goal_diff', false)).toBe(0);
-  });
-});
-
-describe('getPointSortedTeamList', () => {
-  test('sorts by the given key descending', () => {
-    const teams = {
-      TeamA: makeStats({ avlbl_pt: 30 }),
-      TeamB: makeStats({ avlbl_pt: 45 }),
-      TeamC: makeStats({ avlbl_pt: 15 }),
-    };
-    const result = getPointSortedTeamList('avlbl_pt', teams);
-    expect(result).toEqual(['TeamB', 'TeamA', 'TeamC']);
-  });
-
-  test('handles equal values stably by key order', () => {
-    const teams = {
-      TeamA: makeStats({ point: 10 }),
-      TeamB: makeStats({ point: 10 }),
-    };
-    const result = getPointSortedTeamList('point', teams);
-    expect(result).toHaveLength(2);
-    expect(result).toContain('TeamA');
-    expect(result).toContain('TeamB');
+    const s = getStats(td, false);
+    expect(s.goal_diff).toBe(0);
   });
 });
 
@@ -137,13 +129,13 @@ describe('getSortedTeamList', () => {
     expect(result[0]).toBe('TeamB'); // same avlbl_pt, higher point wins
   });
 
-  test('disp_ variants use disp fields for tiebreakers', () => {
+  test('disp_ variants use displayStats for tiebreakers', () => {
     const teams = {
-      TeamA: makeStats({ disp_point: 10, disp_goal_diff: 5, disp_goal_get: 18 }),
-      TeamB: makeStats({ disp_point: 10, disp_goal_diff: 8, disp_goal_get: 20 }),
+      TeamA: makeStats({}, { point: 10, goal_diff: 5, goal_get: 18 }),
+      TeamB: makeStats({}, { point: 10, goal_diff: 8, goal_get: 20 }),
     };
     const result = getSortedTeamList(teams, 'disp_point');
-    expect(result[0]).toBe('TeamB'); // higher disp_goal_diff
+    expect(result[0]).toBe('TeamB'); // higher displayStats.goal_diff
   });
 });
 
@@ -166,12 +158,12 @@ describe('getSafetyLine', () => {
     expect(getSafetyLine(1, false, teams)).toBe(0);
   });
 
-  test('disp=true uses disp_avlbl_pt', () => {
+  test('disp=true uses displayStats.avlbl_pt', () => {
     const teams = {
-      TeamA: makeStats({ avlbl_pt: 80, disp_avlbl_pt: 50 }),
-      TeamB: makeStats({ avlbl_pt: 60, disp_avlbl_pt: 30 }),
+      TeamA: makeStats({ avlbl_pt: 80 }, { avlbl_pt: 50 }),
+      TeamB: makeStats({ avlbl_pt: 60 }, { avlbl_pt: 30 }),
     };
-    expect(getSafetyLine(1, true, teams)).toBe(31); // based on disp_avlbl_pt=30 of 2nd
+    expect(getSafetyLine(1, true, teams)).toBe(31); // based on displayStats.avlbl_pt=30 of 2nd
   });
 });
 
@@ -192,9 +184,9 @@ describe('getPossibleLine', () => {
     expect(getPossibleLine(5, false, teams)).toBe(0);
   });
 
-  test('disp=true uses disp_point', () => {
+  test('disp=true uses displayStats.point', () => {
     const teams = {
-      TeamA: makeStats({ point: 50, disp_point: 25 }),
+      TeamA: makeStats({ point: 50 }, { point: 25 }),
     };
     expect(getPossibleLine(1, true, teams)).toBe(25);
   });

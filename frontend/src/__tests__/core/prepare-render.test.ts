@@ -31,12 +31,12 @@ describe('prepareRenderData', () => {
   test('returns groupData with stats calculated', () => {
     const result = prepareRenderData(makeTestInput());
     // TeamA: 3 + 0 = 3pt, TeamB: 0 + 1 = 1pt, TeamC: 3 + 1 = 4pt
-    expect(result.groupData.TeamA.point).toBe(3);
-    expect(result.groupData.TeamA.win).toBe(1);
-    expect(result.groupData.TeamA.loss).toBe(1);
-    expect(result.groupData.TeamB.point).toBe(1);
-    expect(result.groupData.TeamB.draw).toBe(1);
-    expect(result.groupData.TeamC.point).toBe(4);
+    expect(result.groupData.TeamA.latestStats.point).toBe(3);
+    expect(result.groupData.TeamA.latestStats.resultCounts.win).toBe(1);
+    expect(result.groupData.TeamA.latestStats.resultCounts.loss).toBe(1);
+    expect(result.groupData.TeamB.latestStats.point).toBe(1);
+    expect(result.groupData.TeamB.latestStats.resultCounts.draw).toBe(1);
+    expect(result.groupData.TeamC.latestStats.point).toBe(4);
   });
 
   test('sortedTeams is sorted by requested sort key', () => {
@@ -47,24 +47,24 @@ describe('prepareRenderData', () => {
 
   test('does not mutate the input groupData', () => {
     const input = makeTestInput();
-    const originalPointA = input.groupData.TeamA.point; // undefined before stats
+    const originalPointA = input.groupData.TeamA.latestStats.point; // 0 before stats
     const originalDfLenA = input.groupData.TeamA.df.length;
     prepareRenderData(input);
-    expect(input.groupData.TeamA.point).toBe(originalPointA);
+    expect(input.groupData.TeamA.latestStats.point).toBe(originalPointA);
     expect(input.groupData.TeamA.df.length).toBe(originalDfLenA);
   });
 
-  test('disp sort key uses disp_point for sorting', () => {
+  test('disp sort key uses displayStats.point for sorting', () => {
     // targetDate between section 1 and section 2
     const input = makeTestInput({
       targetDate: '2025/03/05',
       sortKey: 'disp_point',
     });
     const result = prepareRenderData(input);
-    // At 2025/03/05: TeamA disp_point=3 (section 1 only), TeamB disp_point=0, TeamC disp_point=0
-    expect(result.groupData.TeamA.disp_point).toBe(3);
-    expect(result.groupData.TeamB.disp_point).toBe(0);
-    expect(result.groupData.TeamC.disp_point).toBe(0);
+    // At 2025/03/05: TeamA displayStats.point=3 (section 1 only), TeamB displayStats.point=0, TeamC displayStats.point=0
+    expect(result.groupData.TeamA.displayStats.point).toBe(3);
+    expect(result.groupData.TeamB.displayStats.point).toBe(0);
+    expect(result.groupData.TeamC.displayStats.point).toBe(0);
     expect(result.sortedTeams[0]).toBe('TeamA');
   });
 
@@ -72,7 +72,7 @@ describe('prepareRenderData', () => {
     const bySection = prepareRenderData(makeTestInput({ matchSortKey: 'section_no' }));
     const byDate = prepareRenderData(makeTestInput({ matchSortKey: 'match_date' }));
     // Both should produce the same stats for this data (dates align with sections)
-    expect(bySection.groupData.TeamA.point).toBe(byDate.groupData.TeamA.point);
+    expect(bySection.groupData.TeamA.latestStats.point).toBe(byDate.groupData.TeamA.latestStats.point);
     expect(bySection.sortedTeams).toEqual(byDate.sortedTeams);
   });
 
@@ -117,9 +117,9 @@ describe('prepareRenderData with pointSystem', () => {
     };
     const result = prepareRenderData(input);
     // TeamA: 2+1=3pt, TeamB: 0+2=2pt, TeamC: 1+0=1pt
-    expect(result.groupData.TeamA.point).toBe(3);
-    expect(result.groupData.TeamB.point).toBe(2);
-    expect(result.groupData.TeamC.point).toBe(1);
+    expect(result.groupData.TeamA.latestStats.point).toBe(3);
+    expect(result.groupData.TeamB.latestStats.point).toBe(2);
+    expect(result.groupData.TeamC.latestStats.point).toBe(1);
     expect(result.sortedTeams).toEqual(['TeamA', 'TeamB', 'TeamC']);
   });
 
@@ -146,8 +146,8 @@ describe('prepareRenderData with pointSystem', () => {
     const result = prepareRenderData(input);
     // TeamA: avlbl_pt = 2 (win) + 2 (future) = 4
     // TeamB: avlbl_pt = 0 (loss) + 2 (future) = 2
-    expect(result.groupData.TeamA.avlbl_pt).toBe(4);
-    expect(result.groupData.TeamB.avlbl_pt).toBe(2);
+    expect(result.groupData.TeamA.latestStats.avlbl_pt).toBe(4);
+    expect(result.groupData.TeamB.latestStats.avlbl_pt).toBe(2);
     expect(result.sortedTeams[0]).toBe('TeamA');
   });
 
@@ -171,8 +171,8 @@ describe('prepareRenderData with pointSystem', () => {
       targetDate: '2025/12/31', sortKey: 'point', matchSortKey: 'section_no',
     });
     // Standard: TeamA=3+1=4pt, TeamB=0+3=3pt → TeamA first
-    expect(standardResult.groupData.TeamA.point).toBe(4);
-    expect(standardResult.groupData.TeamB.point).toBe(3);
+    expect(standardResult.groupData.TeamA.latestStats.point).toBe(4);
+    expect(standardResult.groupData.TeamB.latestStats.point).toBe(3);
     expect(standardResult.sortedTeams[0]).toBe('TeamA');
 
     // old-two-points uses the point values from matches (which the caller
@@ -193,13 +193,13 @@ describe('prepareRenderData with pointSystem', () => {
       targetDate: '2025/12/31', sortKey: 'point', matchSortKey: 'section_no',
     });
     // old-two-points: TeamA=2+1=3pt, TeamB=0+2=2pt
-    expect(oldResult.groupData.TeamA.point).toBe(3);
-    expect(oldResult.groupData.TeamB.point).toBe(2);
+    expect(oldResult.groupData.TeamA.latestStats.point).toBe(3);
+    expect(oldResult.groupData.TeamB.latestStats.point).toBe(2);
     // Classification: TeamA has 1 win + 1 draw; TeamB has 1 loss + 1 win
-    expect(oldResult.groupData.TeamA.win).toBe(1);
-    expect(oldResult.groupData.TeamA.draw).toBe(1);
-    expect(oldResult.groupData.TeamB.win).toBe(1);
-    expect(oldResult.groupData.TeamB.loss).toBe(1);
+    expect(oldResult.groupData.TeamA.latestStats.resultCounts.win).toBe(1);
+    expect(oldResult.groupData.TeamA.latestStats.resultCounts.draw).toBe(1);
+    expect(oldResult.groupData.TeamB.latestStats.resultCounts.win).toBe(1);
+    expect(oldResult.groupData.TeamB.latestStats.resultCounts.loss).toBe(1);
   });
 });
 
@@ -346,9 +346,9 @@ describe('prepareRenderData with disp sort keys and targetDate', () => {
     const result = prepareRenderData(makeDispInput('disp_point', '2025/03/15'));
     // disp_point: TeamA=3, TeamB=3, TeamC=0 (only March matches count)
     // latest point: TeamA=6, TeamB=3, TeamC=3
-    expect(result.groupData.TeamA.disp_point).toBe(3);
-    expect(result.groupData.TeamB.disp_point).toBe(3);
-    expect(result.groupData.TeamC.disp_point).toBe(0);
+    expect(result.groupData.TeamA.displayStats.point).toBe(3);
+    expect(result.groupData.TeamB.displayStats.point).toBe(3);
+    expect(result.groupData.TeamC.displayStats.point).toBe(0);
     // TeamC should be last; TeamA and TeamB are tied at 3 disp_point
     expect(result.sortedTeams[2]).toBe('TeamC');
   });
@@ -356,21 +356,19 @@ describe('prepareRenderData with disp sort keys and targetDate', () => {
   test('disp_point at end of season vs point: same result when all matches in range', () => {
     const dispResult = prepareRenderData(makeDispInput('disp_point', '2025/12/31'));
     const ptResult = prepareRenderData(makeDispInput('point', '2025/12/31'));
-    // When targetDate covers all matches, disp_point === point
-    expect(dispResult.groupData.TeamA.disp_point).toBe(ptResult.groupData.TeamA.point);
+    // When targetDate covers all matches, displayStats.point === latestStats.point
+    expect(dispResult.groupData.TeamA.displayStats.point).toBe(ptResult.groupData.TeamA.latestStats.point);
     expect(dispResult.sortedTeams).toEqual(ptResult.sortedTeams);
   });
 
   test('disp_avlbl_pt: after-cutoff matches treated as future for display', () => {
     const result = prepareRenderData(makeDispInput('disp_avlbl_pt', '2025/03/15'));
-    // TeamA: disp_avlbl_pt = 3 (March win) + 3 (April treated as future) = 6
-    // TeamB: disp_avlbl_pt = 3 (March win) + 3 (April treated as future) = 6
-    // TeamC: disp_avlbl_pt = 0 (March loss) + 3 (April treated as future) = 3 … wait
-    // Actually: disp_avlbl_pt counts completed-in-display as point, completed-after-display as maxPt,
-    // and unplayed as maxPt. April match has has_result=true but date > targetDate → disp future → +3
-    expect(result.groupData.TeamA.disp_avlbl_pt).toBe(6);
-    expect(result.groupData.TeamB.disp_avlbl_pt).toBe(6);
-    expect(result.groupData.TeamC.disp_avlbl_pt).toBe(3);
+    // TeamA: displayStats.avlbl_pt = 3 (March win) + 3 (April treated as future) = 6
+    // TeamB: displayStats.avlbl_pt = 3 (March win) + 3 (April treated as future) = 6
+    // TeamC: displayStats.avlbl_pt = 0 (March loss) + 3 (April treated as future) = 3
+    expect(result.groupData.TeamA.displayStats.avlbl_pt).toBe(6);
+    expect(result.groupData.TeamB.displayStats.avlbl_pt).toBe(6);
+    expect(result.groupData.TeamC.displayStats.avlbl_pt).toBe(3);
   });
 
   test('disp_point sort differs from point sort when targetDate splits matches', () => {
@@ -388,8 +386,8 @@ describe('prepareRenderData with disp sort keys and targetDate', () => {
   test('targetDate before any match: all disp stats are zero', () => {
     const result = prepareRenderData(makeDispInput('disp_point', '2025/01/01'));
     for (const team of ['TeamA', 'TeamB', 'TeamC']) {
-      expect(result.groupData[team].disp_point).toBe(0);
-      expect(result.groupData[team].disp_all_game).toBe(0);
+      expect(result.groupData[team].displayStats.point).toBe(0);
+      expect(result.groupData[team].displayStats.all_game).toBe(0);
     }
   });
 });
@@ -444,8 +442,8 @@ describe('prepareRenderData sort stability with many teams', () => {
 
     // Descending order: each team's point >= next team's point
     for (let i = 0; i < result1.sortedTeams.length - 1; i++) {
-      const pt1 = result1.groupData[result1.sortedTeams[i]].point!;
-      const pt2 = result1.groupData[result1.sortedTeams[i + 1]].point!;
+      const pt1 = result1.groupData[result1.sortedTeams[i]].latestStats.point;
+      const pt2 = result1.groupData[result1.sortedTeams[i + 1]].latestStats.point;
       expect(pt1).toBeGreaterThanOrEqual(pt2);
     }
   });

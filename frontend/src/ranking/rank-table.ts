@@ -3,7 +3,7 @@
 import type { TeamData } from '../types/match';
 import type { SeasonInfo } from '../types/season';
 import {
-  getTeamAttr,
+  getStats,
   getSafetyLine,
   getPossibleLine,
   getSelfPossibleLine,
@@ -39,17 +39,17 @@ export interface RankRow {
 }
 
 // Returns the total count of opponents with at least one remaining fixture across all teams.
-// Uses rest_games (latest state), not disp_rest_games.
+// Uses latestStats.rest_games (latest state).
 function getAllRestGame(teams: Record<string, TeamData>): number {
   return Object.values(teams).reduce(
-    (sum, td) => sum + Object.keys(td.rest_games ?? {}).length,
+    (sum, td) => sum + Object.keys(td.latestStats.rest_games).length,
     0,
   );
 }
 
 // Builds rank table rows for all teams in teamList.
 // Requires calculateTeamStats to have been called on all teams beforehand.
-// disp: true → use disp_* stats (display-time view), false → use latest stats.
+// disp: true → use displayStats (display-time view), false → use latestStats.
 export function makeRankData(
   groupData: Record<string, TeamData>,
   teamList: string[],
@@ -80,31 +80,27 @@ export function makeRankData(
     rank++;
     const td = groupData[teamName];
 
-    const point    = getTeamAttr(td, 'point',    disp);
-    const avlblPt  = getTeamAttr(td, 'avlbl_pt', disp);
-    const allGame  = getTeamAttr(td, 'all_game', disp);
-    const goalGet  = getTeamAttr(td, 'goal_get', disp);
-    const goalDiff = getTeamAttr(td, 'goal_diff', disp);
-    const avrgPt   = getTeamAttr(td, 'avrg_pt',  disp);
+    const s = getStats(td, disp);
+    const rc = s.resultCounts;
 
     const row: RankRow = {
       rank,
       name: `<div class="${teamName}">${teamName}</div>`,
-      win:         getTeamAttr(td, 'win',      disp),
+      win:         rc.win,
       ...(hasPk ? {
-        pk_win:    getTeamAttr(td, 'pk_win',   disp),
-        pk_loss:   getTeamAttr(td, 'pk_loss',  disp),
+        pk_win:    rc.pk_win,
+        pk_loss:   rc.pk_loss,
       } : {}),
-      draw:        getTeamAttr(td, 'draw',     disp),
-      loss:        getTeamAttr(td, 'loss',     disp),
-      point,
-      avlbl_pt:    avlblPt,
-      avrg_pt:     avrgPt.toFixed(2),
-      all_game:    allGame,
-      goal_get:    goalGet,
-      goal_diff:   goalDiff,
-      goal_lose:   goalGet - goalDiff,
-      future_game: td.df.length - allGame,
+      draw:        rc.draw,
+      loss:        rc.loss,
+      point:       s.point,
+      avlbl_pt:    s.avlbl_pt,
+      avrg_pt:     s.avrg_pt.toFixed(2),
+      all_game:    s.all_game,
+      goal_get:    s.goal_get,
+      goal_diff:   s.goal_diff,
+      goal_lose:   s.goal_get - s.goal_diff,
+      future_game: td.df.length - s.all_game,
       champion:    '',
     };
 
@@ -118,9 +114,9 @@ export function makeRankData(
       }
     } else {
       // Champion calculation
-      const silver      = avlblPt - silverLine;
-      const champion    = point   - championLine;
-      const selfChampion = avlblPt - getSelfPossibleLine(1, teamName, disp, groupData, seasonInfo.pointSystem);
+      const silver      = s.avlbl_pt - silverLine;
+      const champion    = s.point    - championLine;
+      const selfChampion = s.avlbl_pt - getSelfPossibleLine(1, teamName, disp, groupData, seasonInfo.pointSystem);
       row.champion = champion >= 0 ? '確定'
         : silver < 0              ? 'なし'
         : selfChampion >= 0       ? '自力'
@@ -128,9 +124,9 @@ export function makeRankData(
 
       // Promotion calculation
       if (promotionCount > 0) {
-        const remaining      = avlblPt - nonPromotLine;
-        const promotion      = point   - promotionLine;
-        const selfPromotion  = avlblPt - getSelfPossibleLine(promotionCount, teamName, disp, groupData, seasonInfo.pointSystem);
+        const remaining      = s.avlbl_pt - nonPromotLine;
+        const promotion      = s.point    - promotionLine;
+        const selfPromotion  = s.avlbl_pt - getSelfPossibleLine(promotionCount, teamName, disp, groupData, seasonInfo.pointSystem);
         row.promotion = promotion >= 0  ? '確定'
           : remaining < 0              ? 'なし'
           : selfPromotion >= 0         ? '自力'
@@ -139,9 +135,9 @@ export function makeRankData(
 
       // Relegation calculation
       if (relegationCount > 0 && keepLeagueLine !== undefined && relegationLine !== undefined) {
-        const keepLeague    = point   - keepLeagueLine;
-        const relegation    = avlblPt - relegationLine;
-        const selfRelegation = avlblPt - getSelfPossibleLine(relegationRank, teamName, disp, groupData, seasonInfo.pointSystem);
+        const keepLeague    = s.point    - keepLeagueLine;
+        const relegation    = s.avlbl_pt - relegationLine;
+        const selfRelegation = s.avlbl_pt - getSelfPossibleLine(relegationRank, teamName, disp, groupData, seasonInfo.pointSystem);
         row.relegation = keepLeague >= 0 ? '確定'
           : relegation < 0              ? '降格'
           : selfRelegation >= 0         ? '自力'

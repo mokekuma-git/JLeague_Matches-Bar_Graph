@@ -1,7 +1,7 @@
 // Pure HTML-generation helpers: tooltip content, team stats, and rank class.
 // None of these functions access the DOM or global state.
 
-import type { TeamData, TeamMatch } from '../types/match';
+import type { TeamMatch, TeamStats } from '../types/match';
 import type { SeasonInfo } from '../types/season';
 import { dateOnly, timeFormat } from '../core/date-utils';
 
@@ -27,19 +27,17 @@ export function makeFullContent(row: TeamMatch, matchDate: string): string {
 
 /**
  * Generates the stats HTML shown in the team name tooltip.
- * disp=true → uses display-time (disp_*) stats; disp=false → uses latest stats.
+ * Caller selects the appropriate TeamStats (latestStats or displayStats).
  * hasPk=true → includes PK win/loss counts (omitted when the season has no PK matches).
  */
-export function makeTeamStats(teamData: TeamData, disp: boolean, hasPk = false): string {
-  const pre = disp ? 'disp_' : '';
+export function makeTeamStats(stats: TeamStats, disp: boolean, hasPk = false): string {
   const label = disp ? '表示時の状態' : '最新の状態';
-  const p = (key: string): number =>
-    (teamData as unknown as Record<string, number>)[pre + key] ?? 0;
-  const pkLine = hasPk ? `${p('pk_win')}PK勝 ${p('pk_loss')}PK負 ` : '';
-  return `${label}<br/>${p('win')}勝 ${pkLine}${p('draw')}分 ${p('loss')}敗<br/>`
-    + `勝点${p('point')}, 最大${p('avlbl_pt')}<br/>`
-    + `${p('goal_get')}得点, ${p('goal_get') - p('goal_diff')}失点<br/>`
-    + `得失点差: ${p('goal_diff')}`;
+  const rc = stats.resultCounts;
+  const pkLine = hasPk ? `${rc.pk_win}PK勝 ${rc.pk_loss}PK負 ` : '';
+  return `${label}<br/>${rc.win}勝 ${pkLine}${rc.draw}分 ${rc.loss}敗<br/>`
+    + `勝点${stats.point}, 最大${stats.avlbl_pt}<br/>`
+    + `${stats.goal_get}得点, ${stats.goal_get - stats.goal_diff}失点<br/>`
+    + `得失点差: ${stats.goal_diff}`;
 }
 
 /** Joins loss-match content strings with <hr/> dividers. */
