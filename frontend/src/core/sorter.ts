@@ -10,6 +10,23 @@ interface PointCacheEntry {
   rest_games: Record<string, number>;
 }
 
+// Primary sort keys accepted by getSortedTeamList (with optional 'disp_' prefix).
+type SortableField = 'point' | 'avlbl_pt';
+
+const SORT_FIELD_ACCESSORS: Record<SortableField, (s: TeamStats) => number> = {
+  point:    s => s.point,
+  avlbl_pt: s => s.avlbl_pt,
+};
+
+function parseSortKey(sortKey: string): { field: SortableField; disp: boolean } {
+  const disp = sortKey.startsWith('disp_');
+  const raw = disp ? sortKey.slice(5) : sortKey;
+  if (raw !== 'point' && raw !== 'avlbl_pt') {
+    throw new Error(`Unknown sort field: ${raw}`);
+  }
+  return { field: raw, disp };
+}
+
 /**
  * Selects the appropriate stats view (latest or display-time) from TeamData.
  */
@@ -163,8 +180,8 @@ export function getSortedTeamList(
   sortKey: string,
   tiebreakOrder: string[] = ['goal_diff', 'goal_get'],
 ): string[] {
-  const disp = sortKey.startsWith('disp_');
-  const field = disp ? sortKey.slice(5) : sortKey;
+  const { field, disp } = parseSortKey(sortKey);
+  const accessor = SORT_FIELD_ACCESSORS[field];
 
   // Warn about unknown tiebreaker keys (once per call)
   for (const key of tiebreakOrder) {
@@ -173,8 +190,7 @@ export function getSortedTeamList(
     }
   }
 
-  const getFieldVal = (t: string): number =>
-    (getStats(teams[t], disp) as unknown as Record<string, number>)[field] ?? 0;
+  const getFieldVal = (t: string): number => accessor(getStats(teams[t], disp));
 
   // 1. Initial sort by primary key
   const primarySorted = Object.keys(teams).sort((a, b) => {

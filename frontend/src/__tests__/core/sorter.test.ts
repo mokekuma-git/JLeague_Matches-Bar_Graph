@@ -92,6 +92,11 @@ describe('getStats', () => {
 });
 
 describe('getSortedTeamList', () => {
+  test('throws on unknown sort field', () => {
+    const teams = { TeamA: makeStats({ point: 10 }) };
+    expect(() => getSortedTeamList(teams, 'unknown_field')).toThrow('Unknown sort field');
+  });
+
   test('sorts by point descending', () => {
     const teams = {
       TeamA: makeStats({ point: 20, goal_diff: 5, goal_get: 20 }),
