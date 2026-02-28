@@ -87,6 +87,9 @@ export function parseCsvResults(
     const matchDate = new Date(match.match_date);
     if (!isNaN(matchDate.getTime())) matchDateStr = dateFormat(matchDate);
 
+    const homeGoal = match.home_goal ? parseInt(match.home_goal, 10) : null;
+    const awayGoal = match.away_goal ? parseInt(match.away_goal, 10) : null;
+    const sectionNo = parseInt(match.section_no, 10);
     const homePk = match.home_pk_score ? parseInt(match.home_pk_score, 10) : null;
     const awayPk = match.away_pk_score ? parseInt(match.away_pk_score, 10) : null;
     const homeScoreEx = match.home_score_ex ? parseInt(match.home_score_ex, 10) : null;
@@ -98,8 +101,8 @@ export function parseCsvResults(
     const homeMatch: TeamMatch = {
       is_home: true,
       opponent: match.away_team,
-      goal_get: match.home_goal,
-      goal_lose: match.away_goal,
+      goal_get: homeGoal,
+      goal_lose: awayGoal,
       pk_get: homePk,
       pk_lose: awayPk,
       score_ex_get: homeScoreEx,
@@ -107,7 +110,7 @@ export function parseCsvResults(
       has_result: hasResult,
       point: getPointFromResult(match.home_goal, match.away_goal, false, homePk, awayPk, pointSystem),
       match_date: matchDateStr,
-      section_no: match.section_no,
+      section_no: sectionNo,
       stadium: match.stadium,
       start_time: match.start_time,
       status,
@@ -118,8 +121,8 @@ export function parseCsvResults(
     const awayMatch: TeamMatch = {
       is_home: false,
       opponent: match.home_team,
-      goal_get: match.away_goal,
-      goal_lose: match.home_goal,
+      goal_get: awayGoal,
+      goal_lose: homeGoal,
       pk_get: awayPk,
       pk_lose: homePk,
       score_ex_get: awayScoreEx,
@@ -127,7 +130,7 @@ export function parseCsvResults(
       has_result: hasResult,
       point: getPointFromResult(match.away_goal, match.home_goal, false, awayPk, homePk, pointSystem),
       match_date: matchDateStr,
-      section_no: match.section_no,
+      section_no: sectionNo,
       stadium: match.stadium,
       start_time: match.start_time,
       status,

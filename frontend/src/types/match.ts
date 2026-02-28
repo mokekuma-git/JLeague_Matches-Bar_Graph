@@ -28,8 +28,8 @@ export interface RawMatchRow {
 export interface TeamMatch {
   is_home: boolean;
   opponent: string;
-  goal_get: string;
-  goal_lose: string;
+  goal_get: number | null;   // null = unplayed match
+  goal_lose: number | null;
   // pk_get/pk_lose: always present after parsing; null means no PK shootout.
   // Using | null (not ?) because the property is always set, but may be null.
   pk_get: number | null;
@@ -39,7 +39,7 @@ export interface TeamMatch {
   has_result: boolean;
   point: number;
   match_date: string;
-  section_no: string;
+  section_no: number;
   stadium: string;
   start_time: string;
   status: string;

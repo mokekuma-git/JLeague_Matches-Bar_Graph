@@ -49,10 +49,10 @@ describe('parseCsvResults', () => {
       const result = parseCsvResults([makeRow()], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup');
       const homeMatch = result['DefaultGroup']['TeamA'].df[0];
       const awayMatch = result['DefaultGroup']['TeamB'].df[0];
-      expect(homeMatch.goal_get).toBe('2');
-      expect(homeMatch.goal_lose).toBe('1');
-      expect(awayMatch.goal_get).toBe('1');
-      expect(awayMatch.goal_lose).toBe('2');
+      expect(homeMatch.goal_get).toBe(2);
+      expect(homeMatch.goal_lose).toBe(1);
+      expect(awayMatch.goal_get).toBe(1);
+      expect(awayMatch.goal_lose).toBe(2);
     });
 
     test('points are computed correctly (win=3, loss=0)', () => {

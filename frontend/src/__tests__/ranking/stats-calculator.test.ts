@@ -7,7 +7,7 @@ const TARGET = '2025/03/31';
 describe('calculateTeamStats', () => {
   describe('basic accumulation', () => {
     test('win: point=3, win=1, goal counts', () => {
-      const td = makeTeamData([makeMatch({ goal_get: '2', goal_lose: '0', point: 3 })]);
+      const td = makeTeamData([makeMatch({ goal_get: 2, goal_lose: 0, point: 3 })]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.point).toBe(3);
       expect(td.win).toBe(1);
@@ -19,7 +19,7 @@ describe('calculateTeamStats', () => {
     });
 
     test('draw: point=1, draw=1', () => {
-      const td = makeTeamData([makeMatch({ goal_get: '1', goal_lose: '1', point: 1 })]);
+      const td = makeTeamData([makeMatch({ goal_get: 1, goal_lose: 1, point: 1 })]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.point).toBe(1);
       expect(td.draw).toBe(1);
@@ -27,7 +27,7 @@ describe('calculateTeamStats', () => {
     });
 
     test('loss: point=0, loss=1', () => {
-      const td = makeTeamData([makeMatch({ goal_get: '0', goal_lose: '2', point: 0 })]);
+      const td = makeTeamData([makeMatch({ goal_get: 0, goal_lose: 2, point: 0 })]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.point).toBe(0);
       expect(td.loss).toBe(1);
@@ -35,7 +35,7 @@ describe('calculateTeamStats', () => {
     });
 
     test('PK win: pk_win=1 (not win)', () => {
-      const td = makeTeamData([makeMatch({ goal_get: '1', goal_lose: '1', pk_get: 5, pk_lose: 4, point: 2 })]);
+      const td = makeTeamData([makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 4, point: 2 })]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.pk_win).toBe(1);
       expect(td.win).toBe(0);
@@ -44,7 +44,7 @@ describe('calculateTeamStats', () => {
     });
 
     test('PK loss: pk_loss=1 (not draw)', () => {
-      const td = makeTeamData([makeMatch({ goal_get: '1', goal_lose: '1', pk_get: 3, pk_lose: 5, point: 1 })]);
+      const td = makeTeamData([makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 3, pk_lose: 5, point: 1 })]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.pk_loss).toBe(1);
       expect(td.draw).toBe(0);
@@ -53,7 +53,7 @@ describe('calculateTeamStats', () => {
 
     test('unplayed match: avlbl_pt += 3, added to rest_games', () => {
       const td = makeTeamData([
-        makeMatch({ has_result: false, goal_get: '', goal_lose: '', point: 0, opponent: 'TeamC' }),
+        makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, opponent: 'TeamC' }),
       ]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.point).toBe(0);
@@ -64,9 +64,9 @@ describe('calculateTeamStats', () => {
 
     test('multiple matches accumulate correctly', () => {
       const td = makeTeamData([
-        makeMatch({ goal_get: '2', goal_lose: '1', point: 3, match_date: '2025/03/01' }),
-        makeMatch({ goal_get: '1', goal_lose: '1', point: 1, match_date: '2025/03/08' }),
-        makeMatch({ has_result: false, goal_get: '', goal_lose: '', point: 0, opponent: 'TeamC', match_date: '2025/04/05' }),
+        makeMatch({ goal_get: 2, goal_lose: 1, point: 3, match_date: '2025/03/01' }),
+        makeMatch({ goal_get: 1, goal_lose: 1, point: 1, match_date: '2025/03/08' }),
+        makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, opponent: 'TeamC', match_date: '2025/04/05' }),
       ]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.point).toBe(4);
@@ -78,8 +78,8 @@ describe('calculateTeamStats', () => {
 
     test('avrg_pt = point / all_game', () => {
       const td = makeTeamData([
-        makeMatch({ goal_get: '3', goal_lose: '0', point: 3 }),
-        makeMatch({ goal_get: '0', goal_lose: '1', point: 0 }),
+        makeMatch({ goal_get: 3, goal_lose: 0, point: 3 }),
+        makeMatch({ goal_get: 0, goal_lose: 1, point: 0 }),
       ]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.avrg_pt).toBe(1.5);
@@ -87,7 +87,7 @@ describe('calculateTeamStats', () => {
 
     test('avrg_pt = 0 when no games played', () => {
       const td = makeTeamData([
-        makeMatch({ has_result: false, goal_get: '', goal_lose: '', point: 0 }),
+        makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0 }),
       ]);
       calculateTeamStats(td, TARGET, 'section_no');
       expect(td.avrg_pt).toBe(0);
@@ -101,9 +101,9 @@ describe('calculateTeamStats', () => {
     //   Match 3: unplayed (future)
     test('disp_point includes only matches up to targetDate', () => {
       const td = makeTeamData([
-        makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/01', section_no: '1' }),
-        makeMatch({ goal_get: '1', goal_lose: '0', point: 3, match_date: '2025/04/15', section_no: '2' }),
-        makeMatch({ has_result: false, goal_get: '', goal_lose: '', point: 0, match_date: '2025/05/10', section_no: '3', opponent: 'TeamC' }),
+        makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/01', section_no: 1 }),
+        makeMatch({ goal_get: 1, goal_lose: 0, point: 3, match_date: '2025/04/15', section_no: 2 }),
+        makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, match_date: '2025/05/10', section_no: 3, opponent: 'TeamC' }),
       ]);
       calculateTeamStats(td, '2025/03/31', 'section_no');
 
@@ -121,7 +121,7 @@ describe('calculateTeamStats', () => {
 
     test('disp_rest_games includes matches after targetDate', () => {
       const td = makeTeamData([
-        makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/04/15', section_no: '1', opponent: 'TeamB' }),
+        makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/04/15', section_no: 1, opponent: 'TeamB' }),
       ]);
       calculateTeamStats(td, '2025/03/31', 'section_no');
       // April match is after cutoff → treated as future in display
@@ -131,8 +131,8 @@ describe('calculateTeamStats', () => {
 
     test('disp_win/disp_draw/disp_loss only count within cutoff', () => {
       const td = makeTeamData([
-        makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/01', section_no: '1' }), // win, in range
-        makeMatch({ goal_get: '0', goal_lose: '1', point: 0, match_date: '2025/04/01', section_no: '2' }), // loss, out of range
+        makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/01', section_no: 1 }), // win, in range
+        makeMatch({ goal_get: 0, goal_lose: 1, point: 0, match_date: '2025/04/01', section_no: 2 }), // loss, out of range
       ]);
       calculateTeamStats(td, '2025/03/31', 'section_no');
       expect(td.disp_win).toBe(1);
@@ -144,11 +144,11 @@ describe('calculateTeamStats', () => {
     test('disp_avrg_pt differs from avrg_pt when games span the cutoff date', () => {
       // 3 wins in March (in display window), 2 losses in April (after cutoff)
       const td = makeTeamData([
-        makeMatch({ goal_get: '1', goal_lose: '0', point: 3, match_date: '2025/03/01', section_no: '1' }),
-        makeMatch({ goal_get: '1', goal_lose: '0', point: 3, match_date: '2025/03/08', section_no: '2' }),
-        makeMatch({ goal_get: '1', goal_lose: '0', point: 3, match_date: '2025/03/15', section_no: '3' }),
-        makeMatch({ goal_get: '0', goal_lose: '1', point: 0, match_date: '2025/04/01', section_no: '4' }),
-        makeMatch({ goal_get: '0', goal_lose: '1', point: 0, match_date: '2025/04/08', section_no: '5' }),
+        makeMatch({ goal_get: 1, goal_lose: 0, point: 3, match_date: '2025/03/01', section_no: 1 }),
+        makeMatch({ goal_get: 1, goal_lose: 0, point: 3, match_date: '2025/03/08', section_no: 2 }),
+        makeMatch({ goal_get: 1, goal_lose: 0, point: 3, match_date: '2025/03/15', section_no: 3 }),
+        makeMatch({ goal_get: 0, goal_lose: 1, point: 0, match_date: '2025/04/01', section_no: 4 }),
+        makeMatch({ goal_get: 0, goal_lose: 1, point: 0, match_date: '2025/04/08', section_no: 5 }),
       ]);
       calculateTeamStats(td, '2025/03/31', 'section_no');
       // avrg_pt = 9 / 5 = 1.8 (all 5 completed games)
@@ -159,7 +159,7 @@ describe('calculateTeamStats', () => {
 
     test('disp_avrg_pt = 0 when all completed games are after targetDate', () => {
       const td = makeTeamData([
-        makeMatch({ goal_get: '1', goal_lose: '0', point: 3, match_date: '2025/04/01', section_no: '1' }),
+        makeMatch({ goal_get: 1, goal_lose: 0, point: 3, match_date: '2025/04/01', section_no: 1 }),
       ]);
       calculateTeamStats(td, '2025/03/31', 'section_no');
       expect(td.disp_all_game).toBe(0);
@@ -172,16 +172,16 @@ describe('calculateTeamStats', () => {
 describe('sortTeamMatches', () => {
   test('completed matches sort before postponed, postponed before future', () => {
     const past = makeMatch({
-      has_result: false, goal_get: '', goal_lose: '', point: 0,
-      match_date: '03/01', section_no: '2',
+      has_result: false, goal_get: null, goal_lose: null, point: 0,
+      match_date: '03/01', section_no: 2,
     });
     const future = makeMatch({
-      has_result: false, goal_get: '', goal_lose: '', point: 0,
-      match_date: '05/01', section_no: '3',
+      has_result: false, goal_get: null, goal_lose: null, point: 0,
+      match_date: '05/01', section_no: 3,
     });
     const completed = makeMatch({
-      has_result: true, goal_get: '2', goal_lose: '0', point: 3,
-      match_date: '03/15', section_no: '1',
+      has_result: true, goal_get: 2, goal_lose: 0, point: 3,
+      match_date: '03/15', section_no: 1,
     });
     const td = makeTeamData([future, past, completed]);
     sortTeamMatches(td, '2025/03/31', 'section_no');
@@ -191,16 +191,16 @@ describe('sortTeamMatches', () => {
   });
 
   test('within completed matches, section_no sort is numeric', () => {
-    const m1 = makeMatch({ has_result: true, section_no: '10', match_date: '03/01', point: 3, goal_get: '1', goal_lose: '0' });
-    const m2 = makeMatch({ has_result: true, section_no: '2',  match_date: '03/08', point: 3, goal_get: '1', goal_lose: '0' });
+    const m1 = makeMatch({ has_result: true, section_no: 10, match_date: '03/01', point: 3, goal_get: 1, goal_lose: 0 });
+    const m2 = makeMatch({ has_result: true, section_no: 2,  match_date: '03/08', point: 3, goal_get: 1, goal_lose: 0 });
     const td = makeTeamData([m1, m2]);
     sortTeamMatches(td, '2025/12/31', 'section_no');
     expect(td.df[0]).toBe(m2); // section 2 comes before section 10 numerically
   });
 
   test('within completed matches, match_date sort is lexicographic', () => {
-    const m1 = makeMatch({ has_result: true, section_no: '2', match_date: '04/01', point: 3, goal_get: '1', goal_lose: '0' });
-    const m2 = makeMatch({ has_result: true, section_no: '1', match_date: '03/01', point: 3, goal_get: '1', goal_lose: '0' });
+    const m1 = makeMatch({ has_result: true, section_no: 2, match_date: '04/01', point: 3, goal_get: 1, goal_lose: 0 });
+    const m2 = makeMatch({ has_result: true, section_no: 1, match_date: '03/01', point: 3, goal_get: 1, goal_lose: 0 });
     const td = makeTeamData([m1, m2]);
     sortTeamMatches(td, '2025/12/31', 'match_date');
     expect(td.df[0]).toBe(m2); // 03/01 < 04/01
@@ -208,8 +208,8 @@ describe('sortTeamMatches', () => {
 
   test('match with non-MM/DD date sorts after match with valid MM/DD date', () => {
     // Empty string does not match /\d\d\/\d\d$/ → sorts after valid date
-    const validDate = makeMatch({ has_result: true, section_no: '2', match_date: '04/01', point: 3, goal_get: '1', goal_lose: '0' });
-    const emptyDate = makeMatch({ has_result: true, section_no: '1', match_date: '', point: 0, goal_get: '0', goal_lose: '1' });
+    const validDate = makeMatch({ has_result: true, section_no: 2, match_date: '04/01', point: 3, goal_get: 1, goal_lose: 0 });
+    const emptyDate = makeMatch({ has_result: true, section_no: 1, match_date: '', point: 0, goal_get: 0, goal_lose: 1 });
     const td = makeTeamData([emptyDate, validDate]);
     sortTeamMatches(td, '2025/12/31', 'match_date');
     expect(td.df[0]).toBe(validDate);  // valid MM/DD sorts first
@@ -218,8 +218,8 @@ describe('sortTeamMatches', () => {
 
   test('two completed matches with non-MM/DD dates maintain relative order', () => {
     // Both dates do not match /\d\d\/\d\d$/ → comparison returns 0 (stable)
-    const m1 = makeMatch({ has_result: true, section_no: '2', match_date: '', point: 3, goal_get: '1', goal_lose: '0' });
-    const m2 = makeMatch({ has_result: true, section_no: '1', match_date: 'TBD', point: 0, goal_get: '0', goal_lose: '1' });
+    const m1 = makeMatch({ has_result: true, section_no: 2, match_date: '', point: 3, goal_get: 1, goal_lose: 0 });
+    const m2 = makeMatch({ has_result: true, section_no: 1, match_date: 'TBD', point: 0, goal_get: 0, goal_lose: 1 });
     const td = makeTeamData([m1, m2]);
     sortTeamMatches(td, '2025/12/31', 'match_date');
     // comparison returns 0 for both invalid dates; stable sort preserves insertion order
@@ -265,8 +265,8 @@ describe('classifyResult', () => {
 describe('calculateTeamStats with old-two-points', () => {
   test('win earns 2pt, unplayed adds 2pt to avlbl_pt', () => {
     const td = makeTeamData([
-      makeMatch({ goal_get: '2', goal_lose: '0', point: 2, match_date: '2025/03/01' }),
-      makeMatch({ has_result: false, goal_get: '', goal_lose: '', point: 0, opponent: 'TeamC', match_date: '2025/05/01' }),
+      makeMatch({ goal_get: 2, goal_lose: 0, point: 2, match_date: '2025/03/01' }),
+      makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, opponent: 'TeamC', match_date: '2025/05/01' }),
     ]);
     calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
     expect(td.point).toBe(2);
@@ -276,7 +276,7 @@ describe('calculateTeamStats with old-two-points', () => {
 
   test('draw earns 1pt under old-two-points', () => {
     const td = makeTeamData([
-      makeMatch({ goal_get: '1', goal_lose: '1', point: 1, match_date: '2025/03/01' }),
+      makeMatch({ goal_get: 1, goal_lose: 1, point: 1, match_date: '2025/03/01' }),
     ]);
     calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
     expect(td.point).toBe(1);

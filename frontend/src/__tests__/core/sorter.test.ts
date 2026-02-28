@@ -272,15 +272,15 @@ describe('getSortedTeamList tiebreakOrder', () => {
     const teams = {
       TeamA: makeTeamWithMatches(
         [
-          makeMatch({ opponent: 'TeamB', goal_get: '2', goal_lose: '1', point: 3, is_home: true }),
-          makeMatch({ opponent: 'TeamC', goal_get: '0', goal_lose: '1', point: 0 }),
+          makeMatch({ opponent: 'TeamB', goal_get: 2, goal_lose: 1, point: 3, is_home: true }),
+          makeMatch({ opponent: 'TeamC', goal_get: 0, goal_lose: 1, point: 0 }),
         ],
         { point: 3, goal_diff: 0, goal_get: 2, win: 1 },
       ),
       TeamB: makeTeamWithMatches(
         [
-          makeMatch({ opponent: 'TeamA', goal_get: '1', goal_lose: '2', point: 0, is_home: false }),
-          makeMatch({ opponent: 'TeamC', goal_get: '3', goal_lose: '0', point: 3 }),
+          makeMatch({ opponent: 'TeamA', goal_get: 1, goal_lose: 2, point: 0, is_home: false }),
+          makeMatch({ opponent: 'TeamC', goal_get: 3, goal_lose: 0, point: 3 }),
         ],
         { point: 3, goal_diff: 0, goal_get: 4, win: 1 },
       ),
@@ -305,22 +305,22 @@ describe('getSortedTeamList tiebreakOrder', () => {
     const teams = {
       TeamA: makeTeamWithMatches(
         [
-          makeMatch({ opponent: 'TeamB', goal_get: '2', goal_lose: '0', point: 3 }),
-          makeMatch({ opponent: 'TeamC', goal_get: '0', goal_lose: '1', point: 0 }),
+          makeMatch({ opponent: 'TeamB', goal_get: 2, goal_lose: 0, point: 3 }),
+          makeMatch({ opponent: 'TeamC', goal_get: 0, goal_lose: 1, point: 0 }),
         ],
         { point: 6, goal_diff: 5, goal_get: 10 },
       ),
       TeamB: makeTeamWithMatches(
         [
-          makeMatch({ opponent: 'TeamA', goal_get: '0', goal_lose: '2', point: 0 }),
-          makeMatch({ opponent: 'TeamC', goal_get: '3', goal_lose: '1', point: 3 }),
+          makeMatch({ opponent: 'TeamA', goal_get: 0, goal_lose: 2, point: 0 }),
+          makeMatch({ opponent: 'TeamC', goal_get: 3, goal_lose: 1, point: 3 }),
         ],
         { point: 6, goal_diff: 5, goal_get: 10 },
       ),
       TeamC: makeTeamWithMatches(
         [
-          makeMatch({ opponent: 'TeamA', goal_get: '1', goal_lose: '0', point: 3 }),
-          makeMatch({ opponent: 'TeamB', goal_get: '1', goal_lose: '3', point: 0 }),
+          makeMatch({ opponent: 'TeamA', goal_get: 1, goal_lose: 0, point: 3 }),
+          makeMatch({ opponent: 'TeamB', goal_get: 1, goal_lose: 3, point: 0 }),
         ],
         { point: 6, goal_diff: 5, goal_get: 10 },
       ),
@@ -335,11 +335,11 @@ describe('getSortedTeamList tiebreakOrder', () => {
     // TeamA and TeamB tied on points but have not played each other
     const teams = {
       TeamA: makeTeamWithMatches(
-        [makeMatch({ opponent: 'TeamC', goal_get: '1', goal_lose: '0', point: 3 })],
+        [makeMatch({ opponent: 'TeamC', goal_get: 1, goal_lose: 0, point: 3 })],
         { point: 3, goal_diff: 1, goal_get: 1 },
       ),
       TeamB: makeTeamWithMatches(
-        [makeMatch({ opponent: 'TeamC', goal_get: '3', goal_lose: '0', point: 3 })],
+        [makeMatch({ opponent: 'TeamC', goal_get: 3, goal_lose: 0, point: 3 })],
         { point: 3, goal_diff: 3, goal_get: 3 },
       ),
       TeamC: makeTeamWithMatches([], { point: 0, goal_diff: -4, goal_get: 0 }),

@@ -27,9 +27,9 @@ export function sortTeamMatches(
     const prioA = getPostponedSortPriority(a, targetDate);
     const prioB = getPostponedSortPriority(b, targetDate);
     if (prioA !== prioB) return prioA - prioB;
-    const vA = a[matchSortKey];
-    const vB = b[matchSortKey];
-    if (matchSortKey === 'section_no') return parseInt(vA, 10) - parseInt(vB, 10);
+    if (matchSortKey === 'section_no') return a.section_no - b.section_no;
+    const vA = a.match_date;
+    const vB = b.match_date;
     if (!/\d\d\/\d\d$/.test(vA)) {
       if (!/\d\d\/\d\d$/.test(vB)) return 0;
       return 1;
@@ -107,8 +107,8 @@ export function calculateTeamStats(
       teamData.all_game += 1;
       const cls = classifyResult(row.point, row.pk_get, pointSystem);
       (teamData[cls] as number) += 1;
-      teamData.goal_diff += parseInt(row.goal_get, 10) - parseInt(row.goal_lose, 10);
-      teamData.goal_get += parseInt(row.goal_get, 10);
+      teamData.goal_diff += (row.goal_get ?? 0) - (row.goal_lose ?? 0);
+      teamData.goal_get += row.goal_get ?? 0;
 
       if (row.match_date <= targetDate) {
         // Within display window: also counts toward disp_ stats
@@ -117,8 +117,8 @@ export function calculateTeamStats(
         teamData.disp_all_game += 1;
         teamData.disp_point += row.point;
         teamData.disp_avlbl_pt += row.point;
-        teamData.disp_goal_diff += parseInt(row.goal_get, 10) - parseInt(row.goal_lose, 10);
-        teamData.disp_goal_get += parseInt(row.goal_get, 10);
+        teamData.disp_goal_diff += (row.goal_get ?? 0) - (row.goal_lose ?? 0);
+        teamData.disp_goal_get += row.goal_get ?? 0;
       } else {
         // After display cutoff: treat as future for display purposes
         teamData.disp_avlbl_pt += maxPt;

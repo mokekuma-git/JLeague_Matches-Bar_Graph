@@ -7,16 +7,16 @@ function makeTestInput(overrides: Partial<PrepareRenderInput> = {}): PrepareRend
   return {
     groupData: {
       TeamA: makeTeamData([
-        makeMatch({ opponent: 'TeamB', point: 3, match_date: '2025/03/01', section_no: '1', goal_get: '2', goal_lose: '0' }),
-        makeMatch({ opponent: 'TeamC', point: 0, match_date: '2025/03/08', section_no: '2', goal_get: '0', goal_lose: '1' }),
+        makeMatch({ opponent: 'TeamB', point: 3, match_date: '2025/03/01', section_no: 1, goal_get: 2, goal_lose: 0 }),
+        makeMatch({ opponent: 'TeamC', point: 0, match_date: '2025/03/08', section_no: 2, goal_get: 0, goal_lose: 1 }),
       ]),
       TeamB: makeTeamData([
-        makeMatch({ opponent: 'TeamA', point: 0, match_date: '2025/03/01', section_no: '1', goal_get: '0', goal_lose: '2', is_home: false }),
-        makeMatch({ opponent: 'TeamC', point: 1, match_date: '2025/03/08', section_no: '2', goal_get: '1', goal_lose: '1' }),
+        makeMatch({ opponent: 'TeamA', point: 0, match_date: '2025/03/01', section_no: 1, goal_get: 0, goal_lose: 2, is_home: false }),
+        makeMatch({ opponent: 'TeamC', point: 1, match_date: '2025/03/08', section_no: 2, goal_get: 1, goal_lose: 1 }),
       ]),
       TeamC: makeTeamData([
-        makeMatch({ opponent: 'TeamA', point: 3, match_date: '2025/03/08', section_no: '2', goal_get: '1', goal_lose: '0', is_home: false }),
-        makeMatch({ opponent: 'TeamB', point: 1, match_date: '2025/03/08', section_no: '2', goal_get: '1', goal_lose: '1', is_home: false }),
+        makeMatch({ opponent: 'TeamA', point: 3, match_date: '2025/03/08', section_no: 2, goal_get: 1, goal_lose: 0, is_home: false }),
+        makeMatch({ opponent: 'TeamB', point: 1, match_date: '2025/03/08', section_no: 2, goal_get: 1, goal_lose: 1, is_home: false }),
       ]),
     },
     seasonInfo: makeSeasonInfo({ teamCount: 3, teams: ['TeamA', 'TeamB', 'TeamC'] }),
@@ -95,16 +95,16 @@ describe('prepareRenderData with pointSystem', () => {
     const input: PrepareRenderInput = {
       groupData: {
         TeamA: makeTeamData([
-          makeMatch({ opponent: 'TeamB', point: 2, goal_get: '1', goal_lose: '0', match_date: '2025/03/01', section_no: '1' }),
-          makeMatch({ opponent: 'TeamC', point: 1, goal_get: '0', goal_lose: '0', match_date: '2025/03/08', section_no: '2' }),
+          makeMatch({ opponent: 'TeamB', point: 2, goal_get: 1, goal_lose: 0, match_date: '2025/03/01', section_no: 1 }),
+          makeMatch({ opponent: 'TeamC', point: 1, goal_get: 0, goal_lose: 0, match_date: '2025/03/08', section_no: 2 }),
         ]),
         TeamB: makeTeamData([
-          makeMatch({ opponent: 'TeamA', point: 0, goal_get: '0', goal_lose: '1', match_date: '2025/03/01', section_no: '1', is_home: false }),
-          makeMatch({ opponent: 'TeamC', point: 2, goal_get: '2', goal_lose: '0', match_date: '2025/03/08', section_no: '2' }),
+          makeMatch({ opponent: 'TeamA', point: 0, goal_get: 0, goal_lose: 1, match_date: '2025/03/01', section_no: 1, is_home: false }),
+          makeMatch({ opponent: 'TeamC', point: 2, goal_get: 2, goal_lose: 0, match_date: '2025/03/08', section_no: 2 }),
         ]),
         TeamC: makeTeamData([
-          makeMatch({ opponent: 'TeamA', point: 1, goal_get: '0', goal_lose: '0', match_date: '2025/03/08', section_no: '2', is_home: false }),
-          makeMatch({ opponent: 'TeamB', point: 0, goal_get: '0', goal_lose: '2', match_date: '2025/03/08', section_no: '2', is_home: false }),
+          makeMatch({ opponent: 'TeamA', point: 1, goal_get: 0, goal_lose: 0, match_date: '2025/03/08', section_no: 2, is_home: false }),
+          makeMatch({ opponent: 'TeamB', point: 0, goal_get: 0, goal_lose: 2, match_date: '2025/03/08', section_no: 2, is_home: false }),
         ]),
       },
       seasonInfo: makeSeasonInfo({
@@ -127,12 +127,12 @@ describe('prepareRenderData with pointSystem', () => {
     const input: PrepareRenderInput = {
       groupData: {
         TeamA: makeTeamData([
-          makeMatch({ opponent: 'TeamB', point: 2, goal_get: '1', goal_lose: '0', match_date: '2025/03/01', section_no: '1' }),
-          makeMatch({ opponent: 'TeamC', point: 0, goal_get: '', goal_lose: '', has_result: false, match_date: '2025/06/01', section_no: '2' }),
+          makeMatch({ opponent: 'TeamB', point: 2, goal_get: 1, goal_lose: 0, match_date: '2025/03/01', section_no: 1 }),
+          makeMatch({ opponent: 'TeamC', point: 0, goal_get: null, goal_lose: null, has_result: false, match_date: '2025/06/01', section_no: 2 }),
         ]),
         TeamB: makeTeamData([
-          makeMatch({ opponent: 'TeamA', point: 0, goal_get: '0', goal_lose: '1', match_date: '2025/03/01', section_no: '1', is_home: false }),
-          makeMatch({ opponent: 'TeamC', point: 0, goal_get: '', goal_lose: '', has_result: false, match_date: '2025/06/01', section_no: '2' }),
+          makeMatch({ opponent: 'TeamA', point: 0, goal_get: 0, goal_lose: 1, match_date: '2025/03/01', section_no: 1, is_home: false }),
+          makeMatch({ opponent: 'TeamC', point: 0, goal_get: null, goal_lose: null, has_result: false, match_date: '2025/06/01', section_no: 2 }),
         ]),
       },
       seasonInfo: makeSeasonInfo({
@@ -156,12 +156,12 @@ describe('prepareRenderData with pointSystem', () => {
     // can yield different relative standings when draw frequency differs.
     const buildGroupData = () => ({
       TeamA: makeTeamData([
-        makeMatch({ opponent: 'TeamB', point: 3, goal_get: '1', goal_lose: '0', match_date: '2025/03/01', section_no: '1' }),
-        makeMatch({ opponent: 'TeamC', point: 1, goal_get: '0', goal_lose: '0', match_date: '2025/03/08', section_no: '2' }),
+        makeMatch({ opponent: 'TeamB', point: 3, goal_get: 1, goal_lose: 0, match_date: '2025/03/01', section_no: 1 }),
+        makeMatch({ opponent: 'TeamC', point: 1, goal_get: 0, goal_lose: 0, match_date: '2025/03/08', section_no: 2 }),
       ]),
       TeamB: makeTeamData([
-        makeMatch({ opponent: 'TeamA', point: 0, goal_get: '0', goal_lose: '1', match_date: '2025/03/01', section_no: '1', is_home: false }),
-        makeMatch({ opponent: 'TeamC', point: 3, goal_get: '2', goal_lose: '0', match_date: '2025/03/15', section_no: '3' }),
+        makeMatch({ opponent: 'TeamA', point: 0, goal_get: 0, goal_lose: 1, match_date: '2025/03/01', section_no: 1, is_home: false }),
+        makeMatch({ opponent: 'TeamC', point: 3, goal_get: 2, goal_lose: 0, match_date: '2025/03/15', section_no: 3 }),
       ]),
     });
 
@@ -181,12 +181,12 @@ describe('prepareRenderData with pointSystem', () => {
     const oldResult = prepareRenderData({
       groupData: {
         TeamA: makeTeamData([
-          makeMatch({ opponent: 'TeamB', point: 2, goal_get: '1', goal_lose: '0', match_date: '2025/03/01', section_no: '1' }),
-          makeMatch({ opponent: 'TeamC', point: 1, goal_get: '0', goal_lose: '0', match_date: '2025/03/08', section_no: '2' }),
+          makeMatch({ opponent: 'TeamB', point: 2, goal_get: 1, goal_lose: 0, match_date: '2025/03/01', section_no: 1 }),
+          makeMatch({ opponent: 'TeamC', point: 1, goal_get: 0, goal_lose: 0, match_date: '2025/03/08', section_no: 2 }),
         ]),
         TeamB: makeTeamData([
-          makeMatch({ opponent: 'TeamA', point: 0, goal_get: '0', goal_lose: '1', match_date: '2025/03/01', section_no: '1', is_home: false }),
-          makeMatch({ opponent: 'TeamC', point: 2, goal_get: '2', goal_lose: '0', match_date: '2025/03/15', section_no: '3' }),
+          makeMatch({ opponent: 'TeamA', point: 0, goal_get: 0, goal_lose: 1, match_date: '2025/03/01', section_no: 1, is_home: false }),
+          makeMatch({ opponent: 'TeamC', point: 2, goal_get: 2, goal_lose: 0, match_date: '2025/03/15', section_no: 3 }),
         ]),
       },
       seasonInfo: makeSeasonInfo({ teamCount: 2, teams: ['TeamA', 'TeamB'], pointSystem: 'old-two-points' }),
@@ -217,16 +217,16 @@ describe('prepareRenderData with tiebreakOrder', () => {
     return {
       groupData: {
         TeamA: makeTeamData([
-          makeMatch({ opponent: 'TeamB', point: 3, goal_get: '2', goal_lose: '0', match_date: '2025/03/01', section_no: '1' }),
-          makeMatch({ opponent: 'TeamC', point: 0, goal_get: '0', goal_lose: '3', match_date: '2025/03/08', section_no: '2' }),
+          makeMatch({ opponent: 'TeamB', point: 3, goal_get: 2, goal_lose: 0, match_date: '2025/03/01', section_no: 1 }),
+          makeMatch({ opponent: 'TeamC', point: 0, goal_get: 0, goal_lose: 3, match_date: '2025/03/08', section_no: 2 }),
         ]),
         TeamB: makeTeamData([
-          makeMatch({ opponent: 'TeamA', point: 0, goal_get: '0', goal_lose: '2', match_date: '2025/03/01', section_no: '1', is_home: false }),
-          makeMatch({ opponent: 'TeamC', point: 3, goal_get: '3', goal_lose: '0', match_date: '2025/03/08', section_no: '2' }),
+          makeMatch({ opponent: 'TeamA', point: 0, goal_get: 0, goal_lose: 2, match_date: '2025/03/01', section_no: 1, is_home: false }),
+          makeMatch({ opponent: 'TeamC', point: 3, goal_get: 3, goal_lose: 0, match_date: '2025/03/08', section_no: 2 }),
         ]),
         TeamC: makeTeamData([
-          makeMatch({ opponent: 'TeamA', point: 3, goal_get: '3', goal_lose: '0', match_date: '2025/03/08', section_no: '2', is_home: false }),
-          makeMatch({ opponent: 'TeamB', point: 0, goal_get: '0', goal_lose: '3', match_date: '2025/03/08', section_no: '2', is_home: false }),
+          makeMatch({ opponent: 'TeamA', point: 3, goal_get: 3, goal_lose: 0, match_date: '2025/03/08', section_no: 2, is_home: false }),
+          makeMatch({ opponent: 'TeamB', point: 0, goal_get: 0, goal_lose: 3, match_date: '2025/03/08', section_no: 2, is_home: false }),
         ]),
       },
       seasonInfo: makeSeasonInfo({
@@ -283,14 +283,14 @@ describe('prepareRenderData with tiebreakOrder', () => {
     const input: PrepareRenderInput = {
       groupData: {
         TeamX: makeTeamData([
-          makeMatch({ opponent: 'TeamZ', point: 3, goal_get: '1', goal_lose: '0', match_date: '2025/03/01', section_no: '1' }),
+          makeMatch({ opponent: 'TeamZ', point: 3, goal_get: 1, goal_lose: 0, match_date: '2025/03/01', section_no: 1 }),
         ]),
         TeamY: makeTeamData([
-          makeMatch({ opponent: 'TeamZ', point: 3, goal_get: '3', goal_lose: '0', match_date: '2025/03/08', section_no: '2' }),
+          makeMatch({ opponent: 'TeamZ', point: 3, goal_get: 3, goal_lose: 0, match_date: '2025/03/08', section_no: 2 }),
         ]),
         TeamZ: makeTeamData([
-          makeMatch({ opponent: 'TeamX', point: 0, goal_get: '0', goal_lose: '1', match_date: '2025/03/01', section_no: '1', is_home: false }),
-          makeMatch({ opponent: 'TeamY', point: 0, goal_get: '0', goal_lose: '3', match_date: '2025/03/08', section_no: '2', is_home: false }),
+          makeMatch({ opponent: 'TeamX', point: 0, goal_get: 0, goal_lose: 1, match_date: '2025/03/01', section_no: 1, is_home: false }),
+          makeMatch({ opponent: 'TeamY', point: 0, goal_get: 0, goal_lose: 3, match_date: '2025/03/08', section_no: 2, is_home: false }),
         ]),
       },
       seasonInfo: makeSeasonInfo({
@@ -323,16 +323,16 @@ describe('prepareRenderData with disp sort keys and targetDate', () => {
     return {
       groupData: {
         TeamA: makeTeamData([
-          makeMatch({ opponent: 'TeamC', point: 3, goal_get: '2', goal_lose: '0', match_date: '2025/03/01', section_no: '1' }),
-          makeMatch({ opponent: 'TeamB', point: 3, goal_get: '1', goal_lose: '0', match_date: '2025/04/01', section_no: '2' }),
+          makeMatch({ opponent: 'TeamC', point: 3, goal_get: 2, goal_lose: 0, match_date: '2025/03/01', section_no: 1 }),
+          makeMatch({ opponent: 'TeamB', point: 3, goal_get: 1, goal_lose: 0, match_date: '2025/04/01', section_no: 2 }),
         ]),
         TeamB: makeTeamData([
-          makeMatch({ opponent: 'TeamC', point: 3, goal_get: '3', goal_lose: '1', match_date: '2025/03/01', section_no: '1' }),
-          makeMatch({ opponent: 'TeamA', point: 0, goal_get: '0', goal_lose: '1', match_date: '2025/04/01', section_no: '2', is_home: false }),
+          makeMatch({ opponent: 'TeamC', point: 3, goal_get: 3, goal_lose: 1, match_date: '2025/03/01', section_no: 1 }),
+          makeMatch({ opponent: 'TeamA', point: 0, goal_get: 0, goal_lose: 1, match_date: '2025/04/01', section_no: 2, is_home: false }),
         ]),
         TeamC: makeTeamData([
-          makeMatch({ opponent: 'TeamA', point: 0, goal_get: '0', goal_lose: '2', match_date: '2025/03/01', section_no: '1', is_home: false }),
-          makeMatch({ opponent: 'TeamB', point: 3, goal_get: '2', goal_lose: '0', match_date: '2025/04/01', section_no: '2' }),
+          makeMatch({ opponent: 'TeamA', point: 0, goal_get: 0, goal_lose: 2, match_date: '2025/03/01', section_no: 1, is_home: false }),
+          makeMatch({ opponent: 'TeamB', point: 3, goal_get: 2, goal_lose: 0, match_date: '2025/04/01', section_no: 2 }),
         ]),
       },
       seasonInfo: makeSeasonInfo({ teamCount: 3, teams: ['TeamA', 'TeamB', 'TeamC'] }),
@@ -411,8 +411,8 @@ describe('prepareRenderData sort stability with many teams', () => {
       const tierPoints = [3, 3, 1, 0]; // W, W, D, L pattern within a group of 4
       const matchIdx = i % 4;
       const pt = tierPoints[matchIdx];
-      const gg = matchIdx < 2 ? '2' : matchIdx === 2 ? '1' : '0';
-      const gl = matchIdx < 2 ? '0' : matchIdx === 2 ? '1' : '2';
+      const gg = matchIdx < 2 ? 2 : matchIdx === 2 ? 1 : 0;
+      const gl = matchIdx < 2 ? 0 : matchIdx === 2 ? 1 : 2;
 
       groupData[teamNames[i]] = makeTeamData([
         makeMatch({
@@ -421,7 +421,7 @@ describe('prepareRenderData sort stability with many teams', () => {
           goal_get: gg,
           goal_lose: gl,
           match_date: `2025/03/${String(i + 1).padStart(2, '0')}`,
-          section_no: '1',
+          section_no: 1,
         }),
       ]);
     }
@@ -464,10 +464,10 @@ describe('prepareRenderData sort stability with many teams', () => {
         makeMatch({
           opponent,
           point: 1,
-          goal_get: '1',
-          goal_lose: '1',
+          goal_get: 1,
+          goal_lose: 1,
           match_date: '2025/03/01',
-          section_no: '1',
+          section_no: 1,
         }),
       ]);
     }

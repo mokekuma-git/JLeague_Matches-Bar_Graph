@@ -48,9 +48,9 @@ function makeStatsTeam(opts: {
   const dfLength = opts.dfLength ?? all_game;
   return {
     df: Array.from({ length: dfLength }, () => ({
-      is_home: true, opponent: '', goal_get: '', goal_lose: '',
+      is_home: true, opponent: '', goal_get: null, goal_lose: null,
       pk_get: null, pk_lose: null, score_ex_get: null, score_ex_lose: null, has_result: false, point: 0,
-      match_date: '', section_no: '', stadium: '', start_time: '',
+      match_date: '', section_no: 0, stadium: '', start_time: '',
       status: '', live: false,
     })),
     point: opts.point,
