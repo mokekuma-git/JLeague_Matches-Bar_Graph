@@ -49,10 +49,10 @@ describe('parseCsvResults', () => {
       const result = parseCsvResults([makeRow()], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup');
       const homeMatch = result['DefaultGroup']['TeamA'].df[0];
       const awayMatch = result['DefaultGroup']['TeamB'].df[0];
-      expect(homeMatch.goal_get).toBe('2');
-      expect(homeMatch.goal_lose).toBe('1');
-      expect(awayMatch.goal_get).toBe('1');
-      expect(awayMatch.goal_lose).toBe('2');
+      expect(homeMatch.goal_get).toBe(2);
+      expect(homeMatch.goal_lose).toBe(1);
+      expect(awayMatch.goal_get).toBe(1);
+      expect(awayMatch.goal_lose).toBe(2);
     });
 
     test('points are computed correctly (win=3, loss=0)', () => {
@@ -271,32 +271,32 @@ describe('parseCsvResults', () => {
       const result = parseCsvResults(rows, BASE_FIELDS, teamList, 'DefaultGroup');
       const td = result['DefaultGroup']['TeamA'];
       calculateTeamStats(td, TARGET, 'section_no');
-      expect(td.point).toBe(4);
-      expect(td.win).toBe(1);
-      expect(td.draw).toBe(1);
-      expect(td.goal_get).toBe(3);
-      expect(td.goal_diff).toBe(1);
+      expect(td.latestStats.point).toBe(4);
+      expect(td.latestStats.resultCounts.win).toBe(1);
+      expect(td.latestStats.resultCounts.draw).toBe(1);
+      expect(td.latestStats.goal_get).toBe(3);
+      expect(td.latestStats.goal_diff).toBe(1);
     });
 
     test('TeamB accumulates L2: point=0, goal_get=1, goal_diff=-2', () => {
       const result = parseCsvResults(rows, BASE_FIELDS, teamList, 'DefaultGroup');
       const td = result['DefaultGroup']['TeamB'];
       calculateTeamStats(td, TARGET, 'section_no');
-      expect(td.point).toBe(0);
-      expect(td.loss).toBe(2);
-      expect(td.goal_get).toBe(1);
-      expect(td.goal_diff).toBe(-2);
+      expect(td.latestStats.point).toBe(0);
+      expect(td.latestStats.resultCounts.loss).toBe(2);
+      expect(td.latestStats.goal_get).toBe(1);
+      expect(td.latestStats.goal_diff).toBe(-2);
     });
 
     test('TeamC accumulates W1 D1: point=4, goal_get=2, goal_diff=1', () => {
       const result = parseCsvResults(rows, BASE_FIELDS, teamList, 'DefaultGroup');
       const td = result['DefaultGroup']['TeamC'];
       calculateTeamStats(td, TARGET, 'section_no');
-      expect(td.point).toBe(4);
-      expect(td.win).toBe(1);
-      expect(td.draw).toBe(1);
-      expect(td.goal_get).toBe(2);
-      expect(td.goal_diff).toBe(1);
+      expect(td.latestStats.point).toBe(4);
+      expect(td.latestStats.resultCounts.win).toBe(1);
+      expect(td.latestStats.resultCounts.draw).toBe(1);
+      expect(td.latestStats.goal_get).toBe(2);
+      expect(td.latestStats.goal_diff).toBe(1);
     });
   });
 

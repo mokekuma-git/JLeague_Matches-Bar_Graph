@@ -143,7 +143,7 @@ describe('assembleTeamColumn', () => {
   test('original ColumnResult.graph is not mutated by reversal', () => {
     const col = buildCol('TeamA', [
       makeMatch({ point: 3, match_date: '2025/03/01' }),
-      makeMatch({ point: 0, match_date: '2025/04/01', goal_get: '0', goal_lose: '1' }),
+      makeMatch({ point: 0, match_date: '2025/04/01', goal_get: 0, goal_lose: 1 }),
     ]);
     const originalGraphLength = col.graph.length;
     assembleTeamColumn(col, 1, col.avlbl_pt, 20, true, info);
@@ -164,7 +164,7 @@ describe('renderBarGraph', () => {
         makeMatch({ point: 3, match_date: '2025/04/01' }),
       ]),
       TeamB: makeTeamData([
-        makeMatch({ point: 1, match_date: '2025/03/01', goal_get: '1', goal_lose: '1' }),
+        makeMatch({ point: 1, match_date: '2025/03/01', goal_get: 1, goal_lose: 1 }),
       ]),
       TeamC: makeTeamData([]),
     };

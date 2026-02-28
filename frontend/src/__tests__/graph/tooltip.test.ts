@@ -10,8 +10,8 @@ import { makeMatch, makeTeamData, makeSeasonInfo } from '../fixtures/match-data'
 // ─── tooltip content functions ─────────────────────────────────────────────────
 
 const WIN_ROW = makeMatch({
-  opponent: 'TeamB', goal_get: '2', goal_lose: '1',
-  stadium: 'TestStadium', section_no: '3', start_time: '14:00', status: '試合終了',
+  opponent: 'TeamB', goal_get: 2, goal_lose: 1,
+  stadium: 'TestStadium', section_no: 3, start_time: '14:00', status: '試合終了',
 });
 const MATCH_DATE = '2025/03/15';
 
@@ -33,9 +33,9 @@ describe('makeWinContent', () => {
 
 describe('makePkWinContent', () => {
   const PK_ROW = makeMatch({
-    opponent: 'TeamC', goal_get: '1', goal_lose: '1',
+    opponent: 'TeamC', goal_get: 1, goal_lose: 1,
     pk_get: 5, pk_lose: 3,
-    stadium: 'PkStadium', section_no: '5', start_time: '15:30',
+    stadium: 'PkStadium', section_no: 5, start_time: '15:30',
   });
 
   test('includes PK scores in parentheses', () => {
@@ -77,24 +77,24 @@ describe('makeFullContent', () => {
 describe('makeTeamStats', () => {
   test('disp=false shows "最新の状態" with latest stats', () => {
     const td = makeTeamData([
-      makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/01' }),
-      makeMatch({ goal_get: '0', goal_lose: '1', point: 0, match_date: '2025/03/08' }),
+      makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/01' }),
+      makeMatch({ goal_get: 0, goal_lose: 1, point: 0, match_date: '2025/03/08' }),
     ]);
     calculateTeamStats(td, '2025/12/31', 'section_no');
-    const html = makeTeamStats(td, false);
+    const html = makeTeamStats(td.latestStats, false);
     expect(html).toContain('最新の状態');
     expect(html).toContain('1勝');
     expect(html).toContain('1敗');
     expect(html).toContain('勝点3');
   });
 
-  test('disp=true shows "表示時の状態" with disp_* stats', () => {
+  test('disp=true shows "表示時の状態" with displayStats', () => {
     const td = makeTeamData([
-      makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/01' }),
-      makeMatch({ goal_get: '0', goal_lose: '1', point: 0, match_date: '2025/04/15' }), // after cutoff
+      makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/01' }),
+      makeMatch({ goal_get: 0, goal_lose: 1, point: 0, match_date: '2025/04/15' }), // after cutoff
     ]);
     calculateTeamStats(td, '2025/03/31', 'section_no');
-    const html = makeTeamStats(td, true);
+    const html = makeTeamStats(td.displayStats, true);
     expect(html).toContain('表示時の状態');
     // Only the March win is within display window
     expect(html).toContain('1勝');
@@ -104,20 +104,20 @@ describe('makeTeamStats', () => {
 
   test('hasPk=false (default) omits PK line', () => {
     const td = makeTeamData([
-      makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/01' }),
+      makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/01' }),
     ]);
     calculateTeamStats(td, '2025/12/31', 'section_no');
-    const html = makeTeamStats(td, false);
+    const html = makeTeamStats(td.latestStats, false);
     expect(html).not.toContain('PK勝');
     expect(html).not.toContain('PK負');
   });
 
   test('hasPk=true includes PK win/loss in the output', () => {
     const td = makeTeamData([
-      makeMatch({ goal_get: '2', goal_lose: '0', point: 3, match_date: '2025/03/01' }),
+      makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/01' }),
     ]);
     calculateTeamStats(td, '2025/12/31', 'section_no');
-    const html = makeTeamStats(td, false, true);
+    const html = makeTeamStats(td.latestStats, false, true);
     expect(html).toContain('PK勝');
     expect(html).toContain('PK負');
   });

@@ -1,68 +1,55 @@
 // Sorting and line-calculation utilities for team standings.
 
 import type { PointSystem } from '../types/config';
-import type { TeamData } from '../types/match';
+import type { TeamData, TeamStats } from '../types/match';
 import { getMaxPointsPerGame } from './point-calculator';
 
-// Numeric fields extracted from TeamData for point/relegation line calculations.
-// All fields are guaranteed to exist once buildTeamColumn has run.
-export interface PointCacheEntry {
-  point: number;
+// Numeric fields for point/relegation line calculations (single-view snapshot).
+interface PointCacheEntry {
   avlbl_pt: number;
-  disp_point: number;
-  disp_avlbl_pt: number;
   rest_games: Record<string, number>;
-  disp_rest_games: Record<string, number>;
 }
 
-export type PointCache = Record<string, PointCacheEntry>;
+// Primary sort keys accepted by getSortedTeamList (with optional 'disp_' prefix).
+type SortableField = 'point' | 'avlbl_pt';
 
-// Narrow union types for the avlbl_pt / point field name variants.
-type AvlblPtKey = 'avlbl_pt' | 'disp_avlbl_pt';
-type PointKey = 'point' | 'disp_point';
+const SORT_FIELD_ACCESSORS: Record<SortableField, (s: TeamStats) => number> = {
+  point:    s => s.point,
+  avlbl_pt: s => s.avlbl_pt,
+};
+
+function parseSortKey(sortKey: string): { field: SortableField; disp: boolean } {
+  const disp = sortKey.startsWith('disp_');
+  const raw = disp ? sortKey.slice(5) : sortKey;
+  if (raw !== 'point' && raw !== 'avlbl_pt') {
+    throw new Error(`Unknown sort field: ${raw}`);
+  }
+  return { field: raw, disp };
+}
+
+/**
+ * Selects the appropriate stats view (latest or display-time) from TeamData.
+ */
+export function getStats(td: TeamData, disp: boolean): TeamStats {
+  return disp ? td.displayStats : td.latestStats;
+}
 
 /**
  * Returns (valB ?? 0) - (valA ?? 0) for descending sort.
- * @param valA - First value
- * @param valB - Second value
- * @returns Difference for descending sort
  */
 export function calcCompare(valA: number | undefined, valB: number | undefined): number {
   return (valB ?? 0) - (valA ?? 0);
 }
 
-/**
- * Returns teamData[attr] or teamData[disp_attr] depending on disp. Missing values treated as 0.
- * @param teamData - TeamData object
- * @param attr     - Attribute name (e.g. 'goal_diff', 'goal_get')
- * @param disp     - Whether to use the display variant (disp_ prefix)
- * @returns Value of the attribute, or 0 if missing
- */
-export function getTeamAttr(teamData: TeamData, attr: string, disp: boolean): number {
-  const key = (disp ? 'disp_' : '') + attr;
-  return (teamData as unknown as Record<string, number | undefined>)[key] ?? 0;
-}
-
-/**
- * Sorts team names in descending order by the given numeric field.
- * Accepts either a PointCache or a team map (Record<string, TeamData>).
- * @param key   - Field name to sort by (e.g. 'avlbl_pt' or 'disp_point')
- * @param teams - Map of team names to data (can be PointCache or TeamData)
- * @returns Sorted list of team names, highest first
- */
-export function getPointSortedTeamList(
-  key: AvlblPtKey | PointKey,
-  teams: Record<string, unknown>,
-): string[] {
-  return Object.keys(teams).sort((a, b) => {
-    const valA = ((teams[a] as Record<string, unknown>)[key] as number | undefined) ?? 0;
-    const valB = ((teams[b] as Record<string, unknown>)[key] as number | undefined) ?? 0;
-    return valB - valA;
-  });
-}
-
 // Known tiebreaker keys that can appear in tiebreak_order.
 const KNOWN_TIEBREAKERS = new Set(['head_to_head', 'goal_diff', 'goal_get', 'wins']);
+
+// Accessor functions for stat-based tiebreakers.
+const TIEBREAKER_ACCESSORS: Record<string, (s: TeamStats) => number> = {
+  goal_diff: s => s.goal_diff,
+  goal_get:  s => s.goal_get,
+  wins:      s => s.resultCounts.win,
+};
 
 /**
  * Groups team names by equal value of `keyFn`. Preserves order of the first
@@ -121,8 +108,8 @@ function computeH2H(
 
       const entry = result.get(teamName)!;
       entry.h2hPoints += m.point;
-      const gGet = parseInt(m.goal_get, 10) || 0;
-      const gLose = parseInt(m.goal_lose, 10) || 0;
+      const gGet = m.goal_get ?? 0;
+      const gLose = m.goal_lose ?? 0;
       entry.h2hGoalDiff += gGet - gLose;
     }
   }
@@ -170,21 +157,15 @@ function applyTiebreaker(
   }
 
   // Stat-based tiebreakers
-  const attrMap: Record<string, string> = {
-    goal_diff: 'goal_diff',
-    goal_get: 'goal_get',
-    wins: 'win',
-  };
-  const attr = attrMap[key];
-  if (!attr) {
+  const accessor = TIEBREAKER_ACCESSORS[key];
+  if (!accessor) {
     console.warn(`Unknown tiebreaker key: "${key}" — skipping`);
     return [tiedTeams];
   }
 
-  const sorted = [...tiedTeams].sort((a, b) =>
-    calcCompare(getTeamAttr(allTeams[a], attr, disp), getTeamAttr(allTeams[b], attr, disp)),
-  );
-  return groupByEqual(sorted, (t) => getTeamAttr(allTeams[t], attr, disp));
+  const getValue = (t: string) => accessor(getStats(allTeams[t], disp));
+  const sorted = [...tiedTeams].sort((a, b) => calcCompare(getValue(a), getValue(b)));
+  return groupByEqual(sorted, getValue);
 }
 
 /**
@@ -199,7 +180,8 @@ export function getSortedTeamList(
   sortKey: string,
   tiebreakOrder: string[] = ['goal_diff', 'goal_get'],
 ): string[] {
-  const disp = sortKey.startsWith('disp_');
+  const { field, disp } = parseSortKey(sortKey);
+  const accessor = SORT_FIELD_ACCESSORS[field];
 
   // Warn about unknown tiebreaker keys (once per call)
   for (const key of tiebreakOrder) {
@@ -208,30 +190,28 @@ export function getSortedTeamList(
     }
   }
 
+  const getFieldVal = (t: string): number => accessor(getStats(teams[t], disp));
+
   // 1. Initial sort by primary key
   const primarySorted = Object.keys(teams).sort((a, b) => {
-    const getVal = (t: string) =>
-      (teams[t] as unknown as Record<string, number | undefined>)[sortKey] ?? 0;
-    let compare = calcCompare(getVal(a), getVal(b));
+    let compare = calcCompare(getFieldVal(a), getFieldVal(b));
     if (compare !== 0) return compare;
 
     // For avlbl_pt sort, use point as implicit secondary before tiebreakers
-    if (sortKey.endsWith('avlbl_pt')) {
-      const subKey = sortKey.replace('avlbl_pt', 'point');
-      const getSubVal = (t: string) =>
-        (teams[t] as unknown as Record<string, number | undefined>)[subKey] ?? 0;
-      compare = calcCompare(getSubVal(a), getSubVal(b));
+    if (field === 'avlbl_pt') {
+      compare = calcCompare(
+        getStats(teams[a], disp).point,
+        getStats(teams[b], disp).point,
+      );
     }
     return compare;
   });
 
   // 2. Group by equal primary key value
   let groups = groupByEqual(primarySorted, (t) => {
-    let val = (teams[t] as unknown as Record<string, number | undefined>)[sortKey] ?? 0;
-    if (sortKey.endsWith('avlbl_pt')) {
-      const subKey = sortKey.replace('avlbl_pt', 'point');
-      const subVal = (teams[t] as unknown as Record<string, number | undefined>)[subKey] ?? 0;
-      val = val * 100000 + subVal;
+    let val = getFieldVal(t);
+    if (field === 'avlbl_pt') {
+      val = val * 100000 + getStats(teams[t], disp).point;
     }
     return val;
   });
@@ -254,72 +234,33 @@ export function getSortedTeamList(
 }
 
 /**
- * Builds a shallow point/rest-games cache from team data.
- * Used to create a mutable snapshot for safety/possible line calculations.
- * @param teams - Single-group team map (team name → TeamData)
- * @returns PointCache with numeric fields guaranteed to exist (defaulting to 0 or empty object)
- */
-export function makePointCache(teams: Record<string, TeamData>): PointCache {
-  const cache: PointCache = {};
-  for (const teamName of Object.keys(teams)) {
-    const td = teams[teamName];
-    cache[teamName] = {
-      point:           td.point           ?? 0,
-      avlbl_pt:        td.avlbl_pt        ?? 0,
-      disp_point:      td.disp_point      ?? 0,
-      disp_avlbl_pt:   td.disp_avlbl_pt   ?? 0,
-      rest_games:      td.rest_games      ?? {},
-      disp_rest_games: td.disp_rest_games ?? {},
-    };
-  }
-  return cache;
-}
-
-/**
  * Returns the minimum points guaranteeing a team ranks at `rank` or better.
  * A team with >= this value is confirmed to finish in the top `rank` positions.
- * @param rank  - 1-based target rank
- * @param disp  - Use display-time stats when true, latest stats when false
- * @param teams - Single-group team map
- * @returns Minimum points guaranteeing a finish at `rank` or better
  */
 export function getSafetyLine(rank: number, disp: boolean, teams: Record<string, TeamData>): number {
-  const key: AvlblPtKey = disp ? 'disp_avlbl_pt' : 'avlbl_pt';
-  const sorted = getPointSortedTeamList(key, teams);
-  // rank >= sorted.length means no competition at that position → any score guarantees it
+  const sorted = Object.keys(teams).sort((a, b) =>
+    getStats(teams[b], disp).avlbl_pt - getStats(teams[a], disp).avlbl_pt);
   if (rank >= sorted.length) return 0;
-  return (teams[sorted[rank]][key] ?? 0) + 1;
+  return getStats(teams[sorted[rank]], disp).avlbl_pt + 1;
 }
 
 /**
  * Returns the current points of the team at `rank`, i.e. the threshold below which
  * a team has no possibility of reaching that rank.
- * @param rank  - 1-based target rank
- * @param disp  - Use display-time stats when true, latest stats when false
- * @param teams - Single-group team map
- * @returns Current points of the team at `rank`, or 0 if rank exceeds number of teams
  */
 export function getPossibleLine(rank: number, disp: boolean, teams: Record<string, TeamData>): number {
-  const key: PointKey = disp ? 'disp_point' : 'point';
-  const sorted = getPointSortedTeamList(key, teams);
-  // rank out of bounds → every team has a chance at that position
+  const sorted = Object.keys(teams).sort((a, b) =>
+    getStats(teams[b], disp).point - getStats(teams[a], disp).point);
   if (rank <= 0 || rank > sorted.length) return 0;
-  return teams[sorted[rank - 1]][key] ?? 0;
+  return getStats(teams[sorted[rank - 1]], disp).point;
 }
 
 /**
  * Returns the maximum points of the `rank`-th team after assuming `teamName` wins
  * all remaining head-to-head fixtures, reducing opponents' maximum points accordingly.
- * Used to determine whether `teamName` can reach `rank` by their own results alone.
  *
  * Note: The sort order is computed BEFORE reducing opponents' points,
  * which preserves the original JS behavior.
- *
- * @param rank     - 1-based target rank
- * @param teamName - Team to test self-sufficiency for
- * @param disp     - Use display-time stats when true, latest stats when false
- * @param teams    - Single-group team map
- * @return Maximum points of the `rank`-th team after assuming `teamName` wins all remaining head-to-head fixtures
  */
 export function getSelfPossibleLine(
   rank: number,
@@ -328,24 +269,25 @@ export function getSelfPossibleLine(
   teams: Record<string, TeamData>,
   pointSystem: PointSystem = 'standard',
 ): number {
-  const avlblPtKey: AvlblPtKey = disp ? 'disp_avlbl_pt' : 'avlbl_pt';
-  const restGamesKey = disp ? 'disp_rest_games' : 'rest_games';
   const idx = rank - 1;
-
-  const cache = makePointCache(teams);
-  delete cache[teamName];
+  const cache: Record<string, PointCacheEntry> = {};
+  for (const [name, td] of Object.entries(teams)) {
+    if (name === teamName) continue;
+    const s = getStats(td, disp);
+    cache[name] = { avlbl_pt: s.avlbl_pt, rest_games: { ...s.rest_games } };
+  }
 
   // Sort BEFORE reducing opponents' points (preserves original JS behavior).
-  const pointSorted = getPointSortedTeamList(avlblPtKey, cache);
+  const pointSorted = Object.keys(cache).sort((a, b) =>
+    cache[b].avlbl_pt - cache[a].avlbl_pt);
 
-  const restGames = teams[teamName][restGamesKey] ?? {};
+  const restGames = getStats(teams[teamName], disp).rest_games;
   for (const opponent of Object.keys(restGames)) {
     if (cache[opponent] !== undefined) {
-      cache[opponent][avlblPtKey] -= getMaxPointsPerGame(pointSystem) * (restGames[opponent] ?? 0);
+      cache[opponent].avlbl_pt -= getMaxPointsPerGame(pointSystem) * (restGames[opponent] ?? 0);
     }
   }
 
-  // idx out of bounds → target rank doesn't exist among competitors
   if (idx >= pointSorted.length) return 0;
-  return cache[pointSorted[idx]][avlblPtKey];
+  return cache[pointSorted[idx]].avlbl_pt;
 }

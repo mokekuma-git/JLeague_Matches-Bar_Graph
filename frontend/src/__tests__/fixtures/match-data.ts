@@ -1,6 +1,7 @@
 // Shared factory functions for test data.
 
 import type { TeamData, TeamMatch } from '../../types/match';
+import { TeamStats } from '../../types/match';
 import type { SeasonInfo } from '../../types/season';
 
 /** Creates a TeamMatch with sensible defaults; override any field as needed. */
@@ -8,8 +9,8 @@ export function makeMatch(overrides: Partial<TeamMatch> = {}): TeamMatch {
   return {
     is_home: true,
     opponent: 'TeamB',
-    goal_get: '2',
-    goal_lose: '1',
+    goal_get: 2,
+    goal_lose: 1,
     pk_get: null,
     pk_lose: null,
     score_ex_get: null,
@@ -17,7 +18,7 @@ export function makeMatch(overrides: Partial<TeamMatch> = {}): TeamMatch {
     has_result: true,
     point: 3,
     match_date: '2025/03/15',
-    section_no: '1',
+    section_no: 1,
     stadium: 'TestStadium',
     start_time: '15:00',
     status: '試合終了',
@@ -28,7 +29,7 @@ export function makeMatch(overrides: Partial<TeamMatch> = {}): TeamMatch {
 
 /** Creates a TeamData with an optional match list; stats are NOT pre-calculated. */
 export function makeTeamData(matches: TeamMatch[] = []): TeamData {
-  return { df: matches };
+  return { df: matches, latestStats: new TeamStats(), displayStats: new TeamStats() };
 }
 
 /** Creates a SeasonInfo for a 4-team season with 1 promotion and 1 relegation slot. */

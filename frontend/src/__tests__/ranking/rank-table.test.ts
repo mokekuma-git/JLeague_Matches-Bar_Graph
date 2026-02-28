@@ -2,6 +2,7 @@
 import { describe, test, expect, beforeAll, vi } from 'vitest';
 import { makeRankData, makeRankTable } from '../../ranking/rank-table';
 import type { TeamData } from '../../types/match';
+import { TeamStats } from '../../types/match';
 import { makeSeasonInfo } from '../fixtures/match-data';
 
 // Mock the CDN-loaded SortableTable global required by makeRankTable.
@@ -11,6 +12,37 @@ beforeAll(() => {
     setData(_data: unknown[]) {}
   });
 });
+
+/** Populate a TeamStats instance from field values. */
+function buildStats(opts: {
+  point: number;
+  avlbl_pt: number;
+  all_game: number;
+  goal_diff?: number;
+  goal_get?: number;
+  win?: number;
+  draw?: number;
+  loss?: number;
+  pk_win?: number;
+  pk_loss?: number;
+  avrg_pt?: number;
+  rest_games?: Record<string, number>;
+}): TeamStats {
+  const s = new TeamStats();
+  s.point = opts.point;
+  s.avlbl_pt = opts.avlbl_pt;
+  s.all_game = opts.all_game;
+  s.goal_diff = opts.goal_diff ?? 0;
+  s.goal_get = opts.goal_get ?? 0;
+  s.resultCounts.win = opts.win ?? 0;
+  s.resultCounts.draw = opts.draw ?? 0;
+  s.resultCounts.loss = opts.loss ?? 0;
+  s.resultCounts.pk_win = opts.pk_win ?? 0;
+  s.resultCounts.pk_loss = opts.pk_loss ?? 0;
+  s.avrg_pt = opts.avrg_pt ?? (opts.all_game > 0 ? opts.point / opts.all_game : 0);
+  s.rest_games = opts.rest_games ?? {};
+  return s;
+}
 
 // Build a TeamData with all stat fields set directly (bypasses calculateTeamStats).
 // df.length determines future_game: future_game = df.length - all_game.
@@ -41,44 +73,32 @@ function makeStatsTeam(opts: {
   disp_rest_games?: Record<string, number>;
   dfLength?: number; // df.length for future_game calculation
 }): TeamData {
-  const rest_games = opts.rest_games ?? {};
-  const disp_rest_games = opts.disp_rest_games ?? rest_games;
-  const all_game = opts.all_game;
-  // Create a df of the right length (all with has_result:false as placeholders).
-  const dfLength = opts.dfLength ?? all_game;
+  const dfLength = opts.dfLength ?? opts.all_game;
+  const latestStats = buildStats(opts);
+  const dispAllGame = opts.disp_all_game ?? opts.all_game;
+  const displayStats = buildStats({
+    point: opts.disp_point ?? opts.point,
+    avlbl_pt: opts.disp_avlbl_pt ?? opts.avlbl_pt,
+    all_game: dispAllGame,
+    goal_diff: opts.disp_goal_diff ?? opts.goal_diff,
+    goal_get: opts.disp_goal_get ?? opts.goal_get,
+    win: opts.disp_win ?? opts.win,
+    draw: opts.disp_draw ?? opts.draw,
+    loss: opts.disp_loss ?? opts.loss,
+    pk_win: opts.disp_pk_win ?? opts.pk_win,
+    pk_loss: opts.disp_pk_loss ?? opts.pk_loss,
+    avrg_pt: opts.disp_avrg_pt,
+    rest_games: opts.disp_rest_games ?? opts.rest_games,
+  });
   return {
     df: Array.from({ length: dfLength }, () => ({
-      is_home: true, opponent: '', goal_get: '', goal_lose: '',
+      is_home: true, opponent: '', goal_get: null, goal_lose: null,
       pk_get: null, pk_lose: null, score_ex_get: null, score_ex_lose: null, has_result: false, point: 0,
-      match_date: '', section_no: '', stadium: '', start_time: '',
+      match_date: '', section_no: 0, stadium: '', start_time: '',
       status: '', live: false,
     })),
-    point: opts.point,
-    avlbl_pt: opts.avlbl_pt,
-    all_game,
-    goal_diff: opts.goal_diff ?? 0,
-    goal_get: opts.goal_get ?? 0,
-    win: opts.win ?? 0,
-    pk_win: opts.pk_win ?? 0,
-    pk_loss: opts.pk_loss ?? 0,
-    draw: opts.draw ?? 0,
-    loss: opts.loss ?? 0,
-    avrg_pt: opts.avrg_pt ?? (all_game > 0 ? opts.point / all_game : 0),
-    rest_games,
-    disp_point: opts.disp_point ?? opts.point,
-    disp_avlbl_pt: opts.disp_avlbl_pt ?? opts.avlbl_pt,
-    disp_all_game: opts.disp_all_game ?? all_game,
-    disp_goal_diff: opts.disp_goal_diff ?? opts.goal_diff ?? 0,
-    disp_goal_get: opts.disp_goal_get ?? opts.goal_get ?? 0,
-    disp_win: opts.disp_win ?? opts.win ?? 0,
-    disp_pk_win: opts.disp_pk_win ?? opts.pk_win ?? 0,
-    disp_pk_loss: opts.disp_pk_loss ?? opts.pk_loss ?? 0,
-    disp_draw: opts.disp_draw ?? opts.draw ?? 0,
-    disp_loss: opts.disp_loss ?? opts.loss ?? 0,
-    disp_avrg_pt: opts.disp_avrg_pt ?? (opts.disp_all_game ?? all_game) > 0
-      ? (opts.disp_point ?? opts.point) / (opts.disp_all_game ?? all_game)
-      : 0,
-    disp_rest_games,
+    latestStats,
+    displayStats,
   };
 }
 
@@ -251,8 +271,8 @@ describe('makeRankData – all four champion states in one table', () => {
   });
 });
 
-// ─── Scenario 4: disp=true uses disp_* stats ──────────────────────────────────
-// Verify that when disp=true, the row fields reflect disp_* values, not latest values.
+// ─── Scenario 4: disp=true uses displayStats ──────────────────────────────────
+// Verify that when disp=true, the row fields reflect displayStats values, not latest values.
 describe('makeRankData – disp=true uses display-time stats', () => {
   const seasonInfo = makeSeasonInfo({ teamCount: 2, promotionCount: 0, relegationCount: 0 });
 
@@ -273,27 +293,27 @@ describe('makeRankData – disp=true uses display-time stats', () => {
   };
   const teamList = ['TeamA', 'TeamB'];
 
-  test('point field in row equals disp_point when disp=true', () => {
+  test('point field in row equals displayStats.point when disp=true', () => {
     const rows = makeRankData(groupData, teamList, seasonInfo, true);
-    expect(rows[0].point).toBe(6);   // TeamA.disp_point
-    expect(rows[1].point).toBe(9);   // TeamB.disp_point
+    expect(rows[0].point).toBe(6);   // TeamA.displayStats.point
+    expect(rows[1].point).toBe(9);   // TeamB.displayStats.point
   });
 
-  test('point field in row equals latest point when disp=false', () => {
+  test('point field in row equals latestStats.point when disp=false', () => {
     const rows = makeRankData(groupData, teamList, seasonInfo, false);
-    expect(rows[0].point).toBe(15);  // TeamA.point
-    expect(rows[1].point).toBe(9);   // TeamB.point
+    expect(rows[0].point).toBe(15);  // TeamA.latestStats.point
+    expect(rows[1].point).toBe(9);   // TeamB.latestStats.point
   });
 
-  test('avlbl_pt field reflects disp_avlbl_pt when disp=true', () => {
+  test('avlbl_pt field reflects displayStats.avlbl_pt when disp=true', () => {
     const rows = makeRankData(groupData, teamList, seasonInfo, true);
-    expect(rows[0].avlbl_pt).toBe(12);  // TeamA.disp_avlbl_pt
-    expect(rows[1].avlbl_pt).toBe(18);  // TeamB.disp_avlbl_pt
+    expect(rows[0].avlbl_pt).toBe(12);  // TeamA.displayStats.avlbl_pt
+    expect(rows[1].avlbl_pt).toBe(18);  // TeamB.displayStats.avlbl_pt
   });
 
-  test('win field reflects disp_win when disp=true', () => {
+  test('win field reflects displayStats.resultCounts.win when disp=true', () => {
     const rows = makeRankData(groupData, teamList, seasonInfo, true);
-    expect(rows[0].win).toBe(2);  // TeamA.disp_win
+    expect(rows[0].win).toBe(2);  // TeamA.displayStats.resultCounts.win
   });
 });
 

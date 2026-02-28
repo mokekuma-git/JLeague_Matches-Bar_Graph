@@ -28,8 +28,8 @@ export interface RawMatchRow {
 export interface TeamMatch {
   is_home: boolean;
   opponent: string;
-  goal_get: string;
-  goal_lose: string;
+  goal_get: number | null;   // null = unplayed match
+  goal_lose: number | null;
   // pk_get/pk_lose: always present after parsing; null means no PK shootout.
   // Using | null (not ?) because the property is always set, but may be null.
   pk_get: number | null;
@@ -39,7 +39,7 @@ export interface TeamMatch {
   has_result: boolean;
   point: number;
   match_date: string;
-  section_no: string;
+  section_no: number;
   stadium: string;
   start_time: string;
   status: string;
@@ -47,41 +47,52 @@ export interface TeamMatch {
 }
 
 // Classification of a single match result.
-// Used as both classifyResult() return type and TeamStats counter field names.
+// Used as both classifyResult() return type and TeamStats.resultCounts key.
 export type MatchResult = 'win' | 'pk_win' | 'pk_loss' | 'draw' | 'loss';
 
-// Aggregated statistics written onto TeamData by calculateTeamStats.
-// All fields are optional because they do not exist until calculateTeamStats runs.
-export interface TeamStats {
-  point?: number;
-  avlbl_pt?: number;
-  disp_point?: number;
-  disp_avlbl_pt?: number;
-  goal_diff?: number;
-  goal_get?: number;
-  disp_goal_diff?: number;
-  disp_goal_get?: number;
-  win?: number;
-  pk_win?: number;
-  pk_loss?: number;
-  loss?: number;
-  draw?: number;
-  all_game?: number;
-  disp_win?: number;
-  disp_pk_win?: number;
-  disp_pk_loss?: number;
-  disp_loss?: number;
-  disp_draw?: number;
-  disp_all_game?: number;
-  rest_games?: Record<string, number>;      // opponent → remaining matches
-  disp_rest_games?: Record<string, number>;
-  avrg_pt?: number;
-  disp_avrg_pt?: number;
+// Aggregated statistics for a single view (latest or display-time).
+// Managed as two instances on TeamData: latestStats (full season) and displayStats (up to targetDate).
+export class TeamStats {
+  point = 0;
+  avlbl_pt = 0;
+  goal_diff = 0;
+  goal_get = 0;
+  all_game = 0;
+  rest_games: Record<string, number> = {};
+  avrg_pt = 0;
+
+  /** Per-result-type match counts. Key = MatchResult literal. */
+  readonly resultCounts: Record<MatchResult, number> = {
+    win: 0, pk_win: 0, pk_loss: 0, draw: 0, loss: 0,
+  };
+
+  /** Record a completed match. */
+  recordMatch(result: MatchResult, goalGet: number, goalLose: number, matchPoint: number): void {
+    this.point += matchPoint;
+    this.avlbl_pt += matchPoint;
+    this.all_game += 1;
+    this.goal_diff += goalGet - goalLose;
+    this.goal_get += goalGet;
+    this.resultCounts[result] += 1;
+  }
+
+  /** Record an unplayed or beyond-cutoff match. */
+  addUnplayedMatch(opponent: string, maxPt: number): void {
+    this.avlbl_pt += maxPt;
+    this.rest_games[opponent] = (this.rest_games[opponent] ?? 0) + 1;
+  }
+
+  /** Compute derived fields after all matches recorded. */
+  finalize(): void {
+    this.avrg_pt = this.all_game === 0 ? 0 : this.point / this.all_game;
+  }
 }
 
 // Full team data: match list combined with aggregated stats.
-export interface TeamData extends TeamStats {
+export interface TeamData {
   df: TeamMatch[];
+  latestStats: TeamStats;    // latest (full season)
+  displayStats: TeamStats;   // display-time (up to targetDate)
 }
 
 // group name → team name → TeamData
