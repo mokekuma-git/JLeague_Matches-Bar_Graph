@@ -33,7 +33,7 @@ function boxHeightClass(pointValue: number): string {
 export interface ColumnResult {
   /** Box HTML strings in display order (before any reversal by the renderer). */
   graph: string[];
-  /** Maximum points (displayStats.avlbl_pt). Used for space calculation. */
+  /** Available points (= displayStats.avlbl_pt). Used for space-box calculation. */
   avlbl_pt: number;
   teamName: string;
   /** Full-match content strings for loss matches (shown in team stats tooltip). */
@@ -98,7 +98,7 @@ export function buildTeamColumn(
         + `${statusSuffix}</span></p></div>\n`,
       );
     } else {
-      const cls = classifyResult(row.point, row.pk_get, pointSystem);
+      const cls = classifyResult(row.point, row.pk_get, row.pk_lose, pointSystem);
       const liveCls = row.live ? ' live' : '';
       if (cls === 'win') {
         const heightCls = boxHeightClass(winPt);

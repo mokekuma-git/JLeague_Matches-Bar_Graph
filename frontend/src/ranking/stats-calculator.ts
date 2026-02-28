@@ -42,15 +42,22 @@ export function sortTeamMatches(
 
 /**
  * Classifies a match result into win/pk_win/pk_loss/draw/loss.
+ *
+ * Uses pkGet vs pkLose comparison (not point values) to distinguish PK win
+ * from PK loss, because under 'old-two-points' both award the same 1 point.
  */
 export function classifyResult(
-  point: number, pkGet: number | null, pointSystem: PointSystem,
+  point: number,
+  pkGet: number | null,
+  pkLose: number | null,
+  pointSystem: PointSystem,
 ): MatchResult {
   const winPt = getWinPoints(pointSystem);
   if (point >= winPt) return 'win';
-  if (point >= 2 && pkGet !== null) return 'pk_win';
-  if (point === 1 && pkGet !== null) return 'pk_loss';
-  if (point === 1) return 'draw';
+  if (point > 0 && pkGet !== null && pkLose !== null) {
+    return pkGet > pkLose ? 'pk_win' : 'pk_loss';
+  }
+  if (point >= 1) return 'draw';
   return 'loss';
 }
 
@@ -74,7 +81,7 @@ export function calculateTeamStats(
       teamData.latestStats.addUnplayedMatch(row.opponent, maxPt);
       teamData.displayStats.addUnplayedMatch(row.opponent, maxPt);
     } else {
-      const cls = classifyResult(row.point, row.pk_get, pointSystem);
+      const cls = classifyResult(row.point, row.pk_get, row.pk_lose, pointSystem);
       teamData.latestStats.recordMatch(cls, row.goal_get ?? 0, row.goal_lose ?? 0, row.point);
       if (row.match_date <= targetDate) {
         teamData.displayStats.recordMatch(cls, row.goal_get ?? 0, row.goal_lose ?? 0, row.point);

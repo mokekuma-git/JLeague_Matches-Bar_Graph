@@ -133,13 +133,13 @@
             {"point_system": "old-two-points"}],
           "1993B": [10, 1, 0,
             ["鹿島", "Ｖ川崎", "横浜M", "清水", "市原", "広島", "横浜Ｆ", "Ｇ大阪", "名古屋", "浦和"],
-            {"point_system": "old-two-points"}],
+            {"point_system": "victory-count"}],
           "1993A": [10, 1, 0,
             ["Ｖ川崎", "清水", "名古屋", "鹿島", "浦和", "市原", "横浜M", "Ｇ大阪", "広島", "横浜Ｆ"],
-            {"point_system": "old-two-points"}],
+            {"point_system": "victory-count"}],
           "1993": [10, 1, 0,
             ["Ｖ川崎", "清水", "名古屋", "鹿島", "浦和", "市原", "横浜M", "Ｇ大阪", "広島", "横浜Ｆ"],
-            {"point_system": "old-two-points"}]
+            {"point_system": "victory-count"}]
         }
       },
       "J2": {

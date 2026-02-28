@@ -254,3 +254,37 @@ describe('buildTeamColumn – old-two-points system', () => {
     expect(result.lossBox).toHaveLength(1);
   });
 });
+
+// ─── victory-count system ───────────────────────────────────────────────────
+
+describe('buildTeamColumn – victory-count system', () => {
+  function buildVCColumn(matches: ReturnType<typeof makeMatch>[]) {
+    const td = makeTeamData(matches);
+    calculateTeamStats(td, TARGET, 'section_no', 'victory-count');
+    return { result: buildTeamColumn(TEAM, td, TARGET, false, false, 'victory-count'), td };
+  }
+
+  test('PK win (3 pt) → tall box (same as regular win)', () => {
+    const { result } = buildVCColumn([
+      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 3, match_date: '2025/03/15' }),
+    ]);
+    expect(result.graph).toHaveLength(1);
+    expect(result.graph[0]).toContain('"tall box"');
+  });
+
+  test('PK loss (0 pt) → goes to lossBox (same as regular loss)', () => {
+    const { result } = buildVCColumn([
+      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 3, pk_lose: 5, point: 0, match_date: '2025/03/15' }),
+    ]);
+    expect(result.graph).toHaveLength(0);
+    expect(result.lossBox).toHaveLength(1);
+  });
+
+  test('avlbl_pt counts PK win as 3 and PK loss as 0', () => {
+    const { result } = buildVCColumn([
+      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 3, match_date: '2025/03/01', section_no: 1 }),
+      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 3, pk_lose: 5, point: 0, match_date: '2025/03/15', section_no: 2 }),
+    ]);
+    expect(result.avlbl_pt).toBe(3); // 3 (pk_win) + 0 (pk_loss)
+  });
+});

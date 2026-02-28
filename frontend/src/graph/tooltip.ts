@@ -33,8 +33,8 @@ export function makeFullContent(row: TeamMatch, matchDate: string): string {
 export function makeTeamStats(stats: TeamStats, disp: boolean, hasPk = false): string {
   const label = disp ? '表示時の状態' : '最新の状態';
   const rc = stats.resultCounts;
-  const pkLine = hasPk ? `${rc.pk_win}PK勝 ${rc.pk_loss}PK負 ` : '';
-  return `${label}<br/>${rc.win}勝 ${pkLine}${rc.draw}分 ${rc.loss}敗<br/>`
+  const pkLine = hasPk ? ` ${rc.pk_win}PK勝 ${rc.pk_loss}PK負` : '';
+  return `${label}<br/>${rc.win}勝 ${rc.draw}分 ${rc.loss}敗${pkLine}<br/>`
     + `勝点${stats.point}, 最大${stats.avlbl_pt}<br/>`
     + `${stats.goal_get}得点, ${stats.goal_get - stats.goal_diff}失点<br/>`
     + `得失点差: ${stats.goal_diff}`;

@@ -193,28 +193,12 @@ export function getSortedTeamList(
   const getFieldVal = (t: string): number => accessor(getStats(teams[t], disp));
 
   // 1. Initial sort by primary key
-  const primarySorted = Object.keys(teams).sort((a, b) => {
-    let compare = calcCompare(getFieldVal(a), getFieldVal(b));
-    if (compare !== 0) return compare;
-
-    // For avlbl_pt sort, use point as implicit secondary before tiebreakers
-    if (field === 'avlbl_pt') {
-      compare = calcCompare(
-        getStats(teams[a], disp).point,
-        getStats(teams[b], disp).point,
-      );
-    }
-    return compare;
-  });
+  const primarySorted = Object.keys(teams).sort((a, b) =>
+    calcCompare(getFieldVal(a), getFieldVal(b)),
+  );
 
   // 2. Group by equal primary key value
-  let groups = groupByEqual(primarySorted, (t) => {
-    let val = getFieldVal(t);
-    if (field === 'avlbl_pt') {
-      val = val * 100000 + getStats(teams[t], disp).point;
-    }
-    return val;
-  });
+  let groups = groupByEqual(primarySorted, getFieldVal);
 
   // 3. Apply tiebreakers to each group of tied teams
   for (const key of tiebreakOrder) {
