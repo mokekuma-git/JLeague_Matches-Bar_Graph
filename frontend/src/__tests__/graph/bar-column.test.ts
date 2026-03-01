@@ -200,8 +200,8 @@ describe('buildTeamColumn – lossBox content', () => {
         opponent: 'TeamB', stadium: 'LossStadium', section_no: 4,
       }),
     ]);
-    expect(result.lossBox[0]).toContain('TeamB');
-    expect(result.lossBox[0]).toContain('LossStadium');
+    expect(result.lossBox[0]).toContain('Tea');      // opponent truncated to 3 chars
+    expect(result.lossBox[0]).toContain('LossSta');  // stadium truncated to 7 chars
     expect(result.lossBox[0]).toContain('(4)');
   });
 

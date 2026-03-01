@@ -69,11 +69,12 @@ export function parseCsvResults(
   const teamMap: TeamMap = {};
 
   if (defaultGroup === 'null') defaultGroup = 'DefaultGroup';
-  if (fields.includes('group')) defaultGroup = null;
+  const hasGroupColumn = fields.includes('group');
 
   for (const match of data) {
     normalizeColumnAliases(match);
-    const group = defaultGroup ?? match.group ?? 'DefaultGroup';
+    const csvGroup = hasGroupColumn ? match.group : undefined;
+    const group = (csvGroup && csvGroup !== '') ? csvGroup : (defaultGroup ?? 'DefaultGroup');
 
     if (!(group in teamMap)) {
       teamMap[group] = {};

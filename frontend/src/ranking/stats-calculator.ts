@@ -77,6 +77,7 @@ export function calculateTeamStats(
   sortTeamMatches(teamData, targetDate, matchSortKey);
 
   for (const row of teamData.df) {
+    if (row.status === '試合中止') continue;
     if (!row.has_result) {
       teamData.latestStats.addUnplayedMatch(row.opponent, maxPt);
       teamData.displayStats.addUnplayedMatch(row.opponent, maxPt);
