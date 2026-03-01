@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { describe, test, expect } from 'vitest';
 import { buildTeamColumn } from '../../graph/bar-column';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
@@ -25,38 +27,41 @@ describe('buildTeamColumn – box class per result type', () => {
       makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/15' }),
     ]);
     expect(result.graph).toHaveLength(1);
-    expect(result.graph[0]).toContain('"tall box"');
+    expect(result.graph[0].classList.contains('tall')).toBe(true);
+    expect(result.graph[0].classList.contains('box')).toBe(true);
     expect(result.lossBox).toHaveLength(0);
   });
 
-  test('win box contains team CSS class', () => {
+  test('win box contains team CSS class on tooltip', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/15' }),
     ]);
-    expect(result.graph[0]).toContain(TEAM);
+    expect(result.graph[0].querySelector(`.tooltip.${TEAM}`)).not.toBeNull();
   });
 
   test('win (3 pt, tall) → tooltiptext does NOT include stadium', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/15', stadium: 'BigStadium' }),
     ]);
-    const tooltiptext = result.graph[0].match(/<span class="tooltiptext[^"]*">(.*?)<\/span>/s);
+    const tooltiptext = result.graph[0].querySelector('.tooltiptext');
     expect(tooltiptext).not.toBeNull();
-    expect(tooltiptext![1]).not.toContain('BigStadium');
+    expect(tooltiptext!.innerHTML).not.toContain('BigStadium');
   });
 
   test('PK win (2 pt) → medium box in graph', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 2, match_date: '2025/03/15' }),
     ]);
-    expect(result.graph[0]).toContain('"medium box"');
+    expect(result.graph[0].classList.contains('medium')).toBe(true);
+    expect(result.graph[0].classList.contains('box')).toBe(true);
   });
 
   test('draw (1 pt, no PK) → short box in graph', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: 1, goal_lose: 1, pk_get: null, pk_lose: null, point: 1, match_date: '2025/03/15' }),
     ]);
-    expect(result.graph[0]).toContain('"short box"');
+    expect(result.graph[0].classList.contains('short')).toBe(true);
+    expect(result.graph[0].classList.contains('box')).toBe(true);
   });
 
   test('loss (0 pt) → no graph entry, one lossBox entry', () => {
@@ -76,39 +81,42 @@ describe('buildTeamColumn – future and display-future boxes', () => {
       makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, match_date: '2025/05/01' }),
     ]);
     expect(result.graph).toHaveLength(1);
-    expect(result.graph[0]).toContain('future bg');
+    expect(result.graph[0].querySelector('.future.bg')).not.toBeNull();
   });
 
   test('completed match after targetDate → tall box with "future bg"', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/04/15' }),
     ]);
-    expect(result.graph[0]).toContain('future bg');
+    expect(result.graph[0].querySelector('.future.bg')).not.toBeNull();
   });
 
   test('future box does NOT have "live" class', () => {
     const { result } = buildColumn([
       makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, match_date: '2025/05/01' }),
     ]);
-    expect(result.graph[0]).not.toContain('"tall box live"');
+    expect(result.graph[0].classList.contains('live')).toBe(false);
   });
 });
 
 // ─── live match flag ───────────────────────────────────────────────────────────
 
 describe('buildTeamColumn – live match styling', () => {
-  test('live win → "tall box live" CSS class', () => {
+  test('live win → box has "live" CSS class', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: 1, goal_lose: 0, point: 3, match_date: '2025/03/15', live: true, status: '前半' }),
     ]);
-    expect(result.graph[0]).toContain('"tall box live"');
+    expect(result.graph[0].classList.contains('tall')).toBe(true);
+    expect(result.graph[0].classList.contains('box')).toBe(true);
+    expect(result.graph[0].classList.contains('live')).toBe(true);
   });
 
-  test('live draw → "short box live" CSS class', () => {
+  test('live draw → box has "live" CSS class', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: 1, goal_lose: 1, pk_get: null, pk_lose: null, point: 1, match_date: '2025/03/15', live: true }),
     ]);
-    expect(result.graph[0]).toContain('"short box live"');
+    expect(result.graph[0].classList.contains('short')).toBe(true);
+    expect(result.graph[0].classList.contains('live')).toBe(true);
   });
 
   test('live loss → lossBox entry wrapped in <div class="live">', () => {
@@ -219,31 +227,34 @@ describe('buildTeamColumn – old-two-points system', () => {
     const { result } = buildOldColumn([
       makeMatch({ goal_get: 2, goal_lose: 0, point: 2, match_date: '2025/03/15' }),
     ]);
-    expect(result.graph[0]).toContain('"medium box"');
+    expect(result.graph[0].classList.contains('medium')).toBe(true);
+    expect(result.graph[0].classList.contains('box')).toBe(true);
   });
 
   test('win (2 pt, medium) → tooltiptext includes stadium', () => {
     const { result } = buildOldColumn([
       makeMatch({ goal_get: 2, goal_lose: 0, point: 2, match_date: '2025/03/15', stadium: 'OldStadium' }),
     ]);
-    const tooltiptext = result.graph[0].match(/<span class="tooltiptext[^"]*">(.*?)<\/span>/s);
+    const tooltiptext = result.graph[0].querySelector('.tooltiptext');
     expect(tooltiptext).not.toBeNull();
-    expect(tooltiptext![1]).toContain('OldStadium');
+    expect(tooltiptext!.innerHTML).toContain('OldStadium');
   });
 
   test('draw (1 pt) → short box', () => {
     const { result } = buildOldColumn([
       makeMatch({ goal_get: 1, goal_lose: 1, point: 1, match_date: '2025/03/15' }),
     ]);
-    expect(result.graph[0]).toContain('"short box"');
+    expect(result.graph[0].classList.contains('short')).toBe(true);
+    expect(result.graph[0].classList.contains('box')).toBe(true);
   });
 
   test('future match → medium box (max 2pt)', () => {
     const { result } = buildOldColumn([
       makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, match_date: '2025/05/01' }),
     ]);
-    expect(result.graph[0]).toContain('future bg');
-    expect(result.graph[0]).toContain('"medium box"');
+    expect(result.graph[0].querySelector('.future.bg')).not.toBeNull();
+    expect(result.graph[0].classList.contains('medium')).toBe(true);
+    expect(result.graph[0].classList.contains('box')).toBe(true);
   });
 
   test('loss (0 pt) → goes to lossBox', () => {
@@ -269,7 +280,8 @@ describe('buildTeamColumn – victory-count system', () => {
       makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 3, match_date: '2025/03/15' }),
     ]);
     expect(result.graph).toHaveLength(1);
-    expect(result.graph[0]).toContain('"tall box"');
+    expect(result.graph[0].classList.contains('tall')).toBe(true);
+    expect(result.graph[0].classList.contains('box')).toBe(true);
   });
 
   test('PK loss (0 pt) → goes to lossBox (same as regular loss)', () => {

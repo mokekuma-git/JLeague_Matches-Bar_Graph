@@ -1,3 +1,5 @@
+// @vitest-environment happy-dom
+
 import { describe, test, expect } from 'vitest';
 import {
   getScaleColumnPositions,
@@ -50,30 +52,34 @@ describe('getScaleColumnPositions', () => {
 
 describe('makePointColumn', () => {
   test('maxAvblPt=3 → contains boxes 1, 2, 3', () => {
-    const html = makePointColumn(3, false);
-    expect(html).toContain('>1<');
-    expect(html).toContain('>2<');
-    expect(html).toContain('>3<');
+    const col = makePointColumn(3, false);
+    const texts = Array.from(col.querySelectorAll('.point.box')).map(b => b.textContent);
+    expect(texts).toContain('1');
+    expect(texts).toContain('2');
+    expect(texts).toContain('3');
   });
 
   test('contains header cells 順位 and 勝点', () => {
-    const html = makePointColumn(5, false);
-    expect(html).toContain('>順位<');
-    expect(html).toContain('>勝点<');
+    const col = makePointColumn(5, false);
+    const texts = Array.from(col.querySelectorAll('.point.box')).map(b => b.textContent);
+    expect(texts).toContain('順位');
+    expect(texts).toContain('勝点');
   });
 
   test('bottomFirst=false → ascending order in HTML (1 appears before 3)', () => {
-    const html = makePointColumn(3, false);
-    expect(html.indexOf('>1<')).toBeLessThan(html.indexOf('>3<'));
+    const col = makePointColumn(3, false);
+    const texts = Array.from(col.querySelectorAll('.point.box')).map(b => b.textContent);
+    expect(texts.indexOf('1')).toBeLessThan(texts.indexOf('3'));
   });
 
   test('bottomFirst=true → descending order in HTML (3 appears before 1)', () => {
-    const html = makePointColumn(3, true);
-    expect(html.indexOf('>3<')).toBeLessThan(html.indexOf('>1<'));
+    const col = makePointColumn(3, true);
+    const texts = Array.from(col.querySelectorAll('.point.box')).map(b => b.textContent);
+    expect(texts.indexOf('3')).toBeLessThan(texts.indexOf('1'));
   });
 
   test('contains point_column class', () => {
-    expect(makePointColumn(1, false)).toContain('point_column');
+    expect(makePointColumn(1, false).classList.contains('point_column')).toBe(true);
   });
 });
 
@@ -97,47 +103,48 @@ describe('assembleTeamColumn', () => {
   test('space box added when avlbl_pt < maxAvblPt', () => {
     const col = buildCol('TeamA', [makeMatch({ point: 3, has_result: true })]);
     // avlbl_pt = 3, maxAvblPt = 6 → space = 3
-    const html = assembleTeamColumn(col, 1, 6, 20, false, info);
-    expect(html).toContain('class="space box"');
-    expect(html).toContain('height:60px'); // 3 × 20
+    const el = assembleTeamColumn(col, 1, 6, 20, false, info);
+    const spaceBox = el.querySelector('.space.box') as HTMLElement | null;
+    expect(spaceBox).not.toBeNull();
+    expect(spaceBox!.style.height).toBe('60px'); // 3 × 20
   });
 
   test('no space box when avlbl_pt === maxAvblPt', () => {
     const col = buildCol('TeamA', [makeMatch({ point: 3, has_result: true })]);
     const maxAvblPt = col.avlbl_pt;
-    const html = assembleTeamColumn(col, 1, maxAvblPt, 20, false, info);
-    expect(html).not.toContain('class="space box"');
+    const el = assembleTeamColumn(col, 1, maxAvblPt, 20, false, info);
+    expect(el.querySelector('.space.box')).toBeNull();
   });
 
   test('team column has correct id attribute', () => {
     const col = buildCol('TeamA', [makeMatch({ point: 3 })]);
-    const html = assembleTeamColumn(col, 1, col.avlbl_pt, 20, false, info);
-    expect(html).toContain('id="TeamA_column"');
+    const el = assembleTeamColumn(col, 1, col.avlbl_pt, 20, false, info);
+    expect(el.id).toBe('TeamA_column');
   });
 
   test('rank=1 → promoted CSS class', () => {
     const col = buildCol('TeamA', []);
-    const html = assembleTeamColumn(col, 1, 0, 20, false, info);
-    expect(html).toContain('promoted');
+    const el = assembleTeamColumn(col, 1, 0, 20, false, info);
+    expect(el.querySelector('.promoted')).not.toBeNull();
   });
 
   test('rank=4 (last, relegationCount=1) → relegated CSS class', () => {
     const col = buildCol('TeamD', []);
-    const html = assembleTeamColumn(col, 4, 0, 20, false, info);
-    expect(html).toContain('relegated');
+    const el = assembleTeamColumn(col, 4, 0, 20, false, info);
+    expect(el.querySelector('.relegated')).not.toBeNull();
   });
 
   test('rank=2 → no promotion/relegation class', () => {
     const col = buildCol('TeamB', []);
-    const html = assembleTeamColumn(col, 2, 0, 20, false, info);
-    expect(html).not.toContain('"promoted"');
-    expect(html).not.toContain('"relegated"');
+    const el = assembleTeamColumn(col, 2, 0, 20, false, info);
+    expect(el.querySelector('.promoted')).toBeNull();
+    expect(el.querySelector('.relegated')).toBeNull();
   });
 
-  test('bottomFirst=true → does not throw and still produces column HTML', () => {
+  test('bottomFirst=true → does not throw and still produces column element', () => {
     const col = buildCol('TeamA', [makeMatch({ point: 3 })]);
-    const html = assembleTeamColumn(col, 1, col.avlbl_pt, 20, true, info);
-    expect(html).toContain('TeamA_column');
+    const el = assembleTeamColumn(col, 1, col.avlbl_pt, 20, true, info);
+    expect(el.id).toBe('TeamA_column');
   });
 
   test('original ColumnResult.graph is not mutated by reversal', () => {
@@ -174,6 +181,13 @@ describe('renderBarGraph', () => {
     return teams;
   }
 
+  /** Mount a DocumentFragment into a container for querying. */
+  function mountFragment(fragment: DocumentFragment): HTMLDivElement {
+    const container = document.createElement('div');
+    container.appendChild(fragment);
+    return container;
+  }
+
   test('matchDates always starts with sentinel 1970/01/01 for "開幕前" slider position', () => {
     const groupData = buildGroupData();
     const { matchDates } = renderBarGraph(
@@ -204,37 +218,40 @@ describe('renderBarGraph', () => {
     expect(matchDates).toEqual(['1970/01/01']);
   });
 
-  test('html contains all team column ids', () => {
+  test('fragment contains all team column ids', () => {
     const groupData = buildGroupData();
     const sortedTeams = ['TeamA', 'TeamB', 'TeamC'];
-    const { html } = renderBarGraph(
+    const { fragment } = renderBarGraph(
       groupData, sortedTeams, info, TARGET, false, false, 20,
     );
-    expect(html).toContain('id="TeamA_column"');
-    expect(html).toContain('id="TeamB_column"');
-    expect(html).toContain('id="TeamC_column"');
+    const container = mountFragment(fragment);
+    expect(container.querySelector('#TeamA_column')).not.toBeNull();
+    expect(container.querySelector('#TeamB_column')).not.toBeNull();
+    expect(container.querySelector('#TeamC_column')).not.toBeNull();
   });
 
-  test('html starts and ends with point_column', () => {
+  test('fragment starts and ends with point_column', () => {
     const groupData = buildGroupData();
-    const { html } = renderBarGraph(
+    const { fragment } = renderBarGraph(
       groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, false, 20,
     );
-    const firstPt = html.indexOf('point_column');
-    const lastPt = html.lastIndexOf('point_column');
-    expect(firstPt).toBeGreaterThanOrEqual(0);
-    expect(lastPt).toBeGreaterThan(firstPt); // at least 2 occurrences
+    const container = mountFragment(fragment);
+    const pointCols = container.querySelectorAll('.point_column');
+    expect(pointCols.length).toBeGreaterThanOrEqual(2);
+    expect(container.firstElementChild?.classList.contains('point_column')).toBe(true);
+    expect(container.lastElementChild?.classList.contains('point_column')).toBe(true);
   });
 
   test('insertIndices causes extra point_column between teams', () => {
     // teamCount=3, promotion=1, relegation=1 → insertIndices=[1, 2, 2] deduped to {1, 2}
     // indices 1 and 2 get extra point columns
     const groupData = buildGroupData();
-    const { html } = renderBarGraph(
+    const { fragment } = renderBarGraph(
       groupData, ['TeamA', 'TeamB', 'TeamC'], info, TARGET, false, false, 20,
     );
+    const container = mountFragment(fragment);
     // Count point_column occurrences: start + insertions + end ≥ 3
-    const count = (html.match(/point_column/g) ?? []).length;
+    const count = container.querySelectorAll('.point_column').length;
     expect(count).toBeGreaterThanOrEqual(3);
   });
 });

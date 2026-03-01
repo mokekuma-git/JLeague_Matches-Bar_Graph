@@ -248,11 +248,11 @@ function renderFromCache(
 
   const boxCon = document.getElementById('box_container') as HTMLElement | null;
   if (boxCon) {
-    const { html, matchDates } = renderBarGraph(
+    const { fragment, matchDates } = renderBarGraph(
       groupData, sortedTeams, seasonInfo,
       targetDate, disp, bottomFirst, state.heightUnit, hasPk,
     );
-    boxCon.innerHTML = html;
+    boxCon.replaceChildren(fragment);
     const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
     setScale(boxCon, scaleSlider?.value ?? '1');
     resetDateSlider(matchDates, targetDate);

@@ -29,6 +29,17 @@ describe('makeWinContent', () => {
     expect(html).not.toContain('(3)');
     expect(html).not.toContain('14:00');
   });
+
+  test('unplayed match (null goals) → omits score line', () => {
+    const unplayed = makeMatch({
+      opponent: 'TeamC', goal_get: null, goal_lose: null,
+      stadium: 'FutureStadium', has_result: false,
+    });
+    const html = makeWinContent(unplayed, MATCH_DATE);
+    expect(html).toContain('TeamC');
+    expect(html).toContain('FutureStadium');
+    expect(html).not.toContain('null');
+  });
 });
 
 describe('makePkWinContent', () => {
