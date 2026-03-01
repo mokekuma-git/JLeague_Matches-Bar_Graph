@@ -49,7 +49,15 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
     'away_team': 'str',
     'status': 'str',
     'group': 'str',
+    'home_pk_score': 'nullable_int',  # PK shootout (column may be absent)
+    'away_pk_score': 'nullable_int',  # PK shootout (column may be absent)
 }
+
+
+# Valid point_system values.  Must match PointSystem type / POINT_MAPS keys
+# on the TypeScript side (frontend/src/types/config.ts).
+# Verified by scripts/check_type_sync.py in CI.
+POINT_SYSTEM_VALUES: set[str] = {'standard', 'old-two-points', 'victory-count'}
 
 
 # ---------------------------------------------------------------------------
@@ -109,6 +117,9 @@ class SeasonEntry:
             unknown = set(self.options.keys()) - self.KNOWN_OPTION_KEYS
             if unknown:
                 logger.warning("Season '%s': unknown option keys: %s", season_key, unknown)
+            ps = self.options.get('point_system')
+            if ps is not None and ps not in POINT_SYSTEM_VALUES:
+                logger.warning("Season '%s': unknown point_system: '%s'", season_key, ps)
 
 
 class MatchUtils:
