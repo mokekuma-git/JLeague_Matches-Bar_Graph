@@ -5,26 +5,37 @@ import type { TeamMatch, TeamStats } from '../types/match';
 import type { SeasonInfo } from '../types/season';
 import { dateOnly, timeFormat } from '../core/date-utils';
 
+/** Max display length for opponent name in box/tooltip content. */
+const OPPONENT_MAX_LEN = 3;
+/** Max display length for stadium name in box/tooltip content. */
+const STADIUM_MAX_LEN = 7;
+
 /** Tooltip body for a win or future match: MM/DD + opponent + score (if played) + stadium. */
 export function makeWinContent(row: TeamMatch, matchDate: string): string {
   const scoreLine = row.goal_get != null && row.goal_lose != null
     ? `<br/>${row.goal_get}-${row.goal_lose}` : '';
-  return `${dateOnly(matchDate)} ${row.opponent}${scoreLine}<br/>${row.stadium}`;
+  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}${scoreLine}<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
 /** Tooltip body for a 2-pt PK win: same as win but includes PK scores in parentheses. */
 export function makePkWinContent(row: TeamMatch, matchDate: string): string {
-  return `${dateOnly(matchDate)} ${row.opponent}<br/>${row.goal_get}-${row.goal_lose} (${row.pk_get}-${row.pk_lose})<br/>${row.stadium}`;
+  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.goal_get}-${row.goal_lose} (${row.pk_get}-${row.pk_lose})<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
 /** Tooltip body for a 1-pt draw or PK loss: minimal—MM/DD and opponent only. */
 export function makeDrawContent(row: TeamMatch, matchDate: string): string {
-  return `${dateOnly(matchDate)} ${row.opponent}`;
+  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}`;
 }
 
 /** Full match details for draw/loss tooltips: section number, time, date, opponent, score, stadium. */
 export function makeFullContent(row: TeamMatch, matchDate: string): string {
-  return `(${row.section_no}) ${timeFormat(row.start_time)}<br/>${dateOnly(matchDate)} ${row.opponent}<br/>${row.goal_get}-${row.goal_lose} ${row.stadium}`;
+  return `(${row.section_no}) ${timeFormat(row.start_time)}<br/>${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.goal_get}-${row.goal_lose} ${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
+}
+
+/** Content for a cancelled match shown in the lossBox tooltip. */
+export function makeCancelledContent(row: TeamMatch, matchDate: string): string {
+  const datePart = matchDate === '未定' ? '未定' : dateOnly(matchDate);
+  return `(${row.section_no}) ${datePart} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.status}`;
 }
 
 /**

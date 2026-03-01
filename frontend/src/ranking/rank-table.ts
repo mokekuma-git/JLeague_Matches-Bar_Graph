@@ -8,6 +8,7 @@ import {
   getPossibleLine,
   getSelfPossibleLine,
 } from '../core/sorter';
+import { teamCssClass } from '../core/team-utils';
 
 // SortableTable is loaded from CDN as a global (not an npm package).
 declare const SortableTable: new () => {
@@ -85,7 +86,7 @@ export function makeRankData(
 
     const row: RankRow = {
       rank,
-      name: `<div class="${teamName}">${teamName}</div>`,
+      name: `<div class="${teamCssClass(teamName)}">${teamName}</div>`,
       win:         rc.win,
       ...(hasPk ? {
         pk_win:    rc.pk_win,

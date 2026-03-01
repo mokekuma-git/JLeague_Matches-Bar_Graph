@@ -114,17 +114,17 @@ export function assembleTeamColumn(
 
   function createTeamNameTooltip(): HTMLDivElement {
     const div = document.createElement('div');
-    div.classList.add('short', 'box', 'tooltip', col.teamName);
+    div.classList.add('short', 'box', 'tooltip', col.cssClass);
     div.append(col.teamName);
     const span = document.createElement('span');
-    span.classList.add('tooltiptext', 'fullW', col.teamName);
+    span.classList.add('tooltiptext', 'fullW', col.cssClass);
     span.innerHTML = `成績情報:<hr/>${col.stats}<hr/>敗戦記録:<hr/>${joinLossBox(lossBox)}`;
     div.appendChild(span);
     return div;
   }
 
   const wrapper = document.createElement('div');
-  wrapper.id = `${col.teamName}_column`;
+  wrapper.id = `${col.cssClass}_column`;
   wrapper.appendChild(createRankCell());
   wrapper.appendChild(createTeamNameTooltip());
   for (const el of graph) {

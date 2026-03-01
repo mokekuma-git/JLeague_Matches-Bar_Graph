@@ -16,12 +16,12 @@ const WIN_ROW = makeMatch({
 const MATCH_DATE = '2025/03/15';
 
 describe('makeWinContent', () => {
-  test('contains MM/DD date, opponent, score, and stadium', () => {
+  test('contains MM/DD date, truncated opponent (3), score, and truncated stadium (7)', () => {
     const html = makeWinContent(WIN_ROW, MATCH_DATE);
     expect(html).toContain('03/15');   // dateOnly('2025/03/15')
-    expect(html).toContain('TeamB');
+    expect(html).toContain('Tea');     // opponent truncated to 3 chars
     expect(html).toContain('2-1');
-    expect(html).toContain('TestStadium');
+    expect(html).toContain('TestSta'); // stadium truncated to 7 chars
   });
 
   test('does not include section number or time (that is in tooltip span)', () => {
@@ -36,8 +36,8 @@ describe('makeWinContent', () => {
       stadium: 'FutureStadium', has_result: false,
     });
     const html = makeWinContent(unplayed, MATCH_DATE);
-    expect(html).toContain('TeamC');
-    expect(html).toContain('FutureStadium');
+    expect(html).toContain('Tea');     // opponent truncated to 3 chars
+    expect(html).toContain('FutureS'); // stadium truncated to 7 chars
     expect(html).not.toContain('null');
   });
 });
@@ -54,32 +54,32 @@ describe('makePkWinContent', () => {
     expect(html).toContain('(5-3)');
   });
 
-  test('includes regulation score and stadium', () => {
+  test('includes regulation score and truncated stadium', () => {
     const html = makePkWinContent(PK_ROW, MATCH_DATE);
     expect(html).toContain('1-1');
-    expect(html).toContain('PkStadium');
+    expect(html).toContain('PkStadi'); // stadium truncated to 7 chars
   });
 });
 
 describe('makeDrawContent', () => {
-  test('contains only date and opponent (no score, no stadium)', () => {
+  test('contains only date and truncated opponent (no score, no stadium)', () => {
     const html = makeDrawContent(WIN_ROW, MATCH_DATE);
     expect(html).toContain('03/15');
-    expect(html).toContain('TeamB');
-    expect(html).not.toContain('TestStadium');
+    expect(html).toContain('Tea');   // opponent truncated to 3 chars
+    expect(html).not.toContain('TestSta');
     expect(html).not.toContain('2-1');
   });
 });
 
 describe('makeFullContent', () => {
-  test('contains section number, time, date, opponent, score, and stadium', () => {
+  test('contains section number, time, date, truncated opponent, score, and truncated stadium', () => {
     const html = makeFullContent(WIN_ROW, MATCH_DATE);
     expect(html).toContain('(3)');          // section_no
     expect(html).toContain('14:00');        // start_time
     expect(html).toContain('03/15');        // dateOnly
-    expect(html).toContain('TeamB');
+    expect(html).toContain('Tea');          // opponent truncated to 3 chars
     expect(html).toContain('2-1');
-    expect(html).toContain('TestStadium');
+    expect(html).toContain('TestSta');      // stadium truncated to 7 chars
   });
 });
 

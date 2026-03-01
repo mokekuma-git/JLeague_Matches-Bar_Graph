@@ -7,12 +7,14 @@ import type { PointSystem } from '../types/config';
 import type { TeamData } from '../types/match';
 import { timeFormat } from '../core/date-utils';
 import { getWinPoints } from '../core/point-calculator';
+import { teamCssClass } from '../core/team-utils';
 import { classifyResult } from '../ranking/stats-calculator';
 import {
   makeWinContent,
   makePkWinContent,
   makeDrawContent,
   makeFullContent,
+  makeCancelledContent,
   makeTeamStats,
 } from './tooltip';
 
@@ -60,6 +62,8 @@ export interface ColumnResult {
   /** Available points (= displayStats.avlbl_pt). Used for space-box calculation. */
   avlbl_pt: number;
   teamName: string;
+  /** Sanitized team name safe for CSS class selectors (dots/spaces removed). */
+  cssClass: string;
   /** Full-match content strings for loss matches (shown in team stats tooltip). */
   lossBox: string[];
   /** Pre-rendered stats HTML for the team name tooltip. */
@@ -105,11 +109,17 @@ export function buildTeamColumn(
   const matchDateSet = new Set<string>();
   const winPt = getWinPoints(pointSystem);
   const futureClass = boxHeightClass(winPt);
+  const cssClass = teamCssClass(teamName);
 
   for (const row of teamData.df) {
     // Normalize display date: empty string → '未定'
     const matchDate = row.match_date === '' ? '未定' : row.match_date;
     if (matchDate !== '未定') matchDateSet.add(matchDate);
+
+    if (row.status === '試合中止') {
+      lossBox.push(makeCancelledContent(row, matchDate));
+      continue;
+    }
 
     const statusSuffix = row.status ? `<br/>${row.status}` : '';
 
@@ -117,13 +127,13 @@ export function buildTeamColumn(
       // Unplayed or completed-after-cutoff: future (ghost) styling
       const box = createBoxDiv(futureClass, 'box');
       const futureBg = document.createElement('div');
-      futureBg.classList.add('future', 'bg', teamName);
+      futureBg.classList.add('future', 'bg', cssClass);
       box.appendChild(futureBg);
       box.appendChild(createTooltip(
         makeWinContent(row, matchDate),
         `(${row.section_no}) ${timeFormat(row.start_time)}${statusSuffix}`,
         [],
-        [teamName],
+        [cssClass],
       ));
       graph.push(box);
     } else {
@@ -136,8 +146,8 @@ export function buildTeamColumn(
         box.appendChild(createTooltip(
           makeWinContent(row, matchDate),
           `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
-          [teamName],
-          ['halfW', teamName],
+          [cssClass],
+          ['halfW', cssClass],
         ));
         graph.push(box);
       } else if (cls === 'pk_win') {
@@ -146,8 +156,8 @@ export function buildTeamColumn(
         box.appendChild(createTooltip(
           makePkWinContent(row, matchDate),
           `(${row.section_no}) ${timeFormat(row.start_time)}<br/>${row.stadium}${statusSuffix}`,
-          [teamName],
-          ['halfW', teamName],
+          [cssClass],
+          ['halfW', cssClass],
         ));
         graph.push(box);
       } else if (cls === 'draw' || cls === 'pk_loss') {
@@ -156,8 +166,8 @@ export function buildTeamColumn(
         box.appendChild(createTooltip(
           makeDrawContent(row, matchDate),
           makeFullContent(row, matchDate) + statusSuffix,
-          [teamName],
-          ['fullW', teamName],
+          [cssClass],
+          ['fullW', cssClass],
         ));
         graph.push(box);
       } else {
@@ -175,6 +185,7 @@ export function buildTeamColumn(
     graph,
     avlbl_pt: teamData.displayStats.avlbl_pt,
     teamName,
+    cssClass,
     lossBox,
     stats: makeTeamStats(disp ? teamData.displayStats : teamData.latestStats, disp, hasPk),
     matchDates: [...matchDateSet].sort(),
