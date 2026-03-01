@@ -34,6 +34,7 @@ export interface SeasonEntryOptions {
   team_rename_map?: Record<string, string>;
   tiebreak_order?: string[];
   season_start_month?: number;
+  shown_groups?: string[];
 }
 
 // Raw array format as loaded from season_map.json (tuple type).
@@ -78,4 +79,5 @@ export interface SeasonInfo {
   teamRenameMap: Record<string, string>;
   tiebreakOrder: string[];
   seasonStartMonth: number;
+  shownGroups?: string[];
 }

@@ -89,9 +89,16 @@ p {
   align-self: flex-start;
 }
 
+.group_wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  position: relative;
+}
 .group_label {
   position: absolute;
   bottom: -25px;
+  left: 0;
   width: 200px;
   font-weight: bold;
 }

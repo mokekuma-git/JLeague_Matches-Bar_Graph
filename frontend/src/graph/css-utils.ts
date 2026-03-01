@@ -101,9 +101,12 @@ export function setSpace(value: string, updateColorPicker = true): void {
  */
 export function setScale(boxCon: HTMLElement, value: string, updateSlider = true): void {
   boxCon.style.transform = `scale(${value})`;
-  const pointCol = boxCon.querySelector('.point_column');
-  if (pointCol) {
-    boxCon.style.height = `${(pointCol as HTMLElement).clientHeight * parseFloat(value)}px`;
+  let maxHeight = 0;
+  for (const pCol of Array.from(boxCon.querySelectorAll('.point_column'))) {
+    maxHeight = Math.max(maxHeight, (pCol as HTMLElement).clientHeight);
+  }
+  if (maxHeight > 0) {
+    boxCon.style.height = `${maxHeight * parseFloat(value)}px`;
   }
   if (updateSlider) {
     const slider = document.getElementById('scale_slider') as HTMLInputElement | null;
