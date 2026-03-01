@@ -1,4 +1,4 @@
-// Bar graph column builder: generates box-graph HTML for a single team.
+// Bar graph column builder: generates DOM elements for a single team's box graph.
 //
 // Precondition: call calculateTeamStats(teamData, ...) before buildTeamColumn.
 // calculateTeamStats handles stat accumulation and sorts teamData.df in place.
@@ -29,10 +29,34 @@ function boxHeightClass(pointValue: number): string {
   return cls;
 }
 
+/** Create an outer box <div> with the given CSS classes. */
+function createBoxDiv(...classes: string[]): HTMLDivElement {
+  const div = document.createElement('div');
+  div.classList.add(...classes);
+  return div;
+}
+
+/** Create a tooltip <p> with inner content HTML and a tooltiptext <span>. */
+function createTooltip(
+  bodyHtml: string,
+  spanHtml: string,
+  tooltipClasses: string[],
+  spanClasses: string[],
+): HTMLParagraphElement {
+  const p = document.createElement('p');
+  p.classList.add('tooltip', ...tooltipClasses);
+  p.innerHTML = bodyHtml;
+  const span = document.createElement('span');
+  span.classList.add('tooltiptext', ...spanClasses);
+  span.innerHTML = spanHtml;
+  p.appendChild(span);
+  return p;
+}
+
 /** Result returned by buildTeamColumn, consumed by assembleTeamColumn (renderer). */
 export interface ColumnResult {
-  /** Box HTML strings in display order (before any reversal by the renderer). */
-  graph: string[];
+  /** Box DOM elements in display order (before any reversal by the renderer). */
+  graph: HTMLDivElement[];
   /** Available points (= displayStats.avlbl_pt). Used for space-box calculation. */
   avlbl_pt: number;
   teamName: string;
@@ -76,7 +100,7 @@ export function buildTeamColumn(
   hasPk = false,
   pointSystem: PointSystem = 'standard',
 ): ColumnResult {
-  const graph: string[] = [];
+  const graph: HTMLDivElement[] = [];
   const lossBox: string[] = [];
   const matchDateSet = new Set<string>();
   const winPt = getWinPoints(pointSystem);
@@ -91,39 +115,51 @@ export function buildTeamColumn(
 
     if (!row.has_result || matchDate > targetDate) {
       // Unplayed or completed-after-cutoff: future (ghost) styling
-      graph.push(
-        `<div class="${futureClass} box"><div class="future bg ${teamName}"></div><p class="tooltip">`
-        + makeWinContent(row, matchDate)
-        + `<span class="tooltiptext ${teamName}">(${row.section_no}) ${timeFormat(row.start_time)}`
-        + `${statusSuffix}</span></p></div>\n`,
-      );
+      const box = createBoxDiv(futureClass, 'box');
+      const futureBg = document.createElement('div');
+      futureBg.classList.add('future', 'bg', teamName);
+      box.appendChild(futureBg);
+      box.appendChild(createTooltip(
+        makeWinContent(row, matchDate),
+        `(${row.section_no}) ${timeFormat(row.start_time)}${statusSuffix}`,
+        [],
+        [teamName],
+      ));
+      graph.push(box);
     } else {
       const cls = classifyResult(row.point, row.pk_get, row.pk_lose, pointSystem);
-      const liveCls = row.live ? ' live' : '';
       if (cls === 'win') {
         const heightCls = boxHeightClass(winPt);
         const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
-        graph.push(
-          `<div class="${heightCls} box${liveCls}"><p class="tooltip ${teamName}">`
-          + makeWinContent(row, matchDate)
-          + `<span class="tooltiptext halfW ${teamName}">(${row.section_no}) ${timeFormat(row.start_time)}`
-          + `${stadiumLine}${statusSuffix}</span></p></div>\n`,
-        );
+        const box = createBoxDiv(heightCls, 'box');
+        if (row.live) box.classList.add('live');
+        box.appendChild(createTooltip(
+          makeWinContent(row, matchDate),
+          `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
+          [teamName],
+          ['halfW', teamName],
+        ));
+        graph.push(box);
       } else if (cls === 'pk_win') {
-        graph.push(
-          `<div class="medium box${liveCls}"><p class="tooltip ${teamName}">`
-          + makePkWinContent(row, matchDate)
-          + `<span class="tooltiptext halfW ${teamName}">(${row.section_no}) ${timeFormat(row.start_time)}`
-          + `<br/>${row.stadium}${statusSuffix}</span></p></div>\n`,
-        );
+        const box = createBoxDiv('medium', 'box');
+        if (row.live) box.classList.add('live');
+        box.appendChild(createTooltip(
+          makePkWinContent(row, matchDate),
+          `(${row.section_no}) ${timeFormat(row.start_time)}<br/>${row.stadium}${statusSuffix}`,
+          [teamName],
+          ['halfW', teamName],
+        ));
+        graph.push(box);
       } else if (cls === 'draw' || cls === 'pk_loss') {
-        graph.push(
-          `<div class="short box${liveCls}"><p class="tooltip ${teamName}">`
-          + makeDrawContent(row, matchDate)
-          + `<span class="tooltiptext fullW ${teamName}">`
-          + makeFullContent(row, matchDate)
-          + `${statusSuffix}</span></p></div>`,
-        );
+        const box = createBoxDiv('short', 'box');
+        if (row.live) box.classList.add('live');
+        box.appendChild(createTooltip(
+          makeDrawContent(row, matchDate),
+          makeFullContent(row, matchDate) + statusSuffix,
+          [teamName],
+          ['fullW', teamName],
+        ));
+        graph.push(box);
       } else {
         // Loss (point === 0): no box; goes to lossBox for the stats tooltip
         let lossContent = makeFullContent(row, matchDate);

@@ -1,7 +1,7 @@
-// Bar graph renderer: assembles full HTML from ColumnResult objects.
+// Bar graph renderer: assembles DOM elements from ColumnResult objects.
 //
-// All exported functions are pure (no DOM writes). The caller (j_points.ts)
-// is responsible for writing the returned HTML to the DOM.
+// All exported functions build DOM nodes. The caller (app.ts)
+// is responsible for inserting the returned fragment into the DOM.
 
 import type { TeamData } from '../types/match';
 import type { SeasonInfo } from '../types/season';
@@ -9,10 +9,10 @@ import { buildTeamColumn } from './bar-column';
 import type { ColumnResult } from './bar-column';
 import { getRankClass, joinLossBox } from './tooltip';
 
-/** Return value of renderBarGraph, consumed by j_points.ts. */
+/** Return value of renderBarGraph, consumed by app.ts. */
 export interface RenderResult {
-  /** Complete HTML string to write into #box_container. */
-  html: string;
+  /** DocumentFragment to insert into #box_container. */
+  fragment: DocumentFragment;
   /** Sorted unique YYYY/MM/DD match dates across all teams (for date slider). */
   matchDates: string[];
 }
@@ -33,23 +33,41 @@ export function getScaleColumnPositions(seasonInfo: SeasonInfo): number[] {
   return columns;
 }
 
+/** Create a point box <div> with text content. */
+function createPointBox(text: string): HTMLDivElement {
+  const div = document.createElement('div');
+  div.classList.add('point', 'box');
+  div.textContent = text;
+  return div;
+}
+
 /**
- * Generates the point scale column HTML.
+ * Generates the point scale column as a DOM element.
  *
  * Contains header cells (rank/point), numbered boxes 1..maxAvblPt, then footer cells.
  * bottomFirst=true → number list is reversed (large values at top).
  */
-export function makePointColumn(maxAvblPt: number, bottomFirst: boolean): string {
-  const boxList = Array.from({ length: maxAvblPt }, (_, i) => i + 1)
-    .map(i => `<div class="point box">${i}</div>`);
-  if (bottomFirst) boxList.reverse();
-  return `<div class="point_column"><div class="point box">順位</div><div class="point box">勝点</div>`
-    + boxList.join('')
-    + `<div class="point box">勝点</div><div class="point box">順位</div></div>\n\n`;
+export function makePointColumn(maxAvblPt: number, bottomFirst: boolean): HTMLDivElement {
+  const col = document.createElement('div');
+  col.classList.add('point_column');
+
+  col.appendChild(createPointBox('順位'));
+  col.appendChild(createPointBox('勝点'));
+
+  const indices = Array.from({ length: maxAvblPt }, (_, i) => i + 1);
+  if (bottomFirst) indices.reverse();
+  for (const i of indices) {
+    col.appendChild(createPointBox(String(i)));
+  }
+
+  col.appendChild(createPointBox('勝点'));
+  col.appendChild(createPointBox('順位'));
+
+  return col;
 }
 
 /**
- * Assembles one team's bar graph column HTML from a ColumnResult.
+ * Assembles one team's bar graph column as a DOM element from a ColumnResult.
  *
  * Steps:
  *   1. Add a space box at the top (height = (maxAvblPt - col.avlbl_pt) × heightUnit px).
@@ -65,14 +83,18 @@ export function assembleTeamColumn(
   heightUnit: number,
   bottomFirst: boolean,
   seasonInfo: SeasonInfo,
-): string {
+): HTMLDivElement {
   // Clone arrays so we don't mutate the original ColumnResult.
   const graph = [...col.graph];
   const lossBox = [...col.lossBox];
 
   const spaceCols = maxAvblPt - col.avlbl_pt;
   if (spaceCols > 0) {
-    graph.push(`<div class="space box" style="height:${heightUnit * spaceCols}px">(${spaceCols})</div>`);
+    const spaceBox = document.createElement('div');
+    spaceBox.classList.add('space', 'box');
+    spaceBox.style.height = `${heightUnit * spaceCols}px`;
+    spaceBox.textContent = `(${spaceCols})`;
+    graph.push(spaceBox);
   }
 
   if (bottomFirst) {
@@ -81,23 +103,48 @@ export function assembleTeamColumn(
   }
 
   const rankClass = getRankClass(rank, seasonInfo);
-  const rankCell = `<div class="short box ${rankClass}">${rank}</div>`;
-  const teamName = `<div class="short box tooltip ${col.teamName}">${col.teamName}`
-    + `<span class=" tooltiptext fullW ${col.teamName}">`
-    + `成績情報:<hr/>${col.stats}<hr/>敗戦記録:<hr/>${joinLossBox(lossBox)}</span></div>\n`;
 
-  return `<div id="${col.teamName}_column">${rankCell}${teamName}${graph.join('')}${teamName}${rankCell}</div>\n\n`;
+  function createRankCell(): HTMLDivElement {
+    const div = document.createElement('div');
+    div.classList.add('short', 'box');
+    if (rankClass) div.classList.add(rankClass);
+    div.textContent = String(rank);
+    return div;
+  }
+
+  function createTeamNameTooltip(): HTMLDivElement {
+    const div = document.createElement('div');
+    div.classList.add('short', 'box', 'tooltip', col.teamName);
+    div.append(col.teamName);
+    const span = document.createElement('span');
+    span.classList.add('tooltiptext', 'fullW', col.teamName);
+    span.innerHTML = `成績情報:<hr/>${col.stats}<hr/>敗戦記録:<hr/>${joinLossBox(lossBox)}`;
+    div.appendChild(span);
+    return div;
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.id = `${col.teamName}_column`;
+  wrapper.appendChild(createRankCell());
+  wrapper.appendChild(createTeamNameTooltip());
+  for (const el of graph) {
+    wrapper.appendChild(el);
+  }
+  wrapper.appendChild(createTeamNameTooltip());
+  wrapper.appendChild(createRankCell());
+
+  return wrapper;
 }
 
 /**
- * Generates the complete bar graph HTML.
+ * Generates the complete bar graph as a DocumentFragment.
  *
  * Pipeline:
  *   1. For each team, run buildTeamColumn → collect ColumnResult and matchDates.
  *   2. Compute max_avlbl_pt across all teams.
  *   3. Determine point column insertion positions (getScaleColumnPositions).
  *   4. Assemble: point_column + [team columns with interleaved point columns] + point_column.
- *   5. Return { html, matchDates } — no DOM writes.
+ *   5. Return { fragment, matchDates } — no DOM writes to the live document.
  *
  * @param groupData    TeamData map (stats NOT yet computed — computed inside buildTeamColumn's
  *                     caller calculateTeamStats, which must be called before this function).
@@ -138,22 +185,28 @@ export function renderBarGraph(
 
   const matchDates = [...matchDateSet].sort();
 
-  // Step 2: Build point column and insertion index set.
+  // Step 2: Build point column template and insertion index set.
   const pointColumn = makePointColumn(maxAvblPt, bottomFirst);
   const insertIndices = new Set(getScaleColumnPositions(seasonInfo));
 
-  // Step 3: Assemble full HTML.
-  let html = pointColumn;
+  // Step 3: Assemble into DocumentFragment.
+  const fragment = document.createDocumentFragment();
+  fragment.appendChild(pointColumn.cloneNode(true));
+
   sortedTeams.forEach((teamName, index) => {
-    if (insertIndices.has(index)) html += pointColumn;
+    if (insertIndices.has(index)) {
+      fragment.appendChild(pointColumn.cloneNode(true));
+    }
     const col = columns[teamName];
     if (col) {
-      html += assembleTeamColumn(col, index + 1, maxAvblPt, heightUnit, bottomFirst, seasonInfo);
+      fragment.appendChild(
+        assembleTeamColumn(col, index + 1, maxAvblPt, heightUnit, bottomFirst, seasonInfo),
+      );
     }
   });
-  html += pointColumn;
+  fragment.appendChild(pointColumn.cloneNode(true));
 
-  return { html, matchDates };
+  return { fragment, matchDates };
 }
 
 // ---- Slider utilities (pure, exported for testing) ----------------------

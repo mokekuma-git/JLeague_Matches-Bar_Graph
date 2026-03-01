@@ -5,9 +5,11 @@ import type { TeamMatch, TeamStats } from '../types/match';
 import type { SeasonInfo } from '../types/season';
 import { dateOnly, timeFormat } from '../core/date-utils';
 
-/** Tooltip body for a 3-pt win: MM/DD + opponent + score + stadium. */
+/** Tooltip body for a win or future match: MM/DD + opponent + score (if played) + stadium. */
 export function makeWinContent(row: TeamMatch, matchDate: string): string {
-  return `${dateOnly(matchDate)} ${row.opponent}<br/>${row.goal_get}-${row.goal_lose}<br/>${row.stadium}`;
+  const scoreLine = row.goal_get != null && row.goal_lose != null
+    ? `<br/>${row.goal_get}-${row.goal_lose}` : '';
+  return `${dateOnly(matchDate)} ${row.opponent}${scoreLine}<br/>${row.stadium}`;
 }
 
 /** Tooltip body for a 2-pt PK win: same as win but includes PK scores in parentheses. */
