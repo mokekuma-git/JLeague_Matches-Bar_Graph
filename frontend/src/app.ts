@@ -9,8 +9,8 @@
 // - Data timestamp is loaded from csv/csv_timestamp.csv and displayed.
 
 import Papa from 'papaparse';
-import type { RawMatchRow, TeamData } from './types/match';
-import type { SeasonMap } from './types/season';
+import type { RawMatchRow, TeamMap } from './types/match';
+import type { SeasonMap, SeasonInfo } from './types/season';
 import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
 } from './config/season-map';
@@ -27,7 +27,7 @@ import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
 
 interface TeamMapCache {
   key: string;
-  groupData: Record<string, TeamData>;
+  teamMap: TeamMap;
   teamCount: number;
   hasPk: boolean;
 }
@@ -239,28 +239,81 @@ function renderFromCache(
   const entry = found.competition.seasons[season];
   if (!entry) return;
   const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry, found.groupKey);
-
-  const { groupData, sortedTeams } = prepareRenderData({
-    groupData: cache.groupData, seasonInfo, targetDate, sortKey, matchSortKey,
-  });
-
   const { hasPk } = cache;
 
+  // Determine which groups to render and in what order.
+  const allGroups = Object.keys(cache.teamMap);
+  const groupKeys = seasonInfo.shownGroups
+    ? seasonInfo.shownGroups.filter(g => allGroups.includes(g))
+    : allGroups.sort();
+  const isMultiGroup = groupKeys.length > 1;
+
+  const globalMatchDateSet = new Set<string>();
   const boxCon = document.getElementById('box_container') as HTMLElement | null;
-  if (boxCon) {
-    const { fragment, matchDates } = renderBarGraph(
-      groupData, sortedTeams, seasonInfo,
-      targetDate, disp, bottomFirst, state.heightUnit, hasPk,
-    );
-    boxCon.replaceChildren(fragment);
-    const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
-    setScale(boxCon, scaleSlider?.value ?? '1');
-    resetDateSlider(matchDates, targetDate);
+  if (boxCon) boxCon.replaceChildren();
+
+  // Prepare ranking table container.
+  const sortableDiv = document.querySelector('#ranktable_section .sortable-table') as HTMLElement | null;
+  if (sortableDiv) sortableDiv.innerHTML = '';
+
+  for (const groupKey of groupKeys) {
+    const singleGroupData = cache.teamMap[groupKey];
+    if (!singleGroupData) continue;
+
+    // For multi-group: use per-group team count, zero promotion/relegation.
+    const perGroupInfo: SeasonInfo = isMultiGroup
+      ? { ...seasonInfo, teamCount: Object.keys(singleGroupData).length, promotionCount: 0, relegationCount: 0 }
+      : seasonInfo;
+
+    const { groupData, sortedTeams } = prepareRenderData({
+      groupData: singleGroupData, seasonInfo: perGroupInfo, targetDate, sortKey, matchSortKey,
+    });
+
+    if (boxCon) {
+      const { fragment, matchDates } = renderBarGraph(
+        groupData, sortedTeams, perGroupInfo,
+        targetDate, disp, bottomFirst, state.heightUnit, hasPk,
+      );
+      for (const d of matchDates) globalMatchDateSet.add(d);
+
+      if (isMultiGroup) {
+        // Wrap each group's graph in a flex container with a label.
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('group_wrapper');
+        const label = document.createElement('div');
+        label.classList.add('group_label');
+        label.textContent = `グループ${groupKey}`;
+        wrapper.appendChild(label);
+        wrapper.appendChild(fragment);
+        boxCon.appendChild(wrapper);
+      } else {
+        boxCon.appendChild(fragment);
+      }
+    }
+
+    // Ranking table: one table per group (or single table for single-group).
+    if (sortableDiv) {
+      const table = document.createElement('table');
+      table.className = 'ranktable';
+      if (!isMultiGroup) table.id = 'ranktable';
+      if (isMultiGroup) {
+        const caption = document.createElement('caption');
+        caption.textContent = `Group ${groupKey}`;
+        table.appendChild(caption);
+      }
+      table.appendChild(document.createElement('thead'));
+      sortableDiv.appendChild(table);
+      const rankData = makeRankData(groupData, sortedTeams, perGroupInfo, disp, hasPk);
+      makeRankTable(table, rankData, hasPk);
+    }
   }
 
-  const rankData = makeRankData(groupData, sortedTeams, seasonInfo, disp, cache.hasPk);
-  const tableEl = document.getElementById('ranktable');
-  if (tableEl) makeRankTable(tableEl, rankData, hasPk);
+  if (boxCon) {
+    const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
+    setScale(boxCon, scaleSlider?.value ?? '1');
+    const globalMatchDates = [...globalMatchDateSet].sort();
+    resetDateSlider(globalMatchDates, targetDate);
+  }
 }
 
 function loadAndRender(seasonMap: SeasonMap): void {
@@ -314,11 +367,10 @@ function loadAndRender(seasonMap: SeasonMap): void {
         DEFAULT_GROUP,
         seasonInfo.pointSystem,
       );
-      const groupData = teamMap[DEFAULT_GROUP] ?? {};
       const fields = results.meta.fields ?? [];
       const hasPk = fields.includes('home_pk_score') || fields.includes('home_pk');
 
-      const newCache = { key: csvKey, groupData, teamCount: seasonInfo.teamCount, hasPk };
+      const newCache = { key: csvKey, teamMap, teamCount: seasonInfo.teamCount, hasPk };
       state.teamMapCache = newCache;
 
       renderFromCache(newCache, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);

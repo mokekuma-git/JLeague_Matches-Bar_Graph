@@ -274,4 +274,35 @@ describe('resolveSeasonInfo', () => {
 
     expect(info.seasonStartMonth).toBe(7);
   });
+
+  test('shownGroups undefined when not set at any level', () => {
+    const entry: RawSeasonEntry = [20, 3, 3, []];
+    const info = resolveSeasonInfo(sampleGroup, sampleGroup.competitions.J1, entry);
+
+    expect(info.shownGroups).toBeUndefined();
+  });
+
+  test('cascade: shown_groups from competition level', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'Olympic GS',
+      shown_groups: ['A', 'B'],
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = [16, 0, 0, []];
+    const info = resolveSeasonInfo(sampleGroup, comp, entry);
+
+    expect(info.shownGroups).toEqual(['A', 'B']);
+  });
+
+  test('cascade: shown_groups from season overrides competition', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'WC AFC',
+      shown_groups: ['A', 'B'],
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = [6, 0, 0, [], { shown_groups: ['C'] }];
+    const info = resolveSeasonInfo(sampleGroup, comp, entry);
+
+    expect(info.shownGroups).toEqual(['C']);
+  });
 });

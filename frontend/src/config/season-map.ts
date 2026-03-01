@@ -102,6 +102,11 @@ export function resolveSeasonInfo(
     ?? group.season_start_month
     ?? 7;
 
+  // shown_groups: scalar cascade (lowest defined level wins)
+  const shownGroups: string[] | undefined = opts.shown_groups
+    ?? comp.shown_groups
+    ?? undefined;
+
   return {
     teamCount: entry[0],
     promotionCount: entry[1],
@@ -116,5 +121,6 @@ export function resolveSeasonInfo(
     teamRenameMap,
     tiebreakOrder,
     seasonStartMonth,
+    shownGroups,
   };
 }
