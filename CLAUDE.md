@@ -145,11 +145,33 @@ npm run dev               # Vite開発サーバー起動
 - **リファクタリング時のビルド確認**: テスト (`vitest`) だけでなく `npm run build` も確認する。CI は typecheck + vitest のみでビルドは PR 時に自動検証されない
 - **season_map.json 編集後**: `python scripts/format_season_map.py` でカスタム整形を実行
 
+## Python ↔ TypeScript 型同期
+
+Python と TypeScript で共有する型定義のドリフトを CI で検出する。手動での定義保守を前提とし、Python 側を先に変更→TS を合わせる→CI が検証 のワークフローで運用。
+
+### 共有型の対応表
+
+| 共有型 | Python (src/match_utils.py) | TypeScript (frontend/src/types/) |
+| ------ | --------------------------- | -------------------------------- |
+| CSV カラム定義 | `CSV_COLUMN_SCHEMA` | `RawMatchRow` (match.ts) |
+| SeasonEntry オプション | `SeasonEntry.KNOWN_OPTION_KEYS` | `SeasonEntryOptions` (season.ts) |
+| PointSystem 値 | `POINT_SYSTEM_VALUES` | `POINT_MAPS` keys (config.ts) |
+
+### ローカル検証
+
+```bash
+uv run python scripts/check_type_sync.py
+```
+
+### TS 側のみ許容するフィールド
+
+`RawMatchRow` には Python が生成しないフィールドも含まれる (旧 CSV 互換 alias、Tier 4 準備カラム)。これらは `check_type_sync.py` 内の `TS_ONLY_CSV_FIELDS` で管理。
+
 ## 設計上の決定事項
 
 - **JFA JSON APIはCSVカラム名の参考情報源** — 新カラム追加時はJFA JSON構造を参照
 - **スクレイピング時のシーズン文字列は `config.season` (YAML) が正** — HTML読み取り値で上書きしない
 - **`get_sub_seasons(category)` の戻り値で更新動作が決まる**: `None` → スキップ / `[]` → 単一シーズン更新 / `[...]` → マルチグループ振り分け
 - **`match_utils.py` が共通ライブラリ** — CSV I/O, season_map 読み込み, 日付計算を提供。各 reader がインポートして使う
-- **勝ち点システム**: `'standard'` (勝3/PK勝2/PK負1/分1/負0) と `'old-two-points'` (勝2/分1/負0)。Competition 階層の `point_system` で指定 (デフォルト: `'standard'`)
+- **勝ち点システム**: `'standard'` (勝3/PK勝2/PK負1/分1/負0)、`'old-two-points'` (勝2/分1/負0)、`'victory-count'` (勝3/PK勝3/他0)。Competition 階層の `point_system` で指定 (デフォルト: `'standard'`)。有効値は Python `POINT_SYSTEM_VALUES` と TS `POINT_MAPS` で管理し、`check_type_sync.py` で同期検証
 - **SeasonEntry バリデーション**: index 0〜3 の型不正は即エラー。index 4 の未知キーは Warning で無視

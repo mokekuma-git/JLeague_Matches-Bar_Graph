@@ -1,0 +1,36 @@
+name: Check Python/TypeScript type sync
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'feature/**'
+    paths:
+      - 'src/match_utils.py'
+      - 'frontend/src/types/**'
+      - 'scripts/check_type_sync.py'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/match_utils.py'
+      - 'frontend/src/types/**'
+      - 'scripts/check_type_sync.py'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Check type sync
+        run: uv run python scripts/check_type_sync.py
