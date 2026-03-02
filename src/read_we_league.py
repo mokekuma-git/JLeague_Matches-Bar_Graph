@@ -171,11 +171,9 @@ def _read_day(
         else:
             stadium = ''
 
-        # Status from _game class presence
         teams_div = inner.find('div', class_='teams')
         if not teams_div:
             continue
-        status = '試合終了' if '_game' in teams_div.get('class', []) else 'VS'
 
         # Match date from URL (e.g. /matches/2026022820/)
         link = teams_div.find('a')
@@ -194,9 +192,12 @@ def _read_day(
         home_team = team_divs[0].find('span', class_='name').text.strip()
         away_team = team_divs[1].find('span', class_='name').text.strip()
 
-        # Score
+        # Score and status: "VS" in point div means unplayed.
+        # _game class is NOT a reliable indicator — future matches also carry it.
         point_div = teams_div.find('div', class_='point')
         scores = _parse_score(point_div) if point_div else {}
+        point_text = point_div.get_text().strip() if point_div else ''
+        status = 'VS' if point_text == 'VS' else '試合終了'
 
         record: dict[str, Any] = {
             'match_date': match_date,
