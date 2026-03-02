@@ -184,12 +184,14 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
             match_index_dict[section_no] += 1
         _row['match_index_in_section'] = match_index_dict[section_no]
 
-        # Temporary fix because JFA data set the suspended match information to 'venueFullName'
-        if '【中止】' in _match_data['venueFullName']:
+        # JFA embeds match status info in 'venueFullName' for irregular matches
+        venue_full = _match_data['venueFullName']
+        if '【中止】' in venue_full:
             _row['status'] = '試合中止'
-            logger.debug("Cancel Game: %s", _match_data["venueFullName"])
-        else:
-            logger.debug("No Cancel: %s", _match_data["venueFullName"])
+            logger.info("Cancelled match: %s", venue_full)
+        elif '試合不実施' in venue_full:
+            _row['status'] = '試合不実施'
+            logger.info("Forfeited match: %s", venue_full)
 
         _row['extraTime'] = str(_row['extraTime'])  # Stringify for comparison with old style CSV
         _row['match_date'] = mu.to_datetime_aspossible(_row['match_date'])
