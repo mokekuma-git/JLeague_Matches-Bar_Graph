@@ -18,7 +18,12 @@ import { parseCsvResults } from './core/csv-parser';
 import { dateFormat } from './core/date-utils';
 import { prepareRenderData } from './core/prepare-render';
 import type { MatchSortKey } from './ranking/stats-calculator';
-import { makeRankData, makeRankTable } from './ranking/rank-table';
+import {
+  makeRankData, makeRankTable,
+  buildCrossGroupRows, makeCrossGroupTable,
+} from './ranking/rank-table';
+import type { GroupRenderResult } from './ranking/rank-table';
+import { getMaxPointsPerGame } from './core/point-calculator';
 import { renderBarGraph, findSliderIndex } from './graph/renderer';
 import { DEFAULT_HEIGHT_UNIT, getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
@@ -256,13 +261,17 @@ function renderFromCache(
   const sortableDiv = document.querySelector('#ranktable_section .sortable-table') as HTMLElement | null;
   if (sortableDiv) sortableDiv.innerHTML = '';
 
+  // Collect per-group results for cross-group comparison (populated during loop).
+  const allGroupResults: Record<string, GroupRenderResult> = {};
+
   for (const groupKey of groupKeys) {
     const singleGroupData = cache.teamMap[groupKey];
     if (!singleGroupData) continue;
 
-    // For multi-group: use per-group team count, zero promotion/relegation.
+    // For multi-group: use per-group team count from config, zero promotion/relegation.
+    const groupTeamCount = seasonInfo.groupTeamCount?.[groupKey] ?? seasonInfo.teamCount;
     const perGroupInfo: SeasonInfo = isMultiGroup
-      ? { ...seasonInfo, teamCount: Object.keys(singleGroupData).length, promotionCount: 0, relegationCount: 0 }
+      ? { ...seasonInfo, teamCount: groupTeamCount, promotionCount: 0, relegationCount: 0 }
       : seasonInfo;
 
     const { groupData, sortedTeams } = prepareRenderData({
@@ -305,6 +314,22 @@ function renderFromCache(
       sortableDiv.appendChild(table);
       const rankData = makeRankData(groupData, sortedTeams, perGroupInfo, disp, hasPk);
       makeRankTable(table, rankData, hasPk);
+    }
+
+    // Collect for cross-group comparison.
+    if (isMultiGroup && seasonInfo.crossGroupStanding) {
+      allGroupResults[groupKey] = { sortedTeams, groupData };
+    }
+  }
+
+  // Cross-group standing comparison table (after all per-group tables).
+  if (sortableDiv && seasonInfo.crossGroupStanding && Object.keys(allGroupResults).length > 1) {
+    const cgs = seasonInfo.crossGroupStanding;
+    const maxPt = getMaxPointsPerGame(seasonInfo.pointSystem);
+    const rows = buildCrossGroupRows(allGroupResults, cgs, disp, targetDate, maxPt);
+    if (rows.length > 0) {
+      sortableDiv.appendChild(document.createElement('hr'));
+      sortableDiv.appendChild(makeCrossGroupTable(rows, cgs));
     }
   }
 

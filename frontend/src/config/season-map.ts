@@ -3,6 +3,7 @@
 import type { PointSystem } from '../types/config';
 import type {
   SeasonMap, GroupEntry, CompetitionEntry, RawSeasonEntry, SeasonInfo,
+  CrossGroupStanding,
 } from '../types/season';
 
 /**
@@ -107,6 +108,19 @@ export function resolveSeasonInfo(
     ?? comp.shown_groups
     ?? undefined;
 
+  // cross_group_standing: scalar cascade (lowest defined level wins)
+  const crossGroupStanding: CrossGroupStanding | undefined = opts.cross_group_standing
+    ?? comp.cross_group_standing
+    ?? undefined;
+
+  // group_team_count: merge (lower overrides) — per-group team count overrides
+  const groupTeamCountRaw = {
+    ...(comp.group_team_count ?? {}),
+    ...(opts.group_team_count ?? {}),
+  };
+  const groupTeamCount: Record<string, number> | undefined =
+    Object.keys(groupTeamCountRaw).length > 0 ? groupTeamCountRaw : undefined;
+
   return {
     teamCount: entry[0],
     promotionCount: entry[1],
@@ -122,5 +136,7 @@ export function resolveSeasonInfo(
     tiebreakOrder,
     seasonStartMonth,
     shownGroups,
+    crossGroupStanding,
+    groupTeamCount,
   };
 }

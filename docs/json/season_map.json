@@ -276,7 +276,7 @@
           "2026": [6, 0, 0,
             [],
             {"shown_groups": ["C"]}],
-          "2022": [12, 0, 0,
+          "2022": [6, 0, 0,
             [],
             {"shown_groups": ["A", "B"]}]
         }
@@ -284,6 +284,10 @@
       "Olympic_GS": {
         "league_display": "オリンピック GS",
         "shown_groups": ["A", "B"],
+        "cross_group_standing": {
+          "position": 3,
+          "advance_count": 2
+        },
         "team_rename_map": {
           "ホンジュラス": "ホンジュラ",
           "ニュージーランド": "ニュージー",
@@ -293,7 +297,46 @@
           "コートジボワール": "コートジボ"
         },
         "seasons": {
-          "2021": [16, 0, 0,
+          "2021": [4, 0, 0,
+            []]
+        }
+      }
+    }
+  },
+  "acl": {
+    "display_name": "ACL",
+    "css_files": ["team_style.css"],
+    "season_start_month": 1,
+    "competitions": {
+      "ACL_GS": {
+        "league_display": "ACL GS",
+        "tiebreak_order": ["head_to_head", "goal_diff", "goal_get"],
+        "shown_groups": ["F", "G", "H", "I", "J"],
+        "cross_group_standing": {
+          "position": 2,
+          "exclude_from_rank": 4,
+          "advance_count": 3
+        },
+        "team_rename_map": {
+          "ユナイテッドシティ": "UCFC",
+          "タンピネス": "タンピ",
+          "ポートFC": "ポート",
+          "チェンライU": "チェン",
+          "ラーチャブリー": "ラチャ",
+          "ベトテル": "Viettel",
+          "パトゥムユナイテッド": "パトゥ",
+          "全北現代": "全北",
+          "ホアンアインザライ": "ホアン",
+          "山東泰山": "山東",
+          "セーラーズ": "セーラ",
+          "メルボルンシティ": "メルボ",
+          "シドニーFC": "シドニ"
+        },
+        "seasons": {
+          "2022": [4, 0, 0,
+            [],
+            {"group_team_count": {"J": 3}}],
+          "2021": [4, 0, 0,
             []]
         }
       }

@@ -83,7 +83,7 @@ class SeasonEntry:
         'rank_properties', 'group_display', 'url_category',
         'league_display', 'point_system', 'css_files',
         'team_rename_map', 'tiebreak_order', 'season_start_month',
-        'shown_groups',
+        'shown_groups', 'cross_group_standing', 'group_team_count',
     }
 
     def __init__(self, season_key: str, raw: list):
