@@ -14,18 +14,27 @@ Usage::
 """
 from datetime import date
 from datetime import datetime
+from datetime import tzinfo
 import json
 import logging
 from os import PathLike
 from pathlib import Path
 import re
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 from set_config import Config
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_tzinfo(tz: str | tzinfo) -> tzinfo:
+    """Convert a timezone string to a tzinfo object if needed."""
+    if isinstance(tz, str):
+        return ZoneInfo(tz)
+    return tz
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +83,7 @@ class SeasonEntry:
         'rank_properties', 'group_display', 'url_category',
         'league_display', 'point_system', 'css_files',
         'team_rename_map', 'tiebreak_order', 'season_start_month',
+        'shown_groups',
     }
 
     def __init__(self, season_key: str, raw: list):
@@ -430,7 +440,7 @@ class MatchUtils:
         else:
             timestamp = pd.DataFrame(columns=['date'])
             timestamp.index.name = 'file'
-        timestamp.loc[filename] = datetime.now().astimezone(cfg.timezone)
+        timestamp.loc[filename] = datetime.now().astimezone(_ensure_tzinfo(cfg.timezone))
         if timestamp.index.duplicated().any():
             logger.warning("Duplicates in timestamp file were consolidated (keeping most recent values)")
             timestamp = drop_duplicated_indexes(timestamp)
@@ -460,7 +470,7 @@ class MatchUtils:
             if filename in timestamp.index:
                 return timestamp.loc[filename]['date']
         logger.info("Timestamp fallback to file mtime for %s", filename)
-        return datetime.fromtimestamp(Path(filename).stat().st_mtime).astimezone(cfg.timezone)
+        return datetime.fromtimestamp(Path(filename).stat().st_mtime).astimezone(_ensure_tzinfo(cfg.timezone))
 
 
 # Singleton instance
