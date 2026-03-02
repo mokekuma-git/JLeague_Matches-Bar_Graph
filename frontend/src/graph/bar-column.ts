@@ -113,7 +113,8 @@ export function buildTeamColumn(
 
     const statusSuffix = row.status ? `<br/>${row.status}` : '';
 
-    if (!row.has_result || matchDate > targetDate) {
+    const isFuture = !row.has_result || (matchDate !== '未定' && matchDate > targetDate);
+    if (isFuture) {
       // Unplayed or completed-after-cutoff: future (ghost) styling
       const box = createBoxDiv(futureClass, 'box');
       const futureBg = document.createElement('div');
