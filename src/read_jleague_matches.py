@@ -296,7 +296,7 @@ def get_sections_to_update(all_matches: pd.DataFrame,
         current_time: End time for update check
 
     Returns:
-        A sorted list of sections where matches started within the target period.
+        A set of sections where matches started within the target period.
 
     Raises:
         AttributeError: If the start_time column contains non-string values
@@ -313,8 +313,6 @@ def get_sections_to_update(all_matches: pd.DataFrame,
                 logger.info("Add section \"%s\" (match at %s-%s) between %s - %s",
                             _sec, _start, _end, lastupdate, current_time)
                 target_sec.add(_sec)
-    target_sec = list(target_sec)
-    target_sec.sort()
     return target_sec
 
 
