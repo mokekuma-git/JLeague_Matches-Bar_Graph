@@ -22,6 +22,14 @@ import type { PointSystem } from './config';
 // Example: { "3": "promoted_playoff" }
 export type RankClassMap = Record<string, string>;
 
+// Configuration for the cross-group standing comparison table.
+// Extracts the Nth-place team from each group for side-by-side comparison.
+export interface CrossGroupStanding {
+  position: number;            // Which rank to extract (1-indexed)
+  exclude_from_rank?: number;  // Exclude teams ranked at this position or below (e.g. 4 = exclude 4th+)
+  advance_count?: number;      // How many teams advance; highlights top N rows (default: 0)
+}
+
 // Merged optional dict at season entry index 4.
 // Combines what was previously separate at index 4 (RankClassMap) and index 5 (SeasonExtraInfo).
 export interface SeasonEntryOptions {
@@ -35,6 +43,8 @@ export interface SeasonEntryOptions {
   tiebreak_order?: string[];
   season_start_month?: number;
   shown_groups?: string[];
+  cross_group_standing?: CrossGroupStanding;
+  group_team_count?: Record<string, number>;
 }
 
 // Raw array format as loaded from season_map.json (tuple type).
@@ -80,4 +90,6 @@ export interface SeasonInfo {
   tiebreakOrder: string[];
   seasonStartMonth: number;
   shownGroups?: string[];
+  crossGroupStanding?: CrossGroupStanding;
+  groupTeamCount?: Record<string, number>;
 }

@@ -31,6 +31,7 @@ Classify the change set into one of:
 | **Trivial** | CLAUDE.md / README update, CSS color addition, single test addition, config tweak | Commit directly to `main`, no Issue/PR needed |
 | **Single-commit fix** | One logical change, 1-3 files, self-contained | May go to `main` or a branch — ask if unclear |
 | **Multi-commit work** | 2+ logical steps, or part of an ongoing series | Needs a branch. If no Issue exists, suggest creating one |
+| **Sub-issue** | Part of a larger milestone; a parent feature branch exists | Sub-branch → PR to **parent branch** (not `main`). Parent branch's PR handles the merge to `main` |
 
 ## Step 3 — Branch Validation
 
@@ -41,6 +42,19 @@ Check whether the current branch is appropriate:
 - **On a feature/fix/refactor branch**: Verify the changes match the branch's purpose. Warn if they seem unrelated.
 
 If the user needs to switch branches, offer to do it (stashing if needed).
+
+### Parent Branch Detection
+
+When on a feature/fix/refactor branch, check whether it was branched from another feature branch (not `main`):
+
+1. `MAIN_BASE=$(git merge-base main HEAD)`
+2. For each local branch (excluding `main` and current): `BRANCH_BASE=$(git merge-base <branch> HEAD)`
+3. If `BRANCH_BASE` differs from `MAIN_BASE` (i.e., BRANCH_BASE is a descendant of MAIN_BASE), that branch is the **parent branch**
+
+If a parent branch is detected, confirm with the user:
+> "This branch appears to be based on `<parent-branch>` (not `main`). Should the PR target `<parent-branch>`?"
+
+Store the confirmed parent branch as the PR base for Step 7. If no parent branch is found, the PR base is `main`.
 
 ### Branch Naming
 
@@ -144,33 +158,63 @@ If a pre-commit hook fails: fix the issue, re-stage, and create a **new** commit
 After committing, if on a feature/fix/refactor branch and the work appears complete, suggest:
 
 1. **Push**: `git push -u origin {branch}`
-2. **Create PR** using the project's PR format:
-   ```
-   gh pr create --title "..." --body "$(cat <<'EOF'
-   Fixes #{N}
+2. **Determine PR base** (from Step 3 parent branch detection):
+   - Parent branch detected → `--base <parent-branch>`
+   - No parent branch → `--base main` (default, omit the flag)
+3. **Create PR** using the project's PR format:
 
-   ## Summary
-   [Japanese bullet points — what was done and why]
+**PR targeting `main`** (no parent branch):
+```
+gh pr create --title "..." --body "$(cat <<'EOF'
+Fixes #{N}
 
-   ## Changes
-   | Commit | Description |
-   |--------|-------------|
-   | `abc1234` | ... |
+## Summary
+[Japanese bullet points — what was done and why]
 
-   ## Test plan
-   - [ ] `uv run pytest` passed
-   - [ ] `npx vitest run` passed (frontend/)
-   - [ ] `npm run build` succeeded (frontend/)
+## Changes
+| Commit | Description |
+|--------|-------------|
+| `abc1234` | ... |
 
+## Test plan
+- [ ] `uv run pytest` passed
+- [ ] `npx vitest run` passed (frontend/)
+- [ ] `npm run build` succeeded (frontend/)
 
-   🤖 Generated with [Claude Code](https://claude.com/claude-code)
-   EOF
-   )"
-   ```
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
+
+**PR targeting a parent branch** (sub-issue work):
+```
+gh pr create --title "..." --base <parent-branch> --body "$(cat <<'EOF'
+Refs #{sub-issue-N}
+
+> このPRは `<parent-branch>` への統合PRです。`main` への統合は親Issue #N の完了PRで行います。
+
+## Summary
+[Japanese bullet points — what was done and why]
+
+## Changes
+| Commit | Description |
+|--------|-------------|
+| `abc1234` | ... |
+
+## Test plan
+- [ ] `uv run pytest` passed
+- [ ] `npx vitest run` passed (frontend/)
+- [ ] `npm run build` succeeded (frontend/)
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
 
 PR conventions:
 - **Title**: English, concise (< 70 chars)
-- **`Fixes #N`**: At the top of the body to auto-close the Issue
+- **`Fixes #N`**: Use only when the PR directly closes the Issue AND targets `main`. For sub-issue PRs targeting a parent branch, use `Refs #N` instead
+- **`--base`**: Always specify when not targeting `main`
 - **Summary**: Japanese bullet points (日本語)
 - **Changes**: Commit table or category breakdown
 - **Test plan**: Checklist with `- [x]` for passed, `- [ ]` for pending
