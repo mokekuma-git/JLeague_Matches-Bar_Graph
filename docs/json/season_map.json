@@ -251,6 +251,54 @@
       }
     }
   },
+  "international": {
+    "display_name": "国際大会",
+    "css_files": ["national_team_style.css"],
+    "competitions": {
+      "WC_GS": {
+        "league_display": "FIFAワールドカップ GS",
+        "team_rename_map": {
+          "オーストラリア": "豪州",
+          "アメリカ": "米国"
+        },
+        "seasons": {
+          "2022": [32, 0, 0,
+            []]
+        }
+      },
+      "WC_AFC": {
+        "league_display": "W杯アジア最終予選",
+        "team_rename_map": {
+          "オーストラリア": "豪州",
+          "サウジアラビア": "サウジ"
+        },
+        "seasons": {
+          "2026": [6, 0, 0,
+            [],
+            {"shown_groups": ["C"]}],
+          "2022": [12, 0, 0,
+            [],
+            {"shown_groups": ["A", "B"]}]
+        }
+      },
+      "Olympic_GS": {
+        "league_display": "オリンピック GS",
+        "shown_groups": ["A", "B"],
+        "team_rename_map": {
+          "ホンジュラス": "ホンジュラ",
+          "ニュージーランド": "ニュージー",
+          "オーストラリア": "豪州",
+          "アルゼンチン": "アルゼン",
+          "サウジアラビア": "サウジアラ",
+          "コートジボワール": "コートジボ"
+        },
+        "seasons": {
+          "2021": [16, 0, 0,
+            []]
+        }
+      }
+    }
+  },
   "prince": {
     "display_name": "Princeリーグ (J)",
     "css_files": ["team_style.css"],
