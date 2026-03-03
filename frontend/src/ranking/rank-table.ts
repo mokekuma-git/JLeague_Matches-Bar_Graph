@@ -251,8 +251,13 @@ export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: 
   const tbody = tableEl.querySelector('tbody');
   if (!tbody) return;
   applyRowClasses(tbody as HTMLElement, rankMap);
-  new MutationObserver(() => applyRowClasses(tbody as HTMLElement, rankMap))
-    .observe(tbody, { childList: true });
+  // SortableTable replaces the entire <tbody> element on each sort
+  // (removeChild + insertAdjacentHTML), so we must observe the <table>
+  // for childList changes and find the fresh <tbody> on each mutation.
+  new MutationObserver(() => {
+    const newTbody = tableEl.querySelector('tbody');
+    if (newTbody) applyRowClasses(newTbody as HTMLElement, rankMap);
+  }).observe(tableEl, { childList: true });
 }
 
 // ---- Cross-group standing comparison table --------------------------------
