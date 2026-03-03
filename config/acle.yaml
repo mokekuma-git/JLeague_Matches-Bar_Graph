@@ -1,0 +1,26 @@
+http_timeout: 60
+timezone: "Asia/Tokyo"
+standard_date_format: "%Y/%m/%d"
+season_start_month: 9
+
+paths:
+  csv_format: "../docs/csv/{season}_allmatch_result-ACL_Elite.csv"
+  timestamp_file: "../docs/csv/csv_timestamp.csv"
+
+urls:
+  base_url: "https://soccer.yahoo.co.jp/jleague/category/acle/schedule/"
+  # competition_id for the current season's League Stage.
+  # Update this each season: 25-26 LS = 31429
+  competition_id: "31429"
+
+# Matchday IDs for the League Stage (8 matchdays).
+# スポーツナビ encodes matchday N as N*10+1 (e.g. 1st = 11, 2nd = 21).
+section_ids:
+  - "11"
+  - "21"
+  - "31"
+  - "41"
+  - "51"
+  - "61"
+  - "71"
+  - "81"

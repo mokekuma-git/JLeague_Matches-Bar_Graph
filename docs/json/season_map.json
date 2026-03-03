@@ -339,6 +339,15 @@
           "2021": [4, 0, 0,
             []]
         }
+      },
+      "ACL_Elite": {
+        "league_display": "ACL Elite LS",
+        "season_start_month": 9,
+        "tiebreak_order": ["head_to_head", "goal_diff", "goal_get"],
+        "seasons": {
+          "25-26": [12, 0, 0,
+            []]
+        }
       }
     }
   },
