@@ -338,7 +338,7 @@
   background: -webkit-linear-gradient(top left, #FF6020, #FF752D, #FF8030);
   background: linear-gradient(to bottom right, #FF6020, #FF752D, #FF8030);
 }
-.メルボルンシティ {
+.メルボルンシティ, .メルボルン・シティ {
   color: black;
   background: -moz-linear-gradient(top left, #7FB9E8, #7FB9E8, #FFFFFF);
   background: -webkit-linear-gradient(top left, #7FB9E8, #7FB9E8, #FFFFFF);
