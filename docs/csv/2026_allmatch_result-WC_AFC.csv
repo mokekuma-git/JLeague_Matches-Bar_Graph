@@ -1,31 +1,91 @@
 ,match_date,section_no,start_time,stadium,home_team,away_team,status,matchNumber,home_goal,away_goal,extraTime,match_index_in_section,group
-0,2024/09/05,1,20:10,ゴールドコースト(オーストラリア)／Cbus Super Stadium,オーストラリア,バーレーン,試合終了,1,0,1,False,1,C
-1,2024/09/05,1,19:35,埼玉／埼玉スタジアム2002,日本,中国,試合終了,2,7,0,False,2,C
-2,2024/09/05,1,21:00,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,インドネシア,試合終了,3,1,1,False,3,C
-3,2024/09/10,2,19:00,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,オーストラリア,試合終了,4,0,0,False,1,C
-4,2024/09/10,2,20:00,大連(中国)／Dalian Suoyuwan Football Stadium,中国,サウジアラビア,試合終了,5,1,2,False,2,C
-5,2024/09/10,2,19:00,リファー(バーレーン)／Bahrain National Stadium,バーレーン,日本,試合終了,6,0,5,False,3,C
-6,2024/10/10,3,19:10,アデレード(オーストラリア)／Adelaide Oval,オーストラリア,中国,試合終了,7,3,1,False,1,C
-7,2024/10/10,3,19:00,リファー(バーレーン)／Bahrain National Stadium,バーレーン,インドネシア,試合終了,8,2,2,False,2,C
-8,2024/10/10,3,21:00,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,日本,試合終了,9,0,2,False,3,C
-9,2024/10/15,4,19:35,埼玉／埼玉スタジアム2002,日本,オーストラリア,試合終了,10,1,1,False,1,C
-10,2024/10/15,4,20:00,青島(中国)／Qingdao Youth Football Stadium,中国,インドネシア,試合終了,11,2,1,False,2,C
-11,2024/10/15,4,21:00,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,バーレーン,試合終了,12,0,0,False,3,C
-12,2024/11/14,5,17:00,リファー(バーレーン)／Bahrain National Stadium,バーレーン,中国,試合終了,13,0,1,False,1,C
-13,2024/11/14,5,19:10,メルボルン(オーストラリア)／Melbourne Rectangular Stadium,オーストラリア,サウジアラビア,試合終了,14,0,0,False,2,C
-14,2024/11/15,5,19:00,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,日本,試合終了,15,0,4,False,3,C
-15,2024/11/19,6,19:00,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,サウジアラビア,試合終了,16,2,0,False,1,C
-16,2024/11/19,6,21:15,リファー(バーレーン)／Bahrain National Stadium,バーレーン,オーストラリア,試合終了,17,2,2,False,2,C
-17,2024/11/19,6,20:00,廈門(中国)／Xiamen Egret Stadium,中国,日本,試合終了,18,1,3,False,3,C
-18,2025/03/20,7,19:35,埼玉／埼玉スタジアム2002,日本,バーレーン,試合終了,19,2,0,False,1,C
-19,2025/03/20,7,21:15,リヤド(サウジアラビア)／King Saud University Stadium,サウジアラビア,中国,試合終了,20,1,0,False,2,C
-20,2025/03/20,7,20:10,シドニー(オーストラリア)／Sydney Football Stadium,オーストラリア,インドネシア,試合終了,21,5,1,False,3,C
-21,2025/03/25,8,19:00,杭州(中国)／Hangzhou Olympic Sports Centre Stadium,中国,オーストラリア,試合終了,22,0,2,False,1,C
-22,2025/03/25,8,19:35,埼玉／埼玉スタジアム2002,日本,サウジアラビア,試合終了,23,0,0,False,2,C
-23,2025/03/25,8,20:45,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,バーレーン,試合終了,24,1,0,False,3,C
-24,2025/06/05,9,20:45,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,中国,試合終了,25,1,0,False,1,C
-25,2025/06/05,9,19:00,リファー(バーレーン)／Bahrain National Stadium,バーレーン,サウジアラビア,試合終了,26,0,2,False,2,C
-26,2025/06/05,9,19:10,パース(オーストラリア)／Perth Stadium,オーストラリア,日本,試合終了,27,1,0,False,3,C
-27,2025/06/10,10,19:00,重慶(中国)／Chongqing Longxing Football Stadium,中国,バーレーン,試合終了,28,1,0,False,1,C
-28,2025/06/10,10,19:35,大阪／市立吹田サッカースタジアム,日本,インドネシア,試合終了,29,6,0,False,2,C
-29,2025/06/10,10,21:15,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,オーストラリア,試合終了,30,1,2,False,3,C
+0,2024/09/05,1,,BUNYODKOR STADIUM (TASHKENT),ウズベキスタン,朝鮮民主主義人民共和国,試合終了,1,1,0,False,1,A
+1,2024/09/05,1,,AHMAD BIN ALI STADIUM (AL RAYYAN),カタール,UAE,試合終了,2,1,3,False,2,A
+2,2024/09/05,1,,FOOLĀD SHAHR STADIUM (FOOLADSHAHR),イラン,キルギス,試合終了,3,1,0,False,3,A
+3,2024/09/10,2,,LAO NATIONAL STADIUM KM16 (VIENTIANE),朝鮮民主主義人民共和国,カタール,試合終了,4,2,2,False,1,A
+4,2024/09/10,2,,DOLEN OMURZAKOV STADIUM (BISHKEK),キルギス,ウズベキスタン,試合終了,5,2,3,False,2,A
+5,2024/09/10,2,,HAZZA BIN ZAYED STADIUM (AL AIN),UAE,イラン,試合終了,6,0,1,False,3,A
+6,2024/10/10,3,,BUNYODKOR STADIUM (TASHKENT),ウズベキスタン,イラン,試合終了,7,0,0,False,1,A
+7,2024/10/10,3,,HAZZA BIN ZAYED STADIUM (AL AIN),UAE,朝鮮民主主義人民共和国,試合終了,8,1,1,False,2,A
+8,2024/10/10,3,,AHMAD BIN ALI STADIUM (AL RAYYAN),カタール,キルギス,試合終了,9,3,1,False,3,A
+9,2024/10/15,4,,DOLEN OMURZAKOV STADIUM (BISHKEK),キルギス,朝鮮民主主義人民共和国,試合終了,10,1,0,False,1,A
+10,2024/10/15,4,,BUNYODKOR STADIUM (TASHKENT),ウズベキスタン,UAE,試合終了,11,1,0,False,2,A
+11,2024/10/15,4,,IMAM REZA STADIUM (MASHHAD),イラン,カタール,試合終了,12,4,1,False,3,A
+12,2024/11/14,5,,AO NATIONAL STADIUM KM16 (VIENTIANE),朝鮮民主主義人民共和国,イラン,試合終了,13,2,3,False,1,A
+13,2024/11/14,5,,MOHAMMED BIN ZAYED STADIUM (ABU DHABI),UAE,キルギス,試合終了,14,3,0,False,2,A
+14,2024/11/14,5,,JASSIM BIN HAMAD STADIUM (DOHA),カタール,ウズベキスタン,試合終了,15,3,2,False,3,A
+15,2024/11/19,6,,LAO NATIONAL STADIUM KM16 (VIENTIANE),朝鮮民主主義人民共和国,ウズベキスタン,試合終了,16,0,1,False,1,A
+16,2024/11/19,6,,DOLEN OMURZAKOV STADIUM (BISHKEK),キルギス,イラン,試合終了,17,2,3,False,2,A
+17,2024/11/19,6,,HAZZA BIN ZAYED STADIUM (AL AIN),UAE,カタール,試合終了,18,5,0,False,3,A
+18,2025/03/20,7,,JASSIM BIN HAMAD STADIUM (DOHA),カタール,朝鮮民主主義人民共和国,試合終了,19,5,1,False,1,A
+19,2025/03/20,7,,BUNYODKOR STADIUM (TASHKENT),ウズベキスタン,キルギス,試合終了,20,1,0,False,2,A
+20,2025/03/20,7,,AZADI STADIUM (TEHRAN),イラン,UAE,試合終了,21,2,0,False,3,A
+21,2025/03/25,8,,PRINCE FAISAL BIN FAHD STADIUM (RIYADH),朝鮮民主主義人民共和国,UAE,試合終了,22,1,2,False,1,A
+22,2025/03/25,8,,AZADI STADIUM (TEHRAN),イラン,ウズベキスタン,試合終了,23,2,2,False,2,A
+23,2025/03/25,8,,DOLEN OMURZAKOV STADIUM (BISHKEK),キルギス,カタール,試合終了,24,3,1,False,3,A
+24,2025/06/05,9,,PRINCE FAISAL BIN FAHD STADIUM (RIYADH),朝鮮民主主義人民共和国,キルギス,試合終了,25,2,2,False,1,A
+25,2025/06/05,9,,JASSIM BIN HAMAD STADIUM (DOHA),カタール,イラン,試合終了,26,1,0,False,2,A
+26,2025/06/05,9,,AL NAHYAN STADIUM (ABU DHABI),UAE,ウズベキスタン,試合終了,27,0,0,False,3,A
+27,2025/06/10,10,,BUNYODKOR STADIUM (TASHKENT),ウズベキスタン,カタール,試合終了,28,3,0,False,1,A
+28,2025/06/10,10,,AZADI STADIUM (TEHRAN),イラン,朝鮮民主主義人民共和国,試合終了,29,3,0,False,2,A
+29,2025/06/10,10,,DOLEN OMURZAKOV STADIUM (BISHKEK),キルギス,UAE,試合終了,30,1,1,False,3,A
+30,2024/09/05,1,,SEOUL WORLD CUP STADIUM (SEOUL),韓国,パレスチナ,試合終了,1,0,0,False,1,B
+31,2024/09/05,1,,BASRA INTERNATIONAL STADIUM (BASRA),イラク,オマーン,試合終了,2,1,0,False,2,B
+32,2024/09/05,1,,AMMAN INTERNATIONAL STADIUM (AMMAN),ヨルダン,クウェート,試合終了,3,1,1,False,3,B
+33,2024/09/10,2,,KUALA LUMPUR FOOTBALL STADIUM (KUALA LUMPUR),パレスチナ,ヨルダン,試合終了,4,1,3,False,1,B
+34,2024/09/10,2,,SULTAN QABOOS SPORT COMPLEX (MUSCAT),オマーン,韓国,試合終了,5,1,3,False,2,B
+35,2024/09/10,2,,JABER AL-AHMAD INTERNATIONAL STADIUM (ARDHIYAH),クウェート,イラク,試合終了,6,0,0,False,3,B
+36,2024/10/10,3,,AMMAN INTERNATIONAL STADIUM (AMMAN),ヨルダン,韓国,試合終了,7,0,2,False,1,B
+37,2024/10/10,3,,SULTAN QABOOS SPORT COMPLEX (MUSCAT),オマーン,クウェート,試合終了,8,4,0,False,2,B
+38,2024/10/10,3,,BASRA INTERNATIONAL STADIUM (BASRA),イラク,パレスチナ,試合終了,9,1,0,False,3,B
+39,2024/10/15,4,,YONGIN MIREU STADIUM (YONGIN),韓国,イラク,試合終了,10,3,2,False,1,B
+40,2024/10/15,4,,AMMAN INTERNATIONAL STADIUM (AMMAN),ヨルダン,オマーン,試合終了,11,4,0,False,2,B
+41,2024/10/15,4,,JASSIM BIN HAMAD STADIUM (DOHA),パレスチナ,クウェート,試合終了,12,2,2,False,3,B
+42,2024/11/14,5,,JABER AL-AHMAD INTERNATIONAL STADIUM (ARDHIYAH),クウェート,韓国,試合終了,13,1,3,False,1,B
+43,2024/11/14,5,,SULTAN QABOOS SPORT COMPLEX (MUSCAT),オマーン,パレスチナ,試合終了,14,1,0,False,2,B
+44,2024/11/14,5,,BASRA INTERNATIONAL STADIUM (BASRA),イラク,ヨルダン,試合終了,15,0,0,False,3,B
+45,2024/11/19,6,,AMMAN INTERNATIONAL STADIUM (AMMAN),パレスチナ,韓国,試合終了,16,1,1,False,1,B
+46,2024/11/19,6,,SULTAN QABOOS SPORT COMPLEX (MUSCAT),オマーン,イラク,試合終了,17,0,1,False,2,B
+47,2024/11/19,6,,JABER AL-AHMAD INTERNATIONAL STADIUM (ARDHIYAH),クウェート,ヨルダン,試合終了,18,1,1,False,3,B
+48,2025/03/20,7,,BASRA INTERNATIONAL STADIUM (BASRA),イラク,クウェート,試合終了,19,2,2,False,1,B
+49,2025/03/20,7,,GOYANG STADIUM (GOYANG),韓国,オマーン,試合終了,20,1,1,False,2,B
+50,2025/03/20,7,,AMMAN INTERNATIONAL STADIUM (AMMAN),ヨルダン,パレスチナ,試合終了,21,3,1,False,3,B
+51,2025/03/25,8,,AMMAN INTERNATIONAL STADIUM (AMMAN),パレスチナ,イラク,試合終了,22,2,1,False,1,B
+52,2025/03/25,8,,SUWON WORLD CUP STADIUM (SUWON),韓国,ヨルダン,試合終了,23,1,1,False,2,B
+53,2025/03/25,8,,JABER AL-AHMAD INTERNATIONAL STADIUM (ARDHIYAH),クウェート,オマーン,試合終了,24,0,1,False,3,B
+54,2025/06/05,9,,JABER AL-AHMAD INTERNATIONAL STADIUM (ARDHIYAH),クウェート,パレスチナ,試合終了,25,0,2,False,1,B
+55,2025/06/05,9,,SULTAN QABOOS SPORT COMPLEX (MUSCAT),オマーン,ヨルダン,試合終了,26,0,3,False,2,B
+56,2025/06/05,9,,BASRA INTERNATIONAL STADIUM (BASRA),イラク,韓国,試合終了,27,0,2,False,3,B
+57,2025/06/10,10,,SEOUL WORLD CUP STADIUM (SEOUL),韓国,クウェート,試合終了,28,4,0,False,1,B
+58,2025/06/10,10,,AMMAN INTERNATIONAL STADIUM (AMMAN),ヨルダン,イラク,試合終了,29,0,1,False,2,B
+59,2025/06/10,10,,KING ABDULLAH II STADIUM (AMMAN),パレスチナ,オマーン,試合終了,30,1,1,False,3,B
+60,2024/09/05,1,20:10,ゴールドコースト(オーストラリア)／Cbus Super Stadium,オーストラリア,バーレーン,試合終了,1,0,1,False,1,C
+61,2024/09/05,1,19:35,埼玉／埼玉スタジアム2002,日本,中国,試合終了,2,7,0,False,2,C
+62,2024/09/05,1,21:00,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,インドネシア,試合終了,3,1,1,False,3,C
+63,2024/09/10,2,19:00,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,オーストラリア,試合終了,4,0,0,False,1,C
+64,2024/09/10,2,20:00,大連(中国)／Dalian Suoyuwan Football Stadium,中国,サウジアラビア,試合終了,5,1,2,False,2,C
+65,2024/09/10,2,19:00,リファー(バーレーン)／Bahrain National Stadium,バーレーン,日本,試合終了,6,0,5,False,3,C
+66,2024/10/10,3,19:10,アデレード(オーストラリア)／Adelaide Oval,オーストラリア,中国,試合終了,7,3,1,False,1,C
+67,2024/10/10,3,19:00,リファー(バーレーン)／Bahrain National Stadium,バーレーン,インドネシア,試合終了,8,2,2,False,2,C
+68,2024/10/10,3,21:00,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,日本,試合終了,9,0,2,False,3,C
+69,2024/10/15,4,19:35,埼玉／埼玉スタジアム2002,日本,オーストラリア,試合終了,10,1,1,False,1,C
+70,2024/10/15,4,20:00,青島(中国)／Qingdao Youth Football Stadium,中国,インドネシア,試合終了,11,2,1,False,2,C
+71,2024/10/15,4,21:00,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,バーレーン,試合終了,12,0,0,False,3,C
+72,2024/11/14,5,17:00,リファー(バーレーン)／Bahrain National Stadium,バーレーン,中国,試合終了,13,0,1,False,1,C
+73,2024/11/14,5,19:10,メルボルン(オーストラリア)／Melbourne Rectangular Stadium,オーストラリア,サウジアラビア,試合終了,14,0,0,False,2,C
+74,2024/11/15,5,19:00,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,日本,試合終了,15,0,4,False,3,C
+75,2024/11/19,6,19:00,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,サウジアラビア,試合終了,16,2,0,False,1,C
+76,2024/11/19,6,21:15,リファー(バーレーン)／Bahrain National Stadium,バーレーン,オーストラリア,試合終了,17,2,2,False,2,C
+77,2024/11/19,6,20:00,廈門(中国)／Xiamen Egret Stadium,中国,日本,試合終了,18,1,3,False,3,C
+78,2025/03/20,7,19:35,埼玉／埼玉スタジアム2002,日本,バーレーン,試合終了,19,2,0,False,1,C
+79,2025/03/20,7,21:15,リヤド(サウジアラビア)／King Saud University Stadium,サウジアラビア,中国,試合終了,20,1,0,False,2,C
+80,2025/03/20,7,20:10,シドニー(オーストラリア)／Sydney Football Stadium,オーストラリア,インドネシア,試合終了,21,5,1,False,3,C
+81,2025/03/25,8,19:00,杭州(中国)／Hangzhou Olympic Sports Centre Stadium,中国,オーストラリア,試合終了,22,0,2,False,1,C
+82,2025/03/25,8,19:35,埼玉／埼玉スタジアム2002,日本,サウジアラビア,試合終了,23,0,0,False,2,C
+83,2025/03/25,8,20:45,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,バーレーン,試合終了,24,1,0,False,3,C
+84,2025/06/05,9,20:45,ジャカルタ(インドネシア)／Gelora Bung Karno Stadium,インドネシア,中国,試合終了,25,1,0,False,1,C
+85,2025/06/05,9,19:00,リファー(バーレーン)／Bahrain National Stadium,バーレーン,サウジアラビア,試合終了,26,0,2,False,2,C
+86,2025/06/05,9,19:10,パース(オーストラリア)／Perth Stadium,オーストラリア,日本,試合終了,27,1,0,False,3,C
+87,2025/06/10,10,19:00,重慶(中国)／Chongqing Longxing Football Stadium,中国,バーレーン,試合終了,28,1,0,False,1,C
+88,2025/06/10,10,19:35,大阪／市立吹田サッカースタジアム,日本,インドネシア,試合終了,29,6,0,False,2,C
+89,2025/06/10,10,21:15,ジッダ(サウジアラビア)／King Abdullah Sports City Stadium,サウジアラビア,オーストラリア,試合終了,30,1,2,False,3,C

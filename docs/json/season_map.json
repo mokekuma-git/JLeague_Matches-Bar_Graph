@@ -273,12 +273,13 @@
           "サウジアラビア": "サウジ"
         },
         "seasons": {
-          "2026": [6, 0, 0,
+          "2026": [6, 2, 0,
             [],
-            {"shown_groups": ["C"]}],
-          "2022": [6, 0, 0,
+            {"shown_groups": ["A", "B", "C"]}],
+          "2022": [6, 2, 0,
             [],
-            {"shown_groups": ["A", "B"]}]
+            {"shown_groups": ["A", "B"],
+              "rank_properties": {"3": "promoted_playoff"}}]
         }
       },
       "Olympic_GS": {
