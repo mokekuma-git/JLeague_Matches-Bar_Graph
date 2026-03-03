@@ -9,6 +9,7 @@ import {
   getSelfPossibleLine,
 } from '../core/sorter';
 import { teamCssClass } from '../core/team-utils';
+import { getRankClass } from '../graph/tooltip';
 
 // SortableTable is loaded from CDN as a global (not an npm package).
 declare const SortableTable: new () => {
@@ -82,6 +83,7 @@ export interface RankRow extends BaseRankRow {
   champion: string;
   promotion?: string;
   relegation?: string;
+  rowClass?: string;
 }
 
 // Returns the total count of opponents with at least one remaining fixture across all teams.
@@ -148,6 +150,7 @@ export function makeRankData(
       goal_lose:   s.goal_get - s.goal_diff,
       future_game: td.df.length - s.all_game,
       champion:    '',
+      rowClass:    getRankClass(rank, seasonInfo) || undefined,
     };
 
     if (allGameFinished) {
@@ -218,13 +221,38 @@ function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean): void {
   buildTableHead(tableEl, cols);
 }
 
+// Applies rowClass to each <tr> in tbody by matching the rank cell value.
+// Called after SortableTable renders (initial and on re-sort).
+// SortableTable rebuilds tbody.innerHTML on each sort, so fresh <tr>s need
+// classes reapplied; we observe childList changes to catch every re-render.
+function applyRowClasses(tbody: HTMLElement, rankMap: Map<number, string>): void {
+  tbody.querySelectorAll<HTMLTableRowElement>('tr').forEach(tr => {
+    const rank = parseInt(tr.querySelector('td')?.textContent?.trim() ?? '', 10);
+    const cls = rankMap.get(rank);
+    if (cls) tr.classList.add(cls);
+  });
+}
+
 // Renders rankData into the given <table> element using SortableTable from CDN.
 // hasPk controls whether PK win/loss columns appear in the table header.
+// Row CSS classes (promoted/relegated/etc.) are applied based on points-based rank
+// and reapplied after every re-sort via MutationObserver.
 export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean): void {
   buildRankTableHead(tableEl, hasPk);
   const sortableTable = new SortableTable();
   sortableTable.setTable(tableEl);
   sortableTable.setData(rankData);
+
+  const rankMap = new Map<number, string>(
+    rankData.filter(d => d.rowClass).map(d => [d.rank, d.rowClass!]),
+  );
+  if (rankMap.size === 0) return;
+
+  const tbody = tableEl.querySelector('tbody');
+  if (!tbody) return;
+  applyRowClasses(tbody as HTMLElement, rankMap);
+  new MutationObserver(() => applyRowClasses(tbody as HTMLElement, rankMap))
+    .observe(tbody, { childList: true });
 }
 
 // ---- Cross-group standing comparison table --------------------------------
