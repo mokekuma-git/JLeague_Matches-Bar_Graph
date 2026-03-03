@@ -6,6 +6,7 @@ season_start_month: 7
 paths:
   csv_format: "../docs/csv/{season}_allmatch_result-WE.csv"
   cup_csv_format: "../docs/csv/{season}_allmatch_result-WE_Cup.csv"
+  cup_ko_csv_format: "../docs/csv/{season}_allmatch_result-WE_Cup_KO.csv"
   timestamp_file: "../docs/csv/csv_timestamp.csv"
 
 urls:

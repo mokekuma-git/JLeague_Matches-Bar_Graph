@@ -312,5 +312,13 @@ if __name__ == '__main__':
     mu.update_if_diff(_to_df(_we), _we_csv)
 
     if _cup:
+        _cup_df = _to_df(_cup)
+        _cup_gs_df = _cup_df[_cup_df['section_no'] < 97].reset_index(drop=True)
+        _cup_ko_df = _cup_df[_cup_df['section_no'] >= 97].reset_index(drop=True)
+
         _cup_csv = mu.config.get_format_str('paths.cup_csv_format', season=_season)
-        mu.update_if_diff(_to_df(_cup), _cup_csv)
+        mu.update_if_diff(_cup_gs_df, _cup_csv)
+
+        if not _cup_ko_df.empty:
+            _cup_ko_csv = mu.config.get_format_str('paths.cup_ko_csv_format', season=_season)
+            mu.update_if_diff(_cup_ko_df, _cup_ko_csv)
