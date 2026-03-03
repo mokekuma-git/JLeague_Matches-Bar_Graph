@@ -283,11 +283,7 @@
       },
       "Olympic_GS": {
         "league_display": "オリンピック GS",
-        "shown_groups": ["A", "B"],
-        "cross_group_standing": {
-          "position": 3,
-          "advance_count": 2
-        },
+        "shown_groups": ["A", "B", "C", "D"],
         "team_rename_map": {
           "ホンジュラス": "ホンジュラ",
           "ニュージーランド": "ニュージー",
@@ -299,11 +295,10 @@
           "ウズベキスタン": "ウズベキスタ"
         },
         "seasons": {
-          "2021": [4, 0, 0,
+          "2021": [4, 2, 0,
             []],
-          "2024": [4, 0, 0,
-            [],
-            {"shown_groups": ["A", "B", "C", "D"], "team_rename_map": {"ドミニカ共和国": "ドミニカ共", "ウズベキスタン": "ウズベキスタ"}}]
+          "2024": [4, 2, 0,
+            []]
         }
       }
     }
