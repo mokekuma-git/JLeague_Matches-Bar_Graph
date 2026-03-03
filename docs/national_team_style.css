@@ -195,6 +195,28 @@
     background-color: red;
 }
 
+/* ── WCQ 2026 追加チーム ──────────────────────────────────── */
+.朝鮮民主主義人民共和国 {
+  color: white;
+  background-color: #024FA2;
+}
+.キルギス {
+  color: #FCD116;
+  background-color: #CE1126;
+}
+.パレスチナ {
+  color: white;
+  background-color: #009736;
+}
+.ヨルダン {
+  color: white;
+  background-color: black;
+}
+.クウェート {
+  color: white;
+  background-color: #003366;
+}
+
 /* ── Paris 2024 追加チーム ─────────────────────────────────── */
 .イスラエル {
   color: white;
