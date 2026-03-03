@@ -45,6 +45,7 @@ export interface SeasonEntryOptions {
   shown_groups?: string[];
   cross_group_standing?: CrossGroupStanding;
   group_team_count?: Record<string, number>;
+  note?: string | string[];
 }
 
 // Raw array format as loaded from season_map.json (tuple type).

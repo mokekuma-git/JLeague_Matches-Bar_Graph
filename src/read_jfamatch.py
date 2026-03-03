@@ -66,7 +66,7 @@ def _prepare_config() -> Config:
             if isinstance(cmpt_conf.groups, str):
                 # groups are comma separated
                 # ex) 'A,B,C' -> ['A', 'B', 'C']
-                cmpt_conf.groups = cmpt_conf.groups.split(',')
+                cmpt_conf.groups = [group.strip() for group in cmpt_conf.groups.split(',')]
             elif is_string_list(cmpt_conf.groups):
                 pass
             else:

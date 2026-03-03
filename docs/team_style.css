@@ -6,7 +6,7 @@
 .柏, .柏レイソルU-18 {
   background-color: #fff100;
 }
-.広島, .サンフレッチェ広島FCユース {
+.広島, .S広島R, .サンフレッチェ広島FCユース {
   color: white;
   background-color: #51318f;
 }
@@ -34,7 +34,7 @@
   color: #ffb606;
   background-color: #140b8c;
 }
-.横浜FM, .横浜M, .横浜F・マリノスユース {
+.横浜FM, .横浜M, .横浜F・マリノス, .横浜F・マリノスユース {
   background: -moz-linear-gradient(top left, #E60039 10%, #FFFFFF, #004098 90%);
   background: -webkit-linear-gradient(top left, #E60039 10%, #FFFFFF, #004098 90%);
   background: linear-gradient(to bottom right, #E60039 10%, #FFFFFF, #004098 90%);
@@ -51,7 +51,7 @@
   color: black;
   background-color: #faa0bf;
 }
-.川崎Ｆ, .川崎F, .川崎フロンターレU-18 {
+.川崎Ｆ, .川崎F, .川崎フロンターレ, .川崎フロンターレU-18 {
   color: white;
   background: -moz-linear-gradient(left, #198cca 60%, #000000);
   background: -webkit-linear-gradient(left, #198cca 60%, #000000);
@@ -82,11 +82,11 @@
   background: -webkit-linear-gradient(left, #003a68 60%, #000000);
   background: linear-gradient(to right, #003a68 60%, #000000);
 }
-.浦和, .浦和レッドダイヤモンズユース, .浦和レッズユース {
+.浦和, .浦和レッズ, .浦和レッドダイヤモンズユース, .浦和レッズユース {
   color: white;
   background-color: #e6002d;
 }
-.神戸, .ヴィッセル神戸U-18 {
+.神戸, .ヴィッセル神戸, .ヴィッセル神戸U-18 {
   color: white;
   background-color: #980323;
 }
@@ -103,7 +103,7 @@
   color: white;
   background-color: #750069;
 }
-.大宮, .大宮アルディージャU18, .RB大宮アルディージャU18 {
+.大宮, .大宮V, .大宮アルディージャU18, .RB大宮アルディージャU18 {
   color: white;
   background-color: #f18900;
 }
@@ -117,7 +117,7 @@
   color: white;
   background-color: #004093;
 }
-.甲府, .山梨学院高校, .ヴァンフォーレ甲府U-18 {
+.甲府, .ヴァンフォーレ甲府, .山梨学院高校, .ヴァンフォーレ甲府U-18 {
   color: white;
   background: -moz-linear-gradient(left, #B8193F, #005bac, #005bac);
   background: -webkit-linear-gradient(left, #B8193F, #005bac, #005bac);
@@ -295,7 +295,9 @@
 }
 
 /**************************************************************** ACL Team style definition */
-.大邱, .傑志, .JDT, .蔚山 {
+.大邱, .傑志,
+.JDT, .ジョホール, .ジョホール・ダルル・タクジム,
+.蔚山, .蔚山HD, .蔚山現代 {
   color: white;
   background-color: #00205b;
 }
@@ -310,7 +312,7 @@
   color: white;
   background-color: #f18900;
 }
-.浦項 {
+.浦項, .浦項スティーラース {
   color: black;
   background-color: #7399d1;
 }
@@ -318,15 +320,15 @@
   color: white;
   background-color: #e50012;
 }
-.北京FC, .パトゥムユナイテッド, .全北現代 {
-    color: white;
-    background-color: #009844;
-  }
-.カヤFC {
+.北京FC, .パトゥムユナイテッド, .全北現代, .全北現代モータース {
+  color: white;
+  background-color: #009844;
+}
+.カヤFC, .カヤ・イロイロ {
   color: yellow;
   background-color: black;
 }
-.セーラーズ {
+.セーラーズ, .ライオン・シティ・セーラーズ {
   color: #E57623;
   background: -moz-linear-gradient(top left, #000084, #000084, #478EF7);
   background: -webkit-linear-gradient(top left, #000084, #000084, #478EF7);
@@ -338,7 +340,7 @@
   background: -webkit-linear-gradient(top left, #FF6020, #FF752D, #FF8030);
   background: linear-gradient(to bottom right, #FF6020, #FF752D, #FF8030);
 }
-.メルボルンシティ {
+.メルボルンシティ, .メルボルン・シティ {
   color: black;
   background: -moz-linear-gradient(top left, #7FB9E8, #7FB9E8, #FFFFFF);
   background: -webkit-linear-gradient(top left, #7FB9E8, #7FB9E8, #FFFFFF);
@@ -358,6 +360,194 @@
   color: black;
   background-color: #52AEE3;
 }
+
+/* ── Saudi Arabia ─────────────────────────────────────────── */
+.アル・ヒラル {
+  color: white;
+  background-color: #003699;
+}
+.アル・ナスル {
+  color: #1d3461;
+  background-color: #FFCC00;
+}
+.アル・イテハド {
+  color: #FFD700;
+  background-color: #000000;
+}
+/* Al-Ahli SC (Saudi) and Al-Faisaly share green/white */
+.アル・アハリ, .アル・アハリ・サウジ, .アル・ファイサリー {
+  color: white;
+  background-color: #009A44;
+}
+.アル・フェイハ {
+  color: white;
+  background-color: #F05A28;
+}
+
+/* ── UAE ──────────────────────────────────────────────────── */
+.アル・アイン {
+  color: white;
+  background-color: #70161E;
+}
+.アル・ワスル {
+  color: black;
+  background-color: #D4AF37;
+}
+.アル・ワフダ {
+  color: #002060;
+  background: -moz-linear-gradient(left, #D4AF37 50%, #FFFFFF);
+  background: -webkit-linear-gradient(left, #D4AF37 50%, #FFFFFF);
+  background: linear-gradient(to right, #D4AF37 50%, #FFFFFF);
+}
+.シャールジャ {
+  color: white;
+  background-color: #80193A;
+}
+
+/* ── Qatar ────────────────────────────────────────────────── */
+.アル・サッド {
+  color: white;
+  background-color: #800020;
+}
+.アル・ガラファ {
+  color: white;
+  background-color: #8B1A2F;
+}
+.アル・ドゥハイル {
+  color: white;
+  background-color: #DA0012;
+}
+.アル・ラーヤン {
+  color: white;
+  background-color: #701A3A;
+}
+
+/* ── Iraq ─────────────────────────────────────────────────── */
+.アル・ショルタ {
+  color: white;
+  background: -moz-linear-gradient(left, #000000 60%, #FFFFFF);
+  background: -webkit-linear-gradient(left, #000000 60%, #FFFFFF);
+  background: linear-gradient(to right, #000000 60%, #FFFFFF);
+}
+.アル・クウワ・アル・ジャウウィーヤ {
+  color: white;
+  background-color: #003399;
+}
+
+/* ── Iran ─────────────────────────────────────────────────── */
+.ペルセポリス {
+  color: white;
+  background-color: #CC0000;
+}
+.エステグラル {
+  color: white;
+  background-color: #0062C2;
+}
+.セパハン {
+  color: black;
+  background-color: #FF6B00;
+}
+.ナッサジ {
+  color: white;
+  background-color: #007A33;
+}
+.トラークトゥール {
+  color: white;
+  background-color: #C8102E;
+}
+
+/* ── Central Asia (Uzbekistan / Tajikistan) ───────────────── */
+.パフタコール {
+  color: #003399;
+  background-color: #4DBBEB;
+}
+.AGMK {
+  color: black;
+  background-color: #FFD700;
+}
+.FKアハル {
+  color: white;
+  background-color: #006633;
+}
+.ナサフ {
+  color: white;
+  background-color: #003399;
+}
+.ナフバホール {
+  color: white;
+  background-color: #002060;
+}
+.イスティクロル {
+  color: white;
+  background-color: #C8102E;
+}
+
+/* ── Korea ────────────────────────────────────────────────── */
+.FCソウル {
+  color: white;
+  background-color: #B22222;
+}
+.仁川ユナイテッド {
+  color: white;
+  background-color: #003DA5;
+}
+.光州FC {
+  color: black;
+  background-color: #FFD700;
+}
+.江原 {
+  color: white;
+  background-color: #006633;
+}
+
+/* ── China ────────────────────────────────────────────────── */
+.上海海港 {
+  color: #D4AF37;
+  background-color: #002060;
+}
+.上海申花 {
+  color: white;
+  background-color: #003DA5;
+}
+.浙江 {
+  color: white;
+  background-color: #00643C;
+}
+.武漢三鎮 {
+  color: white;
+  background-color: #1A4C8B;
+}
+.成都蓉城 {
+  color: white;
+  background-color: #006633;
+}
+
+/* ── SE Asia / Australia ──────────────────────────────────── */
+.ブリーラム, .ブリーラム・ユナイテッド {
+  color: white;
+  background-color: #CC0000;
+}
+.バンコク・ユナイテッド {
+  color: black;
+  background-color: #FFD700;
+}
+.ハノイ {
+  color: white;
+  background-color: #DD0000;
+}
+.ムンバイ・シティ {
+  color: #F7941D;
+  background-color: #002F6C;
+}
+.BGパトゥム・ユナイテッド {
+  color: white;
+  background-color: #1E40AF;
+}
+.セントラル・コースト・マリナーズ {
+  color: #FFD700;
+  background-color: #002E62;
+}
+
 /**************************************************************** Youth Team style definition */
 .前橋育英高校	{
   color: black;
