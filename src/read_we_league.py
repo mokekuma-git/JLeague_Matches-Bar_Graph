@@ -14,7 +14,7 @@ URL pattern:
 
 Status detection:
   <div class="teams _game"> -> 試合終了 (completed)
-  <div class="teams">       -> VS (not yet played; "VS" is the site's own text)
+  <div class="teams">       -> ＶＳ (not yet played; site shows "VS" but output uses full-width to match project standard)
 """
 import argparse
 from datetime import date
@@ -197,7 +197,7 @@ def _read_day(
         point_div = teams_div.find('div', class_='point')
         scores = _parse_score(point_div) if point_div else {}
         point_text = point_div.get_text().strip() if point_div else ''
-        status = 'VS' if point_text == 'VS' else '試合終了'
+        status = 'ＶＳ' if point_text == 'VS' else '試合終了'
 
         record: dict[str, Any] = {
             'match_date': match_date,

@@ -392,5 +392,26 @@
         }
       }
     }
+  },
+  "we": {
+    "display_name": "WEリーグ",
+    "css_files": ["team_style.css"],
+    "season_start_month": 8,
+    "competitions": {
+      "WE": {
+        "league_display": "WEリーグ",
+        "seasons": {
+          "25-26": [12, 0, 0,
+            ["浦和", "広島", "I神戸", "新潟L", "東京NB", "マイ仙台", "大宮", "N相模原", "千葉L", "EL埼玉", "AC長野", "Ｃ大阪"]]
+        }
+      },
+      "WE_Cup": {
+        "league_display": "クラシエカップ",
+        "seasons": {
+          "25-26": [4, 0, 0,
+            []]
+        }
+      }
+    }
   }
 }
