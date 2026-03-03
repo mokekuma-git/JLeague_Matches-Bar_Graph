@@ -194,3 +194,43 @@
     color: white;
     background-color: red;
 }
+
+/* ── Paris 2024 追加チーム ─────────────────────────────────── */
+.イスラエル {
+  color: white;
+  background: -moz-linear-gradient(top left, #003399 50%, #FFFFFF);
+  background: -webkit-linear-gradient(top left, #003399 50%, #FFFFFF);
+  background: linear-gradient(to bottom right, #003399 50%, #FFFFFF);
+}
+.ウクライナ {
+  color: #003399;
+  background-color: #FFD700;
+}
+.ウズベキスタン {
+  color: white;
+  background: -moz-linear-gradient(top left, #1EB53A, #1EB53A, #0099B5);
+  background: -webkit-linear-gradient(top left, #1EB53A, #1EB53A, #0099B5);
+  background: linear-gradient(to bottom right, #1EB53A, #1EB53A, #0099B5);
+}
+.ギニア {
+  color: black;
+  background: -moz-linear-gradient(left, #CE1126 33%, #FCD116 33%, #FCD116 66%, #009460 66%);
+  background: -webkit-linear-gradient(left, #CE1126 33%, #FCD116 33%, #FCD116 66%, #009460 66%);
+  background: linear-gradient(to right, #CE1126 33%, #FCD116 33%, #FCD116 66%, #009460 66%);
+}
+.ドミニカ共和国 {
+  color: white;
+  background: -moz-linear-gradient(top left, #002D62, #002D62, #CE1126);
+  background: -webkit-linear-gradient(top left, #002D62, #002D62, #CE1126);
+  background: linear-gradient(to bottom right, #002D62, #002D62, #CE1126);
+}
+.パラグアイ {
+  color: #0038A8;
+  background-color: white;
+}
+.マリ {
+  color: black;
+  background: -moz-linear-gradient(left, #14B53A 33%, #FCD116 33%, #FCD116 66%, #CE1126 66%);
+  background: -webkit-linear-gradient(left, #14B53A 33%, #FCD116 33%, #FCD116 66%, #CE1126 66%);
+  background: linear-gradient(to right, #14B53A 33%, #FCD116 33%, #FCD116 66%, #CE1126 66%);
+}

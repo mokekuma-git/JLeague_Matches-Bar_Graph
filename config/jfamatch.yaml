@@ -1,8 +1,12 @@
 # Competition Settings
 competitions:
-  Olympic:
+  Olympic2020:
     schedule_url: https://www.jfa.jp/national_team/u24_2021/tokyo_olympic_2020/group{}/match/schedule.json
     csv_path: ../docs/csv/2021_allmatch_result-Olympic_GS.csv
+    groups: A, B, C, D
+  Olympic2024:
+    schedule_url: https://www.jfa.jp/national_team/u23_2024/paris_olympic_2024_men/group{}/match/schedule.json
+    csv_path: ../docs/csv/2024_allmatch_result-Olympic_GS.csv
     groups: A, B, C, D
   # ACL2021GL: 
   #     schedule_url: http://www.jfa.jp/match/acl_2021/group{}/match/schedule.json,
