@@ -15,7 +15,7 @@ if [ $RUNNING_HOUR -eq 1 ]; then
   # 日ごと深夜自動実行 ⇒ 全CSVのアップデートを実行
   uv run python src/read_jleague_matches.py -f
   uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto
-  # uv run python src/read_we-league.py
+  uv run python src/read_we_league.py
   # uv run python src/read_aclgl_matches.py
 else
   # 試合時間ごとの自動実行は、現在はJリーグ分のみ
