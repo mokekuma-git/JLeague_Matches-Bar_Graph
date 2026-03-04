@@ -3,7 +3,7 @@
 // Each PointSystem defines a mapping from MatchResult to points awarded.
 // New scoring systems can be added by extending POINT_MAPS.
 
-import { POINT_MAPS } from '../types/config';
+import { POINT_MAPS, POINT_HEIGHT_SCALE } from '../types/config';
 import type { PointSystem } from '../types/config';
 
 /** Returns the maximum points earnable per game under the given point system. */
@@ -14,6 +14,11 @@ export function getMaxPointsPerGame(ps: PointSystem = 'standard'): number {
 /** Returns the points awarded for a win under the given point system. */
 export function getWinPoints(ps: PointSystem = 'standard'): number {
   return POINT_MAPS[ps].win;
+}
+
+/** Returns the height-unit multiplier for one earned point under the given point system. */
+export function getPointHeightScale(ps: PointSystem = 'standard'): number {
+  return POINT_HEIGHT_SCALE[ps];
 }
 
 /**

@@ -66,7 +66,7 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
 # Valid point_system values.  Must match PointSystem type / POINT_MAPS keys
 # on the TypeScript side (frontend/src/types/config.ts).
 # Verified by scripts/check_type_sync.py in CI.
-POINT_SYSTEM_VALUES: set[str] = {'standard', 'old-two-points', 'victory-count'}
+POINT_SYSTEM_VALUES: set[str] = {'standard', 'victory-count'}
 
 
 # ---------------------------------------------------------------------------

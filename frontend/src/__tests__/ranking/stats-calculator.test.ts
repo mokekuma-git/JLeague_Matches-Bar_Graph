@@ -249,36 +249,16 @@ describe('classifyResult', () => {
     expect(classifyResult(0, null, null, 'standard')).toBe('loss');
   });
 
-  test('old-two-points: 2pt → win', () => {
-    expect(classifyResult(2, null, null, 'old-two-points')).toBe('win');
+  test('victory-count: 1pt (regular win) → win', () => {
+    expect(classifyResult(1, null, null, 'victory-count')).toBe('win');
   });
 
-  test('old-two-points: 1pt with PK win → pk_win', () => {
-    expect(classifyResult(1, 4, 3, 'old-two-points')).toBe('pk_win');
+  test('victory-count: 1pt with PK → pk_win', () => {
+    expect(classifyResult(1, 5, 3, 'victory-count')).toBe('pk_win');
   });
 
-  test('old-two-points: 1pt with PK loss → pk_loss', () => {
-    expect(classifyResult(1, 3, 4, 'old-two-points')).toBe('pk_loss');
-  });
-
-  test('old-two-points: 1pt without PK → draw', () => {
-    expect(classifyResult(1, null, null, 'old-two-points')).toBe('draw');
-  });
-
-  test('old-two-points: 0pt → loss', () => {
-    expect(classifyResult(0, null, null, 'old-two-points')).toBe('loss');
-  });
-
-  test('victory-count: 3pt (regular win) → win', () => {
-    expect(classifyResult(3, null, null, 'victory-count')).toBe('win');
-  });
-
-  test('victory-count: 3pt with PK (pk_win=3) → win (not pk_win)', () => {
-    expect(classifyResult(3, 5, 3, 'victory-count')).toBe('win');
-  });
-
-  test('victory-count: 0pt with PK loss (pk_loss=0) → loss (not pk_loss)', () => {
-    expect(classifyResult(0, 3, 5, 'victory-count')).toBe('loss');
+  test('victory-count: 0pt with PK loss → pk_loss', () => {
+    expect(classifyResult(0, 3, 5, 'victory-count')).toBe('pk_loss');
   });
 
   test('victory-count: 0pt without PK → loss', () => {
@@ -286,77 +266,32 @@ describe('classifyResult', () => {
   });
 });
 
-describe('calculateTeamStats with old-two-points', () => {
-  test('win earns 2pt, unplayed adds 2pt to avlbl_pt', () => {
-    const td = makeTeamData([
-      makeMatch({ goal_get: 2, goal_lose: 0, point: 2, match_date: '2025/03/01' }),
-      makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, opponent: 'TeamC', match_date: '2025/05/01' }),
-    ]);
-    calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
-    expect(td.latestStats.point).toBe(2);
-    expect(td.latestStats.resultCounts.win).toBe(1);
-    expect(td.latestStats.avlbl_pt).toBe(4); // 2 (win) + 2 (future max)
-  });
-
-  test('draw earns 1pt under old-two-points', () => {
-    const td = makeTeamData([
-      makeMatch({ goal_get: 1, goal_lose: 1, point: 1, match_date: '2025/03/01' }),
-    ]);
-    calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
-    expect(td.latestStats.point).toBe(1);
-    expect(td.latestStats.resultCounts.draw).toBe(1);
-    expect(td.latestStats.avlbl_pt).toBe(1);
-  });
-
-  test('PK win earns 1pt and counts as pk_win under old-two-points', () => {
-    const td = makeTeamData([
-      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 4, pk_lose: 3, point: 1, match_date: '2025/03/01' }),
-    ]);
-    calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
-    expect(td.latestStats.point).toBe(1);
-    expect(td.latestStats.resultCounts.pk_win).toBe(1);
-    expect(td.latestStats.resultCounts.pk_loss).toBe(0);
-    expect(td.latestStats.resultCounts.draw).toBe(0);
-  });
-
-  test('PK loss earns 1pt and counts as pk_loss under old-two-points', () => {
-    const td = makeTeamData([
-      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 3, pk_lose: 4, point: 1, match_date: '2025/03/01' }),
-    ]);
-    calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
-    expect(td.latestStats.point).toBe(1);
-    expect(td.latestStats.resultCounts.pk_loss).toBe(1);
-    expect(td.latestStats.resultCounts.pk_win).toBe(0);
-    expect(td.latestStats.resultCounts.draw).toBe(0);
-  });
-});
-
 describe('calculateTeamStats with victory-count', () => {
-  test('PK win earns 3pt and counts as win (not pk_win)', () => {
+  test('PK win earns 1pt and counts as pk_win', () => {
     const td = makeTeamData([
-      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 3, match_date: '2025/03/01' }),
+      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 1, match_date: '2025/03/01' }),
     ]);
     calculateTeamStats(td, TARGET, 'section_no', 'victory-count');
-    expect(td.latestStats.point).toBe(3);
-    expect(td.latestStats.resultCounts.win).toBe(1);
-    expect(td.latestStats.resultCounts.pk_win).toBe(0);
+    expect(td.latestStats.point).toBe(1);
+    expect(td.latestStats.resultCounts.pk_win).toBe(1);
+    expect(td.latestStats.resultCounts.win).toBe(0);
   });
 
-  test('PK loss earns 0pt and counts as loss (not pk_loss)', () => {
+  test('PK loss earns 0pt and counts as pk_loss', () => {
     const td = makeTeamData([
       makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 3, pk_lose: 5, point: 0, match_date: '2025/03/01' }),
     ]);
     calculateTeamStats(td, TARGET, 'section_no', 'victory-count');
     expect(td.latestStats.point).toBe(0);
-    expect(td.latestStats.resultCounts.loss).toBe(1);
-    expect(td.latestStats.resultCounts.pk_loss).toBe(0);
+    expect(td.latestStats.resultCounts.pk_loss).toBe(1);
+    expect(td.latestStats.resultCounts.loss).toBe(0);
   });
 
-  test('unplayed match adds 3pt to avlbl_pt', () => {
+  test('unplayed match adds 1pt to avlbl_pt', () => {
     const td = makeTeamData([
       makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, opponent: 'TeamC', match_date: '2025/05/01' }),
     ]);
     calculateTeamStats(td, TARGET, 'section_no', 'victory-count');
-    expect(td.latestStats.avlbl_pt).toBe(3);
+    expect(td.latestStats.avlbl_pt).toBe(1);
   });
 });

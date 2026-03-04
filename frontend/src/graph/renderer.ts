@@ -5,6 +5,7 @@
 
 import type { TeamData } from '../types/match';
 import type { SeasonInfo } from '../types/season';
+import { getPointHeightScale } from '../core/point-calculator';
 import { buildTeamColumn } from './bar-column';
 import type { ColumnResult } from './bar-column';
 import { getRankClass, joinLossBox } from './tooltip';
@@ -46,8 +47,9 @@ function createPointBox(text: string): HTMLDivElement {
  *
  * Contains header cells (rank/point), numbered boxes 1..maxAvblPt, then footer cells.
  * bottomFirst=true → number list is reversed (large values at top).
+ * heightScale multiplies each numbered box height (default 1 = 25 px per point).
  */
-export function makePointColumn(maxAvblPt: number, bottomFirst: boolean): HTMLDivElement {
+export function makePointColumn(maxAvblPt: number, bottomFirst: boolean, heightScale: number = 1): HTMLDivElement {
   const col = document.createElement('div');
   col.classList.add('point_column');
 
@@ -57,7 +59,9 @@ export function makePointColumn(maxAvblPt: number, bottomFirst: boolean): HTMLDi
   const indices = Array.from({ length: maxAvblPt }, (_, i) => i + 1);
   if (bottomFirst) indices.reverse();
   for (const i of indices) {
-    col.appendChild(createPointBox(String(i)));
+    const box = createPointBox(String(i));
+    if (heightScale !== 1) box.style.height = `${25 * heightScale}px`;
+    col.appendChild(box);
   }
 
   col.appendChild(createPointBox('勝点'));
@@ -186,7 +190,9 @@ export function renderBarGraph(
   const matchDates = [...matchDateSet].sort();
 
   // Step 2: Build point column template and insertion index set.
-  const pointColumn = makePointColumn(maxAvblPt, bottomFirst);
+  const heightScale = getPointHeightScale(seasonInfo.pointSystem);
+  const scaledHeightUnit = heightUnit * heightScale;
+  const pointColumn = makePointColumn(maxAvblPt, bottomFirst, heightScale);
   const insertIndices = new Set(getScaleColumnPositions(seasonInfo));
 
   // Step 3: Assemble into DocumentFragment.
@@ -200,7 +206,7 @@ export function renderBarGraph(
     const col = columns[teamName];
     if (col) {
       fragment.appendChild(
-        assembleTeamColumn(col, index + 1, maxAvblPt, heightUnit, bottomFirst, seasonInfo),
+        assembleTeamColumn(col, index + 1, maxAvblPt, scaledHeightUnit, bottomFirst, seasonInfo),
       );
     }
   });

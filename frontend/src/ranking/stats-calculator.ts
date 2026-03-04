@@ -43,8 +43,10 @@ export function sortTeamMatches(
 /**
  * Classifies a match result into win/pk_win/pk_loss/draw/loss.
  *
- * Uses pkGet vs pkLose comparison (not point values) to distinguish PK win
- * from PK loss, because under 'old-two-points' both award the same 1 point.
+ * PK data is checked first: if pkGet/pkLose are present the match went to
+ * a shootout, so we classify as pk_win or pk_loss regardless of point value.
+ * This ensures PK results are tracked separately even when they award the
+ * same points as a regular win (e.g. victory-count: win=1, pk_win=1).
  */
 export function classifyResult(
   point: number,
@@ -52,11 +54,11 @@ export function classifyResult(
   pkLose: number | null,
   pointSystem: PointSystem,
 ): MatchResult {
-  const winPt = getWinPoints(pointSystem);
-  if (point >= winPt) return 'win';
-  if (point > 0 && pkGet !== null && pkLose !== null) {
+  if (pkGet !== null && pkLose !== null) {
     return pkGet > pkLose ? 'pk_win' : 'pk_loss';
   }
+  const winPt = getWinPoints(pointSystem);
+  if (point >= winPt) return 'win';
   if (point >= 1) return 'draw';
   return 'loss';
 }

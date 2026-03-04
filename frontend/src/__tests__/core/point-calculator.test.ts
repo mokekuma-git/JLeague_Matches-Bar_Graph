@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { getPointFromResult, getMaxPointsPerGame, getWinPoints } from '../../core/point-calculator';
+import { getPointFromResult, getMaxPointsPerGame, getWinPoints, getPointHeightScale } from '../../core/point-calculator';
 
 describe('getPointFromResult', () => {
   describe('win / loss / draw', () => {
@@ -61,17 +61,25 @@ describe('getPointFromResult', () => {
     });
   });
 
-  describe('old-two-points system', () => {
-    test('win → 2 points', () => {
-      expect(getPointFromResult('2', '1', false, null, null, 'old-two-points')).toBe(2);
+  describe('victory-count system', () => {
+    test('win → 1 point', () => {
+      expect(getPointFromResult('2', '1', false, null, null, 'victory-count')).toBe(1);
     });
 
     test('loss → 0 points', () => {
-      expect(getPointFromResult('0', '2', false, null, null, 'old-two-points')).toBe(0);
+      expect(getPointFromResult('0', '2', false, null, null, 'victory-count')).toBe(0);
     });
 
-    test('draw → 1 point', () => {
-      expect(getPointFromResult('1', '1', false, null, null, 'old-two-points')).toBe(1);
+    test('PK win → 1 point', () => {
+      expect(getPointFromResult('1', '1', false, 5, 3, 'victory-count')).toBe(1);
+    });
+
+    test('PK loss → 0 points', () => {
+      expect(getPointFromResult('1', '1', false, 3, 5, 'victory-count')).toBe(0);
+    });
+
+    test('draw (no PK) → 0 points', () => {
+      expect(getPointFromResult('1', '1', false, null, null, 'victory-count')).toBe(0);
     });
   });
 });
@@ -81,8 +89,8 @@ describe('getMaxPointsPerGame', () => {
     expect(getMaxPointsPerGame('standard')).toBe(3);
   });
 
-  test('old-two-points → 2', () => {
-    expect(getMaxPointsPerGame('old-two-points')).toBe(2);
+  test('victory-count → 1', () => {
+    expect(getMaxPointsPerGame('victory-count')).toBe(1);
   });
 
   test('defaults to standard (3)', () => {
@@ -95,7 +103,21 @@ describe('getWinPoints', () => {
     expect(getWinPoints('standard')).toBe(3);
   });
 
-  test('old-two-points → 2', () => {
-    expect(getWinPoints('old-two-points')).toBe(2);
+  test('victory-count → 1', () => {
+    expect(getWinPoints('victory-count')).toBe(1);
+  });
+});
+
+describe('getPointHeightScale', () => {
+  test('standard → 1', () => {
+    expect(getPointHeightScale('standard')).toBe(1);
+  });
+
+  test('victory-count → 3 (1 pt rendered at 3× height)', () => {
+    expect(getPointHeightScale('victory-count')).toBe(3);
+  });
+
+  test('defaults to standard (1)', () => {
+    expect(getPointHeightScale()).toBe(1);
   });
 });

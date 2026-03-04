@@ -175,5 +175,5 @@ uv run python scripts/check_type_sync.py
 - **スクレイピング時のシーズン文字列は `config.season` (YAML) が正** — HTML読み取り値で上書きしない
 - **`get_sub_seasons(category)` の戻り値で更新動作が決まる**: `None` → スキップ / `[]` → 単一シーズン更新 / `[...]` → マルチグループ振り分け
 - **`match_utils.py` が共通ライブラリ** — CSV I/O, season_map 読み込み, 日付計算を提供。各 reader がインポートして使う
-- **勝ち点システム**: `'standard'` (勝3/PK勝2/PK負1/分1/負0)、`'old-two-points'` (勝2/分1/負0)、`'victory-count'` (勝3/PK勝3/他0)。Competition 階層の `point_system` で指定 (デフォルト: `'standard'`)。有効値は Python `POINT_SYSTEM_VALUES` と TS `POINT_MAPS` で管理し、`check_type_sync.py` で同期検証
+- **勝ち点システム**: `'standard'` (勝3/PK勝2/PK負1/分1/負0)、`'victory-count'` (勝1/PK勝1/他0、POINT_HEIGHT_SCALE=3 でボックス高さ3倍)。Competition 階層の `point_system` で指定 (デフォルト: `'standard'`)。有効値は Python `POINT_SYSTEM_VALUES` と TS `POINT_MAPS` で管理し、`check_type_sync.py` で同期検証
 - **SeasonEntry バリデーション**: index 0〜3 の型不正は即エラー。index 4 の未知キーは Warning で無視
