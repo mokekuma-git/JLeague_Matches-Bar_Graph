@@ -341,6 +341,30 @@ function renderFromCache(
     const globalMatchDates = [...globalMatchDateSet].sort();
     resetDateSlider(globalMatchDates, targetDate);
   }
+
+  // Update season notes from season_map config.
+  const notesEl = document.getElementById('season_notes');
+  if (notesEl) {
+    notesEl.replaceChildren();
+    for (const text of seasonInfo.notes) {
+      const li = document.createElement('li');
+      li.textContent = text;
+      notesEl.appendChild(li);
+    }
+  }
+
+  // Update data source link from season_map config.
+  const dsSection = document.getElementById('data_source_section');
+  if (dsSection) {
+    if (seasonInfo.dataSource) {
+      const a = document.createElement('a');
+      a.href = seasonInfo.dataSource.url;
+      a.textContent = seasonInfo.dataSource.label;
+      dsSection.replaceChildren('データ参照元: ', a);
+    } else {
+      dsSection.replaceChildren();
+    }
+  }
 }
 
 function loadAndRender(seasonMap: SeasonMap): void {
@@ -505,6 +529,13 @@ async function main(): Promise<void> {
     };
 
     dateSlider.addEventListener('change', updateFromSlider);
+
+    // Show date label in real-time while dragging (no graph redraw)
+    dateSlider.addEventListener('input', () => {
+      const date = state.currentMatchDates[parseInt(dateSlider.value, 10)];
+      if (!date) return;
+      (document.getElementById('target_date') as HTMLInputElement).value = date.replace(/\//g, '-');
+    });
 
     document.getElementById('date_slider_down')?.addEventListener('click', () => {
       dateSlider.value = String(Math.max(0, parseInt(dateSlider.value, 10) - 1));
