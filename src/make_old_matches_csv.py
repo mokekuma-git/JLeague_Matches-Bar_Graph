@@ -77,6 +77,10 @@ def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
         matches['away_pk'] = matches['away_pk'].fillna('')
         columns_list.extend(['home_pk', 'away_pk'])
     if 'home_score_ex' in matches.columns:
+        for col in ('home_score_ex', 'away_score_ex'):
+            matches[col] = matches[col].fillna('').apply(
+                lambda x: str(int(float(x))) if x != '' else ''
+            )
         columns_list.extend(['home_score_ex', 'away_score_ex'])
     matches['attendance'] = matches['attendance'].astype('int')
 
