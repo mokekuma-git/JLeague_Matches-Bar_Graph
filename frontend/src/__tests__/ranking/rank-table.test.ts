@@ -634,3 +634,23 @@ describe('makeRankTable – thead hasPk=true', () => {
     expect(pkLossIdx).toBe(pkWinIdx + 1);
   });
 });
+
+describe('makeRankTable – promotionLabel', () => {
+  function getPromotionHeader(table: HTMLElement): string {
+    const ths = Array.from(table.querySelectorAll('thead th'));
+    const th = ths.find(el => el.getAttribute('data-id') === 'promotion');
+    return th?.innerHTML ?? '';
+  }
+
+  test('defaults to "昇格" when no label is passed', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false);
+    expect(getPromotionHeader(table)).toBe('昇格');
+  });
+
+  test('uses provided label as innerHTML', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false, '昇格<br/>ACL');
+    expect(getPromotionHeader(table)).toBe('昇格<br>ACL');
+  });
+});

@@ -204,7 +204,7 @@ export function makeRankData(
 
 // Builds the <thead> for per-group ranking tables.
 // pk_win / pk_loss columns are included only when hasPk=true.
-function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean): void {
+function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean, promotionLabel: string = '昇格'): void {
   const cols: ColDef[] = [
     { id: 'rank',        label: '',          sortable: true },
     ...STAT_COLS,
@@ -215,7 +215,7 @@ function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean): void {
     ...GOAL_COLS,
     {                    label: '-' },
     { id: 'champion',    label: '優勝',      sortable: true },
-    { id: 'promotion',   label: '昇格<br/>ACL', sortable: true },
+    { id: 'promotion',   label: promotionLabel, sortable: true },
     { id: 'relegation',  label: '残留',      sortable: true },
   ];
   buildTableHead(tableEl, cols);
@@ -237,8 +237,8 @@ function applyRowClasses(tbody: HTMLElement, rankMap: Map<number, string>): void
 // hasPk controls whether PK win/loss columns appear in the table header.
 // Row CSS classes (promoted/relegated/etc.) are applied based on points-based rank
 // and reapplied after every re-sort via MutationObserver.
-export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean): void {
-  buildRankTableHead(tableEl, hasPk);
+export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean, promotionLabel: string = '昇格'): void {
+  buildRankTableHead(tableEl, hasPk, promotionLabel);
   const sortableTable = new SortableTable();
   sortableTable.setTable(tableEl);
   sortableTable.setData(rankData);

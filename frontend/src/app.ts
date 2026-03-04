@@ -315,7 +315,7 @@ function renderFromCache(
       table.appendChild(document.createElement('thead'));
       sortableDiv.appendChild(table);
       const rankData = makeRankData(groupData, sortedTeams, perGroupInfo, disp, hasPk);
-      makeRankTable(table, rankData, hasPk);
+      makeRankTable(table, rankData, hasPk, perGroupInfo.promotionLabel);
     }
 
     // Collect for cross-group comparison.

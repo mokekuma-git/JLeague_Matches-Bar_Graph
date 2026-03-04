@@ -47,6 +47,7 @@ export function makeSeasonInfo(overrides: Partial<SeasonInfo> = {}): SeasonInfo 
     tiebreakOrder: ['goal_diff', 'goal_get'],
     seasonStartMonth: 7,
     notes: [],
+    promotionLabel: '昇格',
     ...overrides,
   };
 }
