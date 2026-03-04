@@ -60,13 +60,15 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
     'group': 'str',
     'home_pk_score': 'nullable_int',  # PK shootout (column may be absent)
     'away_pk_score': 'nullable_int',  # PK shootout (column may be absent)
+    'home_score_ex': 'nullable_int',  # Extra-time score (column may be absent)
+    'away_score_ex': 'nullable_int',  # Extra-time score (column may be absent)
 }
 
 
 # Valid point_system values.  Must match PointSystem type / POINT_MAPS keys
 # on the TypeScript side (frontend/src/types/config.ts).
 # Verified by scripts/check_type_sync.py in CI.
-POINT_SYSTEM_VALUES: set[str] = {'standard', 'old-two-points', 'victory-count'}
+POINT_SYSTEM_VALUES: set[str] = {'standard', 'victory-count'}
 
 
 # ---------------------------------------------------------------------------

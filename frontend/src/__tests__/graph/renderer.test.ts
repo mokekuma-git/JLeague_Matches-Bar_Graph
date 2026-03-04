@@ -81,6 +81,26 @@ describe('makePointColumn', () => {
   test('contains point_column class', () => {
     expect(makePointColumn(1, false).classList.contains('point_column')).toBe(true);
   });
+
+  test('heightScale=3 → numbered boxes have 75px height', () => {
+    const col = makePointColumn(2, false, 3);
+    const boxes = Array.from(col.querySelectorAll('.point.box'));
+    // Header (順位, 勝点) + numbered (1, 2) + footer (勝点, 順位)
+    const numbered = boxes.filter(b => /^\d+$/.test(b.textContent ?? ''));
+    expect(numbered).toHaveLength(2);
+    for (const box of numbered) {
+      expect((box as HTMLElement).style.height).toBe('75px');
+    }
+  });
+
+  test('heightScale=1 (default) → numbered boxes have no inline height override', () => {
+    const col = makePointColumn(2, false);
+    const boxes = Array.from(col.querySelectorAll('.point.box'));
+    const numbered = boxes.filter(b => /^\d+$/.test(b.textContent ?? ''));
+    for (const box of numbered) {
+      expect((box as HTMLElement).style.height).toBe('');
+    }
+  });
 });
 
 // ─── assembleTeamColumn ────────────────────────────────────────────────────────

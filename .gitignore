@@ -19,6 +19,9 @@ frontend/dist/
 # Planning documents
 plan/
 
+# Locally cached data (fetched by src/fetch_match_detail.py etc.)
+local_data/
+
 # TypeScript build artifacts (managed by CI deploy-pages.yaml, not committed to git)
 docs/j_points.html
 docs/assets/

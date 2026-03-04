@@ -139,10 +139,10 @@ describe('resolveSeasonInfo', () => {
   });
 
   test('cascade: point_system from season overrides default', () => {
-    const entry: RawSeasonEntry = [10, 0, 0, [], { point_system: 'old-two-points' }];
+    const entry: RawSeasonEntry = [10, 0, 0, [], { point_system: 'victory-count' }];
     const info = resolveSeasonInfo(sampleGroup, sampleGroup.competitions.J1, entry);
 
-    expect(info.pointSystem).toBe('old-two-points');
+    expect(info.pointSystem).toBe('victory-count');
   });
 
   test('cascade: css_files union and deduplication', () => {

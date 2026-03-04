@@ -214,58 +214,6 @@ describe('buildTeamColumn – lossBox content', () => {
   });
 });
 
-// ─── old-two-points system ─────────────────────────────────────────────────────
-
-describe('buildTeamColumn – old-two-points system', () => {
-  function buildOldColumn(matches: ReturnType<typeof makeMatch>[]) {
-    const td = makeTeamData(matches);
-    calculateTeamStats(td, TARGET, 'section_no', 'old-two-points');
-    return { result: buildTeamColumn(TEAM, td, TARGET, false, false, 'old-two-points'), td };
-  }
-
-  test('win (2 pt) → medium box', () => {
-    const { result } = buildOldColumn([
-      makeMatch({ goal_get: 2, goal_lose: 0, point: 2, match_date: '2025/03/15' }),
-    ]);
-    expect(result.graph[0].classList.contains('medium')).toBe(true);
-    expect(result.graph[0].classList.contains('box')).toBe(true);
-  });
-
-  test('win (2 pt, medium) → tooltiptext includes stadium', () => {
-    const { result } = buildOldColumn([
-      makeMatch({ goal_get: 2, goal_lose: 0, point: 2, match_date: '2025/03/15', stadium: 'OldStadium' }),
-    ]);
-    const tooltiptext = result.graph[0].querySelector('.tooltiptext');
-    expect(tooltiptext).not.toBeNull();
-    expect(tooltiptext!.innerHTML).toContain('OldStadium');
-  });
-
-  test('draw (1 pt) → short box', () => {
-    const { result } = buildOldColumn([
-      makeMatch({ goal_get: 1, goal_lose: 1, point: 1, match_date: '2025/03/15' }),
-    ]);
-    expect(result.graph[0].classList.contains('short')).toBe(true);
-    expect(result.graph[0].classList.contains('box')).toBe(true);
-  });
-
-  test('future match → medium box (max 2pt)', () => {
-    const { result } = buildOldColumn([
-      makeMatch({ has_result: false, goal_get: null, goal_lose: null, point: 0, match_date: '2025/05/01' }),
-    ]);
-    expect(result.graph[0].querySelector('.future.bg')).not.toBeNull();
-    expect(result.graph[0].classList.contains('medium')).toBe(true);
-    expect(result.graph[0].classList.contains('box')).toBe(true);
-  });
-
-  test('loss (0 pt) → goes to lossBox', () => {
-    const { result } = buildOldColumn([
-      makeMatch({ goal_get: 0, goal_lose: 2, point: 0, match_date: '2025/03/15' }),
-    ]);
-    expect(result.graph).toHaveLength(0);
-    expect(result.lossBox).toHaveLength(1);
-  });
-});
-
 // ─── victory-count system ───────────────────────────────────────────────────
 
 describe('buildTeamColumn – victory-count system', () => {
@@ -275,16 +223,16 @@ describe('buildTeamColumn – victory-count system', () => {
     return { result: buildTeamColumn(TEAM, td, TARGET, false, false, 'victory-count'), td };
   }
 
-  test('PK win (3 pt) → tall box (same as regular win)', () => {
+  test('PK win (pk_win: 1 pt × scale 3) → tall box', () => {
     const { result } = buildVCColumn([
-      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 3, match_date: '2025/03/15' }),
+      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 1, match_date: '2025/03/15' }),
     ]);
     expect(result.graph).toHaveLength(1);
     expect(result.graph[0].classList.contains('tall')).toBe(true);
     expect(result.graph[0].classList.contains('box')).toBe(true);
   });
 
-  test('PK loss (0 pt) → goes to lossBox (same as regular loss)', () => {
+  test('PK loss (pk_loss: 0 pt) → goes to lossBox', () => {
     const { result } = buildVCColumn([
       makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 3, pk_lose: 5, point: 0, match_date: '2025/03/15' }),
     ]);
@@ -292,11 +240,11 @@ describe('buildTeamColumn – victory-count system', () => {
     expect(result.lossBox).toHaveLength(1);
   });
 
-  test('avlbl_pt counts PK win as 3 and PK loss as 0', () => {
+  test('avlbl_pt counts PK win as 1 and PK loss as 0', () => {
     const { result } = buildVCColumn([
-      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 3, match_date: '2025/03/01', section_no: 1 }),
+      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 1, match_date: '2025/03/01', section_no: 1 }),
       makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 3, pk_lose: 5, point: 0, match_date: '2025/03/15', section_no: 2 }),
     ]);
-    expect(result.avlbl_pt).toBe(3); // 3 (pk_win) + 0 (pk_loss)
+    expect(result.avlbl_pt).toBe(1); // 1 (pk_win) + 0 (pk_loss)
   });
 });
