@@ -127,6 +127,12 @@ export function resolveSeasonInfo(
     ?? group.data_source
     ?? undefined;
 
+  // promotion_label: scalar cascade (lowest defined level wins, default '昇格')
+  const promotionLabel: string = opts.promotion_label
+    ?? comp.promotion_label
+    ?? group.promotion_label
+    ?? '昇格';
+
   // notes: union across all three levels (flattened, preserving order)
   const toArray = (v: string | string[] | undefined): string[] =>
     v == null ? [] : Array.isArray(v) ? v : [v];
@@ -155,5 +161,6 @@ export function resolveSeasonInfo(
     groupTeamCount,
     dataSource,
     notes,
+    promotionLabel,
   };
 }

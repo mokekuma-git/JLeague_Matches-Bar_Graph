@@ -11,6 +11,7 @@
     "competitions": {
       "J1": {
         "league_display": "J1リーグ",
+        "promotion_label": "ACL",
         "seasons": {
           "2026East": [10, 1, 0,
             ["鹿島", "柏", "町田", "浦和", "川崎Ｆ", "FC東京", "横浜FM", "東京Ｖ", "水戸", "千葉"],
@@ -278,6 +279,7 @@
       },
       "WC_AFC": {
         "league_display": "W杯アジア最終予選",
+        "promotion_label": "本選出場",
         "team_rename_map": {
           "オーストラリア": "豪州",
           "サウジアラビア": "サウジ"
@@ -293,6 +295,7 @@
       },
       "Olympic_GS": {
         "league_display": "オリンピック GS",
+        "promotion_label": "決勝T",
         "shown_groups": ["A", "B", "C", "D"],
         "team_rename_map": {
           "ホンジュラス": "ホンジュラ",
@@ -324,6 +327,7 @@
     "competitions": {
       "ACL_GS": {
         "league_display": "ACL GS",
+        "promotion_label": "決勝T",
         "tiebreak_order": ["head_to_head", "goal_diff", "goal_get"],
         "shown_groups": ["F", "G", "H", "I", "J"],
         "cross_group_standing": {
@@ -357,6 +361,7 @@
       },
       "ACL_Elite": {
         "league_display": "ACL Elite LS",
+        "promotion_label": "KOステージ",
         "season_start_month": 9,
         "tiebreak_order": ["head_to_head", "goal_diff", "goal_get"],
         "seasons": {
@@ -450,6 +455,7 @@
       },
       "WE_Cup": {
         "league_display": "クラシエカップ",
+        "promotion_label": "決勝T",
         "seasons": {
           "22-23": [11, 1, 0,
             [],

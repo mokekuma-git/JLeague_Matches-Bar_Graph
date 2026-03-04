@@ -53,6 +53,7 @@ export interface SeasonEntryOptions {
   group_team_count?: Record<string, number>;
   note?: string | string[];
   data_source?: DataSource;
+  promotion_label?: string;
 }
 
 // Raw array format as loaded from season_map.json (tuple type).
@@ -102,4 +103,5 @@ export interface SeasonInfo {
   groupTeamCount?: Record<string, number>;
   dataSource?: DataSource;
   notes: string[];
+  promotionLabel: string;
 }

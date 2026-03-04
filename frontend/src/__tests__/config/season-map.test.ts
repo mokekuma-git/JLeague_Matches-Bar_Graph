@@ -305,4 +305,35 @@ describe('resolveSeasonInfo', () => {
 
     expect(info.shownGroups).toEqual(['C']);
   });
+
+  test('promotionLabel defaults to "昇格" when not set', () => {
+    const entry: RawSeasonEntry = [20, 3, 3, []];
+    const info = resolveSeasonInfo(sampleGroup, sampleGroup.competitions.J1, entry);
+
+    expect(info.promotionLabel).toBe('昇格');
+  });
+
+  test('cascade: promotion_label from competition level', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'J1リーグ',
+      promotion_label: '昇格<br/>ACL',
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = [20, 3, 3, []];
+    const info = resolveSeasonInfo(sampleGroup, comp, entry);
+
+    expect(info.promotionLabel).toBe('昇格<br/>ACL');
+  });
+
+  test('cascade: promotion_label from season overrides competition', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'J1リーグ',
+      promotion_label: '昇格<br/>ACL',
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = [20, 3, 3, [], { promotion_label: 'W杯本選' }];
+    const info = resolveSeasonInfo(sampleGroup, comp, entry);
+
+    expect(info.promotionLabel).toBe('W杯本選');
+  });
 });
