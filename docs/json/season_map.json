@@ -3,6 +3,11 @@
     "display_name": "Jリーグ",
     "css_files": ["team_style.css"],
     "season_start_month": 1,
+    "data_source": {
+      "label": "Jリーグ公式サイト: 日程結果",
+      "url": "https://www.jleague.jp/match/"
+    },
+    "note": "ACL: 天皇杯優勝チームがACL参加時の繰り上がり権利獲得は含まない (「なし」と表示)",
     "competitions": {
       "J1": {
         "league_display": "J1リーグ",
@@ -232,7 +237,8 @@
           "2022": [18, 2, 0,
             ["相模原", "愛媛", "北九州", "松本", "宮崎", "富山", "福島", "岐阜", "鹿児島", "YS横浜", "長野", "藤枝", "今治", "鳥取", "八戸", "沼津", "讃岐", "いわき"]],
           "2021": [15, 2, 0,
-            ["長野", "鹿児島", "鳥取", "岐阜", "今治", "熊本", "富山", "藤枝", "岩手", "沼津", "福島", "八戸", "讃岐", "YS横浜", "宮崎"]],
+            ["長野", "鹿児島", "鳥取", "岐阜", "今治", "熊本", "富山", "藤枝", "岩手", "沼津", "福島", "八戸", "讃岐", "YS横浜", "宮崎"],
+            {"note": ["2021年の宮崎はJ3昇格圏内に入ったが、所持ライセンスが足りずJ2に昇格できずJ3昇格・J2降格が1枠減った"]}],
           "2020": [18, 2, 0,
             ["鹿児島", "岐阜", "藤枝", "富山", "熊本", "Ｃ大23", "鳥取", "秋田", "長野", "八戸", "福島", "沼津", "YS横浜", "讃岐", "相模原", "Ｆ東23", "Ｇ大23", "岩手", "今治"]],
           "2019": [18, 2, 0,
@@ -254,6 +260,10 @@
   "international": {
     "display_name": "国際大会",
     "css_files": ["national_team_style.css"],
+    "data_source": {
+      "label": "JFA公式サイト: 日程・結果",
+      "url": "https://www.jfa.jp/"
+    },
     "competitions": {
       "WC_GS": {
         "league_display": "FIFAワールドカップ GS",
@@ -278,8 +288,7 @@
             {"shown_groups": ["A", "B", "C"]}],
           "2022": [6, 2, 0,
             [],
-            {"shown_groups": ["A", "B"],
-              "rank_properties": {"3": "promoted_playoff"}}]
+            {"shown_groups": ["A", "B"], "rank_properties": {"3": "promoted_playoff"}}]
         }
       },
       "Olympic_GS": {
@@ -308,6 +317,10 @@
     "display_name": "ACL",
     "css_files": ["team_style.css"],
     "season_start_month": 1,
+    "data_source": {
+      "label": "スポーツナビ: ACL日程・結果",
+      "url": "https://soccer.yahoo.co.jp/jleague/category/acle/schedule/"
+    },
     "competitions": {
       "ACL_GS": {
         "league_display": "ACL GS",
@@ -337,12 +350,7 @@
             []],
           "2022": [4, 1, 0,
             [],
-            {"group_team_count": {"J": 3},
-              "cross_group_standing": {
-              "position": 2,
-              "exclude_from_rank": 4,
-              "advance_count": 3
-            }}],
+            {"group_team_count": {"J": 3}, "cross_group_standing": {"position": 2, "exclude_from_rank": 4, "advance_count": 3}}],
           "2021": [4, 1, 0,
             []]
         }
@@ -364,6 +372,10 @@
   "prince": {
     "display_name": "Princeリーグ (J)",
     "css_files": ["team_style.css"],
+    "data_source": {
+      "label": "JFA公式サイト: 高円宮杯",
+      "url": "https://www.jfa.jp/match/"
+    },
     "competitions": {
       "PrincePremierE": {
         "league_display": "プレミアリーグEAST",
@@ -416,6 +428,10 @@
     "display_name": "WEリーグ",
     "css_files": ["team_style.css"],
     "season_start_month": 8,
+    "data_source": {
+      "label": "WEリーグ公式サイト: 試合日程・結果",
+      "url": "https://weleague.jp/matches/"
+    },
     "competitions": {
       "WE": {
         "league_display": "WEリーグ",
@@ -446,8 +462,7 @@
             {"note": ["グループステージのみ。準決勝・決勝の結果は WE_Cup_KO を参照。", "三菱重工浦和レッズレディース（23-24 WEリーグ優勝）はシードでKOラウンドから参加。"]}],
           "25-26": [12, 1, 0,
             [],
-            {"rank_properties": {"2": "promoted_playoff"},
-              "cross_group_standing": {"position": 2, "advance_count": 1}}]
+            {"rank_properties": {"2": "promoted_playoff"}, "cross_group_standing": {"position": 2, "advance_count": 1}}]
         }
       }
     }

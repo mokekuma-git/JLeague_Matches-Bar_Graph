@@ -112,14 +112,16 @@ p {
   align-items: center;
 }
 #date_slider_section {
-  margin: 0.5em 1em;
+  margin: 0.5em 0;
   display: flex;
   gap: 0.5em;
   flex-wrap: wrap;
   align-items: center;
+  width: 100%;
 }
 #date_slider {
-  width: 60%;
+  flex: 1;
+  min-width: 200px;
 }
 #appearance_controls {
   margin: 0.5em 1em;
@@ -154,6 +156,12 @@ p {
 .tooltip {
   position: relative;
   display: inline-block;
+}
+/* Inside .box, override inline-block to avoid Safari rendering gaps */
+.box.tooltip,
+.box > .tooltip {
+  display: block;
+  margin: 0;
 }
 
 /* Tooltip text */

@@ -30,6 +30,12 @@ export interface CrossGroupStanding {
   advance_count?: number;      // How many teams advance; highlights top N rows (default: 0)
 }
 
+// Data source reference for display at the bottom of the page.
+export interface DataSource {
+  label: string;
+  url: string;
+}
+
 // Merged optional dict at season entry index 4.
 // Combines what was previously separate at index 4 (RankClassMap) and index 5 (SeasonExtraInfo).
 export interface SeasonEntryOptions {
@@ -46,6 +52,7 @@ export interface SeasonEntryOptions {
   cross_group_standing?: CrossGroupStanding;
   group_team_count?: Record<string, number>;
   note?: string | string[];
+  data_source?: DataSource;
 }
 
 // Raw array format as loaded from season_map.json (tuple type).
@@ -93,4 +100,6 @@ export interface SeasonInfo {
   shownGroups?: string[];
   crossGroupStanding?: CrossGroupStanding;
   groupTeamCount?: Record<string, number>;
+  dataSource?: DataSource;
+  notes: string[];
 }
