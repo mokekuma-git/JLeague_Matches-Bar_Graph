@@ -76,6 +76,8 @@ def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
         matches['away_pk'] = matches['スコア'].str.extract(r'\(PK\d+\-(\d+)\)', expand=False)
         matches['away_pk'] = matches['away_pk'].fillna('')
         columns_list.extend(['home_pk', 'away_pk'])
+    if 'home_score_ex' in matches.columns:
+        columns_list.extend(['home_score_ex', 'away_score_ex'])
     matches['attendance'] = matches['attendance'].astype('int')
 
     for (_season, _name) in season_dict.items():

@@ -34,7 +34,6 @@ CONFIG_TS = TS_TYPES_DIR / 'config.ts'
 # These are expected to exist in RawMatchRow but NOT in CSV_COLUMN_SCHEMA.
 # ---------------------------------------------------------------------------
 TS_ONLY_CSV_FIELDS: set[str] = {
-    'home_score_ex', 'away_score_ex',   # Tier 4 preparation (no Python producer)
     'match_status', 'home_pk', 'away_pk',  # Backward-compat aliases for old CSVs
 }
 
