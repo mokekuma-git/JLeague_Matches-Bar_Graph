@@ -108,8 +108,8 @@ npm run dev               # Vite開発サーバー起動
 
 ### 階層別プロパティ
 
-- **Group** (`jleague` 等): `display_name`, `css_files?`, `season_start_month?`
-- **Competition** (`J1` 等): `league_display?`, `css_files?`, `point_system?`, `team_rename_map?`, `tiebreak_order?`, `season_start_month?`, `seasons`
+- **Group** (`jleague` 等): `display_name`, `css_files?`, `season_start_month?`, `data_source?`, `note?`
+- **Competition** (`J1` 等): `league_display?`, `css_files?`, `point_system?`, `team_rename_map?`, `tiebreak_order?`, `season_start_month?`, `data_source?`, `note?`, `seasons`
 
 ### Season Entry (配列)
 
@@ -123,7 +123,7 @@ npm run dev               # Vite開発サーバー起動
 
 ### プロパティカスケード
 
-`resolveSeasonInfo()` が Group → Competition → Season Entry の3階層をマージ。スカラ値は下位が上書き、配列 (`css_files`) は和集合、オブジェクト (`team_rename_map`) はマージ。
+`resolveSeasonInfo()` が Group → Competition → Season Entry の3階層をマージ。スカラ値は下位が上書き、配列 (`css_files`, `note`) は和集合、オブジェクト (`team_rename_map`) はマージ。
 
 ### SeasonEntryOptions の主要キー
 
@@ -131,6 +131,8 @@ npm run dev               # Vite開発サーバー起動
 - `url_category`: スクレイピングURL のカテゴリ部分を上書き (デフォルト: competition key の小文字化)
 - `rank_properties`: 順位→CSSクラスのマッピング (例: `{"3": "promoted_playoff"}`)
 - `season_start_month`: シーズン開始月。カスケード対象。コードデフォルト: `7` (秋春制)
+- `data_source`: データ参照元。`{label, url}` オブジェクト。カスケード対象 (スカラ: 下位が上書き)。フロントエンドで動的表示
+- `note`: 注記テキスト (`string | string[]`)。カスケード対象 (和集合: Group + Competition + Entry を結合)。フロントエンドで動的表示
 
 ### シーズン命名規則
 
