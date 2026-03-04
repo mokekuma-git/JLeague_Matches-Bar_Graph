@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 DETAIL_URL = 'https://data.j-league.or.jp/SFMS02/?match_card_id={match_card_id}'
 CSV_DIR = Path(__file__).parent / '../csv'
-OUTPUT_DIR = Path(__file__).parent / '../data/match_detail'
+OUTPUT_DIR = Path(__file__).parent / '../local_data/match_detail'
 
 
 def load_match_card_ids(year: int) -> list[str]:

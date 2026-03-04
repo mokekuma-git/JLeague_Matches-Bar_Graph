@@ -20,7 +20,7 @@ from parse_match_detail import parse_match_detail
 logger = logging.getLogger(__name__)
 
 CSV_DIR = Path(__file__).parent / '../csv'
-HTML_DIR = Path(__file__).parent / '../data/match_detail'
+HTML_DIR = Path(__file__).parent / '../local_data/match_detail'
 
 PK_PATTERN = re.compile(r'\(PK(\d+)-(\d+)\)')
 
