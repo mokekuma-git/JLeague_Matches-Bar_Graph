@@ -175,16 +175,16 @@
         "seasons": {
           "2026EastA": [10, 0, 0,
             ["横浜FC", "湘南", "仙台", "山形", "秋田", "栃木Ｃ", "八戸", "栃木SC", "相模原", "群馬"],
-            {"group_display": "EAST-A", "url_category": "j2j3"}],
+            {"group_display": "EAST-A", "url_category": "j2j3", "point_system": "pk-win2-loss1"}],
           "2026EastB": [10, 0, 0,
             ["磐田", "大宮", "いわき", "札幌", "甲府", "藤枝", "福島", "岐阜", "松本", "長野"],
-            {"group_display": "EAST-B", "url_category": "j2j3"}],
+            {"group_display": "EAST-B", "url_category": "j2j3", "point_system": "pk-win2-loss1"}],
           "2026WestA": [10, 0, 0,
             ["新潟", "徳島", "今治", "富山", "愛媛", "FC大阪", "金沢", "奈良", "讃岐", "高知"],
-            {"group_display": "WEST-A", "url_category": "j2j3"}],
+            {"group_display": "WEST-A", "url_category": "j2j3", "point_system": "pk-win2-loss1"}],
           "2026WestB": [10, 0, 0,
             ["鳥栖", "大分", "宮崎", "熊本", "山口", "鹿児島", "北九州", "鳥取", "琉球", "滋賀"],
-            {"group_display": "WEST-B", "url_category": "j2j3"}],
+            {"group_display": "WEST-B", "url_category": "j2j3", "point_system": "pk-win2-loss1"}],
           "2025": [20, 6, 3,
             ["磐田", "札幌", "鳥栖", "長崎", "山形", "仙台", "千葉", "徳島", "いわき", "秋田", "山口", "熊本", "藤枝", "甲府", "水戸", "大分", "愛媛", "大宮", "今治", "富山"],
             {"rank_properties": {"3": "promoted_playoff", "4": "promoted_playoff", "5": "promoted_playoff", "6": "promoted_playoff"}}],
@@ -490,7 +490,7 @@
             {"note": ["グループステージのみ。準決勝・決勝の結果は WE_Cup_KO を参照。", "三菱重工浦和レッズレディース（23-24 WEリーグ優勝）はシードでKOラウンドから参加。"]}],
           "25-26": [12, 1, 0,
             [],
-            {"rank_properties": {"2": "promoted_playoff"}, "cross_group_standing": {"position": 2, "advance_count": 1}}]
+            {"rank_properties": {"2": "promoted_playoff"}, "cross_group_standing": {"position": 2, "advance_count": 1}, "point_system": "pk-win2-loss1"}]
         }
       }
     }
