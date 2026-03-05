@@ -9,6 +9,8 @@ on:
       - 'src/match_utils.py'
       - 'frontend/src/types/**'
       - 'scripts/check_type_sync.py'
+      - 'docs/json/season_map.json'
+      - 'scripts/check_point_system_csv.py'
   push:
     branches:
       - main
@@ -16,6 +18,8 @@ on:
       - 'src/match_utils.py'
       - 'frontend/src/types/**'
       - 'scripts/check_type_sync.py'
+      - 'docs/json/season_map.json'
+      - 'scripts/check_point_system_csv.py'
 
 jobs:
   check:
@@ -34,3 +38,6 @@ jobs:
 
       - name: Check type sync
         run: uv run python scripts/check_type_sync.py
+
+      - name: Check point_system × CSV consistency
+        run: uv run python scripts/check_point_system_csv.py
