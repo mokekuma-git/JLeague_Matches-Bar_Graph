@@ -138,7 +138,7 @@ export function buildTeamColumn(
       ));
       graph.push(box);
     } else {
-      const cls = classifyResult(row.point, row.pk_get, row.pk_lose, pointSystem);
+      const cls = classifyResult(row.point, row.score_ex_get, row.score_ex_lose, row.pk_get, row.pk_lose, pointSystem);
       const ptMap = POINT_MAPS[pointSystem];
       if (cls === 'win') {
         const heightCls = boxHeightClass(ptMap.win * scale);

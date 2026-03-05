@@ -41,21 +41,26 @@ export function sortTeamMatches(
 }
 
 /**
- * Classifies a match result into win/pk_win/pk_loss/draw/loss.
+ * Classifies a match result into win/ex_win/pk_win/draw/pk_loss/ex_loss/loss.
  *
- * PK data is checked first: if pkGet/pkLose are present the match went to
- * a shootout, so we classify as pk_win or pk_loss regardless of point value.
- * This ensures PK results are tracked separately even when they award the
- * same points as a regular win (e.g. victory-count: win=1, pk_win=1).
+ * Priority: PK (shootout) → ET (extra time) → regular result.
+ * PK data is checked first so that PK results are tracked separately even when
+ * they award the same points as a regular win (e.g. victory-count: pk_win=1).
+ * ET is detected when scoreExGet !== scoreExLose (ET 0-0 falls through to draw/PK).
  */
 export function classifyResult(
   point: number,
+  scoreExGet: number | null,
+  scoreExLose: number | null,
   pkGet: number | null,
   pkLose: number | null,
   pointSystem: PointSystem,
 ): MatchResult {
   if (pkGet !== null && pkLose !== null) {
     return pkGet > pkLose ? 'pk_win' : 'pk_loss';
+  }
+  if (scoreExGet !== null && scoreExLose !== null && scoreExGet !== scoreExLose) {
+    return scoreExGet > scoreExLose ? 'ex_win' : 'ex_loss';
   }
   const winPt = getWinPoints(pointSystem);
   if (point >= winPt) return 'win';
@@ -84,7 +89,7 @@ export function calculateTeamStats(
       teamData.latestStats.addUnplayedMatch(row.opponent, maxPt);
       teamData.displayStats.addUnplayedMatch(row.opponent, maxPt);
     } else {
-      const cls = classifyResult(row.point, row.pk_get, row.pk_lose, pointSystem);
+      const cls = classifyResult(row.point, row.score_ex_get, row.score_ex_lose, row.pk_get, row.pk_lose, pointSystem);
       teamData.latestStats.recordMatch(cls, row.goal_get ?? 0, row.goal_lose ?? 0, row.point);
       if (row.match_date <= targetDate) {
         teamData.displayStats.recordMatch(cls, row.goal_get ?? 0, row.goal_lose ?? 0, row.point);
