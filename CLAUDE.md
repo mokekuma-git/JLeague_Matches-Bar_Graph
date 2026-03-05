@@ -28,16 +28,16 @@ JLeague_Matches-Bar_Graph/
 │   ├── set_config.py               #   設定管理 (YAML読み込み)
 │   ├── read_jleague_matches.py     #   Jリーグスクレイピング (BS4)
 │   ├── read_jfamatch.py            #   JFA JSON API データ取得
-│   └── ...                         #   ACL, WEリーグ, 過去データ, cron生成等
+│   └── ...                         #   ACL, WEリーグ, cron生成等
 ├── config/                          #   YAML設定 (jleague.yaml, jfamatch.yaml等)
 ├── tests/                           #   pytest テストコード + test_data/
 ├── docs/                            # GitHub Pages 公開ディレクトリ
 │   ├── j_points.html, assets/      #   ★ ビルド生成物 (gitignore対象)
-│   ├── *_points.{html,js}          #   旧JS版ページ (ACL, W杯, 五輪等。未TS化)
 │   ├── *.css                       #   スタイル (チームカラー定義含む)
 │   ├── csv/                        #   処理済みCSV
-│   └── json/                       #   season_map.json, aclgl_points.json
-├── scripts/                         #   CI/CDスクリプト, season_map.jsonフォーマッタ
+│   └── json/                       #   season_map.json
+├── scripts/                         #   CI/CDスクリプト, 運用ユーティリティ
+│   └── legacy/                     #   旧データ処理スクリプト (1993-2020)
 ├── .github/workflows/               #   Pages デプロイ, CSV更新, テスト, ビルドチェック
 └── pyproject.toml                   #   Python依存 (uv管理)
 ```
@@ -68,7 +68,7 @@ npm run dev               # Vite開発サーバー起動
 
 - **GitHub Pages は GitHub Actions 経由** (`deploy-pages.yaml`): main push 時に TS ビルド → `docs/` を artifact としてアップロード → デプロイ
 - **ビルド生成物 (`docs/j_points.html`, `docs/assets/`) は git 管理外** (`.gitignore` に記載)
-- `docs/` 内の CSV, JSON, CSS, 旧JS ページ等はそのまま git 管理 (Python 側が直接更新)
+- `docs/` 内の CSV, JSON, CSS はそのまま git 管理 (Python 側が直接更新)
 - `check-build-artifacts.yaml` が PR 時にビルド生成物の誤コミットを検出
 
 ## CSV形式

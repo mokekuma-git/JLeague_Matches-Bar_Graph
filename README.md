@@ -8,19 +8,13 @@ Make a bar graph of points each team got and will get.
 
 <https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/> を見れば、基本的にその時の最新データを見られるようにしています。
 
-<https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/prince_points.html> プリンス関東、プリンスプレミアEAST, WEST
+ページ上部の「大会」プルダウンから、以下の大会を切り替えて閲覧できます:
 
-## 過去開催分のアーカイブ
-
-<https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/olympic_points.html> オリンピックグループステージの得点表も作ってみました。
-
-<https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/wcafc_fq_points.html> W杯2022アジア最終予選
-
-<https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/wc2022_points.html> W杯2022グループリーグ
-
-(<https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/aclgl_points.html> 2022 ACLのグループステージ)
-
-それぞれルールが違うので別ファイルで実装してしまっていますが、できるだけ統合したいなと思っています。
+- **Jリーグ** — J1 / J2 / J3 (1993年開幕以降の全シーズン)
+- **Princeリーグ** — 高円宮杯プレミアリーグ EAST・WEST / プリンスリーグ関東
+- **ACL** — ACL グループステージ / ACL Elite リーグステージ
+- **WEリーグ** — WEリーグ / WEリーグカップ
+- **国際大会** — W杯アジア最終予選 / W杯グループステージ / オリンピック グループステージ
 
 ## 簡単な説明
 
@@ -138,8 +132,8 @@ ACLのデータは、Yahoo スポーツナビさんの<https://soccer.yahoo.co.j
 
 ## 自分の環境で動かす方法
 
-docs に置いている、j_points.css  j_points.js j_points.html とcsvディレクトリのファイルをダウンロードして、
-同じディレクトリに置いて、Chromeなどのブラウザで開く (CSVを読むようにしたので、HTTPでないとダメかも (サーバが要る？))
+ローカルで試すには、このプロジェクトを clone して `frontend/` ディレクトリで `npm run dev` を実行するのが最も簡単です。
+(CSVを読み込むためHTTPサーバが必要です。Vite開発サーバがその役割を担います)
 
 これらdocsに置いている例は、GitHub Actionsを使って更新中です。
 試合時間に合わせて収集させる時もありますが、多くの場合それほど頻繁にアップデートするようにはしていません。

@@ -5,7 +5,7 @@ detail page (SFMS02), saving the raw HTML for offline parsing.
 Already-downloaded files are skipped (incremental fetch).
 
 Usage:
-    uv run python src/fetch_match_detail.py --year 1995 [--delay 3] [--dry-run]
+    uv run python scripts/fetch_match_detail.py --year 1995 [--delay 3] [--dry-run]
 """
 import argparse
 import logging

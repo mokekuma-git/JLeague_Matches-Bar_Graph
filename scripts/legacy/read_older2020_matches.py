@@ -7,6 +7,9 @@ from pathlib import Path
 import re
 import sys
 
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(_REPO_ROOT / 'src'))
+
 import bs4
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -16,7 +19,7 @@ from set_config import Config
 
 logger = logging.getLogger(__name__)
 
-config = Config(Path(__file__).parent / '../config/old_matches.yaml')
+config = Config(Path(__file__).parent / 'old_matches.yaml')
 
 MATCH_CARD_ID = re.compile(config.match_data.card_id_pattern)
 
@@ -126,7 +129,7 @@ def main():
 
 
 if __name__ == '__main__':
-    os.chdir(Path(__file__).parent)
+    os.chdir(_REPO_ROOT / 'src')
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
