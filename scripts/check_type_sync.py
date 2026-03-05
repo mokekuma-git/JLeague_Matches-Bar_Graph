@@ -33,9 +33,7 @@ CONFIG_TS = TS_TYPES_DIR / 'config.ts'
 # TS-only CSV fields that Python does not produce (yet).
 # These are expected to exist in RawMatchRow but NOT in CSV_COLUMN_SCHEMA.
 # ---------------------------------------------------------------------------
-TS_ONLY_CSV_FIELDS: set[str] = {
-    'match_status', 'home_pk', 'away_pk',  # Backward-compat aliases for old CSVs
-}
+TS_ONLY_CSV_FIELDS: set[str] = set()
 
 
 def _parse_interface_fields(content: str, interface_name: str) -> dict[str, str]:

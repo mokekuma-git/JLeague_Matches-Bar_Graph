@@ -81,7 +81,6 @@ npm run dev               # Vite開発サーバー起動
 - `group`: グループ名 (グループ分けがある場合のみ)
 - `home_pk_score`/`away_pk_score`: PK得点 (省略可能。JFA JSONの命名に倣った)
 - `home_score_ex`/`away_score_ex`: 延長戦得点 (省略可能。延長戦がない大会では列自体が存在しない)
-- `home_pk`/`away_pk`: `home_pk_score`/`away_pk_score` の旧名エイリアス (1993-1998 CSV)
 
 ## season_map.json 構造
 

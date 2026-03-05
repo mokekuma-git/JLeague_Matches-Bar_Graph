@@ -420,7 +420,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
         seasonInfo.pointSystem,
       );
       const fields = results.meta.fields ?? [];
-      const hasPk = fields.includes('home_pk_score') || fields.includes('home_pk');
+      const hasPk = fields.includes('home_pk_score');
       const hasEx = fields.includes('home_score_ex');
 
       const newCache = { key: csvKey, teamMap, teamCount: seasonInfo.teamCount, hasPk, hasEx };

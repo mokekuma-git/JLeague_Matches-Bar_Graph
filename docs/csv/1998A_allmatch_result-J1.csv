@@ -1,4 +1,4 @@
-,match_date,section_no,match_index_in_section,start_time,stadium,home_team,home_goal,away_goal,away_team,broadcast,attendance,home_pk,away_pk
+,match_date,section_no,match_index_in_section,start_time,stadium,home_team,home_goal,away_goal,away_team,broadcast,attendance,home_pk_score,away_pk_score
 0,1998/03/21,1,1,12:03,瑞穂陸,名古屋,2,3,神戸,,19181,,
 1,1998/03/21,1,2,14:06,平塚,平塚,4,1,Ｖ川崎,,13254,,
 2,1998/03/21,1,3,15:00,カシマ,鹿島,4,2,福岡,,15306,,
