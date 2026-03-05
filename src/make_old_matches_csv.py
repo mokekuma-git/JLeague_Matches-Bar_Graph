@@ -129,5 +129,6 @@ if __name__ == '__main__':
         format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
         datefmt='%H:%M:%S',
     )
+    years = parse_years()
     for _comp in ['J1', 'J2', 'J3']:
-        make_old_matches_csv(_comp, parse_years())
+        make_old_matches_csv(_comp, years)
