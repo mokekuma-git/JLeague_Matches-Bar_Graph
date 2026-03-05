@@ -5,6 +5,7 @@ import type {
   SeasonMap, GroupEntry, CompetitionEntry, RawSeasonEntry, SeasonInfo,
   CrossGroupStanding, DataSource,
 } from '../types/season';
+import { generateRuleNotes } from './rule-notes';
 
 /**
  * Returns the CSV filename for a given competition and season.
@@ -140,6 +141,7 @@ export function resolveSeasonInfo(
     ...toArray(group.note),
     ...toArray(comp.note),
     ...toArray(opts.note),
+    ...generateRuleNotes(pointSystem, tiebreakOrder),
   ];
 
   return {

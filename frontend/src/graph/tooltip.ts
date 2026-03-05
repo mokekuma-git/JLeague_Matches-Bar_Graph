@@ -17,9 +17,14 @@ export function makeWinContent(row: TeamMatch, matchDate: string): string {
   return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}${scoreLine}<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
-/** Tooltip body for a 2-pt PK win: same as win but includes PK scores in parentheses. */
+/**
+ * Tooltip body for a PK win: includes PK scores in parentheses.
+ * ET detail is intentionally omitted — when a match reaches PK, ET always ends tied,
+ * so the total score already reflects the drawn state.
+ * To add ET info: insert `(ET${row.score_ex_get}-${row.score_ex_lose}/PK...)` in the score line.
+ */
 export function makePkWinContent(row: TeamMatch, matchDate: string): string {
-  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.goal_get}-${row.goal_lose} (${row.pk_get}-${row.pk_lose})<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
+  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.goal_get}-${row.goal_lose} (PK${row.pk_get}-${row.pk_lose})<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
 /** Tooltip body for an ET win: includes extra-time scores in parentheses. */
@@ -32,9 +37,16 @@ export function makeDrawContent(row: TeamMatch, matchDate: string): string {
   return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}`;
 }
 
-/** Full match details for draw/loss tooltips: section number, time, date, opponent, score, stadium. */
+/** Full match details for draw/loss/PK-loss tooltips: section, time, date, opponent, score, stadium. */
 export function makeFullContent(row: TeamMatch, matchDate: string): string {
-  return `(${row.section_no}) ${timeFormat(row.start_time)}<br/>${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.goal_get}-${row.goal_lose} ${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
+  let scorePart = `${row.goal_get}-${row.goal_lose}`;
+  if (row.score_ex_get != null && row.score_ex_lose != null && row.score_ex_get !== row.score_ex_lose) {
+    scorePart += ` (ET${row.score_ex_get}-${row.score_ex_lose})`;
+  }
+  if (row.pk_get != null && row.pk_lose != null) {
+    scorePart += ` (PK${row.pk_get}-${row.pk_lose})`;
+  }
+  return `(${row.section_no}) ${timeFormat(row.start_time)}<br/>${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${scorePart} ${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
 /** Content for a cancelled match shown in the lossBox tooltip. */
@@ -51,12 +63,18 @@ export function makeCancelledContent(row: TeamMatch, matchDate: string): string 
 export function makeTeamStats(stats: TeamStats, disp: boolean, hasPk = false, hasEx = false): string {
   const label = disp ? '表示時の状態' : '最新の状態';
   const rc = stats.resultCounts;
-  const pkLine = hasPk ? ` ${rc.pk_win}PK勝 ${rc.pk_loss}PK負` : '';
-  const exLine = hasEx ? ` ${rc.ex_win}延勝 ${rc.ex_loss}延負` : '';
-  return `${label}<br/>${rc.win}勝 ${rc.draw}分 ${rc.loss}敗${pkLine}${exLine}<br/>`
-    + `勝点${stats.point}, 最大${stats.avlbl_pt}<br/>`
-    + `${stats.goal_get}得点, ${stats.goal_get - stats.goal_diff}失点<br/>`
-    + `得失点差: ${stats.goal_diff}`;
+  const lines = [
+    `${label}`,
+    `${rc.win}勝 / ${rc.draw}分 / ${rc.loss}敗`,
+  ];
+  if (hasEx) lines.push(`${rc.ex_win}延勝 / ${rc.ex_loss}延負`);
+  if (hasPk) lines.push(`${rc.pk_win}PK勝 / ${rc.pk_loss}PK負`);
+  lines.push(
+    `勝点${stats.point}, 最大${stats.avlbl_pt}`,
+    `${stats.goal_get}得点, ${stats.goal_get - stats.goal_diff}失点`,
+    `得失点差: ${stats.goal_diff}`,
+  );
+  return lines.join('<br/>');
 }
 
 /** Joins loss-match content strings with <hr/> dividers. */

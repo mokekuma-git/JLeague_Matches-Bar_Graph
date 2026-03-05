@@ -14,6 +14,7 @@ JLeague_Matches-Bar_Graph/
 │   │   ├── app.ts                  #   エントリポイント
 │   │   ├── j_points.html           #   HTMLテンプレート (Vite input)
 │   │   ├── config/season-map.ts    #   season_map.json 読み込み・ユーティリティ
+│   │   ├── config/rule-notes.ts   #   ルール説明ノート自動生成 (i18n準備済)
 │   │   ├── core/                   #   CSV解析, 勝ち点計算, ソート, 日付ユーティリティ
 │   │   ├── graph/                  #   バーグラフ描画, ツールチップ, CSS操作
 │   │   ├── ranking/                #   順位表HTML生成, 統計集計
@@ -79,6 +80,8 @@ npm run dev               # Vite開発サーバー起動
 - `home_goal`/`away_goal`: 空 = 未実施
 - `group`: グループ名 (グループ分けがある場合のみ)
 - `home_pk_score`/`away_pk_score`: PK得点 (省略可能。JFA JSONの命名に倣った)
+- `home_score_ex`/`away_score_ex`: 延長戦得点 (省略可能。延長戦がない大会では列自体が存在しない)
+- `home_pk`/`away_pk`: `home_pk_score`/`away_pk_score` の旧名エイリアス (1993-1998 CSV)
 
 ## season_map.json 構造
 
@@ -175,5 +178,13 @@ uv run python scripts/check_type_sync.py
 - **スクレイピング時のシーズン文字列は `config.season` (YAML) が正** — HTML読み取り値で上書きしない
 - **`get_sub_seasons(category)` の戻り値で更新動作が決まる**: `None` → スキップ / `[]` → 単一シーズン更新 / `[...]` → マルチグループ振り分け
 - **`match_utils.py` が共通ライブラリ** — CSV I/O, season_map 読み込み, 日付計算を提供。各 reader がインポートして使う
-- **勝ち点システム**: `'standard'` (勝3/PK勝2/PK負1/分1/負0)、`'victory-count'` (勝1/PK勝1/他0、POINT_HEIGHT_SCALE=3 でボックス高さ3倍)。Competition 階層の `point_system` で指定 (デフォルト: `'standard'`)。有効値は Python `POINT_SYSTEM_VALUES` と TS `POINT_MAPS` で管理し、`check_type_sync.py` で同期検証
+- **勝ち点システム**: Competition/Season 階層の `point_system` で指定 (デフォルト: `'standard'`)。有効値は Python `POINT_SYSTEM_VALUES` と TS `POINT_MAPS` で管理し、`check_type_sync.py` で同期検証。非 standard 時は `rule-notes.ts` がルール説明を自動生成して note 欄に表示
+  - `'standard'` (2003–): 勝3/分1/負0
+  - `'victory-count'` (1993–94): 勝1/他0 (`POINT_HEIGHT_SCALE=3` でボックス高さ3倍)
+  - `'win3all-pkloss1'` (1995–96): 全勝3/PK負1/負0
+  - `'graduated-win'` (1997–98): 90分勝3/延長勝2/PK勝1/負0
+  - `'ex-win-2'` (1999–2002): 90分勝3/延長勝2/分1/負0
+  - `'pk-win2-loss1'` (2026特別大会): 勝3/PK勝2/PK負1/負0
 - **SeasonEntry バリデーション**: index 0〜3 の型不正は即エラー。index 4 の未知キーは Warning で無視
+- **ルール説明ノート自動生成** (`config/rule-notes.ts`): `pointSystem` が `'standard'` 以外、または `tiebreakOrder` がデフォルト (`['goal_diff', 'goal_get']`) と異なる場合、`resolveSeasonInfo()` が note 配列末尾にルール説明を自動追加。メッセージは辞書オブジェクトで管理し、将来の多言語化に備える (locale 引数 + `Record<Locale, ...>` への拡張で対応可能)
+- **ツールチップ表示規則**: ボックス内スコアは `ET`/`PK` プレフィックスで種別を明示 (`3-2 (ET1-0)`, `1-1 (PK5-3)`)。PKまで行った場合のET情報は省略 (ET後も同点のためスコアに情報価値なし)。チーム名ツールチップの成績は勝/分/敗を1行、延長勝負・PK勝負を各1行で表示

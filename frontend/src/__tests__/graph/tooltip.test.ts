@@ -51,7 +51,7 @@ describe('makePkWinContent', () => {
 
   test('includes PK scores in parentheses', () => {
     const html = makePkWinContent(PK_ROW, MATCH_DATE);
-    expect(html).toContain('(5-3)');
+    expect(html).toContain('(PK5-3)');
   });
 
   test('includes regulation score and truncated stadium', () => {
@@ -99,6 +99,29 @@ describe('makeFullContent', () => {
     expect(html).toContain('Tea');          // opponent truncated to 3 chars
     expect(html).toContain('2-1');
     expect(html).toContain('TestSta');      // stadium truncated to 7 chars
+  });
+
+  test('includes PK scores when present', () => {
+    const pkRow = makeMatch({
+      opponent: 'TeamD', goal_get: 1, goal_lose: 1,
+      pk_get: 3, pk_lose: 5, score_ex_get: 0, score_ex_lose: 0,
+      stadium: 'Arena', section_no: 7, start_time: '18:00',
+    });
+    const html = makeFullContent(pkRow, MATCH_DATE);
+    expect(html).toContain('1-1');
+    expect(html).toContain('(PK3-5)');
+    expect(html).not.toContain('ET');  // ET 0-0 (tied) is omitted
+  });
+
+  test('includes ET scores when non-tied', () => {
+    const etRow = makeMatch({
+      opponent: 'TeamE', goal_get: 2, goal_lose: 3,
+      score_ex_get: 0, score_ex_lose: 1,
+      stadium: 'Ground', section_no: 8, start_time: '19:00',
+    });
+    const html = makeFullContent(etRow, MATCH_DATE);
+    expect(html).toContain('2-3');
+    expect(html).toContain('(ET0-1)');
   });
 });
 
@@ -170,6 +193,20 @@ describe('makeTeamStats', () => {
     const html = makeTeamStats(td.latestStats, false, false, true);
     expect(html).toContain('延勝');
     expect(html).toContain('延負');
+  });
+
+  test('wins/draws/losses are on a separate line from ET and PK', () => {
+    const td = makeTeamData([
+      makeMatch({ goal_get: 2, goal_lose: 0, point: 3, match_date: '2025/03/01' }),
+      makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 3, pk_lose: 1, score_ex_get: 0, score_ex_lose: 0, point: 3, match_date: '2025/03/08' }),
+    ]);
+    calculateTeamStats(td, '2025/12/31', 'section_no', 'win3all-pkloss1');
+    const html = makeTeamStats(td.latestStats, false, true, true);
+    const lines = html.split('<br/>');
+    // Line 0: label, Line 1: W/D/L, Line 2: ET, Line 3: PK, Line 4+: points etc.
+    expect(lines[1]).toMatch(/\d+勝 \/ \d+分 \/ \d+敗/);
+    expect(lines[2]).toMatch(/\d+延勝 \/ \d+延負/);
+    expect(lines[3]).toMatch(/\d+PK勝 \/ \d+PK負/);
   });
 });
 
