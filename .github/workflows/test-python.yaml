@@ -7,17 +7,21 @@ on:
       - 'feature/**'
     paths:
       - 'src/**'
+      - 'scripts/**'
       - 'tests/**'
       - 'pyproject.toml'
       - 'setup.cfg'
+      - 'pytest.ini'
   push:
     branches:
       - main
     paths:
       - 'src/**'
+      - 'scripts/**'
       - 'tests/**'
       - 'pyproject.toml'
       - 'setup.cfg'
+      - 'pytest.ini'
 
 jobs:
   test:
