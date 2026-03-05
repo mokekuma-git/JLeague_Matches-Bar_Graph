@@ -1,7 +1,11 @@
 """Process and save J-League match results from data.j-league.or.jp into CSV files"""
 import logging
 import os
+import sys
 from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(_REPO_ROOT / 'src'))
 
 import pandas as pd
 
@@ -10,7 +14,7 @@ from set_config import Config
 
 logger = logging.getLogger(__name__)
 
-config = Config(Path(__file__).parent / '../config/old_matches.yaml')
+config = Config(Path(__file__).parent / 'old_matches.yaml')
 
 
 def make_old_matches_csv(competition: str, years: list[int] | None = None) -> None:
@@ -123,7 +127,7 @@ def init_season_dict(matches: pd.DataFrame, year: int) -> dict[str, str]:
 
 
 if __name__ == '__main__':
-    os.chdir(Path(__file__).parent)
+    os.chdir(_REPO_ROOT / 'src')
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',

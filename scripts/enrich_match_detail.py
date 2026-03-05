@@ -5,7 +5,7 @@ home_score_ex / away_score_ex columns to the intermediate CSV.
 Also cross-checks PK data between the CSV's スコア column and parsed HTML.
 
 Usage:
-    uv run python src/enrich_match_detail.py --year 1995
+    uv run python scripts/enrich_match_detail.py --year 1995
 """
 import argparse
 import logging
