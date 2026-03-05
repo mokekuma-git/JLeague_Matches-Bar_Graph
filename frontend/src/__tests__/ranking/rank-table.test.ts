@@ -650,7 +650,36 @@ describe('makeRankTable – promotionLabel', () => {
 
   test('uses provided label as innerHTML', () => {
     const table = makeTableEl();
-    makeRankTable(table, [], false, '昇格<br/>ACL');
+    makeRankTable(table, [], false, false, '昇格<br/>ACL');
     expect(getPromotionHeader(table)).toBe('昇格<br>ACL');
+  });
+});
+
+describe('makeRankTable – thead hasEx=true', () => {
+  test('includes ex_win and ex_loss columns', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false, true);
+    const ids = getHeaderIds(table);
+    expect(ids).toContain('ex_win');
+    expect(ids).toContain('ex_loss');
+  });
+
+  test('ex_win/ex_loss appear after pk columns (after loss when hasPk=false)', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false, true);
+    const ids = getHeaderIds(table);
+    const lossIdx   = ids.indexOf('loss');
+    const exWinIdx  = ids.indexOf('ex_win');
+    const exLossIdx = ids.indexOf('ex_loss');
+    expect(exWinIdx).toBe(lossIdx + 1);
+    expect(exLossIdx).toBe(exWinIdx + 1);
+  });
+
+  test('hasPk=false, hasEx=false → no pk or ex columns', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false, false);
+    const ids = getHeaderIds(table);
+    expect(ids).not.toContain('pk_win');
+    expect(ids).not.toContain('ex_win');
   });
 });

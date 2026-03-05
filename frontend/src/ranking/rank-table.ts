@@ -80,6 +80,8 @@ export interface RankRow extends BaseRankRow {
   rank: number;
   pk_win?: number;
   pk_loss?: number;
+  ex_win?: number;
+  ex_loss?: number;
   champion: string;
   promotion?: string;
   relegation?: string;
@@ -104,6 +106,7 @@ export function makeRankData(
   seasonInfo: SeasonInfo,
   disp: boolean,
   hasPk: boolean = false,
+  hasEx: boolean = false,
 ): RankRow[] {
   const { teamCount, promotionCount, relegationCount } = seasonInfo;
   const relegationRank = teamCount - relegationCount;
@@ -138,6 +141,10 @@ export function makeRankData(
       ...(hasPk ? {
         pk_win:    rc.pk_win,
         pk_loss:   rc.pk_loss,
+      } : {}),
+      ...(hasEx ? {
+        ex_win:    rc.ex_win,
+        ex_loss:   rc.ex_loss,
       } : {}),
       draw:        rc.draw,
       loss:        rc.loss,
@@ -204,13 +211,18 @@ export function makeRankData(
 
 // Builds the <thead> for per-group ranking tables.
 // pk_win / pk_loss columns are included only when hasPk=true.
-function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean, promotionLabel: string = '昇格'): void {
+// ex_win / ex_loss columns are included only when hasEx=true.
+function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean, hasEx: boolean, promotionLabel: string = '昇格'): void {
   const cols: ColDef[] = [
     { id: 'rank',        label: '',          sortable: true },
     ...STAT_COLS,
     ...(hasPk ? [
       { id: 'pk_win',  label: 'PK勝', sortable: true as true },
       { id: 'pk_loss', label: 'PK負', sortable: true as true },
+    ] : []),
+    ...(hasEx ? [
+      { id: 'ex_win',  label: '延勝', sortable: true as true },
+      { id: 'ex_loss', label: '延負', sortable: true as true },
     ] : []),
     ...GOAL_COLS,
     {                    label: '-' },
@@ -237,8 +249,8 @@ function applyRowClasses(tbody: HTMLElement, rankMap: Map<number, string>): void
 // hasPk controls whether PK win/loss columns appear in the table header.
 // Row CSS classes (promoted/relegated/etc.) are applied based on points-based rank
 // and reapplied after every re-sort via MutationObserver.
-export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean, promotionLabel: string = '昇格'): void {
-  buildRankTableHead(tableEl, hasPk, promotionLabel);
+export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean, hasEx: boolean = false, promotionLabel: string = '昇格'): void {
+  buildRankTableHead(tableEl, hasPk, hasEx, promotionLabel);
   const sortableTable = new SortableTable();
   sortableTable.setTable(tableEl);
   sortableTable.setData(rankData);
