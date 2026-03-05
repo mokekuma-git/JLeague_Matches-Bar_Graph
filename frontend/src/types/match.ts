@@ -47,8 +47,9 @@ export interface TeamMatch {
 }
 
 // Classification of a single match result.
+// Ordered by descending points in the most common system.
 // Used as both classifyResult() return type and TeamStats.resultCounts key.
-export type MatchResult = 'win' | 'pk_win' | 'pk_loss' | 'draw' | 'loss';
+export type MatchResult = 'win' | 'ex_win' | 'pk_win' | 'draw' | 'pk_loss' | 'ex_loss' | 'loss';
 
 // Aggregated statistics for a single view (latest or display-time).
 // Managed as two instances on TeamData: latestStats (full season) and displayStats (up to targetDate).
@@ -63,7 +64,7 @@ export class TeamStats {
 
   /** Per-result-type match counts. Key = MatchResult literal. */
   readonly resultCounts: Record<MatchResult, number> = {
-    win: 0, pk_win: 0, pk_loss: 0, draw: 0, loss: 0,
+    win: 0, ex_win: 0, pk_win: 0, draw: 0, pk_loss: 0, ex_loss: 0, loss: 0,
   };
 
   /** Record a completed match. */

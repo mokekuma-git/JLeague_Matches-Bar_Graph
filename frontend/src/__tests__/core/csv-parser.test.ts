@@ -122,12 +122,17 @@ describe('parseCsvResults', () => {
       expect(homeMatch.pk_lose).toBe(4);
     });
 
-    test('PK win earns 2 points, PK loss earns 1 point', () => {
+    test('PK win/loss points depend on point system (standard: 0/0, pk-win2-loss1: 2/1)', () => {
       const fields = [...BASE_FIELDS, 'home_pk_score', 'away_pk_score'];
       const row = makeRow({ home_goal: '1', away_goal: '1', home_pk_score: '5', away_pk_score: '4' });
-      const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
-      expect(result['DefaultGroup']['TeamA'].df[0].point).toBe(2); // PK win
-      expect(result['DefaultGroup']['TeamB'].df[0].point).toBe(1); // PK loss
+      // standard: pk_win=0, pk_loss=0 (no PK in modern J-League)
+      const std = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(std['DefaultGroup']['TeamA'].df[0].point).toBe(0); // PK win under standard
+      expect(std['DefaultGroup']['TeamB'].df[0].point).toBe(0); // PK loss under standard
+      // pk-win2-loss1: pk_win=2, pk_loss=1 (2026 special)
+      const pk21 = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup', 'pk-win2-loss1');
+      expect(pk21['DefaultGroup']['TeamA'].df[0].point).toBe(2); // PK win
+      expect(pk21['DefaultGroup']['TeamB'].df[0].point).toBe(1); // PK loss
     });
 
     test('pk_get/pk_lose are null when no PK column', () => {
@@ -213,7 +218,7 @@ describe('parseCsvResults', () => {
       const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
       expect(result['DefaultGroup']['TeamA'].df[0].pk_get).toBe(5);
       expect(result['DefaultGroup']['TeamA'].df[0].pk_lose).toBe(3);
-      expect(result['DefaultGroup']['TeamA'].df[0].point).toBe(2); // PK win
+      expect(result['DefaultGroup']['TeamA'].df[0].point).toBe(0); // PK win under standard (pk_win=0)
     });
 
     test('home_pk_score takes precedence over home_pk when both exist', () => {

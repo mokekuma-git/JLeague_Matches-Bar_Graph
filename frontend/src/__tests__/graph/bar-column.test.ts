@@ -13,10 +13,11 @@ function buildColumn(
   matches: ReturnType<typeof makeMatch>[],
   disp = false,
   target = TARGET,
+  pointSystem: Parameters<typeof buildTeamColumn>[5] = 'standard',
 ) {
   const td = makeTeamData(matches);
-  calculateTeamStats(td, target, 'section_no');
-  return { result: buildTeamColumn(TEAM, td, target, disp), td };
+  calculateTeamStats(td, target, 'section_no', pointSystem);
+  return { result: buildTeamColumn(TEAM, td, target, disp, false, pointSystem), td };
 }
 
 // ─── box class per result type ─────────────────────────────────────────────────
@@ -48,10 +49,10 @@ describe('buildTeamColumn – box class per result type', () => {
     expect(tooltiptext!.innerHTML).not.toContain('BigStadium');
   });
 
-  test('PK win (2 pt) → medium box in graph', () => {
+  test('PK win (2 pt, pk-win2-loss1) → medium box in graph', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 2, match_date: '2025/03/15' }),
-    ]);
+    ], false, TARGET, 'pk-win2-loss1');
     expect(result.graph[0].classList.contains('medium')).toBe(true);
     expect(result.graph[0].classList.contains('box')).toBe(true);
   });

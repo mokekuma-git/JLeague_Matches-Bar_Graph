@@ -19,19 +19,31 @@ describe('getPointFromResult', () => {
     });
   });
 
-  describe('PK shootout', () => {
-    test('PK win → 2 points', () => {
-      expect(getPointFromResult('1', '1', false, 5, 4)).toBe(2);
-      expect(getPointFromResult('0', '0', false, 3, 2)).toBe(2);
+  describe('PK shootout (standard: pk_win=0, pk_loss=0 — PK not used in modern J-League)', () => {
+    test('PK win → 0 points under standard', () => {
+      expect(getPointFromResult('1', '1', false, 5, 4)).toBe(0);
+      expect(getPointFromResult('0', '0', false, 3, 2)).toBe(0);
     });
 
-    test('PK loss → 1 point', () => {
-      expect(getPointFromResult('1', '1', false, 4, 5)).toBe(1);
-      expect(getPointFromResult('0', '0', false, 2, 4)).toBe(1);
+    test('PK loss → 0 points under standard', () => {
+      expect(getPointFromResult('1', '1', false, 4, 5)).toBe(0);
+      expect(getPointFromResult('0', '0', false, 2, 4)).toBe(0);
     });
 
     test('pkGet/pkLose both null → treated as regular draw (1 pt)', () => {
       expect(getPointFromResult('1', '1', false, null, null)).toBe(1);
+    });
+  });
+
+  describe('PK shootout (pk-win2-loss1: pk_win=2, pk_loss=1 — 2026 special)', () => {
+    test('PK win → 2 points', () => {
+      expect(getPointFromResult('1', '1', false, 5, 4, 'pk-win2-loss1')).toBe(2);
+      expect(getPointFromResult('0', '0', false, 3, 2, 'pk-win2-loss1')).toBe(2);
+    });
+
+    test('PK loss → 1 point', () => {
+      expect(getPointFromResult('1', '1', false, 4, 5, 'pk-win2-loss1')).toBe(1);
+      expect(getPointFromResult('0', '0', false, 2, 4, 'pk-win2-loss1')).toBe(1);
     });
   });
 
@@ -115,6 +127,13 @@ describe('getPointHeightScale', () => {
 
   test('victory-count → 3 (1 pt rendered at 3× height)', () => {
     expect(getPointHeightScale('victory-count')).toBe(3);
+  });
+
+  test('new systems default to 1', () => {
+    expect(getPointHeightScale('win3all-pkloss1')).toBe(1);
+    expect(getPointHeightScale('graduated-win')).toBe(1);
+    expect(getPointHeightScale('ex-win-2')).toBe(1);
+    expect(getPointHeightScale('pk-win2-loss1')).toBe(1);
   });
 
   test('defaults to standard (1)', () => {

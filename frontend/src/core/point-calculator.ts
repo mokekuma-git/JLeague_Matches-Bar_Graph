@@ -16,9 +16,10 @@ export function getWinPoints(ps: PointSystem = 'standard'): number {
   return POINT_MAPS[ps].win;
 }
 
-/** Returns the height-unit multiplier for one earned point under the given point system. */
+/** Returns the height-unit multiplier for one earned point under the given point system.
+ *  Defaults to 1 for systems not listed in POINT_HEIGHT_SCALE. */
 export function getPointHeightScale(ps: PointSystem = 'standard'): number {
-  return POINT_HEIGHT_SCALE[ps];
+  return POINT_HEIGHT_SCALE[ps] ?? 1;
 }
 
 /**
