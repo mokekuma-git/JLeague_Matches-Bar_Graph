@@ -1,4 +1,4 @@
-,match_date,section_no,match_index_in_section,start_time,stadium,home_team,home_goal,away_goal,away_team,broadcast,attendance,home_pk,away_pk,home_score_ex,away_score_ex
+,match_date,section_no,match_index_in_section,start_time,stadium,home_team,home_goal,away_goal,away_team,broadcast,attendance,home_pk_score,away_pk_score,home_score_ex,away_score_ex
 0,1996/03/16,1,1,14:03,等々力,Ｖ川崎,1,0,京都,,12835,,,,
 1,1996/03/16,1,2,15:03,駒場,浦和,2,1,柏,,20124,,,,
 2,1996/03/16,1,3,15:03,瑞穂陸,名古屋,4,1,平塚,,22021,,,,
