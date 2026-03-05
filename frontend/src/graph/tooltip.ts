@@ -22,6 +22,11 @@ export function makePkWinContent(row: TeamMatch, matchDate: string): string {
   return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.goal_get}-${row.goal_lose} (${row.pk_get}-${row.pk_lose})<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
+/** Tooltip body for an ET win: includes extra-time scores in parentheses. */
+export function makeExWinContent(row: TeamMatch, matchDate: string): string {
+  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.goal_get}-${row.goal_lose} (ET${row.score_ex_get}-${row.score_ex_lose})<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
+}
+
 /** Tooltip body for a 1-pt draw or PK loss: minimal—MM/DD and opponent only. */
 export function makeDrawContent(row: TeamMatch, matchDate: string): string {
   return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}`;
@@ -43,11 +48,12 @@ export function makeCancelledContent(row: TeamMatch, matchDate: string): string 
  * Caller selects the appropriate TeamStats (latestStats or displayStats).
  * hasPk=true → includes PK win/loss counts (omitted when the season has no PK matches).
  */
-export function makeTeamStats(stats: TeamStats, disp: boolean, hasPk = false): string {
+export function makeTeamStats(stats: TeamStats, disp: boolean, hasPk = false, hasEx = false): string {
   const label = disp ? '表示時の状態' : '最新の状態';
   const rc = stats.resultCounts;
   const pkLine = hasPk ? ` ${rc.pk_win}PK勝 ${rc.pk_loss}PK負` : '';
-  return `${label}<br/>${rc.win}勝 ${rc.draw}分 ${rc.loss}敗${pkLine}<br/>`
+  const exLine = hasEx ? ` ${rc.ex_win}延勝 ${rc.ex_loss}延負` : '';
+  return `${label}<br/>${rc.win}勝 ${rc.draw}分 ${rc.loss}敗${pkLine}${exLine}<br/>`
     + `勝点${stats.point}, 最大${stats.avlbl_pt}<br/>`
     + `${stats.goal_get}得点, ${stats.goal_get - stats.goal_diff}失点<br/>`
     + `得失点差: ${stats.goal_diff}`;

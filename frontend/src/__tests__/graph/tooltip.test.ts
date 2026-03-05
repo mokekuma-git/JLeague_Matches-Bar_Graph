@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import {
-  makeWinContent, makePkWinContent, makeDrawContent, makeFullContent,
+  makeWinContent, makeExWinContent, makePkWinContent, makeDrawContent, makeFullContent,
   makeTeamStats, joinLossBox, getRankClass,
 } from '../../graph/tooltip';
 import { getBright } from '../../graph/css-utils';
@@ -58,6 +58,25 @@ describe('makePkWinContent', () => {
     const html = makePkWinContent(PK_ROW, MATCH_DATE);
     expect(html).toContain('1-1');
     expect(html).toContain('PkStadi'); // stadium truncated to 7 chars
+  });
+});
+
+describe('makeExWinContent', () => {
+  const ET_ROW = makeMatch({
+    opponent: 'TeamC', goal_get: 3, goal_lose: 2,
+    score_ex_get: 1, score_ex_lose: 0,
+    stadium: 'ETStadium', section_no: 6, start_time: '14:00',
+  });
+
+  test('includes ET scores in parentheses', () => {
+    const html = makeExWinContent(ET_ROW, MATCH_DATE);
+    expect(html).toContain('ET1-0');
+  });
+
+  test('includes regulation score and truncated stadium', () => {
+    const html = makeExWinContent(ET_ROW, MATCH_DATE);
+    expect(html).toContain('3-2');
+    expect(html).toContain('ETStadi'); // stadium truncated to 7 chars
   });
 });
 
@@ -131,6 +150,26 @@ describe('makeTeamStats', () => {
     const html = makeTeamStats(td.latestStats, false, true);
     expect(html).toContain('PK勝');
     expect(html).toContain('PK負');
+  });
+
+  test('hasEx=false (default) omits ET line', () => {
+    const td = makeTeamData([
+      makeMatch({ goal_get: 3, goal_lose: 2, score_ex_get: 1, score_ex_lose: 0, point: 2, match_date: '2025/03/01' }),
+    ]);
+    calculateTeamStats(td, '2025/12/31', 'section_no', 'graduated-win');
+    const html = makeTeamStats(td.latestStats, false);
+    expect(html).not.toContain('延勝');
+    expect(html).not.toContain('延負');
+  });
+
+  test('hasEx=true includes ET win/loss in the output', () => {
+    const td = makeTeamData([
+      makeMatch({ goal_get: 3, goal_lose: 2, score_ex_get: 1, score_ex_lose: 0, point: 2, match_date: '2025/03/01' }),
+    ]);
+    calculateTeamStats(td, '2025/12/31', 'section_no', 'graduated-win');
+    const html = makeTeamStats(td.latestStats, false, false, true);
+    expect(html).toContain('延勝');
+    expect(html).toContain('延負');
   });
 });
 
