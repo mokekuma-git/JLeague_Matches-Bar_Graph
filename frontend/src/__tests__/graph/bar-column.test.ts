@@ -13,10 +13,11 @@ function buildColumn(
   matches: ReturnType<typeof makeMatch>[],
   disp = false,
   target = TARGET,
+  pointSystem: Parameters<typeof buildTeamColumn>[6] = 'standard',
 ) {
   const td = makeTeamData(matches);
-  calculateTeamStats(td, target, 'section_no');
-  return { result: buildTeamColumn(TEAM, td, target, disp), td };
+  calculateTeamStats(td, target, 'section_no', pointSystem);
+  return { result: buildTeamColumn(TEAM, td, target, disp, false, false, pointSystem), td };
 }
 
 // ─── box class per result type ─────────────────────────────────────────────────
@@ -48,10 +49,10 @@ describe('buildTeamColumn – box class per result type', () => {
     expect(tooltiptext!.innerHTML).not.toContain('BigStadium');
   });
 
-  test('PK win (2 pt) → medium box in graph', () => {
+  test('PK win (2 pt, pk-win2-loss1) → medium box in graph', () => {
     const { result } = buildColumn([
       makeMatch({ goal_get: 1, goal_lose: 1, pk_get: 5, pk_lose: 3, point: 2, match_date: '2025/03/15' }),
-    ]);
+    ], false, TARGET, 'pk-win2-loss1');
     expect(result.graph[0].classList.contains('medium')).toBe(true);
     expect(result.graph[0].classList.contains('box')).toBe(true);
   });
@@ -214,13 +215,49 @@ describe('buildTeamColumn – lossBox content', () => {
   });
 });
 
+// ─── extra-time (ET) system ─────────────────────────────────────────────────
+
+describe('buildTeamColumn – extra-time results', () => {
+  test('ET win (graduated-win: ex_win=2) → medium box', () => {
+    const { result } = buildColumn([
+      makeMatch({ goal_get: 3, goal_lose: 2, score_ex_get: 1, score_ex_lose: 0, point: 2, match_date: '2025/03/15' }),
+    ], false, TARGET, 'graduated-win');
+    expect(result.graph).toHaveLength(1);
+    expect(result.graph[0].classList.contains('medium')).toBe(true);
+    expect(result.graph[0].classList.contains('box')).toBe(true);
+  });
+
+  test('ET win box contains ET score in body content', () => {
+    const { result } = buildColumn([
+      makeMatch({ goal_get: 3, goal_lose: 2, score_ex_get: 1, score_ex_lose: 0, point: 2, match_date: '2025/03/15' }),
+    ], false, TARGET, 'graduated-win');
+    // ET content is in the <p class="tooltip"> body (not the .tooltiptext span)
+    expect(result.graph[0].innerHTML).toContain('ET1-0');
+  });
+
+  test('ET loss (graduated-win: ex_loss=0) → lossBox', () => {
+    const { result } = buildColumn([
+      makeMatch({ goal_get: 2, goal_lose: 3, score_ex_get: 0, score_ex_lose: 1, point: 0, match_date: '2025/03/15' }),
+    ], false, TARGET, 'graduated-win');
+    expect(result.graph).toHaveLength(0);
+    expect(result.lossBox).toHaveLength(1);
+  });
+
+  test('ET win (win3all-pkloss1: ex_win=3) → tall box', () => {
+    const { result } = buildColumn([
+      makeMatch({ goal_get: 2, goal_lose: 1, score_ex_get: 1, score_ex_lose: 0, point: 3, match_date: '2025/03/15' }),
+    ], false, TARGET, 'win3all-pkloss1');
+    expect(result.graph[0].classList.contains('tall')).toBe(true);
+  });
+});
+
 // ─── victory-count system ───────────────────────────────────────────────────
 
 describe('buildTeamColumn – victory-count system', () => {
   function buildVCColumn(matches: ReturnType<typeof makeMatch>[]) {
     const td = makeTeamData(matches);
     calculateTeamStats(td, TARGET, 'section_no', 'victory-count');
-    return { result: buildTeamColumn(TEAM, td, TARGET, false, false, 'victory-count'), td };
+    return { result: buildTeamColumn(TEAM, td, TARGET, false, false, false, 'victory-count'), td };
   }
 
   test('PK win (pk_win: 1 pt × scale 3) → tall box', () => {

@@ -35,6 +35,7 @@ interface TeamMapCache {
   teamMap: TeamMap;
   teamCount: number;
   hasPk: boolean;
+  hasEx: boolean;
 }
 
 /** Mutable application state collected in one place. */
@@ -244,7 +245,7 @@ function renderFromCache(
   const entry = found.competition.seasons[season];
   if (!entry) return;
   const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry, found.groupKey);
-  const { hasPk } = cache;
+  const { hasPk, hasEx } = cache;
 
   // Determine which groups to render and in what order.
   const allGroups = Object.keys(cache.teamMap);
@@ -283,7 +284,7 @@ function renderFromCache(
     if (boxCon) {
       const { fragment, matchDates } = renderBarGraph(
         groupData, sortedTeams, perGroupInfo,
-        targetDate, disp, bottomFirst, state.heightUnit, hasPk,
+        targetDate, disp, bottomFirst, state.heightUnit, hasPk, hasEx,
       );
       for (const d of matchDates) globalMatchDateSet.add(d);
 
@@ -314,8 +315,8 @@ function renderFromCache(
       }
       table.appendChild(document.createElement('thead'));
       sortableDiv.appendChild(table);
-      const rankData = makeRankData(groupData, sortedTeams, perGroupInfo, disp, hasPk);
-      makeRankTable(table, rankData, hasPk, perGroupInfo.promotionLabel);
+      const rankData = makeRankData(groupData, sortedTeams, perGroupInfo, disp, hasPk, hasEx);
+      makeRankTable(table, rankData, hasPk, hasEx, perGroupInfo.promotionLabel);
     }
 
     // Collect for cross-group comparison.
@@ -420,8 +421,9 @@ function loadAndRender(seasonMap: SeasonMap): void {
       );
       const fields = results.meta.fields ?? [];
       const hasPk = fields.includes('home_pk_score') || fields.includes('home_pk');
+      const hasEx = fields.includes('home_score_ex');
 
-      const newCache = { key: csvKey, teamMap, teamCount: seasonInfo.teamCount, hasPk };
+      const newCache = { key: csvKey, teamMap, teamCount: seasonInfo.teamCount, hasPk, hasEx };
       state.teamMapCache = newCache;
 
       renderFromCache(newCache, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);

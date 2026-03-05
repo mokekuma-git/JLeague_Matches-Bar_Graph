@@ -230,39 +230,66 @@ describe('sortTeamMatches', () => {
 
 describe('classifyResult', () => {
   test('standard: 3pt → win', () => {
-    expect(classifyResult(3, null, null, 'standard')).toBe('win');
+    expect(classifyResult(3, null, null, null, null, 'standard')).toBe('win');
   });
 
   test('standard: 2pt with PK → pk_win', () => {
-    expect(classifyResult(2, 5, 3, 'standard')).toBe('pk_win');
+    expect(classifyResult(2, null, null, 5, 3, 'standard')).toBe('pk_win');
   });
 
   test('standard: 1pt with PK → pk_loss', () => {
-    expect(classifyResult(1, 3, 5, 'standard')).toBe('pk_loss');
+    expect(classifyResult(1, null, null, 3, 5, 'standard')).toBe('pk_loss');
   });
 
   test('standard: 1pt without PK → draw', () => {
-    expect(classifyResult(1, null, null, 'standard')).toBe('draw');
+    expect(classifyResult(1, null, null, null, null, 'standard')).toBe('draw');
   });
 
   test('standard: 0pt → loss', () => {
-    expect(classifyResult(0, null, null, 'standard')).toBe('loss');
+    expect(classifyResult(0, null, null, null, null, 'standard')).toBe('loss');
   });
 
   test('victory-count: 1pt (regular win) → win', () => {
-    expect(classifyResult(1, null, null, 'victory-count')).toBe('win');
+    expect(classifyResult(1, null, null, null, null, 'victory-count')).toBe('win');
   });
 
   test('victory-count: 1pt with PK → pk_win', () => {
-    expect(classifyResult(1, 5, 3, 'victory-count')).toBe('pk_win');
+    expect(classifyResult(1, null, null, 5, 3, 'victory-count')).toBe('pk_win');
   });
 
   test('victory-count: 0pt with PK loss → pk_loss', () => {
-    expect(classifyResult(0, 3, 5, 'victory-count')).toBe('pk_loss');
+    expect(classifyResult(0, null, null, 3, 5, 'victory-count')).toBe('pk_loss');
   });
 
   test('victory-count: 0pt without PK → loss', () => {
-    expect(classifyResult(0, null, null, 'victory-count')).toBe('loss');
+    expect(classifyResult(0, null, null, null, null, 'victory-count')).toBe('loss');
+  });
+
+  describe('extra-time (ET) results', () => {
+    test('ET win (scoreEx 1-0) → ex_win', () => {
+      expect(classifyResult(3, 1, 0, null, null, 'graduated-win')).toBe('ex_win');
+    });
+
+    test('ET loss (scoreEx 0-1) → ex_loss', () => {
+      expect(classifyResult(0, 0, 1, null, null, 'graduated-win')).toBe('ex_loss');
+    });
+
+    test('ET 0-0 (draw, no PK) → draw', () => {
+      // scoreEx 0-0 means ET occurred but no goal → falls through to point check
+      expect(classifyResult(1, 0, 0, null, null, 'ex-win-2')).toBe('draw');
+    });
+
+    test('PK takes priority over ET: ET 0-0 then PK win → pk_win', () => {
+      expect(classifyResult(3, 0, 0, 7, 6, 'win3all-pkloss1')).toBe('pk_win');
+    });
+
+    test('PK takes priority over ET: ET 0-0 then PK loss → pk_loss', () => {
+      expect(classifyResult(1, 0, 0, 6, 7, 'win3all-pkloss1')).toBe('pk_loss');
+    });
+
+    test('no ET data (null) → regular win', () => {
+      expect(classifyResult(3, null, null, null, null, 'standard')).toBe('win');
+    });
   });
 });
 

@@ -12,6 +12,7 @@ import { teamCssClass } from '../core/team-utils';
 import { classifyResult } from '../ranking/stats-calculator';
 import {
   makeWinContent,
+  makeExWinContent,
   makePkWinContent,
   makeDrawContent,
   makeFullContent,
@@ -93,6 +94,7 @@ export interface ColumnResult {
  * @param targetDate Display cutoff date 'YYYY/MM/DD'.
  * @param disp       true → tooltip uses displayStats; false → latestStats.
  * @param hasPk      true → PK columns exist in the CSV.
+ * @param hasEx      true → extra-time columns exist in the CSV.
  * @param pointSystem Scoring system.
  */
 export function buildTeamColumn(
@@ -101,6 +103,7 @@ export function buildTeamColumn(
   targetDate: string,
   disp: boolean,
   hasPk = false,
+  hasEx = false,
   pointSystem: PointSystem = 'standard',
 ): ColumnResult {
   const graph: HTMLDivElement[] = [];
@@ -138,7 +141,7 @@ export function buildTeamColumn(
       ));
       graph.push(box);
     } else {
-      const cls = classifyResult(row.point, row.pk_get, row.pk_lose, pointSystem);
+      const cls = classifyResult(row.point, row.score_ex_get, row.score_ex_lose, row.pk_get, row.pk_lose, pointSystem);
       const ptMap = POINT_MAPS[pointSystem];
       if (cls === 'win') {
         const heightCls = boxHeightClass(ptMap.win * scale);
@@ -147,6 +150,18 @@ export function buildTeamColumn(
         if (row.live) box.classList.add('live');
         box.appendChild(createTooltip(
           makeWinContent(row, matchDate),
+          `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
+          [cssClass],
+          ['halfW', cssClass],
+        ));
+        graph.push(box);
+      } else if (cls === 'ex_win') {
+        const heightCls = boxHeightClass(ptMap.ex_win * scale);
+        const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
+        const box = createBoxDiv(heightCls, 'box');
+        if (row.live) box.classList.add('live');
+        box.appendChild(createTooltip(
+          makeExWinContent(row, matchDate),
           `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
           [cssClass],
           ['halfW', cssClass],
@@ -192,7 +207,7 @@ export function buildTeamColumn(
     teamName,
     cssClass,
     lossBox,
-    stats: makeTeamStats(disp ? teamData.displayStats : teamData.latestStats, disp, hasPk),
+    stats: makeTeamStats(disp ? teamData.displayStats : teamData.latestStats, disp, hasPk, hasEx),
     matchDates: [...matchDateSet].sort(),
   };
 }
