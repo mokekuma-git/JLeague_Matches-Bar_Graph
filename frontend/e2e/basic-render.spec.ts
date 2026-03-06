@@ -16,6 +16,9 @@ test.describe('T1: Basic Rendering', () => {
     expect(await rankRows.count()).toBeGreaterThan(0);
 
     await assertInvariants(page);
+
+    // I3: no team color warning on default load
+    await expect(page.locator('#warning_msg')).toBeHidden();
   });
 
   test('status message shows row count', async ({ page }) => {
