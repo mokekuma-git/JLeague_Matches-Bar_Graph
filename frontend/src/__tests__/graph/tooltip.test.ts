@@ -1,13 +1,13 @@
 import { describe, test, expect } from 'vitest';
 import {
-  makeWinContent, makeExWinContent, makePkWinContent, makeDrawContent, makeFullContent,
+  makeBoxBody, makeFullContent,
   makeTeamStats, joinLossBox, getRankClass,
 } from '../../graph/tooltip';
 import { getBright } from '../../graph/css-utils';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
 import { makeMatch, makeTeamData, makeSeasonInfo } from '../fixtures/match-data';
 
-// ─── tooltip content functions ─────────────────────────────────────────────────
+// ─── makeBoxBody (height-based box content) ─────────────────────────────────
 
 const WIN_ROW = makeMatch({
   opponent: 'TeamB', goal_get: 2, goal_lose: 1,
@@ -15,17 +15,17 @@ const WIN_ROW = makeMatch({
 });
 const MATCH_DATE = '2025/03/15';
 
-describe('makeWinContent', () => {
-  test('contains MM/DD date, truncated opponent (3), score, and truncated stadium (7)', () => {
-    const html = makeWinContent(WIN_ROW, MATCH_DATE);
-    expect(html).toContain('03/15');   // dateOnly('2025/03/15')
+describe('makeBoxBody – tall', () => {
+  test('contains date, truncated opponent, score, and truncated stadium', () => {
+    const html = makeBoxBody(WIN_ROW, MATCH_DATE, 'tall');
+    expect(html).toContain('03/15');
     expect(html).toContain('Tea');     // opponent truncated to 3 chars
     expect(html).toContain('2-1');
     expect(html).toContain('TestSta'); // stadium truncated to 7 chars
   });
 
-  test('does not include section number or time (that is in tooltip span)', () => {
-    const html = makeWinContent(WIN_ROW, MATCH_DATE);
+  test('does not include section number or time', () => {
+    const html = makeBoxBody(WIN_ROW, MATCH_DATE, 'tall');
     expect(html).not.toContain('(3)');
     expect(html).not.toContain('14:00');
   });
@@ -35,70 +35,86 @@ describe('makeWinContent', () => {
       opponent: 'TeamC', goal_get: null, goal_lose: null,
       stadium: 'FutureStadium', has_result: false,
     });
-    const html = makeWinContent(unplayed, MATCH_DATE);
-    expect(html).toContain('Tea');     // opponent truncated to 3 chars
-    expect(html).toContain('FutureS'); // stadium truncated to 7 chars
+    const html = makeBoxBody(unplayed, MATCH_DATE, 'tall');
+    expect(html).toContain('Tea');
+    expect(html).toContain('FutureS');
     expect(html).not.toContain('null');
   });
-});
 
-describe('makePkWinContent', () => {
-  const PK_ROW = makeMatch({
-    opponent: 'TeamC', goal_get: 1, goal_lose: 1,
-    pk_get: 5, pk_lose: 3,
-    stadium: 'PkStadium', section_no: 5, start_time: '15:30',
-  });
-
-  test('includes PK scores in parentheses', () => {
-    const html = makePkWinContent(PK_ROW, MATCH_DATE);
-    expect(html).toContain('(PK5-3)');
-  });
-
-  test('includes regulation score and truncated stadium', () => {
-    const html = makePkWinContent(PK_ROW, MATCH_DATE);
-    expect(html).toContain('1-1');
-    expect(html).toContain('PkStadi'); // stadium truncated to 7 chars
-  });
-});
-
-describe('makeExWinContent', () => {
-  const ET_ROW = makeMatch({
-    opponent: 'TeamC', goal_get: 3, goal_lose: 2,
-    score_ex_get: 1, score_ex_lose: 0,
-    stadium: 'ETStadium', section_no: 6, start_time: '14:00',
-  });
-
-  test('includes ET scores in parentheses', () => {
-    const html = makeExWinContent(ET_ROW, MATCH_DATE);
-    expect(html).toContain('ET1-0');
-  });
-
-  test('includes regulation score and truncated stadium', () => {
-    const html = makeExWinContent(ET_ROW, MATCH_DATE);
+  test('includes ET score when present and non-tied', () => {
+    const etRow = makeMatch({
+      opponent: 'TeamC', goal_get: 3, goal_lose: 2,
+      score_ex_get: 1, score_ex_lose: 0, stadium: 'ETStadium',
+    });
+    const html = makeBoxBody(etRow, MATCH_DATE, 'tall');
     expect(html).toContain('3-2');
-    expect(html).toContain('ETStadi'); // stadium truncated to 7 chars
+    expect(html).toContain('(ET1-0)');
+    expect(html).toContain('ETStadi');
+  });
+
+  test('includes PK score when present', () => {
+    const pkRow = makeMatch({
+      opponent: 'TeamC', goal_get: 1, goal_lose: 1,
+      pk_get: 5, pk_lose: 3, stadium: 'PkStadium',
+    });
+    const html = makeBoxBody(pkRow, MATCH_DATE, 'tall');
+    expect(html).toContain('1-1');
+    expect(html).toContain('(PK5-3)');
+    expect(html).toContain('PkStadi');
   });
 });
 
-describe('makeDrawContent', () => {
-  test('contains only date and truncated opponent (no score, no stadium)', () => {
-    const html = makeDrawContent(WIN_ROW, MATCH_DATE);
+describe('makeBoxBody – medium', () => {
+  test('contains date, opponent, score — no stadium', () => {
+    const html = makeBoxBody(WIN_ROW, MATCH_DATE, 'medium');
     expect(html).toContain('03/15');
-    expect(html).toContain('Tea');   // opponent truncated to 3 chars
+    expect(html).toContain('Tea');
+    expect(html).toContain('2-1');
     expect(html).not.toContain('TestSta');
-    expect(html).not.toContain('2-1');
+  });
+
+  test('includes ET score in parentheses', () => {
+    const etRow = makeMatch({
+      opponent: 'TeamC', goal_get: 3, goal_lose: 2,
+      score_ex_get: 1, score_ex_lose: 0, stadium: 'ETStadium',
+    });
+    const html = makeBoxBody(etRow, MATCH_DATE, 'medium');
+    expect(html).toContain('(ET1-0)');
+    expect(html).not.toContain('ETStadi');
+  });
+
+  test('includes PK score in parentheses', () => {
+    const pkRow = makeMatch({
+      opponent: 'TeamC', goal_get: 1, goal_lose: 1,
+      pk_get: 5, pk_lose: 3, stadium: 'PkStadium',
+    });
+    const html = makeBoxBody(pkRow, MATCH_DATE, 'medium');
+    expect(html).toContain('(PK5-3)');
+    expect(html).not.toContain('PkStadi');
   });
 });
+
+describe('makeBoxBody – short', () => {
+  test('contains only date and opponent — no score, no stadium', () => {
+    const html = makeBoxBody(WIN_ROW, MATCH_DATE, 'short');
+    expect(html).toContain('03/15');
+    expect(html).toContain('Tea');
+    expect(html).not.toContain('2-1');
+    expect(html).not.toContain('TestSta');
+  });
+});
+
+// ─── makeFullContent ────────────────────────────────────────────────────────
 
 describe('makeFullContent', () => {
   test('contains section number, time, date, truncated opponent, score, and truncated stadium', () => {
     const html = makeFullContent(WIN_ROW, MATCH_DATE);
-    expect(html).toContain('(3)');          // section_no
-    expect(html).toContain('14:00');        // start_time
-    expect(html).toContain('03/15');        // dateOnly
-    expect(html).toContain('Tea');          // opponent truncated to 3 chars
+    expect(html).toContain('(3)');
+    expect(html).toContain('14:00');
+    expect(html).toContain('03/15');
+    expect(html).toContain('Tea');
     expect(html).toContain('2-1');
-    expect(html).toContain('TestSta');      // stadium truncated to 7 chars
+    expect(html).toContain('TestSta');
   });
 
   test('includes PK scores when present', () => {
@@ -125,7 +141,7 @@ describe('makeFullContent', () => {
   });
 });
 
-// ─── makeTeamStats ─────────────────────────────────────────────────────────────
+// ─── makeTeamStats ──────────────────────────────────────────────────────────
 
 describe('makeTeamStats', () => {
   test('disp=false shows "最新の状態" with latest stats', () => {
@@ -210,7 +226,7 @@ describe('makeTeamStats', () => {
   });
 });
 
-// ─── joinLossBox ───────────────────────────────────────────────────────────────
+// ─── joinLossBox ────────────────────────────────────────────────────────────
 
 describe('joinLossBox', () => {
   test('joins entries with <hr/>', () => {
@@ -226,7 +242,7 @@ describe('joinLossBox', () => {
   });
 });
 
-// ─── getRankClass ──────────────────────────────────────────────────────────────
+// ─── getRankClass ───────────────────────────────────────────────────────────
 
 describe('getRankClass', () => {
   // 4 teams, promotion 1, relegation 1 → relegationRank = 3 (rank 4 relegated)
@@ -255,7 +271,7 @@ describe('getRankClass', () => {
   });
 });
 
-// ─── getBright ─────────────────────────────────────────────────────────────────
+// ─── getBright ──────────────────────────────────────────────────────────────
 
 describe('getBright', () => {
   test('white (#FFFFFF) → 1.0', () => {
