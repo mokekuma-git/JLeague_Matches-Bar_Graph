@@ -28,3 +28,7 @@ docs/assets/
 
 # Vite dev server cache
 frontend/.vite/
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
