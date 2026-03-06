@@ -3,18 +3,13 @@
 // Precondition: call calculateTeamStats(teamData, ...) before buildTeamColumn.
 // calculateTeamStats handles stat accumulation and sorts teamData.df in place.
 
-import { POINT_MAPS } from '../types/config';
 import type { PointSystem } from '../types/config';
 import type { TeamData } from '../types/match';
 import { timeFormat } from '../core/date-utils';
 import { getPointHeightScale, getWinPoints } from '../core/point-calculator';
 import { teamCssClass } from '../core/team-utils';
-import { classifyResult } from '../ranking/stats-calculator';
 import {
-  makeWinContent,
-  makeExWinContent,
-  makePkWinContent,
-  makeDrawContent,
+  makeBoxBody,
   makeFullContent,
   makeCancelledContent,
   makeTeamStats,
@@ -78,16 +73,13 @@ export interface ColumnResult {
  * Generates the bar graph box list for a single team.
  *
  * Box heights are driven by point value × POINT_HEIGHT_SCALE:
- *   boxHeightClass(ptMap[result] * scale) → CSS class (tall / medium / short).
+ *   boxHeightClass(row.point * scale) → CSS class (tall / medium / short).
  *
- * Examples:
- *   standard 3-1-0:    win 3×1=3 → tall, pk_win 2×1=2 → medium, draw 1×1=1 → short
- *   victory-count:     win 1×3=3 → tall (1 pt scaled up to tall height)
- *   loss (0 pt) → always goes to lossBox only
- *
- * A "display-future" match is either:
- *   (a) unplayed (has_result=false), or
- *   (b) completed but with match_date > targetDate (after display cutoff).
+ * Display content is determined by box height, not result type:
+ *   tall:   body = date + opponent + score + stadium, span = section + time
+ *   medium: body = date + opponent + score,           span = section + time + stadium
+ *   short:  body = date + opponent,                   span = full match details
+ *   0 pt:   no box → lossBox only
  *
  * @param teamName   Team identifier (used as CSS class on boxes and tooltips).
  * @param teamData   TeamData with stats already computed by calculateTeamStats.
@@ -134,80 +126,41 @@ export function buildTeamColumn(
       futureBg.classList.add('future', 'bg', cssClass);
       box.appendChild(futureBg);
       box.appendChild(createTooltip(
-        makeWinContent(row, matchDate),
+        makeBoxBody(row, matchDate, futureClass),
         `(${row.section_no}) ${timeFormat(row.start_time)}${statusSuffix}`,
         [],
         [cssClass],
       ));
       graph.push(box);
-    } else {
-      const cls = classifyResult(row.point, row.score_ex_get, row.score_ex_lose, row.pk_get, row.pk_lose, pointSystem);
-      const ptMap = POINT_MAPS[pointSystem];
-      if (cls === 'win') {
-        const heightCls = boxHeightClass(ptMap.win * scale);
-        const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
-        const box = createBoxDiv(heightCls, 'box');
-        if (row.live) box.classList.add('live');
+    } else if (row.point > 0) {
+      // Completed match with points: box height determines display content
+      const heightCls = boxHeightClass(row.point * scale);
+      const box = createBoxDiv(heightCls, 'box');
+      if (row.live) box.classList.add('live');
+      if (heightCls === 'short') {
         box.appendChild(createTooltip(
-          makeWinContent(row, matchDate),
-          `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
-          [cssClass],
-          ['halfW', cssClass],
-        ));
-        graph.push(box);
-      } else if (cls === 'ex_win') {
-        const heightCls = boxHeightClass(ptMap.ex_win * scale);
-        const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
-        const box = createBoxDiv(heightCls, 'box');
-        if (row.live) box.classList.add('live');
-        box.appendChild(createTooltip(
-          makeExWinContent(row, matchDate),
-          `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
-          [cssClass],
-          ['halfW', cssClass],
-        ));
-        graph.push(box);
-      } else if (cls === 'pk_win') {
-        const heightCls = boxHeightClass(ptMap.pk_win * scale);
-        const box = createBoxDiv(heightCls, 'box');
-        if (row.live) box.classList.add('live');
-        if (heightCls === 'short') {
-          // Short box (e.g. graduated-win PK win = 1pt): minimal body, full detail in tooltip
-          box.appendChild(createTooltip(
-            makeDrawContent(row, matchDate),
-            makeFullContent(row, matchDate) + statusSuffix,
-            [cssClass],
-            ['fullW', cssClass],
-          ));
-        } else {
-          const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
-          box.appendChild(createTooltip(
-            makePkWinContent(row, matchDate),
-            `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
-            [cssClass],
-            ['halfW', cssClass],
-          ));
-        }
-        graph.push(box);
-      } else if ((cls === 'draw' || cls === 'pk_loss') && row.point > 0) {
-        const heightCls = boxHeightClass(row.point * scale);
-        const box = createBoxDiv(heightCls, 'box');
-        if (row.live) box.classList.add('live');
-        box.appendChild(createTooltip(
-          makeDrawContent(row, matchDate),
+          makeBoxBody(row, matchDate, heightCls),
           makeFullContent(row, matchDate) + statusSuffix,
           [cssClass],
           ['fullW', cssClass],
         ));
-        graph.push(box);
       } else {
-        // Loss or 0-pt result (e.g. pk_loss under victory-count): no box → lossBox
-        let lossContent = makeFullContent(row, matchDate);
-        if (row.live) {
-          lossContent = `<div class="live">${lossContent}${statusSuffix}</div>`;
-        }
-        lossBox.push(lossContent);
+        const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
+        box.appendChild(createTooltip(
+          makeBoxBody(row, matchDate, heightCls),
+          `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
+          [cssClass],
+          ['halfW', cssClass],
+        ));
       }
+      graph.push(box);
+    } else {
+      // Loss or 0-pt result → lossBox
+      let lossContent = makeFullContent(row, matchDate);
+      if (row.live) {
+        lossContent = `<div class="live">${lossContent}${statusSuffix}</div>`;
+      }
+      lossBox.push(lossContent);
     }
   }
 

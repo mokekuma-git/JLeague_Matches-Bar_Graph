@@ -10,43 +10,37 @@ const OPPONENT_MAX_LEN = 3;
 /** Max display length for stadium name in box/tooltip content. */
 const STADIUM_MAX_LEN = 7;
 
-/** Tooltip body for a win or future match: MM/DD + opponent + score (if played) + stadium. */
-export function makeWinContent(row: TeamMatch, matchDate: string): string {
-  const scoreLine = row.goal_get != null && row.goal_lose != null
-    ? `<br/>${row.goal_get}-${row.goal_lose}` : '';
-  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}${scoreLine}<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
+/** Score string with ET/PK indicators where applicable. */
+function formatScore(row: TeamMatch): string {
+  let s = `${row.goal_get}-${row.goal_lose}`;
+  if (row.score_ex_get != null && row.score_ex_lose != null && row.score_ex_get !== row.score_ex_lose) {
+    s += ` (ET${row.score_ex_get}-${row.score_ex_lose})`;
+  }
+  if (row.pk_get != null && row.pk_lose != null) {
+    s += ` (PK${row.pk_get}-${row.pk_lose})`;
+  }
+  return s;
 }
 
 /**
- * Tooltip body for a PK win: includes PK scores in parentheses.
- * ET detail is intentionally omitted — when a match reaches PK, ET always ends tied,
- * so the total score already reflects the drawn state.
- * To add ET info: insert `(ET${row.score_ex_get}-${row.score_ex_lose}/PK...)` in the score line.
+ * Box body HTML, scaled by CSS height class.
+ *
+ *   tall:   date + opponent + score (ET/PK) + stadium
+ *   medium: date + opponent + score (ET/PK)
+ *   short:  date + opponent
  */
-export function makePkWinContent(row: TeamMatch, matchDate: string): string {
-  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.goal_get}-${row.goal_lose} (PK${row.pk_get}-${row.pk_lose})<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
+export function makeBoxBody(row: TeamMatch, matchDate: string, heightCls: string): string {
+  const datePart = `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}`;
+  if (heightCls === 'short') return datePart;
+  const scoreLine = row.goal_get != null && row.goal_lose != null
+    ? `<br/>${formatScore(row)}` : '';
+  if (heightCls !== 'tall') return `${datePart}${scoreLine}`;
+  return `${datePart}${scoreLine}<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
-/** Tooltip body for an ET win: includes extra-time scores in parentheses. */
-export function makeExWinContent(row: TeamMatch, matchDate: string): string {
-  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.goal_get}-${row.goal_lose} (ET${row.score_ex_get}-${row.score_ex_lose})<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
-}
-
-/** Tooltip body for a 1-pt draw or PK loss: minimal—MM/DD and opponent only. */
-export function makeDrawContent(row: TeamMatch, matchDate: string): string {
-  return `${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}`;
-}
-
-/** Full match details for draw/loss/PK-loss tooltips: section, time, date, opponent, score, stadium. */
+/** Full match details for tooltip span and lossBox: section, time, date, opponent, score, stadium. */
 export function makeFullContent(row: TeamMatch, matchDate: string): string {
-  let scorePart = `${row.goal_get}-${row.goal_lose}`;
-  if (row.score_ex_get != null && row.score_ex_lose != null && row.score_ex_get !== row.score_ex_lose) {
-    scorePart += ` (ET${row.score_ex_get}-${row.score_ex_lose})`;
-  }
-  if (row.pk_get != null && row.pk_lose != null) {
-    scorePart += ` (PK${row.pk_get}-${row.pk_lose})`;
-  }
-  return `(${row.section_no}) ${timeFormat(row.start_time)}<br/>${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${scorePart} ${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
+  return `(${row.section_no}) ${timeFormat(row.start_time)}<br/>${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${formatScore(row)} ${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
 /** Content for a cancelled match shown in the lossBox tooltip. */
@@ -93,4 +87,3 @@ export function getRankClass(rank: number, seasonInfo: SeasonInfo): string {
   if (rank > seasonInfo.teamCount - seasonInfo.relegationCount) return 'relegated';
   return '';
 }
-
