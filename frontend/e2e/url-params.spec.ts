@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test-base';
 import { waitForRender, assertInvariants } from './helpers/invariants';
 
 test.describe('T3: URL Parameters', () => {
@@ -33,9 +33,6 @@ test.describe('T3: URL Parameters', () => {
   });
 
   test('invalid params fall back to defaults without error', async ({ page }) => {
-    const errors: string[] = [];
-    page.on('pageerror', (err) => errors.push(err.message));
-
     await page.goto('/j_points.html?competition=INVALID&season=INVALID');
     // Should still render something (falls back to first available)
     await waitForRender(page);
@@ -43,8 +40,7 @@ test.describe('T3: URL Parameters', () => {
     const teamColumns = page.locator('#box_container [id$="_column"]');
     expect(await teamColumns.count()).toBeGreaterThan(0);
 
-    // No uncaught errors
-    expect(errors).toEqual([]);
+    // pageerror monitoring is handled by test-base fixture
     await assertInvariants(page);
   });
 });
