@@ -169,15 +169,25 @@ export function buildTeamColumn(
         graph.push(box);
       } else if (cls === 'pk_win') {
         const heightCls = boxHeightClass(ptMap.pk_win * scale);
-        const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
         const box = createBoxDiv(heightCls, 'box');
         if (row.live) box.classList.add('live');
-        box.appendChild(createTooltip(
-          makePkWinContent(row, matchDate),
-          `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
-          [cssClass],
-          ['halfW', cssClass],
-        ));
+        if (heightCls === 'short') {
+          // Short box (e.g. graduated-win PK win = 1pt): minimal body, full detail in tooltip
+          box.appendChild(createTooltip(
+            makeDrawContent(row, matchDate),
+            makeFullContent(row, matchDate) + statusSuffix,
+            [cssClass],
+            ['fullW', cssClass],
+          ));
+        } else {
+          const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
+          box.appendChild(createTooltip(
+            makePkWinContent(row, matchDate),
+            `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
+            [cssClass],
+            ['halfW', cssClass],
+          ));
+        }
         graph.push(box);
       } else if ((cls === 'draw' || cls === 'pk_loss') && row.point > 0) {
         const heightCls = boxHeightClass(row.point * scale);
