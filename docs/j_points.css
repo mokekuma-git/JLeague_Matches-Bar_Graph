@@ -139,6 +139,15 @@ p {
   color: #999;
   margin-left: 1em;
 }
+#warning_msg {
+  margin: 0.3em 1em;
+  padding: 0.4em 0.8em;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  color: #856404;
+  font-size: 0.85em;
+}
 #ranktable_section {
   margin: 1em;
 }

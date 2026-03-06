@@ -26,6 +26,8 @@ import type { GroupRenderResult } from './ranking/rank-table';
 import { getMaxPointsPerGame } from './core/point-calculator';
 import { renderBarGraph, findSliderIndex } from './graph/renderer';
 import { DEFAULT_HEIGHT_UNIT, getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
+import { findTeamsWithoutColor } from './graph/css-validator';
+import { teamCssClass } from './core/team-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
 
 // ---- Application state ------------------------------------------------
@@ -84,6 +86,18 @@ function getSelectValue(id: string): string {
 function setStatus(msg: string): void {
   const el = document.getElementById('status_msg');
   if (el) el.textContent = msg;
+}
+
+function showWarning(msg: string | null): void {
+  const el = document.getElementById('warning_msg');
+  if (!el) return;
+  if (msg) {
+    el.textContent = msg;
+    el.hidden = false;
+  } else {
+    el.textContent = '';
+    el.hidden = true;
+  }
 }
 
 // ---- Timestamp management ----------------------------------------------
@@ -255,6 +269,7 @@ function renderFromCache(
   const isMultiGroup = groupKeys.length > 1;
 
   const globalMatchDateSet = new Set<string>();
+  const allTeamCssClasses: string[] = [];
   const boxCon = document.getElementById('box_container') as HTMLElement | null;
   if (boxCon) boxCon.replaceChildren();
 
@@ -280,6 +295,8 @@ function renderFromCache(
     const { groupData, sortedTeams } = prepareRenderData({
       groupData: singleGroupData, seasonInfo: perGroupInfo, targetDate, sortKey, matchSortKey,
     });
+
+    for (const t of sortedTeams) allTeamCssClasses.push(teamCssClass(t));
 
     if (boxCon) {
       const { fragment, matchDates } = renderBarGraph(
@@ -365,6 +382,14 @@ function renderFromCache(
     } else {
       dsSection.replaceChildren();
     }
+  }
+
+  // I3: Warn about teams with undefined CSS colors.
+  const undefinedTeams = findTeamsWithoutColor(allTeamCssClasses);
+  if (undefinedTeams.length > 0) {
+    showWarning(`チームカラー未定義: ${undefinedTeams.join(', ')}`);
+  } else {
+    showWarning(null);
   }
 }
 
