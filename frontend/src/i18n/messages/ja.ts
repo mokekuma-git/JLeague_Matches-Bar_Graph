@@ -10,6 +10,7 @@ export const ja = {
   'label.futureOpacity': '未実施試合透明度',
   'label.spaceColor': '余白色',
   'label.dataTimestamp': 'データ取得時刻:',
+  'label.language': '言語',
 
   // Buttons
   'btn.resetDate': '最新にリセット',

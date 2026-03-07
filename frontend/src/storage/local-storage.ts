@@ -14,6 +14,7 @@ export interface ViewerPrefs {
   futureOpacity?: string;
   spaceColor?: string;
   scale?: string;
+  locale?: string;
 }
 
 export function loadPrefs(): ViewerPrefs {

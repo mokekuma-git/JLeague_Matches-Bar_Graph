@@ -1,7 +1,8 @@
 import type { Locale } from './types';
 import { ja, type MessageKey } from './messages/ja';
+import { en } from './messages/en';
 
-const messages: Record<Locale, Record<MessageKey, string>> = { ja, en: ja };
+const messages: Record<Locale, Record<MessageKey, string>> = { ja, en };
 
 let currentLocale: Locale = 'ja';
 

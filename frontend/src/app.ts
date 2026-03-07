@@ -29,7 +29,8 @@ import { DEFAULT_HEIGHT_UNIT, getHeightUnit, setFutureOpacity, setSpace, setScal
 import { findTeamsWithoutColor } from './graph/css-validator';
 import { teamCssClass } from './core/team-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
-import { t, applyI18nAttributes } from './i18n';
+import { t, applyI18nAttributes, setLocale } from './i18n';
+import type { Locale } from './i18n';
 
 // ---- Application state ------------------------------------------------
 
@@ -471,6 +472,10 @@ function loadAndRender(seasonMap: SeasonMap): void {
 // ---- Initialization & event wiring ------------------------------------
 
 async function main(): Promise<void> {
+  // Restore locale from prefs before any i18n calls.
+  const savedLocale = loadPrefs().locale;
+  if (savedLocale === 'ja' || savedLocale === 'en') setLocale(savedLocale as Locale);
+
   applyI18nAttributes();
   void loadTimestampMap();
 
@@ -607,6 +612,17 @@ async function main(): Promise<void> {
     setSpace(v);
     savePrefs({ spaceColor: v });
   });
+
+  // ---- Locale selector ----
+
+  const localeSel = document.getElementById('locale_key') as HTMLSelectElement | null;
+  if (localeSel) {
+    if (savedLocale) localeSel.value = savedLocale;
+    localeSel.addEventListener('change', () => {
+      savePrefs({ locale: localeSel.value });
+      location.reload();
+    });
+  }
 
   // ---- Reset ----
 
