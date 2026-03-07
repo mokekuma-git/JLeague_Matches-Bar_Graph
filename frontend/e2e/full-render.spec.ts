@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test, expect } from './helpers/test-base';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -58,6 +58,9 @@ test.describe('@full-render: All seasons invariant check', () => {
         return;
       }
       await assertInvariants(page);
+
+      // I3: no team color warning
+      await expect(page.locator('#warning_msg')).toBeHidden();
     });
   }
 });

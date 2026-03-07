@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test-base';
 import { waitForRender, assertInvariants } from './helpers/invariants';
 
 test.describe('T4: Date Slider', () => {
