@@ -6,6 +6,7 @@ import type {
   CrossGroupStanding, DataSource,
 } from '../types/season';
 import { generateRuleNotes } from './rule-notes';
+import { t } from '../i18n';
 
 /**
  * Returns the CSV filename for a given competition and season.
@@ -132,7 +133,7 @@ export function resolveSeasonInfo(
   const promotionLabel: string = opts.promotion_label
     ?? comp.promotion_label
     ?? group.promotion_label
-    ?? '昇格';
+    ?? t('col.promotion');
 
   // notes: union across all three levels (flattened, preserving order)
   const toArray = (v: string | string[] | undefined): string[] =>

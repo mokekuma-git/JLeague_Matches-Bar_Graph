@@ -21,6 +21,8 @@ JLeague_Matches-Bar_Graph/
 │   │   ├── storage/                #   localStorage 永続化
 │   │   ├── types/                  #   型定義 (match, season, config)
 │   │   └── __tests__/              #   Vitest テスト
+│   ├── e2e/                        #   Playwright E2E テスト
+│   ├── playwright.config.ts
 │   ├── vite.config.ts              #   ビルド → docs/ に出力
 │   └── vitest.config.ts
 ├── src/                             # Python スクリプト (データ取得・変換)
@@ -37,7 +39,12 @@ JLeague_Matches-Bar_Graph/
 │   ├── csv/                        #   処理済みCSV
 │   └── json/                       #   season_map.json
 ├── scripts/                         #   CI/CDスクリプト, 運用ユーティリティ
-│   └── legacy/                     #   旧データ処理スクリプト (1993-2020)
+│   ├── check_type_sync.py          #   Python ↔ TS 型同期チェック (CI)
+│   ├── check_point_system_csv.py   #   PointSystem ↔ CSV 整合検証 (CI)
+│   ├── fetch_match_detail.py       #   旧試合詳細ページ取得 (1回限り)
+│   ├── enrich_match_detail.py      #   試合詳細→延長スコア反映 (1回限り)
+│   ├── parse_match_detail.py       #   試合詳細 HTML パーサー
+│   └── legacy/                     #   旧データ処理スクリプト + config (1993-2020)
 ├── .github/workflows/               #   Pages デプロイ, CSV更新, テスト, ビルドチェック
 └── pyproject.toml                   #   Python依存 (uv管理)
 ```
@@ -45,7 +52,7 @@ JLeague_Matches-Bar_Graph/
 ## 技術スタック
 
 - **Python 3.12+**: BeautifulSoup4, requests, pandas, PyYAML / パッケージ管理: uv / テスト: pytest
-- **TypeScript + Vite**: PapaParse (CSV), SortableTable (CDN) / パッケージ管理: npm / テスト: vitest (DOM: happy-dom) / Node.js 22
+- **TypeScript + Vite**: PapaParse (CSV), SortableTable (CDN) / パッケージ管理: npm / テスト: vitest (DOM: happy-dom), Playwright (E2E) / Node.js 22
 - **CI/CD**: GitHub Actions (CSV定期更新 + TSビルド&デプロイ + テスト) → GitHub Pages
 
 ## 主要コマンド
@@ -62,6 +69,11 @@ npm test                  # vitest 実行 (npx vitest run)
 npm run typecheck         # tsc --noEmit
 npm run build             # tsc && vite build → docs/ に出力
 npm run dev               # Vite開発サーバー起動
+
+# === E2E テスト (frontend/ で実行) ===
+npx playwright test                              # E2E 全テスト
+npx playwright test --grep-invert @full-render   # full-render 除外 (CI デフォルト)
+npx playwright test --grep @full-render          # full-render のみ
 ```
 
 ## デプロイモデル
@@ -135,6 +147,7 @@ npm run dev               # Vite開発サーバー起動
 - `season_start_month`: シーズン開始月。カスケード対象。コードデフォルト: `7` (秋春制)
 - `data_source`: データ参照元。`{label, url}` オブジェクト。カスケード対象 (スカラ: 下位が上書き)。フロントエンドで動的表示
 - `note`: 注記テキスト (`string | string[]`)。カスケード対象 (和集合: Group + Competition + Entry を結合)。フロントエンドで動的表示
+- `promotion_label`: 昇格枠のラベル文字列 (デフォルト: `'昇格'`)。カスケード対象 (スカラ: 下位が上書き)。HTML 許容 (例: `'昇格<br/>ACL'`)
 
 ### シーズン命名規則
 
@@ -169,7 +182,7 @@ uv run python scripts/check_type_sync.py
 
 ### TS 側のみ許容するフィールド
 
-`RawMatchRow` には Python が生成しないフィールドも含まれる (旧 CSV 互換 alias、Tier 4 準備カラム)。これらは `check_type_sync.py` 内の `TS_ONLY_CSV_FIELDS` で管理。
+`RawMatchRow` に Python 側にないフィールドがある場合、`check_type_sync.py` 内の `TS_ONLY_CSV_FIELDS` で管理する。現在は空 (全フィールドが Python ↔ TS で同期済み)。
 
 ## 設計上の決定事項
 

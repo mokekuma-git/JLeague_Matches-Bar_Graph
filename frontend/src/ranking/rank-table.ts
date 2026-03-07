@@ -10,6 +10,7 @@ import {
 } from '../core/sorter';
 import { teamCssClass } from '../core/team-utils';
 import { getRankClass } from '../graph/tooltip';
+import { t } from '../i18n';
 
 // SortableTable is loaded from CDN as a global (not an npm package).
 declare const SortableTable: new () => {
@@ -23,24 +24,28 @@ declare const SortableTable: new () => {
 type ColDef = { id?: string; label: string; sortable?: true };
 
 // Stat columns shared by all ranking table variants (between rank and goal columns).
-const STAT_COLS: ColDef[] = [
-  { id: 'name',        label: 'チーム' },
-  { id: 'all_game',    label: '試合',   sortable: true },
-  { id: 'point',       label: '勝点',   sortable: true },
-  { id: 'avrg_pt',     label: '平均',   sortable: true },
-  { id: 'avlbl_pt',    label: '最大',   sortable: true },
-  { id: 'win',         label: '勝',     sortable: true },
-  { id: 'draw',        label: '分',     sortable: true },
-  { id: 'loss',        label: '負',     sortable: true },
-];
+function getStatCols(): ColDef[] {
+  return [
+    { id: 'name',        label: t('col.team') },
+    { id: 'all_game',    label: t('col.games'),     sortable: true },
+    { id: 'point',       label: t('col.points'),    sortable: true },
+    { id: 'avrg_pt',     label: t('col.average'),   sortable: true },
+    { id: 'avlbl_pt',    label: t('col.maxPoints'), sortable: true },
+    { id: 'win',         label: t('col.win'),       sortable: true },
+    { id: 'draw',        label: t('col.draw'),      sortable: true },
+    { id: 'loss',        label: t('col.loss'),       sortable: true },
+  ];
+}
 
 // Goal and remaining-game columns shared by all ranking table variants.
-const GOAL_COLS: ColDef[] = [
-  { id: 'goal_get',    label: '得点',   sortable: true },
-  { id: 'goal_lose',   label: '失点',   sortable: true },
-  { id: 'goal_diff',   label: '点差',   sortable: true },
-  { id: 'future_game', label: '残り',   sortable: true },
-];
+function getGoalCols(): ColDef[] {
+  return [
+    { id: 'goal_get',    label: t('col.goalsFor'),     sortable: true },
+    { id: 'goal_lose',   label: t('col.goalsAgainst'), sortable: true },
+    { id: 'goal_diff',   label: t('col.goalDiff'),     sortable: true },
+    { id: 'future_game', label: t('col.remaining'),    sortable: true },
+  ];
+}
 
 // Builds a <thead> row from a column definition array.
 function buildTableHead(tableEl: HTMLElement, cols: ColDef[]): void {
@@ -161,32 +166,32 @@ export function makeRankData(
     };
 
     if (allGameFinished) {
-      row.champion   = rank <= 1 ? '確定' : 'なし';
+      row.champion   = rank <= 1 ? t('rank.clinched') : t('rank.eliminated');
       if (promotionCount > 0) {
-        row.promotion = rank <= promotionCount ? '確定' : 'なし';
+        row.promotion = rank <= promotionCount ? t('rank.clinched') : t('rank.eliminated');
       }
       if (relegationCount > 0) {
-        row.relegation = rank <= relegationRank ? '確定' : '降格';
+        row.relegation = rank <= relegationRank ? t('rank.clinched') : t('rank.relegated');
       }
     } else {
       // Champion calculation
       const silver      = s.avlbl_pt - silverLine;
       const champion    = s.point    - championLine;
       const selfChampion = s.avlbl_pt - getSelfPossibleLine(1, teamName, disp, groupData, seasonInfo.pointSystem);
-      row.champion = champion >= 0 ? '確定'
-        : silver < 0              ? 'なし'
-        : selfChampion >= 0       ? '自力'
-        : '他力';
+      row.champion = champion >= 0 ? t('rank.clinched')
+        : silver < 0              ? t('rank.eliminated')
+        : selfChampion >= 0       ? t('rank.selfPower')
+        : t('rank.otherPower');
 
       // Promotion calculation
       if (promotionCount > 0) {
         const remaining      = s.avlbl_pt - nonPromotLine;
         const promotion      = s.point    - promotionLine;
         const selfPromotion  = s.avlbl_pt - getSelfPossibleLine(promotionCount, teamName, disp, groupData, seasonInfo.pointSystem);
-        row.promotion = promotion >= 0  ? '確定'
-          : remaining < 0              ? 'なし'
-          : selfPromotion >= 0         ? '自力'
-          : '他力';
+        row.promotion = promotion >= 0  ? t('rank.clinched')
+          : remaining < 0              ? t('rank.eliminated')
+          : selfPromotion >= 0         ? t('rank.selfPower')
+          : t('rank.otherPower');
       }
 
       // Relegation calculation
@@ -194,12 +199,12 @@ export function makeRankData(
         const keepLeague    = s.point    - keepLeagueLine;
         const relegation    = s.avlbl_pt - relegationLine;
         const selfRelegation = s.avlbl_pt - getSelfPossibleLine(relegationRank, teamName, disp, groupData, seasonInfo.pointSystem);
-        row.relegation = keepLeague >= 0 ? '確定'
-          : relegation < 0              ? '降格'
-          : selfRelegation >= 0         ? '自力'
-          : '他力';
+        row.relegation = keepLeague >= 0 ? t('rank.clinched')
+          : relegation < 0              ? t('rank.relegated')
+          : selfRelegation >= 0         ? t('rank.selfPower')
+          : t('rank.otherPower');
       } else {
-        row.relegation = '確定';
+        row.relegation = t('rank.clinched');
       }
     }
 
@@ -212,23 +217,23 @@ export function makeRankData(
 // Builds the <thead> for per-group ranking tables.
 // pk_win / pk_loss columns are included only when hasPk=true.
 // ex_win / ex_loss columns are included only when hasEx=true.
-function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean, hasEx: boolean, promotionLabel: string = '昇格'): void {
+function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean, hasEx: boolean, promotionLabel: string = t('col.promotion')): void {
   const cols: ColDef[] = [
     { id: 'rank',        label: '',          sortable: true },
-    ...STAT_COLS,
+    ...getStatCols(),
     ...(hasPk ? [
-      { id: 'pk_win',  label: 'PK勝', sortable: true as true },
-      { id: 'pk_loss', label: 'PK負', sortable: true as true },
+      { id: 'pk_win',  label: t('col.pkWin'),  sortable: true as true },
+      { id: 'pk_loss', label: t('col.pkLoss'), sortable: true as true },
     ] : []),
     ...(hasEx ? [
-      { id: 'ex_win',  label: '延勝', sortable: true as true },
-      { id: 'ex_loss', label: '延負', sortable: true as true },
+      { id: 'ex_win',  label: t('col.exWin'),  sortable: true as true },
+      { id: 'ex_loss', label: t('col.exLoss'), sortable: true as true },
     ] : []),
-    ...GOAL_COLS,
+    ...getGoalCols(),
     {                    label: '-' },
-    { id: 'champion',    label: '優勝',      sortable: true },
+    { id: 'champion',    label: t('col.champion'),    sortable: true },
     { id: 'promotion',   label: promotionLabel, sortable: true },
-    { id: 'relegation',  label: '残留',      sortable: true },
+    { id: 'relegation',  label: t('col.relegation'),  sortable: true },
   ];
   buildTableHead(tableEl, cols);
 }
@@ -249,7 +254,7 @@ function applyRowClasses(tbody: HTMLElement, rankMap: Map<number, string>): void
 // hasPk controls whether PK win/loss columns appear in the table header.
 // Row CSS classes (promoted/relegated/etc.) are applied based on points-based rank
 // and reapplied after every re-sort via MutationObserver.
-export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean, hasEx: boolean = false, promotionLabel: string = '昇格'): void {
+export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean, hasEx: boolean = false, promotionLabel: string = t('col.promotion')): void {
   buildRankTableHead(tableEl, hasPk, hasEx, promotionLabel);
   const sortableTable = new SortableTable();
   sortableTable.setTable(tableEl);
@@ -402,16 +407,16 @@ export function makeCrossGroupTable(
   table.className = 'ranktable';
 
   const caption = document.createElement('caption');
-  const posLabel = `${position}位チーム比較`;
-  const excludeLabel = exclude_from_rank ? ` (${exclude_from_rank}位以下との対戦除外)` : '';
+  const posLabel = t('crossGroup.caption', { position });
+  const excludeLabel = exclude_from_rank ? t('crossGroup.exclude', { rank: exclude_from_rank }) : '';
   caption.textContent = posLabel + excludeLabel;
   table.appendChild(caption);
 
   table.appendChild(document.createElement('thead'));
   buildTableHead(table, [
-    { id: 'rank', label: 'Grp', sortable: true },
-    ...STAT_COLS,
-    ...GOAL_COLS,
+    { id: 'rank', label: t('col.group'), sortable: true },
+    ...getStatCols(),
+    ...getGoalCols(),
   ]);
 
   const sortableTable = new SortableTable();

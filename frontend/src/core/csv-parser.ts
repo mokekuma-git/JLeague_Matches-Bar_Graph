@@ -5,6 +5,12 @@ import { TeamStats } from '../types/match';
 import type { RawMatchRow, TeamMap, TeamMatch } from '../types/match';
 import { dateFormat } from './date-utils';
 import { getPointFromResult } from './point-calculator';
+import { t } from '../i18n';
+
+/** CSV status values — not translated (must match CSV data vocabulary). */
+const CSV_STATUS_FINISHED = '試合終了';
+const CSV_STATUS_VS = 'ＶＳ';
+const CSV_STATUS_LIVE = '速報中';
 
 /**
  * Returns the display status string for a match row.
@@ -13,10 +19,10 @@ import { getPointFromResult } from './point-calculator';
  */
 function makeStatusAttr(match: RawMatchRow): string {
   if (match.status === undefined) {
-    return (match.home_goal && match.away_goal) ? '試合終了' : '';
+    return (match.home_goal && match.away_goal) ? CSV_STATUS_FINISHED : '';
   }
-  if (match.status === 'ＶＳ') return '開始前';
-  return match.status.replace('速報中', '');
+  if (match.status === CSV_STATUS_VS) return t('tip.matchStatus.started');
+  return match.status.replace(CSV_STATUS_LIVE, '');
 }
 
 /**
@@ -25,7 +31,7 @@ function makeStatusAttr(match: RawMatchRow): string {
  * @returns True if the match is live, false otherwise
  */
 function makeLiveAttr(match: RawMatchRow): boolean {
-  return match.status?.includes('速報中') ?? false;
+  return match.status?.includes(CSV_STATUS_LIVE) ?? false;
 }
 
 /**
