@@ -9,6 +9,7 @@ import { getPointHeightScale } from '../core/point-calculator';
 import { buildTeamColumn } from './bar-column';
 import type { ColumnResult } from './bar-column';
 import { getRankClass, joinLossBox } from './tooltip';
+import { t } from '../i18n';
 
 /** Return value of renderBarGraph, consumed by app.ts. */
 export interface RenderResult {
@@ -53,8 +54,8 @@ export function makePointColumn(maxAvblPt: number, bottomFirst: boolean, heightS
   const col = document.createElement('div');
   col.classList.add('point_column');
 
-  col.appendChild(createPointBox('順位'));
-  col.appendChild(createPointBox('勝点'));
+  col.appendChild(createPointBox(t('col.rank')));
+  col.appendChild(createPointBox(t('col.points')));
 
   const indices = Array.from({ length: maxAvblPt }, (_, i) => i + 1);
   if (bottomFirst) indices.reverse();
@@ -64,8 +65,8 @@ export function makePointColumn(maxAvblPt: number, bottomFirst: boolean, heightS
     col.appendChild(box);
   }
 
-  col.appendChild(createPointBox('勝点'));
-  col.appendChild(createPointBox('順位'));
+  col.appendChild(createPointBox(t('col.points')));
+  col.appendChild(createPointBox(t('col.rank')));
 
   return col;
 }
@@ -122,7 +123,7 @@ export function assembleTeamColumn(
     div.append(col.teamName);
     const span = document.createElement('span');
     span.classList.add('tooltiptext', 'fullW', col.cssClass);
-    span.innerHTML = `成績情報:<hr/>${col.stats}<hr/>敗戦記録:<hr/>${joinLossBox(lossBox)}`;
+    span.innerHTML = `${t('tip.statsHeader')}<hr/>${col.stats}<hr/>${t('tip.lossHeader')}<hr/>${joinLossBox(lossBox)}`;
     div.appendChild(span);
     return div;
   }
@@ -246,5 +247,5 @@ export function findSliderIndex(matchDates: string[], targetDate: string): numbe
  * which may differ from sliderDate when typed between match days).
  */
 export function formatSliderDate(sliderDate: string, targetDate: string): string {
-  return sliderDate === '1970/01/01' ? '開幕前' : targetDate;
+  return sliderDate === '1970/01/01' ? t('slider.preseason') : targetDate;
 }

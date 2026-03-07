@@ -4,6 +4,7 @@
 import type { TeamMatch, TeamStats } from '../types/match';
 import type { SeasonInfo } from '../types/season';
 import { dateOnly, timeFormat } from '../core/date-utils';
+import { t } from '../i18n';
 
 /** Max display length for opponent name in box/tooltip content. */
 const OPPONENT_MAX_LEN = 3;
@@ -14,10 +15,10 @@ const STADIUM_MAX_LEN = 7;
 function formatScore(row: TeamMatch): string {
   let s = `${row.goal_get}-${row.goal_lose}`;
   if (row.score_ex_get != null && row.score_ex_lose != null && row.score_ex_get !== row.score_ex_lose) {
-    s += ` (ET${row.score_ex_get}-${row.score_ex_lose})`;
+    s += ` (${t('score.et', { get: row.score_ex_get, lose: row.score_ex_lose })})`;
   }
   if (row.pk_get != null && row.pk_lose != null) {
-    s += ` (PK${row.pk_get}-${row.pk_lose})`;
+    s += ` (${t('score.pk', { get: row.pk_get, lose: row.pk_lose })})`;
   }
   return s;
 }
@@ -45,7 +46,7 @@ export function makeFullContent(row: TeamMatch, matchDate: string): string {
 
 /** Content for a cancelled match shown in the lossBox tooltip. */
 export function makeCancelledContent(row: TeamMatch, matchDate: string): string {
-  const datePart = matchDate === '未定' ? '未定' : dateOnly(matchDate);
+  const datePart = matchDate === t('graph.undecided') ? t('graph.undecided') : dateOnly(matchDate);
   return `(${row.section_no}) ${datePart} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${row.status}`;
 }
 
@@ -55,18 +56,18 @@ export function makeCancelledContent(row: TeamMatch, matchDate: string): string 
  * hasPk=true → includes PK win/loss counts (omitted when the season has no PK matches).
  */
 export function makeTeamStats(stats: TeamStats, disp: boolean, hasPk = false, hasEx = false): string {
-  const label = disp ? '表示時の状態' : '最新の状態';
+  const label = disp ? t('tip.statsLabel.disp') : t('tip.statsLabel.latest');
   const rc = stats.resultCounts;
   const lines = [
-    `${label}`,
-    `${rc.win}勝 / ${rc.draw}分 / ${rc.loss}敗`,
+    label,
+    t('tip.record', { win: rc.win, draw: rc.draw, loss: rc.loss }),
   ];
-  if (hasEx) lines.push(`${rc.ex_win}延勝 / ${rc.ex_loss}延負`);
-  if (hasPk) lines.push(`${rc.pk_win}PK勝 / ${rc.pk_loss}PK負`);
+  if (hasEx) lines.push(t('tip.exRecord', { exWin: rc.ex_win, exLoss: rc.ex_loss }));
+  if (hasPk) lines.push(t('tip.pkRecord', { pkWin: rc.pk_win, pkLoss: rc.pk_loss }));
   lines.push(
-    `勝点${stats.point}, 最大${stats.avlbl_pt}`,
-    `${stats.goal_get}得点, ${stats.goal_get - stats.goal_diff}失点`,
-    `得失点差: ${stats.goal_diff}`,
+    t('tip.points', { point: stats.point, max: stats.avlbl_pt }),
+    t('tip.goals', { get: stats.goal_get, lose: stats.goal_get - stats.goal_diff }),
+    t('tip.goalDiff', { diff: stats.goal_diff }),
   );
   return lines.join('<br/>');
 }

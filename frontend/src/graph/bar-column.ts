@@ -8,12 +8,16 @@ import type { TeamData } from '../types/match';
 import { timeFormat } from '../core/date-utils';
 import { getPointHeightScale, getWinPoints } from '../core/point-calculator';
 import { teamCssClass } from '../core/team-utils';
+import { t } from '../i18n';
 import {
   makeBoxBody,
   makeFullContent,
   makeCancelledContent,
   makeTeamStats,
 } from './tooltip';
+
+/** CSV status value for cancelled matches (not translated — matches CSV data). */
+const CSV_STATUS_CANCELLED = '試合中止';
 
 /** CSS class name for box height based on point value. */
 const BOX_HEIGHT_CLASS: Record<number, string> = {
@@ -106,12 +110,14 @@ export function buildTeamColumn(
   const futureClass = boxHeightClass(winPt * scale);
   const cssClass = teamCssClass(teamName);
 
-  for (const row of teamData.df) {
-    // Normalize display date: empty string → '未定'
-    const matchDate = row.match_date === '' ? '未定' : row.match_date;
-    if (matchDate !== '未定') matchDateSet.add(matchDate);
+  const undecided = t('graph.undecided');
 
-    if (row.status === '試合中止') {
+  for (const row of teamData.df) {
+    // Normalize display date: empty string → undecided label
+    const matchDate = row.match_date === '' ? undecided : row.match_date;
+    if (matchDate !== undecided) matchDateSet.add(matchDate);
+
+    if (row.status === CSV_STATUS_CANCELLED) {
       lossBox.push(makeCancelledContent(row, matchDate));
       continue;
     }

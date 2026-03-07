@@ -29,6 +29,7 @@ import { DEFAULT_HEIGHT_UNIT, getHeightUnit, setFutureOpacity, setSpace, setScal
 import { findTeamsWithoutColor } from './graph/css-validator';
 import { teamCssClass } from './core/team-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
+import { t, applyI18nAttributes } from './i18n';
 
 // ---- Application state ------------------------------------------------
 
@@ -63,19 +64,25 @@ const CACHE_BUST_WINDOW_SEC = 300; // 5 minutes
 
 // ---- Fixed dropdown options (generated into HTML by TS) ------------------
 
-const TEAM_SORT_OPTIONS = [
-  { value: 'disp_point',    label: '勝点(表示時)' },
-  { value: 'disp_avlbl_pt', label: '最大勝点(表示時)' },
-  { value: 'point',         label: '勝点(最新)' },
-  { value: 'avlbl_pt',      label: '最大勝点(最新)' },
-] as const;
+const MATCH_SORT_VALUES = ['old_bottom', 'new_bottom', 'first_bottom', 'last_bottom'] as const;
 
-const MATCH_SORT_OPTIONS = [
-  { value: 'old_bottom',   label: '古い試合が下' },
-  { value: 'new_bottom',   label: '新しい試合が下' },
-  { value: 'first_bottom', label: '第1節が下' },
-  { value: 'last_bottom',  label: '最終節が下' },
-] as const;
+function getTeamSortOptions(): { value: string; label: string }[] {
+  return [
+    { value: 'disp_point',    label: t('sort.dispPoint') },
+    { value: 'disp_avlbl_pt', label: t('sort.dispAvlblPt') },
+    { value: 'point',         label: t('sort.point') },
+    { value: 'avlbl_pt',      label: t('sort.avlblPt') },
+  ];
+}
+
+function getMatchSortOptions(): { value: string; label: string }[] {
+  return [
+    { value: 'old_bottom',   label: t('sort.oldBottom') },
+    { value: 'new_bottom',   label: t('sort.newBottom') },
+    { value: 'first_bottom', label: t('sort.firstBottom') },
+    { value: 'last_bottom',  label: t('sort.lastBottom') },
+  ];
+}
 
 // ---- DOM helpers -------------------------------------------------------
 
@@ -155,7 +162,7 @@ function writeUrlParams(competition: string, season: string): void {
 
 // ---- Fixed dropdown population -----------------------------------------
 
-type MatchSortUiValue = typeof MATCH_SORT_OPTIONS[number]['value'];
+type MatchSortUiValue = typeof MATCH_SORT_VALUES[number];
 
 function populateFixedSelect(
   id: string,
@@ -296,7 +303,7 @@ function renderFromCache(
       groupData: singleGroupData, seasonInfo: perGroupInfo, targetDate, sortKey, matchSortKey,
     });
 
-    for (const t of sortedTeams) allTeamCssClasses.push(teamCssClass(t));
+    for (const team of sortedTeams) allTeamCssClasses.push(teamCssClass(team));
 
     if (boxCon) {
       const { fragment, matchDates } = renderBarGraph(
@@ -311,7 +318,7 @@ function renderFromCache(
         wrapper.classList.add('group_wrapper');
         const label = document.createElement('div');
         label.classList.add('group_label');
-        label.textContent = `グループ${groupKey}`;
+        label.textContent = t('graph.group', { key: groupKey });
         wrapper.appendChild(label);
         wrapper.appendChild(fragment);
         boxCon.appendChild(wrapper);
@@ -378,7 +385,7 @@ function renderFromCache(
       const a = document.createElement('a');
       a.href = seasonInfo.dataSource.url;
       a.textContent = seasonInfo.dataSource.label;
-      dsSection.replaceChildren('データ参照元: ', a);
+      dsSection.replaceChildren(t('status.dataSource'), a);
     } else {
       dsSection.replaceChildren();
     }
@@ -387,7 +394,7 @@ function renderFromCache(
   // I3: Warn about teams with undefined CSS colors.
   const undefinedTeams = findTeamsWithoutColor(allTeamCssClasses);
   if (undefinedTeams.length > 0) {
-    showWarning(`チームカラー未定義: ${undefinedTeams.join(', ')}`);
+    showWarning(t('warn.undefinedColor', { teams: undefinedTeams.join(', ') }));
   } else {
     showWarning(null);
   }
@@ -409,7 +416,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
 
   const found = findCompetition(seasonMap, competition);
   if (!found || !found.competition.seasons[season]) {
-    setStatus(`シーズン情報なし: ${competition}/${season}`);
+    setStatus(t('status.noSeason', { competition, season }));
     return;
   }
 
@@ -423,12 +430,12 @@ function loadAndRender(seasonMap: SeasonMap): void {
   if (state.teamMapCache?.key === csvKey) {
     renderFromCache(state.teamMapCache, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
     showTimestamp(filename);
-    setStatus(`${leagueDisplay} ${season} (cached)`);
+    setStatus(t('status.cached', { league: leagueDisplay, season }));
     return;
   }
 
   const cachebuster = Math.floor(Date.now() / 1000 / CACHE_BUST_WINDOW_SEC);
-  setStatus('CSVを読み込み中...');
+  setStatus(t('status.loading'));
 
   Papa.parse<RawMatchRow>(filename + '?_=' + cachebuster, {
     header: true,
@@ -453,10 +460,10 @@ function loadAndRender(seasonMap: SeasonMap): void {
 
       renderFromCache(newCache, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
       showTimestamp(filename);
-      setStatus(`${leagueDisplay} ${season} — ${results.data.length} 行`);
+      setStatus(t('status.loaded', { league: leagueDisplay, season, rows: results.data.length }));
     },
     error: (err: unknown) => {
-      setStatus(`CSV読み込みエラー: ${String(err)}`);
+      setStatus(t('status.error', { detail: String(err) }));
     },
   });
 }
@@ -464,13 +471,14 @@ function loadAndRender(seasonMap: SeasonMap): void {
 // ---- Initialization & event wiring ------------------------------------
 
 async function main(): Promise<void> {
+  applyI18nAttributes();
   void loadTimestampMap();
 
   let seasonMap: SeasonMap;
   try {
     seasonMap = await loadSeasonMap();
   } catch (err) {
-    setStatus('season_map.json の読み込みに失敗しました');
+    setStatus(t('status.seasonMapError'));
     console.error('Failed to load season map:', err);
     return;
   }
@@ -478,8 +486,8 @@ async function main(): Promise<void> {
   state.heightUnit = getHeightUnit();
 
   populateCompetitionPulldown(seasonMap);
-  populateFixedSelect('team_sort_key', TEAM_SORT_OPTIONS);
-  populateFixedSelect('match_sort_key', MATCH_SORT_OPTIONS);
+  populateFixedSelect('team_sort_key', getTeamSortOptions());
+  populateFixedSelect('match_sort_key', getMatchSortOptions());
 
   // Determine initial competition/season from URL params → localStorage → default
   const urlParams = readUrlParams();

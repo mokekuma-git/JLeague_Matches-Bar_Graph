@@ -24,25 +24,25 @@
 
 <section id="controls">
   <label>
-    大会:
+    <span data-i18n="label.competition"></span>
     <select id="competition_key">
       <!-- populated dynamically from season_map.json -->
     </select>
   </label>
   <label>
-    シーズン:
+    <span data-i18n="label.season"></span>
     <select id="season_key"></select>
   </label>
   <label>
-    チーム順:
+    <span data-i18n="label.teamSort"></span>
     <select id="team_sort_key">
-      <!-- populated by app.ts from TEAM_SORT_OPTIONS -->
+      <!-- populated by app.ts -->
     </select>
   </label>
   <label>
-    試合順:
+    <span data-i18n="label.matchSort"></span>
     <select id="match_sort_key">
-      <!-- populated by app.ts from MATCH_SORT_OPTIONS -->
+      <!-- populated by app.ts -->
     </select>
   </label>
 
@@ -50,14 +50,14 @@
 
 <!-- Date slider -->
 <section id="date_slider_section">
-  <span id="pre_date_slider">開幕前</span>
-  <button id="date_slider_down">＜</button>
+  <span id="pre_date_slider" data-i18n="slider.preseason"></span>
+  <button id="date_slider_down" data-i18n="btn.sliderPrev"></button>
   <input type="range" id="date_slider" min="0" max="0" step="1" value="0"/>
-  <button id="date_slider_up">＞</button>
+  <button id="date_slider_up" data-i18n="btn.sliderNext"></button>
   <span id="post_date_slider"></span>
-  <button id="reset_date_slider">最新にリセット</button>
+  <button id="reset_date_slider" data-i18n="btn.resetDate"></button>
   <label>
-    表示日:
+    <span data-i18n="label.displayDate"></span>
     <input type="date" id="target_date">
   </label>
 </section>
@@ -65,26 +65,26 @@
 <!-- Appearance controls -->
 <section id="appearance_controls">
   <label>
-    グラフ縮小:
+    <span data-i18n="label.graphScale"></span>
     <input type="range" id="scale_slider" min="0.1" max="1" step="0.1" value="1"/>
-    <span id="current_scale">1</span>倍
+    <span id="current_scale">1</span><span data-i18n="label.scaleUnit"></span>
   </label>
   <label>
-    未実施試合透明度:
+    <span data-i18n="label.futureOpacity"></span>
     <input type="range" id="future_opacity" min="0" max="0.5" step="0.01" value="0.1"/>
     [<span id="current_opacity"></span>]
   </label>
   <label>
-    余白色:
+    <span data-i18n="label.spaceColor"></span>
     <input type="color" id="space_color" value="#000000"/>
   </label>
-  <button id="reset_prefs">設定をリセット</button>
+  <button id="reset_prefs" data-i18n="btn.resetPrefs"></button>
 </section>
 
 <!-- Status message and data timestamp -->
 <div id="status_bar">
   <span id="status_msg"></span>
-  <span class="timestamp-label">データ取得時刻: <span id="data_timestamp"></span></span>
+  <span class="timestamp-label"><span data-i18n="label.dataTimestamp"></span> <span id="data_timestamp"></span></span>
 </div>
 
 <!-- Warning message (team color CSS undefined etc.) -->
@@ -96,7 +96,7 @@
 <hr/>
 <span id="data_source_section"></span>
 <br/>
-<a href="https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph">Github公開場所</a>
+<a href="https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph" data-i18n="link.github"></a>
 <hr/>
 
 <section id="ranktable_section">
@@ -106,10 +106,10 @@
     </table>
   </div>
   <ul>
-    <li>どの判定も、3チーム以上の対戦成績の関係から、実際には確定していても「自力」「他力」と示す場合アリ</li>
-    <li>(「確定」「降格」「なし」と判定されている場合は、それぞれ決定済み)</li>
-    <li>昇格・降格: プレーオフ参戦決定も、それぞれ「確定」「降格」と表示</li>
-    <li>別リーグの影響で昇格・降格数が減るケースは考慮しない</li>
+    <li data-i18n="note.judgmentCaveat"></li>
+    <li data-i18n="note.judgmentDecided"></li>
+    <li data-i18n="note.playoffNote"></li>
+    <li data-i18n="note.otherLeague"></li>
   </ul>
   <ul id="season_notes"></ul>
 </section>
