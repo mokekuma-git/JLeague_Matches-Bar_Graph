@@ -73,6 +73,20 @@ def resolve_point_system(
     return 'standard'
 
 
+def resolve_view_types(
+    group_data: dict, comp_data: dict, season_entry: list,
+) -> set[str]:
+    """Resolve view_type with array union cascade: group -> competition -> season."""
+    vt: set[str] = set()
+    for level in (group_data, comp_data):
+        for v in level.get('view_type', []):
+            vt.add(v)
+    if len(season_entry) > 4 and isinstance(season_entry[4], dict):
+        for v in season_entry[4].get('view_type', []):
+            vt.add(v)
+    return vt if vt else {'league'}
+
+
 def check_csv_pk_data(csv_path: Path) -> bool:
     """Check if a CSV contains actual PK match data (non-empty values).
 
@@ -121,6 +135,12 @@ def check_all() -> list[str]:
         for comp_key, comp_data in competitions.items():
             seasons = comp_data.get('seasons', {})
             for season_key, season_entry in seasons.items():
+                # Skip bracket-only seasons (no league view = no point calculation)
+                view_types = resolve_view_types(
+                    group_data, comp_data, season_entry)
+                if 'league' not in view_types:
+                    continue
+
                 point_system = resolve_point_system(comp_data, season_entry)
 
                 # Validate point_system is known
