@@ -29,6 +29,33 @@
   </label>
 </section>
 
+<section id="bracket_controls">
+  <div id="date_slider_section">
+    <button id="date_slider_down" data-i18n="btn.sliderPrev">＜</button>
+    <input type="range" id="date_slider" min="0" max="0" step="1" value="0"/>
+    <button id="date_slider_up" data-i18n="btn.sliderNext">＞</button>
+    <span id="post_date_slider"></span>
+    <button id="date_slider_reset" data-i18n="btn.resetDate">最新にリセット</button>
+  </div>
+  <label>
+    <span data-i18n="label.futureOpacity">未実施試合透明度</span>
+    <input type="range" id="future_opacity" min="0" max="0.5" step="0.01" value="0.2"/>
+    [<span id="current_opacity">0.2</span>]
+  </label>
+  <label>
+    <span data-i18n="label.graphScale">表示縮小</span>
+    <input type="range" id="scale_slider" min="0.3" max="1" step="0.1" value="1"/>
+    <span id="current_scale">1</span><span data-i18n="label.scaleUnit">倍</span>
+  </label>
+  <label>
+    <span data-i18n="label.bracketLayout">表示方向</span>
+    <select id="layout_toggle">
+      <option value="horizontal" data-i18n="label.layoutHorizontal">横 (左→右)</option>
+      <option value="vertical" data-i18n="label.layoutVertical">縦 (下→上)</option>
+    </select>
+  </label>
+</section>
+
 <div id="status_bar">
   <span id="status_msg"></span>
 </div>

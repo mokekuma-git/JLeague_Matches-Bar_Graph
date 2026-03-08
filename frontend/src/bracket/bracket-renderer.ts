@@ -44,6 +44,11 @@ function createTeamRow(
     row.classList.add(teamCssClass(team));
   }
 
+  // TBD team: future styling (opacity controlled by slider)
+  if (!team) {
+    row.classList.add('bracket-future');
+  }
+
   // Winner/loser styling
   if (node.winner) {
     row.classList.add(node.winner === team ? 'winner' : 'loser');

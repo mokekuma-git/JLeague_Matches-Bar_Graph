@@ -1,7 +1,8 @@
 // Tournament bracket viewer entry point.
 //
 // Loads season_map.json, filters to bracket-enabled competitions,
-// and renders a CSS Grid bracket for the selected season.
+// and renders a CSS bracket for the selected season.
+// Provides date slider, opacity, zoom, and layout controls.
 
 import Papa from 'papaparse';
 import type { RawMatchRow } from './types/match';
@@ -15,6 +16,20 @@ import { renderBracket } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
 import type { Locale } from './i18n';
+import type { BracketNode } from './bracket/bracket-types';
+
+// ---- State ------------------------------------------------------------------
+
+interface BracketState {
+  csvRows: RawMatchRow[];
+  bracketOrder: string[];
+  matchDates: string[];       // sorted unique dates from CSV
+  cssFiles: string[];
+  leagueDisplay: string;
+  season: string;
+}
+
+let currentState: BracketState | null = null;
 
 // ---- DOM helpers -----------------------------------------------------------
 
@@ -25,6 +40,21 @@ function getSelectValue(id: string): string {
 function setStatus(msg: string): void {
   const el = document.getElementById('status_msg');
   if (el) el.textContent = msg;
+}
+
+// ---- Match date collection --------------------------------------------------
+
+const PRESEASON_SENTINEL = '1970/01/01';
+
+function collectMatchDates(rows: RawMatchRow[]): string[] {
+  const dates = new Set<string>();
+  for (const r of rows) {
+    if (r.match_date) dates.add(r.match_date);
+  }
+  const sorted = Array.from(dates).sort();
+  // Prepend sentinel so slider index 0 = "before any match"
+  sorted.unshift(PRESEASON_SENTINEL);
+  return sorted;
 }
 
 // ---- Dropdown population ---------------------------------------------------
@@ -60,7 +90,7 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
   const found = findCompetition(seasonMap, competition);
   if (!found) return;
   const seasons = Object.keys(found.competition.seasons)
-    .filter(s => found.competition.seasons[s][4]?.bracket_order != null)  // bracket_order required for rendering
+    .filter(s => found.competition.seasons[s][4]?.bracket_order != null)
     .sort().reverse();
   for (const s of seasons) {
     const opt = document.createElement('option');
@@ -85,6 +115,116 @@ function writeUrlParams(competition: string, season: string): void {
   url.searchParams.set('competition', competition);
   url.searchParams.set('season', season);
   history.replaceState(null, '', url.toString());
+}
+
+// ---- Bracket rendering with date filter ------------------------------------
+
+function getTargetDate(): string | null {
+  if (!currentState) return null;
+  const slider = document.getElementById('date_slider') as HTMLInputElement | null;
+  if (!slider) return null;
+  const idx = parseInt(slider.value, 10);
+  return currentState.matchDates[idx] ?? null;
+}
+
+/**
+ * Mask a bracket tree for a target date.
+ * - Nodes with matchDate > targetDate: clear scores and winner, keep date/stadium
+ * - Nodes whose child winner is unknown: set corresponding team to null (TBD)
+ * Walks bottom-up (children before parent) so winner propagation works correctly.
+ */
+function maskBracketForDate(node: BracketNode, targetDate: string): BracketNode {
+  // Recurse into children first
+  const [upper, lower] = node.children;
+  const maskedUpper = upper ? maskBracketForDate(upper, targetDate) : null;
+  const maskedLower = lower ? maskBracketForDate(lower, targetDate) : null;
+
+  // Determine if this match is in the future
+  const isFuture = node.matchDate != null && node.matchDate > targetDate;
+
+  if (isFuture) {
+    // Replace teams with child winners (may be null = TBD)
+    const homeTeam = maskedUpper ? maskedUpper.winner : node.homeTeam;
+    const awayTeam = maskedLower ? maskedLower.winner : node.awayTeam;
+    return {
+      ...node,
+      homeTeam,
+      awayTeam,
+      homeGoal: undefined,
+      awayGoal: undefined,
+      homePkScore: undefined,
+      awayPkScore: undefined,
+      homeScoreEx: undefined,
+      awayScoreEx: undefined,
+      status: 'ＶＳ',
+      winner: null,
+      children: [maskedUpper, maskedLower],
+    };
+  }
+
+  // Not future: keep original data but use masked children
+  return { ...node, children: [maskedUpper, maskedLower] };
+}
+
+function renderWithDateFilter(): void {
+  if (!currentState) return;
+  const container = document.getElementById('bracket_container');
+  if (!container) return;
+
+  // Build full tree from all CSV data, then mask for target date
+  const fullRoot = buildBracket(currentState.csvRows, currentState.bracketOrder);
+  const targetDate = getTargetDate();
+  const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
+  const root = (targetDate && targetDate < lastDate)
+    ? maskBracketForDate(fullRoot, targetDate)
+    : fullRoot;
+
+  container.replaceChildren(renderBracket(root, currentState.cssFiles));
+
+  // Apply layout class
+  applyLayout();
+}
+
+function updateSliderDisplay(): void {
+  if (!currentState) return;
+  const slider = document.getElementById('date_slider') as HTMLInputElement | null;
+  const display = document.getElementById('post_date_slider');
+  if (!slider || !display) return;
+  const idx = parseInt(slider.value, 10);
+  const date = currentState.matchDates[idx];
+  display.textContent = date === PRESEASON_SENTINEL ? t('slider.preseason') : (date ?? '');
+}
+
+// ---- Controls: opacity, scale, layout --------------------------------------
+
+function setBracketFutureOpacity(value: string): void {
+  const container = document.getElementById('bracket_container');
+  if (!container) return;
+  for (const el of Array.from(container.querySelectorAll('.bracket-future'))) {
+    (el as HTMLElement).style.opacity = value;
+  }
+  const display = document.getElementById('current_opacity');
+  if (display) display.textContent = value;
+}
+
+function setBracketScale(value: string): void {
+  const container = document.getElementById('bracket_container');
+  if (!container) return;
+  container.style.transform = `scale(${value})`;
+  container.style.transformOrigin = 'top left';
+  const display = document.getElementById('current_scale');
+  if (display) display.textContent = value;
+}
+
+function applyLayout(): void {
+  const layoutSel = document.getElementById('layout_toggle') as HTMLSelectElement | null;
+  const bracket = document.querySelector('.bracket');
+  if (!bracket || !layoutSel) return;
+  if (layoutSel.value === 'vertical') {
+    bracket.classList.add('vertical');
+  } else {
+    bracket.classList.remove('vertical');
+  }
 }
 
 // ---- Render pipeline -------------------------------------------------------
@@ -123,14 +263,39 @@ function loadAndRender(seasonMap: SeasonMap): void {
     skipEmptyLines: 'greedy',
     download: true,
     complete: (results) => {
-      const container = document.getElementById('bracket_container');
-      if (!container) return;
+      const matchDates = collectMatchDates(results.data);
 
-      const root = buildBracket(results.data, bracketOrder);
-      container.replaceChildren(renderBracket(root, seasonInfo.cssFiles));
+      currentState = {
+        csvRows: results.data,
+        bracketOrder,
+        matchDates,
+        cssFiles: seasonInfo.cssFiles,
+        leagueDisplay: seasonInfo.leagueDisplay,
+        season,
+      };
 
-      const leagueDisplay = seasonInfo.leagueDisplay;
-      setStatus(t('status.loaded', { league: leagueDisplay, season, rows: results.data.length }));
+      // Set up date slider
+      const slider = document.getElementById('date_slider') as HTMLInputElement | null;
+      if (slider && matchDates.length > 0) {
+        slider.min = '0';
+        slider.max = String(matchDates.length - 1);
+        slider.value = String(matchDates.length - 1);
+      }
+
+      renderWithDateFilter();
+      updateSliderDisplay();
+
+      // Apply saved opacity
+      const opacitySlider = document.getElementById('future_opacity') as HTMLInputElement | null;
+      if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
+
+      // Apply saved scale
+      const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
+      if (scaleSlider) setBracketScale(scaleSlider.value);
+
+      setStatus(t('status.loaded', {
+        league: seasonInfo.leagueDisplay, season, rows: results.data.length,
+      }));
     },
     error: (err: unknown) => {
       setStatus(t('status.error', { detail: String(err) }));
@@ -188,7 +353,79 @@ async function main(): Promise<void> {
     });
   }
 
-  // Event wiring
+  // ---- Restore saved preferences -------------------------------------------
+
+  const opacitySlider = document.getElementById('future_opacity') as HTMLInputElement | null;
+  if (opacitySlider && prefs.futureOpacity) opacitySlider.value = prefs.futureOpacity;
+
+  const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
+  if (scaleSlider && prefs.scale) scaleSlider.value = prefs.scale;
+
+  // ---- Date slider events --------------------------------------------------
+
+  const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
+  if (dateSlider) {
+    dateSlider.addEventListener('input', () => {
+      updateSliderDisplay();
+    });
+    dateSlider.addEventListener('change', () => {
+      renderWithDateFilter();
+      // Re-apply opacity after re-render
+      if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
+    });
+
+    document.getElementById('date_slider_down')?.addEventListener('click', () => {
+      dateSlider.value = String(Math.max(0, parseInt(dateSlider.value, 10) - 1));
+      updateSliderDisplay();
+      renderWithDateFilter();
+      if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
+    });
+    document.getElementById('date_slider_up')?.addEventListener('click', () => {
+      dateSlider.value = String(Math.min(
+        parseInt(dateSlider.max, 10), parseInt(dateSlider.value, 10) + 1,
+      ));
+      updateSliderDisplay();
+      renderWithDateFilter();
+      if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
+    });
+    document.getElementById('date_slider_reset')?.addEventListener('click', () => {
+      if (!currentState) return;
+      dateSlider.value = String(currentState.matchDates.length - 1);
+      updateSliderDisplay();
+      renderWithDateFilter();
+      if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
+    });
+  }
+
+  // ---- Opacity slider events -----------------------------------------------
+
+  if (opacitySlider) {
+    opacitySlider.addEventListener('input', () => {
+      setBracketFutureOpacity(opacitySlider.value);
+      savePrefs({ futureOpacity: opacitySlider.value });
+    });
+  }
+
+  // ---- Scale slider events -------------------------------------------------
+
+  if (scaleSlider) {
+    scaleSlider.addEventListener('input', () => {
+      setBracketScale(scaleSlider.value);
+      savePrefs({ scale: scaleSlider.value });
+    });
+  }
+
+  // ---- Layout toggle events ------------------------------------------------
+
+  const layoutSel = document.getElementById('layout_toggle') as HTMLSelectElement | null;
+  if (layoutSel) {
+    layoutSel.addEventListener('change', () => {
+      applyLayout();
+    });
+  }
+
+  // ---- Competition/season change events ------------------------------------
+
   competitionSel.addEventListener('change', () => {
     populateSeasonPulldown(seasonMap, competitionSel.value);
     loadAndRender(seasonMap);

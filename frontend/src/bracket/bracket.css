@@ -85,6 +85,12 @@
   border-top: 2px solid #888;
 }
 
+/* Unplayed match: translucent for future/pending state.
+   Opacity controlled dynamically via slider. */
+.bracket-future {
+  opacity: 0.2;
+}
+
 /* Match card */
 .bracket-match {
   border: 1px solid #999;
@@ -177,4 +183,72 @@
   background: #333;
   padding: 3px 8px;
   text-align: center;
+}
+
+/* ---- Vertical layout (bottom-to-top) ---- */
+
+.bracket.vertical {
+  flex-direction: column-reverse;
+}
+
+.bracket.vertical .bracket-subtree {
+  flex-direction: column-reverse;
+}
+
+.bracket.vertical .bracket-children {
+  flex-direction: row;
+  justify-content: center;
+}
+
+.bracket.vertical .bracket-child {
+  flex-direction: column-reverse;
+}
+
+.bracket.vertical .bracket-child::after {
+  width: auto;
+  height: 24px;
+  border-top: none;
+  border-left: 2px solid #888;
+}
+
+.bracket.vertical .bracket-connector {
+  flex-direction: row;
+  width: auto;
+  height: 24px;
+  align-self: stretch;
+}
+
+.bracket.vertical .connector-top {
+  flex: 1;
+}
+
+.bracket.vertical .connector-top::after {
+  top: auto;
+  bottom: 0;
+  left: 50%;
+  right: 0;
+  border-left: none;
+  border-top: 2px solid #888;
+}
+
+.bracket.vertical .connector-bottom {
+  flex: 1;
+}
+
+.bracket.vertical .connector-bottom::after {
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 50%;
+  border-left: none;
+  border-top: 2px solid #888;
+}
+
+.bracket.vertical .bracket-connector::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  right: auto;
+  border-top: none;
+  border-left: 2px solid #888;
 }
