@@ -1,2 +1,2 @@
-,match_date,section_no,match_index_in_section,start_time,stadium,home_team,home_goal,away_goal,away_team,status,group,home_pk_score,away_pk_score
-0,2023/10/14,99,1,16:03,Uvanceとどろきスタジアム　by　Fujitsu,S広島R,0,0,新潟L,試合終了,,4.0,2.0
+,match_date,section_no,match_index_in_section,start_time,stadium,home_team,home_goal,away_goal,away_team,status,group,home_pk_score,away_pk_score,round
+0,2023/10/14,99,1,16:03,Uvanceとどろきスタジアム　by　Fujitsu,S広島R,0,0,新潟L,試合終了,,4.0,2.0,決勝

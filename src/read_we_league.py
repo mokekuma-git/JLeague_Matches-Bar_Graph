@@ -39,6 +39,7 @@ _CUP_KEYWORD = 'カップ'
 _SECTION_RE = re.compile(r'第(\d+)節')
 _GROUP_RE = re.compile(r'グループ([A-Z])')
 _ROUND_SECTION: dict[str, int] = {'準々決勝': 97, '準決勝': 98, '決勝': 99}
+_SECTION_ROUND: dict[int, str] = {v: k for k, v in _ROUND_SECTION.items()}
 
 # Date extraction from match URL e.g. /matches/2026022820/
 _MATCH_DATE_RE = re.compile(r'/matches/(\d{4})(\d{2})(\d{2})\d+/')
@@ -215,6 +216,8 @@ def _read_day(
         if scores.get('home_pk_score'):
             record['home_pk_score'] = scores['home_pk_score']
             record['away_pk_score'] = scores['away_pk_score']
+        if section_no in _SECTION_ROUND:
+            record['round'] = _SECTION_ROUND[section_no]
 
         results.append((is_cup, record))
 

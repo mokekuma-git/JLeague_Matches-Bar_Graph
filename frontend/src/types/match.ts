@@ -16,6 +16,8 @@ export interface RawMatchRow {
   away_pk_score?: string;
   home_score_ex?: string;   // Extra-time score (column may be absent; Tier 4 preparation)
   away_score_ex?: string;
+  round?: string;           // Tournament round name (column may be absent)
+  match_number?: string;    // Tournament match number (column may be absent)
 }
 
 // Per-match data from a single team's perspective, produced by parse_csvresults.

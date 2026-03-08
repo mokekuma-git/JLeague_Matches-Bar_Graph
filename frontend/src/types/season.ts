@@ -54,6 +54,8 @@ export interface SeasonEntryOptions {
   note?: string | string[];
   data_source?: DataSource;
   promotion_label?: string;
+  bracket_order?: string[];
+  bracket_round_start?: string;
 }
 
 // Raw array format as loaded from season_map.json (tuple type).
