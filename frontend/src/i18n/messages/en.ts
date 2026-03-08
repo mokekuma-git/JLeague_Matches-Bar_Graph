@@ -13,6 +13,9 @@ export const en: Record<MessageKey, string> = {
   'label.spaceColor': 'Space color',
   'label.dataTimestamp': 'Data updated:',
   'label.language': 'Language',
+  'label.bracketLayout': 'Layout',
+  'label.layoutHorizontal': 'Horizontal (L→R)',
+  'label.layoutVertical': 'Vertical (bottom→up)',
 
   // Buttons
   'btn.resetDate': 'Reset to latest',
