@@ -116,13 +116,6 @@ function createConnector(): HTMLElement {
   return connector;
 }
 
-/** Create a horizontal line from connector to match card. */
-function createConnectorLine(): HTMLElement {
-  const line = document.createElement('div');
-  line.classList.add('connector-line');
-  return line;
-}
-
 /** Recursively render a BracketNode subtree. */
 function renderNode(node: BracketNode): HTMLElement {
   const [upper, lower] = node.children;
@@ -148,16 +141,21 @@ function renderNode(node: BracketNode): HTMLElement {
   const subtree = document.createElement('div');
   subtree.classList.add('bracket-subtree');
 
-  // Render child subtrees
+  // Render child subtrees, each wrapped with a horizontal connector line
   const children = document.createElement('div');
   children.classList.add('bracket-children');
-  if (upper) children.appendChild(renderNode(upper));
-  if (lower) children.appendChild(renderNode(lower));
+  const addChild = (child: BracketNode): void => {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('bracket-child');
+    wrapper.appendChild(renderNode(child));
+    children.appendChild(wrapper);
+  };
+  if (upper) addChild(upper);
+  if (lower) addChild(lower);
   subtree.appendChild(children);
 
-  // Connector lines
+  // Vertical connector + midpoint horizontal (via ::after in CSS)
   subtree.appendChild(createConnector());
-  subtree.appendChild(createConnectorLine());
 
   // This match with label
   subtree.appendChild(wrapWithLabel(node));
