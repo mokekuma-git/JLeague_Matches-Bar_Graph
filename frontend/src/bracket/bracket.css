@@ -4,6 +4,7 @@
   display: inline-flex;
   align-items: center;
   padding: 16px;
+  background: #1a1a1a;
 }
 
 .bracket-subtree {
@@ -17,7 +18,11 @@
   justify-content: center;
 }
 
-/* Connector lines between rounds */
+/* Connector lines between rounds.
+   The connector sits between the children column and the parent match.
+   It stretches to match the children's full height, then splits into
+   top/bottom halves that draw right-angle lines from each child's
+   vertical center to the midpoint, forming the classic bracket shape. */
 .bracket-connector {
   display: flex;
   flex-direction: column;
@@ -27,50 +32,71 @@
 
 .connector-top {
   flex: 1;
-  border-right: 2px solid #888;
-  border-bottom: 2px solid #888;
-  min-height: 12px;
+  border-right: 2px solid #666;
+  border-bottom: 2px solid #666;
 }
 
 .connector-bottom {
   flex: 1;
-  border-right: 2px solid #888;
-  border-top: 2px solid #888;
-  min-height: 12px;
+  border-right: 2px solid #666;
+  border-top: 2px solid #666;
 }
 
 .connector-line {
   width: 24px;
-  border-top: 2px solid #888;
+  border-top: 2px solid #666;
 }
 
 /* Match card */
 .bracket-match {
-  border: 1px solid #999;
-  margin: 4px 0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  margin: 8px 0;
   min-width: 200px;
-  background: #fff;
+  background: #2a2a2a;
+  overflow: hidden;
 }
 
+/* Date line above team rows */
+.bracket-match-date {
+  font-size: 0.75em;
+  color: #aaa;
+  padding: 3px 8px;
+  border-bottom: 1px solid #444;
+  text-align: center;
+}
+
+/* Team row: team CSS class applies background-color + color directly */
 .bracket-team {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 4px 8px;
-  border-left: 4px solid transparent;
   min-height: 28px;
 }
 
 .bracket-team + .bracket-team {
-  border-top: 1px solid #ddd;
+  border-top: 1px solid #444;
 }
 
+/* Winner: bold text to distinguish from loser */
 .bracket-team.winner {
   font-weight: bold;
 }
 
+/* Loser: keep team colors fully visible, dim via translucent overlay.
+   This preserves background-color + color from team_style.css while
+   visually indicating elimination — similar to .future in league view. */
 .bracket-team.loser {
-  opacity: 0.5;
+  position: relative;
+}
+
+.bracket-team.loser::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
 }
 
 .bracket-team-name {
@@ -85,20 +111,23 @@
 
 .bracket-score-pk {
   font-size: 0.85em;
-  color: #666;
+  opacity: 0.8;
   margin-left: 4px;
 }
 
+/* Round label above match card */
 .bracket-round-label {
   text-align: center;
   font-size: 0.85em;
-  color: #666;
+  color: #aaa;
   margin-bottom: 2px;
 }
 
-.bracket-match-info {
+/* Stadium line below team rows */
+.bracket-match-stadium {
   font-size: 0.75em;
   color: #888;
-  padding: 2px 8px;
-  border-top: 1px solid #eee;
+  padding: 3px 8px;
+  border-top: 1px solid #444;
+  text-align: center;
 }

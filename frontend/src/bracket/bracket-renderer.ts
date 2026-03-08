@@ -39,9 +39,8 @@ function createTeamRow(
   if (isHome) row.classList.add('home');
   else row.classList.add('away');
 
-  // Team color via CSS class
+  // Team color via CSS class (background-color + color from team_style.css)
   if (team) {
-    row.style.borderLeftColor = '';
     row.classList.add(teamCssClass(team));
   }
 
@@ -79,26 +78,23 @@ function createMatchCard(node: BracketNode): HTMLElement {
   const card = document.createElement('div');
   card.classList.add('bracket-match');
 
-  // Round label
-  if (node.round) {
-    const label = document.createElement('div');
-    label.classList.add('bracket-round-label');
-    label.textContent = node.round;
-    card.appendChild(label);
+  // Date line (above team rows)
+  if (node.matchDate) {
+    const dateLine = document.createElement('div');
+    dateLine.classList.add('bracket-match-date');
+    dateLine.textContent = node.matchDate;
+    card.appendChild(dateLine);
   }
 
   card.appendChild(createTeamRow(node.homeTeam, node, true));
   card.appendChild(createTeamRow(node.awayTeam, node, false));
 
-  // Match info (date, stadium)
-  if (node.matchDate || node.stadium) {
-    const info = document.createElement('div');
-    info.classList.add('bracket-match-info');
-    const parts: string[] = [];
-    if (node.matchDate) parts.push(node.matchDate);
-    if (node.stadium) parts.push(node.stadium);
-    info.textContent = parts.join(' | ');
-    card.appendChild(info);
+  // Stadium line (below team rows)
+  if (node.stadium) {
+    const stadiumLine = document.createElement('div');
+    stadiumLine.classList.add('bracket-match-stadium');
+    stadiumLine.textContent = node.stadium;
+    card.appendChild(stadiumLine);
   }
 
   return card;
@@ -131,9 +127,22 @@ function createConnectorLine(): HTMLElement {
 function renderNode(node: BracketNode): HTMLElement {
   const [upper, lower] = node.children;
 
-  // Leaf node: just the match card
+  /** Wrap a match card with its round label. */
+  const wrapWithLabel = (n: BracketNode): HTMLElement => {
+    const wrapper = document.createElement('div');
+    if (n.round) {
+      const label = document.createElement('div');
+      label.classList.add('bracket-round-label');
+      label.textContent = n.round;
+      wrapper.appendChild(label);
+    }
+    wrapper.appendChild(createMatchCard(n));
+    return wrapper;
+  };
+
+  // Leaf node: just the match card with label
   if (!upper && !lower) {
-    return createMatchCard(node);
+    return wrapWithLabel(node);
   }
 
   const subtree = document.createElement('div');
@@ -150,8 +159,8 @@ function renderNode(node: BracketNode): HTMLElement {
   subtree.appendChild(createConnector());
   subtree.appendChild(createConnectorLine());
 
-  // This match
-  subtree.appendChild(createMatchCard(node));
+  // This match with label
+  subtree.appendChild(wrapWithLabel(node));
 
   return subtree;
 }

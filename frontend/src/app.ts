@@ -13,6 +13,7 @@ import type { RawMatchRow, TeamMap } from './types/match';
 import type { SeasonMap, SeasonInfo } from './types/season';
 import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
+  getCompetitionViewTypes,
 } from './config/season-map';
 import { parseCsvResults } from './core/csv-parser';
 import { dateFormat } from './core/date-utils';
@@ -209,6 +210,7 @@ function populateCompetitionPulldown(seasonMap: SeasonMap): void {
     }
 
     for (const [compKey, comp] of Object.entries(group.competitions)) {
+      if (!getCompetitionViewTypes(group, comp).includes('league')) continue;
       const opt = document.createElement('option');
       opt.value = compKey;
       opt.textContent = comp.league_display ?? compKey;

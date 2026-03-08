@@ -5,9 +5,10 @@
 
 import Papa from 'papaparse';
 import type { RawMatchRow } from './types/match';
-import type { SeasonMap, CompetitionEntry } from './types/season';
+import type { SeasonMap } from './types/season';
 import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
+  getCompetitionViewTypes,
 } from './config/season-map';
 import { buildBracket } from './bracket/bracket-data';
 import { renderBracket } from './bracket/bracket-renderer';
@@ -26,15 +27,6 @@ function setStatus(msg: string): void {
   if (el) el.textContent = msg;
 }
 
-// ---- Competition filtering -------------------------------------------------
-
-/** Check if a competition has any season with bracket_order. */
-function hasBracket(comp: CompetitionEntry): boolean {
-  return Object.values(comp.seasons).some(
-    entry => entry[4]?.bracket_order != null,
-  );
-}
-
 // ---- Dropdown population ---------------------------------------------------
 
 function populateCompetitionPulldown(seasonMap: SeasonMap): void {
@@ -44,7 +36,7 @@ function populateCompetitionPulldown(seasonMap: SeasonMap): void {
   const multiGroup = groups.length > 1;
   for (const [groupKey, group] of groups) {
     const bracketComps = Object.entries(group.competitions)
-      .filter(([, comp]) => hasBracket(comp));
+      .filter(([, comp]) => getCompetitionViewTypes(group, comp).includes('bracket'));
     if (bracketComps.length === 0) continue;
 
     if (multiGroup) {
@@ -68,7 +60,7 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
   const found = findCompetition(seasonMap, competition);
   if (!found) return;
   const seasons = Object.keys(found.competition.seasons)
-    .filter(s => found.competition.seasons[s][4]?.bracket_order != null)
+    .filter(s => found.competition.seasons[s][4]?.bracket_order != null)  // bracket_order required for rendering
     .sort().reverse();
   for (const s of seasons) {
     const opt = document.createElement('option');

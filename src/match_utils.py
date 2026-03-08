@@ -92,7 +92,7 @@ class SeasonEntry:
         'team_rename_map', 'tiebreak_order', 'season_start_month',
         'shown_groups', 'cross_group_standing', 'group_team_count',
         'note', 'data_source', 'promotion_label',
-        'bracket_order', 'bracket_round_start',
+        'bracket_order', 'bracket_round_start', 'view_type',
     }
 
     def __init__(self, season_key: str, raw: list):
