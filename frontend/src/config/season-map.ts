@@ -3,7 +3,7 @@
 import type { PointSystem } from '../types/config';
 import type {
   SeasonMap, GroupEntry, CompetitionEntry, RawSeasonEntry, SeasonInfo,
-  CrossGroupStanding, DataSource,
+  CrossGroupStanding, DataSource, ViewType,
 } from '../types/season';
 import { generateRuleNotes } from './rule-notes';
 import { t } from '../i18n';
@@ -49,6 +49,18 @@ export function findCompetition(
     }
   }
   return undefined;
+}
+
+/**
+ * Resolve view_type at the group → competition level (ignoring per-season).
+ * Used for dropdown filtering without resolving every season entry.
+ * Returns ['league'] as the default when no level specifies view_type.
+ */
+export function getCompetitionViewTypes(group: GroupEntry, comp: CompetitionEntry): ViewType[] {
+  const set = new Set<ViewType>();
+  for (const v of (group.view_type ?? [])) set.add(v);
+  for (const v of (comp.view_type ?? [])) set.add(v);
+  return set.size > 0 ? [...set] : ['league'];
 }
 
 /**
@@ -145,6 +157,14 @@ export function resolveSeasonInfo(
     ...generateRuleNotes(pointSystem, tiebreakOrder),
   ];
 
+  // view_type: array union across all three levels (deduplicated).
+  // Default ['league'] when no level specifies it.
+  const vtSet = new Set<ViewType>();
+  for (const v of (group.view_type ?? [])) vtSet.add(v);
+  for (const v of (comp.view_type ?? [])) vtSet.add(v);
+  for (const v of (opts.view_type ?? [])) vtSet.add(v);
+  const viewTypes: ViewType[] = vtSet.size > 0 ? [...vtSet] : ['league'];
+
   return {
     teamCount: entry[0],
     promotionCount: entry[1],
@@ -165,5 +185,6 @@ export function resolveSeasonInfo(
     dataSource,
     notes,
     promotionLabel,
+    viewTypes,
   };
 }

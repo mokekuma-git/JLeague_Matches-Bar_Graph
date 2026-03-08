@@ -492,6 +492,21 @@
             [],
             {"rank_properties": {"2": "promoted_playoff"}, "cross_group_standing": {"position": 2, "advance_count": 1}, "point_system": "pk-win2-loss1"}]
         }
+      },
+      "WE_Cup_KO": {
+        "league_display": "クラシエカップ KO",
+        "view_type": ["bracket"],
+        "seasons": {
+          "22-23": [2, 0, 0,
+            ["浦和", "東京NB"],
+            {"bracket_order": ["浦和", "東京NB"], "bracket_round_start": "決勝"}],
+          "23-24": [2, 0, 0,
+            ["S広島R", "新潟L"],
+            {"bracket_order": ["S広島R", "新潟L"], "bracket_round_start": "決勝"}],
+          "24-25": [4, 0, 0,
+            ["S広島R", "浦和", "I神戸", "新潟L"],
+            {"bracket_order": ["S広島R", "浦和", "I神戸", "新潟L"], "bracket_round_start": "準決勝"}]
+        }
       }
     }
   }

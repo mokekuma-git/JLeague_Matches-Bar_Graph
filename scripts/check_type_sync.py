@@ -135,6 +135,37 @@ def check_point_system_values() -> list[str]:
     return errors
 
 
+def check_view_type_consistency() -> list[str]:
+    """Check that bracket_order entries have view_type including 'bracket'."""
+    import json
+    errors: list[str] = []
+    season_map_path = PROJECT_ROOT / 'docs' / 'json' / 'season_map.json'
+    with open(season_map_path, 'r', encoding='utf-8') as f:
+        season_map = json.load(f)
+
+    for group_key, group in season_map.items():
+        if not isinstance(group, dict) or 'competitions' not in group:
+            continue
+        group_vt = set(group.get('view_type', []))
+        for comp_key, comp in group.get('competitions', {}).items():
+            if not isinstance(comp, dict):
+                continue
+            comp_vt = group_vt | set(comp.get('view_type', []))
+            for season_key, entry in comp.get('seasons', {}).items():
+                if not isinstance(entry, list) or len(entry) < 5:
+                    continue
+                opts = entry[4] if isinstance(entry[4], dict) else {}
+                resolved_vt = comp_vt | set(opts.get('view_type', []))
+                if not resolved_vt:
+                    resolved_vt = {'league'}
+                if opts.get('bracket_order') and 'bracket' not in resolved_vt:
+                    errors.append(
+                        f"{group_key}/{comp_key}/{season_key}: "
+                        f"bracket_order exists but view_type {sorted(resolved_vt)} "
+                        f"does not include 'bracket'")
+    return errors
+
+
 def main() -> int:
     all_errors: list[str] = []
 
@@ -142,6 +173,7 @@ def main() -> int:
         ('CSV columns', check_csv_columns),
         ('SeasonEntryOptions', check_season_entry_options),
         ('PointSystem values', check_point_system_values),
+        ('view_type consistency', check_view_type_consistency),
     ]
 
     for label, check_fn in checks:

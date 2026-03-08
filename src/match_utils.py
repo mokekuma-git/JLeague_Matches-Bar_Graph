@@ -62,6 +62,8 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
     'away_pk_score': 'nullable_int',  # PK shootout (column may be absent)
     'home_score_ex': 'nullable_int',  # Extra-time score (column may be absent)
     'away_score_ex': 'nullable_int',  # Extra-time score (column may be absent)
+    'round': 'str',                   # Tournament round name (column may be absent)
+    'match_number': 'nullable_int',   # Tournament match number (column may be absent)
 }
 
 
@@ -90,6 +92,7 @@ class SeasonEntry:
         'team_rename_map', 'tiebreak_order', 'season_start_month',
         'shown_groups', 'cross_group_standing', 'group_team_count',
         'note', 'data_source', 'promotion_label',
+        'bracket_order', 'bracket_round_start', 'view_type',
     }
 
     def __init__(self, season_key: str, raw: list):

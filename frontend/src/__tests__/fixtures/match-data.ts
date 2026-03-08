@@ -48,6 +48,7 @@ export function makeSeasonInfo(overrides: Partial<SeasonInfo> = {}): SeasonInfo 
     seasonStartMonth: 7,
     notes: [],
     promotionLabel: '昇格',
+    viewTypes: ['league'],
     ...overrides,
   };
 }

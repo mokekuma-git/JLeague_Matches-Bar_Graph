@@ -1,0 +1,180 @@
+/* Tournament bracket layout using recursive flexbox. */
+
+.bracket {
+  display: inline-flex;
+  align-items: center;
+  padding: 16px;
+}
+
+.bracket-subtree {
+  display: flex;
+  align-items: center;
+}
+
+.bracket-children {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Each child wrapped in a flex row so its ::after line aligns
+   with the child's vertical center automatically. */
+.bracket-child {
+  display: flex;
+  align-items: center;
+}
+
+.bracket-child::after {
+  content: '';
+  flex-shrink: 0;
+  width: 24px;
+  border-top: 2px solid #888;
+}
+
+/* Connector between children and parent match.
+   Draws a vertical line on the left (connecting to child ::after lines)
+   and a horizontal line at the midpoint (toward the parent match card)
+   via the ::after pseudo-element. */
+.bracket-connector {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 24px;
+  align-self: stretch;
+}
+
+/* Each half covers one child's vertical extent.
+   The ::after draws the vertical line only from the child's center
+   (50% of the half) to the midpoint, so the line doesn't extend
+   beyond the children's horizontal connector lines. */
+.connector-top {
+  flex: 1;
+  position: relative;
+}
+
+.connector-top::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  bottom: 0;
+  left: 0;
+  border-left: 2px solid #888;
+}
+
+.connector-bottom {
+  flex: 1;
+  position: relative;
+}
+
+.connector-bottom::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 50%;
+  left: 0;
+  border-left: 2px solid #888;
+}
+
+/* Horizontal line from vertical connector midpoint to parent match */
+.bracket-connector::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 2px solid #888;
+}
+
+/* Match card */
+.bracket-match {
+  border: 1px solid #999;
+  border-radius: 4px;
+  margin: 8px 0;
+  min-width: 200px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* Date line above team rows */
+.bracket-match-date {
+  font-size: 0.75em;
+  color: #fff;
+  background: #333;
+  padding: 3px 8px;
+  text-align: center;
+}
+
+/* Team row: team CSS class applies background-color + color directly */
+.bracket-team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  min-height: 28px;
+}
+
+.bracket-team + .bracket-team {
+  border-top: 1px solid #ddd;
+}
+
+/* Winner: bold text to distinguish from loser */
+.bracket-team.winner {
+  font-weight: bold;
+}
+
+/* Loser: dim background via translucent white overlay.
+   The overlay sits between the background and the text content:
+   - ::after covers the background-color (set by team CSS class)
+   - Text spans use z-index to stay above the overlay
+   Same visual effect as league view's .future on a separate bg div. */
+.bracket-team.loser {
+  position: relative;
+}
+
+.bracket-team.loser::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.8);
+  pointer-events: none;
+}
+
+.bracket-team.loser .bracket-team-name,
+.bracket-team.loser .bracket-score {
+  position: relative;
+  z-index: 1;
+  color: #333;
+}
+
+.bracket-team-name {
+  margin-right: 12px;
+  white-space: nowrap;
+}
+
+.bracket-score {
+  font-family: monospace;
+  white-space: nowrap;
+}
+
+.bracket-score-pk {
+  font-size: 0.85em;
+  color: #666;
+  margin-left: 4px;
+}
+
+/* Round label above match card */
+.bracket-round-label {
+  text-align: center;
+  font-size: 0.85em;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+/* Stadium line below team rows */
+.bracket-match-stadium {
+  font-size: 0.75em;
+  color: #fff;
+  background: #333;
+  padding: 3px 8px;
+  text-align: center;
+}

@@ -18,6 +18,9 @@
 
 import type { PointSystem } from './config';
 
+// Which views a competition/season supports.
+export type ViewType = 'league' | 'bracket';
+
 // Map of rank → CSS class name.
 // Example: { "3": "promoted_playoff" }
 export type RankClassMap = Record<string, string>;
@@ -54,6 +57,9 @@ export interface SeasonEntryOptions {
   note?: string | string[];
   data_source?: DataSource;
   promotion_label?: string;
+  bracket_order?: string[];
+  bracket_round_start?: string;
+  view_type?: ViewType[];
 }
 
 // Raw array format as loaded from season_map.json (tuple type).
@@ -104,4 +110,5 @@ export interface SeasonInfo {
   dataSource?: DataSource;
   notes: string[];
   promotionLabel: string;
+  viewTypes: ViewType[];
 }
