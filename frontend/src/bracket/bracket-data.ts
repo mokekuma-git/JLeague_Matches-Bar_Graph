@@ -47,6 +47,13 @@ function findMatch(
   );
 }
 
+/** Check if a subtree contains any real (non-null) team. */
+function hasAnyTeam(node: BracketNode | null): boolean {
+  if (!node) return false;
+  if (node.homeTeam || node.awayTeam) return true;
+  return hasAnyTeam(node.children[0]) || hasAnyTeam(node.children[1]);
+}
+
 /**
  * Create a BracketNode from a CSV row (or a placeholder if no match found).
  */
@@ -57,30 +64,46 @@ function nodeFromMatch(
   children: [BracketNode | null, BracketNode | null] = [null, null],
 ): BracketNode {
   if (!row) {
+    // Auto-advance: if one team exists and the opponent side is entirely
+    // empty (no real teams in the subtree), the existing team wins.
+    // This handles single-round byes (leaf) and multi-round skips (deep).
+    let winner: string | null = null;
+    if (upperTeam && !lowerTeam && !hasAnyTeam(children[1])) {
+      winner = upperTeam;
+    } else if (!upperTeam && lowerTeam && !hasAnyTeam(children[0])) {
+      winner = lowerTeam;
+    }
     return {
       round: '',
       homeTeam: upperTeam,
       awayTeam: lowerTeam,
       status: 'ＶＳ',
-      winner: null,
+      winner,
       children,
     };
   }
 
-  const hg = row.home_goal ? parseInt(row.home_goal, 10) : undefined;
-  const ag = row.away_goal ? parseInt(row.away_goal, 10) : undefined;
+  // Preserve bracket position: upperTeam must be homeTeam in the node.
+  // If CSV home/away is reversed relative to bracket order, swap scores.
+  const needsSwap = upperTeam != null && row.home_team !== upperTeam;
+  const parse = (v: string | undefined): number | undefined =>
+    v ? parseInt(v, 10) : undefined;
+
+  const [hGoal, aGoal] = needsSwap ? [parse(row.away_goal), parse(row.home_goal)]
+    : [parse(row.home_goal), parse(row.away_goal)];
+  const [hPk, aPk] = needsSwap ? [parse(row.away_pk_score), parse(row.home_pk_score)]
+    : [parse(row.home_pk_score), parse(row.away_pk_score)];
+  const [hEx, aEx] = needsSwap ? [parse(row.away_score_ex), parse(row.home_score_ex)]
+    : [parse(row.home_score_ex), parse(row.away_score_ex)];
 
   return {
     round: row.round ?? '',
     matchNumber: row.match_number ? parseInt(row.match_number, 10) : undefined,
-    homeTeam: row.home_team,
-    awayTeam: row.away_team,
-    homeGoal: isNaN(hg as number) ? undefined : hg,
-    awayGoal: isNaN(ag as number) ? undefined : ag,
-    homePkScore: row.home_pk_score ? parseInt(row.home_pk_score, 10) : undefined,
-    awayPkScore: row.away_pk_score ? parseInt(row.away_pk_score, 10) : undefined,
-    homeScoreEx: row.home_score_ex ? parseInt(row.home_score_ex, 10) : undefined,
-    awayScoreEx: row.away_score_ex ? parseInt(row.away_score_ex, 10) : undefined,
+    homeTeam: needsSwap ? row.away_team : row.home_team,
+    awayTeam: needsSwap ? row.home_team : row.away_team,
+    homeGoal: hGoal, awayGoal: aGoal,
+    homePkScore: hPk, awayPkScore: aPk,
+    homeScoreEx: hEx, awayScoreEx: aEx,
     matchDate: row.match_date,
     stadium: row.stadium,
     status: row.status,
@@ -92,7 +115,7 @@ function nodeFromMatch(
 /**
  * Recursively build a bracket tree from bracket_order positions.
  */
-function buildNode(rows: RawMatchRow[], teams: string[]): BracketNode {
+function buildNode(rows: RawMatchRow[], teams: (string | null)[]): BracketNode {
   if (teams.length === 2) {
     const match = findMatch(rows, teams[0], teams[1]);
     return nodeFromMatch(match, teams[0], teams[1]);
@@ -116,7 +139,7 @@ function buildNode(rows: RawMatchRow[], teams: string[]): BracketNode {
  * @param bracketOrder - Teams in bracket position order (top to bottom).
  * @returns Root BracketNode of the tournament tree.
  */
-export function buildBracket(rows: RawMatchRow[], bracketOrder: string[]): BracketNode {
+export function buildBracket(rows: RawMatchRow[], bracketOrder: (string | null)[]): BracketNode {
   if (bracketOrder.length < 2) {
     throw new Error(`bracket_order must have at least 2 teams, got ${bracketOrder.length}`);
   }

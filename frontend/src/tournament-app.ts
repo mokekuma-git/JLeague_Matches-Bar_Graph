@@ -23,7 +23,11 @@ import type { BracketNode } from './bracket/bracket-types';
 interface BracketState {
   csvRows: RawMatchRow[];
   bracketOrder: string[];
-  matchDates: string[];       // sorted unique dates from CSV
+  fullRoot: BracketNode;        // full tree built from bracketOrder
+  roundsByDepth: string[];      // round labels root-to-leaf (e.g. ['決勝戦','準決勝','準々決勝','ラウンド16'])
+  allRounds: string[];          // all CSV rounds in chronological order
+  defaultRoundStart?: string;   // from season_map bracket_round_start
+  matchDates: string[];         // sorted unique dates from CSV
   cssFiles: string[];
   leagueDisplay: string;
   season: string;
@@ -120,6 +124,129 @@ function writeUrlParams(competition: string, season: string): void {
   history.replaceState(null, '', url.toString());
 }
 
+// ---- Round start helpers ---------------------------------------------------
+
+/** Collect round labels at each tree depth via BFS (root → leaf). */
+function collectRoundsByDepth(node: BracketNode): string[] {
+  const rounds: string[] = [];
+  let level: BracketNode[] = [node];
+  while (level.length > 0) {
+    const roundName = level.find(n => n.round)?.round ?? '';
+    if (roundName) rounds.push(roundName);
+    const next: BracketNode[] = [];
+    for (const n of level) {
+      for (const child of n.children) {
+        if (child) next.push(child);
+      }
+    }
+    level = next;
+  }
+  return rounds;
+}
+
+/** Collect unique rounds from CSV in chronological order. */
+function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
+  const seen = new Set<string>();
+  const rounds: string[] = [];
+  const sorted = [...rows].sort(
+    (a, b) => (a.match_date ?? '').localeCompare(b.match_date ?? ''),
+  );
+  for (const row of sorted) {
+    if (row.round && !seen.has(row.round)) {
+      seen.add(row.round);
+      rounds.push(row.round);
+    }
+  }
+  return rounds;
+}
+
+/** Collect winners at a given tree depth (in bracket positional order). */
+function collectWinnersAtDepth(
+  node: BracketNode, depth: number,
+): (string | null)[] {
+  if (depth === 0) return [node.winner];
+  const results: (string | null)[] = [];
+  for (const child of node.children) {
+    if (child) results.push(...collectWinnersAtDepth(child, depth - 1));
+  }
+  return results;
+}
+
+/**
+ * Extend bracket order backward by one round.
+ * For each team, find their match in the given round and expand to [home, away].
+ * Teams that entered at a later round (no match found) become [team, null] (bye).
+ */
+function extendBracketBackward(
+  order: (string | null)[],
+  rows: RawMatchRow[],
+  round: string,
+): (string | null)[] {
+  const extended: (string | null)[] = [];
+  for (const team of order) {
+    if (!team) {
+      extended.push(null, null);
+      continue;
+    }
+    const match = rows.find(r =>
+      r.round === round && (r.home_team === team || r.away_team === team),
+    );
+    if (match) {
+      extended.push(match.home_team, match.away_team);
+    } else {
+      // Team entered at a later round (bye)
+      extended.push(team, null);
+    }
+  }
+  return extended;
+}
+
+function populateRoundStartPulldown(
+  allRounds: string[], defaultRound?: string,
+): void {
+  const sel = document.getElementById('round_start_key') as HTMLSelectElement;
+  if (!sel) return;
+  sel.innerHTML = '';
+  for (const round of allRounds) {
+    const opt = document.createElement('option');
+    opt.value = round;
+    opt.textContent = round;
+    sel.appendChild(opt);
+  }
+  if (defaultRound && allRounds.includes(defaultRound)) {
+    sel.value = defaultRound;
+  }
+}
+
+/** Get effective bracket order for the selected start round. */
+function getEffectiveBracketOrder(): (string | null)[] {
+  if (!currentState) return [];
+  const { fullRoot, bracketOrder, roundsByDepth, allRounds, csvRows } = currentState;
+  const selected = getSelectValue('round_start_key');
+
+  const leafRound = roundsByDepth[roundsByDepth.length - 1];
+  const leafIdx = allRounds.indexOf(leafRound);
+  const selectedIdx = allRounds.indexOf(selected);
+  if (selectedIdx < 0) return bracketOrder;
+
+  if (selectedIdx === leafIdx) {
+    // Same as configured leaf → original bracket order
+    return bracketOrder;
+  } else if (selectedIdx > leafIdx) {
+    // Later round → collapse using bracket tree
+    const treeDepthIdx = roundsByDepth.indexOf(selected);
+    if (treeDepthIdx < 0) return bracketOrder;
+    return collectWinnersAtDepth(fullRoot, treeDepthIdx + 1);
+  } else {
+    // Earlier round → extend backward from leaf
+    let order: (string | null)[] = [...bracketOrder];
+    for (let i = leafIdx - 1; i >= selectedIdx; i--) {
+      order = extendBracketBackward(order, csvRows, allRounds[i]);
+    }
+    return order;
+  }
+}
+
 // ---- Bracket rendering with date filter ------------------------------------
 
 function getTargetDate(): string | null {
@@ -174,8 +301,10 @@ function renderWithDateFilter(): void {
   const container = document.getElementById('bracket_container');
   if (!container) return;
 
-  // Build full tree from all CSV data, then mask for target date
-  const fullRoot = buildBracket(currentState.csvRows, currentState.bracketOrder);
+  // Build tree from effective bracket order, then mask for target date
+  const effectiveOrder = getEffectiveBracketOrder();
+  if (effectiveOrder.length < 2) return;
+  const fullRoot = buildBracket(currentState.csvRows, effectiveOrder);
   const targetDate = getTargetDate();
   const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
   const root = (targetDate && targetDate < lastDate)
@@ -268,15 +397,28 @@ function loadAndRender(seasonMap: SeasonMap): void {
     download: true,
     complete: (results) => {
       const matchDates = collectMatchDates(results.data);
+      const defaultRoundStart = entry[4]?.bracket_round_start;
+
+      // Build full tree to extract round structure
+      const fullRoot = buildBracket(results.data, bracketOrder);
+      const roundsByDepth = collectRoundsByDepth(fullRoot);
+      const allRounds = collectRoundsFromCsv(results.data);
 
       currentState = {
         csvRows: results.data,
         bracketOrder,
+        fullRoot,
+        roundsByDepth,
+        allRounds,
+        defaultRoundStart,
         matchDates,
         cssFiles: seasonInfo.cssFiles,
         leagueDisplay: seasonInfo.leagueDisplay,
         season,
       };
+
+      // Populate round start dropdown
+      populateRoundStartPulldown(allRounds, defaultRoundStart);
 
       // Set up date slider
       const slider = document.getElementById('date_slider') as HTMLInputElement | null;
@@ -427,6 +569,14 @@ async function main(): Promise<void> {
       applyLayout();
     });
   }
+
+  // ---- Round start change events --------------------------------------------
+
+  document.getElementById('round_start_key')?.addEventListener('change', () => {
+    renderWithDateFilter();
+    const opSlider = document.getElementById('future_opacity') as HTMLInputElement | null;
+    if (opSlider) setBracketFutureOpacity(opSlider.value);
+  });
 
   // ---- Competition/season change events ------------------------------------
 

@@ -111,15 +111,13 @@
 }
 
 /* Team row: team CSS class applies background-color + color directly.
-   Default: muted gray for teams without a team_style.css definition. */
+   Default team color is defined in team_style.css (.team-cell). */
 .bracket-team {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 4px 8px;
   min-height: 28px;
-  background-color: #888;
-  color: #fff;
 }
 
 .bracket-team + .bracket-team {
