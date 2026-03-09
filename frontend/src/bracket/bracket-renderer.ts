@@ -122,15 +122,13 @@ function createConnector(): HTMLElement {
 function renderNode(node: BracketNode): HTMLElement {
   const [upper, lower] = node.children;
 
-  /** Wrap a match card with its round label. */
+  /** Wrap a match card with its round label (always present for consistent height). */
   const wrapWithLabel = (n: BracketNode): HTMLElement => {
     const wrapper = document.createElement('div');
-    if (n.round) {
-      const label = document.createElement('div');
-      label.classList.add('bracket-round-label');
-      label.textContent = n.round;
-      wrapper.appendChild(label);
-    }
+    const label = document.createElement('div');
+    label.classList.add('bracket-round-label');
+    label.textContent = n.round || '\u00A0';
+    wrapper.appendChild(label);
     wrapper.appendChild(createMatchCard(n));
     return wrapper;
   };
