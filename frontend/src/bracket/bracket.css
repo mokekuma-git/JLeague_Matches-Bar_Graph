@@ -110,13 +110,16 @@
   text-align: center;
 }
 
-/* Team row: team CSS class applies background-color + color directly */
+/* Team row: team CSS class applies background-color + color directly.
+   Default: muted gray for teams without a team_style.css definition. */
 .bracket-team {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 4px 8px;
   min-height: 28px;
+  background-color: #888;
+  color: #fff;
 }
 
 .bracket-team + .bracket-team {

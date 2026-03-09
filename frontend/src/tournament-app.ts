@@ -90,7 +90,10 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
   const found = findCompetition(seasonMap, competition);
   if (!found) return;
   const seasons = Object.keys(found.competition.seasons)
-    .filter(s => found.competition.seasons[s][4]?.bracket_order != null)
+    .filter(s => {
+      const e = found.competition.seasons[s];
+      return e[4]?.bracket_order != null || e[3]?.length > 0;
+    })
     .sort().reverse();
   for (const s of seasons) {
     const opt = document.createElement('option');
@@ -245,8 +248,9 @@ function loadAndRender(seasonMap: SeasonMap): void {
   const seasonInfo = resolveSeasonInfo(
     found.group, found.competition, found.competition.seasons[season], found.groupKey,
   );
-  const bracketOrder = found.competition.seasons[season][4]?.bracket_order;
-  if (!bracketOrder) {
+  const entry = found.competition.seasons[season];
+  const bracketOrder = entry[4]?.bracket_order ?? entry[3];
+  if (!bracketOrder || bracketOrder.length === 0) {
     setStatus('No bracket data for this season.');
     return;
   }
