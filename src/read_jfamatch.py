@@ -169,7 +169,7 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
         for (target_key, org_key) in config.replace_key.items():
             _row[target_key] = _match_data[org_key]
         for (target_key, org_key) in config.score_data_key.items():
-            _row[target_key] = _match_data['score'][org_key]
+            _row[target_key] = _match_data['score'].get(org_key, '')
         _regexp_result = config.section_no.search(_row['section_no'])
         if _regexp_result:
             section_no = int(_regexp_result[1])
@@ -193,6 +193,15 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
             _row['status'] = '試合不実施'
             logger.info("Forfeited match: %s", venue_full)
 
+        # Compute extra-time score from two-half differential values
+        score = _match_data['score']
+        if score.get('exMatch'):
+            for side in ('home', 'away'):
+                s1 = score.get(f'{side}TeamScore1ex', '')
+                s2 = score.get(f'{side}TeamScore2ex', '')
+                if s1 != '' and s2 != '':
+                    _row[f'{side}_score_ex'] = int(s1) + int(s2)
+
         _row['extraTime'] = str(_row['extraTime'])  # Stringify for comparison with old style CSV
         _row['match_date'] = mu.to_datetime_aspossible(_row['match_date'])
 
@@ -213,6 +222,13 @@ def read_group(competition: str) -> None:
 
     comp_conf = config.competitions[competition]
     match_df = read_all_group(comp_conf)
+
+    # Apply team name rename if configured
+    if 'team_rename' in comp_conf:
+        rename_map = dict(comp_conf.team_rename._data)
+        for col in ('home_team', 'away_team'):
+            match_df[col] = match_df[col].replace(rename_map)
+        logger.info("Applied team_rename (%d mappings) to %s", len(rename_map), competition)
 
     logger.debug("Match status:\n%s", match_df['status'])
     mu.update_if_diff(match_df, comp_conf.csv_path)

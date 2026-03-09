@@ -2,8 +2,9 @@
   "name": "jleague-bar-graph-frontend",
   "type": "module",
   "scripts": {
+    "clean": "rm -rf ../docs/assets",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run clean && tsc && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

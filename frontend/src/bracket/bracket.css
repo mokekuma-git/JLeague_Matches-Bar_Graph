@@ -110,7 +110,8 @@
   text-align: center;
 }
 
-/* Team row: team CSS class applies background-color + color directly */
+/* Team row: team CSS class applies background-color + color directly.
+   Default team color is defined in team_style.css (.team-cell). */
 .bracket-team {
   display: flex;
   justify-content: space-between;

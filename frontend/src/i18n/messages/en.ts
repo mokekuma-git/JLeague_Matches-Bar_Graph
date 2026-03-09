@@ -13,6 +13,7 @@ export const en: Record<MessageKey, string> = {
   'label.spaceColor': 'Space color',
   'label.dataTimestamp': 'Data updated:',
   'label.language': 'Language',
+  'label.roundStart': 'Start round',
   'label.bracketLayout': 'Layout',
   'label.layoutHorizontal': 'Horizontal (L→R)',
   'label.layoutVertical': 'Vertical (bottom→up)',
