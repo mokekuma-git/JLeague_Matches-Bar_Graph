@@ -6,6 +6,7 @@ Already-downloaded files are skipped (incremental fetch).
 
 Usage:
     uv run python scripts/fetch_match_detail.py --year 1995 [--delay 3] [--dry-run]
+    uv run python scripts/fetch_match_detail.py --year 2025 --filter ＹＬＣ
 """
 import argparse
 import logging
@@ -21,16 +22,33 @@ DETAIL_URL = 'https://data.j-league.or.jp/SFMS02/?match_card_id={match_card_id}'
 CSV_DIR = Path(__file__).parent / '../csv'
 OUTPUT_DIR = Path(__file__).parent / '../local_data/match_detail'
 
+# Shorthand aliases for --filter
+FILTER_ALIASES: dict[str, str] = {
+    'leaguecup': 'ＹＬＣ',
+    'jleague': 'Ｊ',
+}
 
-def load_match_card_ids(year: int) -> list[str]:
-    """Read match_card_id values from the intermediate CSV for a given year."""
+
+def load_match_card_ids(year: int, *, filter_pattern: str | None = None) -> list[str]:
+    """Read match_card_id values from the intermediate CSV for a given year.
+
+    Args:
+        year: Year to load.
+        filter_pattern: If set, only return IDs for rows whose 大会 column
+                        contains this substring.
+    """
     csv_path = (CSV_DIR / f'{year}.csv').resolve()
     if not csv_path.exists():
         logger.warning('CSV not found: %s', csv_path)
         return []
     df = pd.read_csv(csv_path, dtype={'match_card_id': str})
+    if filter_pattern and '大会' in df.columns:
+        before = len(df)
+        df = df[df['大会'].str.contains(filter_pattern, na=False)]
+        logger.info('Year %d: filtered %d → %d rows (大会 contains "%s")',
+                     year, before, len(df), filter_pattern)
     ids = df['match_card_id'].dropna().tolist()
-    logger.info('Year %d: %d match_card_ids found in %s', year, len(ids), csv_path.name)
+    logger.info('Year %d: %d match_card_ids to fetch', year, len(ids))
     return ids
 
 
@@ -61,9 +79,10 @@ def fetch_and_save(year: int, match_card_id: str, *, delay: float, dry_run: bool
     return True
 
 
-def fetch_year(year: int, *, delay: float, dry_run: bool) -> None:
+def fetch_year(year: int, *, delay: float, dry_run: bool,
+               filter_pattern: str | None = None) -> None:
     """Fetch all match detail pages for a given year."""
-    ids = load_match_card_ids(year)
+    ids = load_match_card_ids(year, filter_pattern=filter_pattern)
     if not ids:
         return
 
@@ -86,6 +105,10 @@ def parse_args() -> argparse.Namespace:
     group.add_argument('--year', type=int, help='Single year to fetch')
     group.add_argument('--range', nargs=2, type=int, metavar=('START', 'END'),
                        help='Range of years (inclusive)')
+    parser.add_argument('--filter',
+                        help='Filter by 大会 column substring. '
+                             'Aliases: leaguecup→ＹＬＣ, jleague→Ｊ. '
+                             'Or pass a literal pattern (e.g. プライム).')
     parser.add_argument('--delay', type=float, default=3.0,
                         help='Delay in seconds between requests (default: 3)')
     parser.add_argument('--dry-run', action='store_true',
@@ -98,8 +121,14 @@ def main() -> None:
     args = parse_args()
     years = [args.year] if args.year else list(range(args.range[0], args.range[1] + 1))
 
+    # Resolve filter alias
+    filter_pattern = None
+    if args.filter:
+        filter_pattern = FILTER_ALIASES.get(args.filter, args.filter)
+
     for year in years:
-        fetch_year(year, delay=args.delay, dry_run=args.dry_run)
+        fetch_year(year, delay=args.delay, dry_run=args.dry_run,
+                   filter_pattern=filter_pattern)
 
 
 if __name__ == '__main__':

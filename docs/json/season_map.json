@@ -300,6 +300,22 @@
       }
     }
   },
+  "leaguecup": {
+    "display_name": "Jリーグカップ",
+    "css_files": ["team_style.css"],
+    "season_start_month": 1,
+    "competitions": {
+      "JLeagueCup": {
+        "league_display": "ルヴァンカップ プライムラウンド",
+        "view_type": ["bracket"],
+        "seasons": {
+          "2025": [8, 0, 0,
+            ["横浜FC", "神戸", "湘南", "広島", "浦和", "川崎Ｆ", "横浜FM", "柏"],
+            {"bracket_round_start": "準々決勝"}]
+        }
+      }
+    }
+  },
   "international": {
     "display_name": "国際大会",
     "css_files": ["national_team_style.css"],

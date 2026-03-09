@@ -2,7 +2,7 @@
    Applied via .team-cell class on elements that display team colors. */
 .team-cell {
   background-color: #888;
-  color: #fff;
+  color: #333;
 }
 
 /**************************************************************** J League Team style definition */
@@ -11,6 +11,7 @@
   background-color: #fcc800;
 }
 .柏, .柏レイソルU-18 {
+  color: black;
   background-color: #fff100;
 }
 .広島, .S広島R, .サンフレッチェ広島FCユース {
@@ -18,11 +19,13 @@
   background-color: #51318f;
 }
 .鳥栖, .サガン鳥栖U-18 {
+  color: black;
   background: -moz-linear-gradient(top left, #f580a7, #4fc3f7 50%);
   background: -webkit-linear-gradient(top left, #f580a7, #4fc3f7 50%);
   background: linear-gradient(to bottom right, #f580a7, #4fc3f7 50%);
 }
 .横浜FC, .横浜FCユース {
+  color: white;
   background-color: #00a4f9;
 }
 .名古屋, .名古屋グランパスU-18 {
@@ -42,6 +45,7 @@
   background-color: #140b8c;
 }
 .横浜FM, .横浜M, .横浜F・マリノス, .横浜F・マリノスユース {
+  color: black;
   background: -moz-linear-gradient(top left, #E60039 10%, #FFFFFF, #004098 90%);
   background: -webkit-linear-gradient(top left, #E60039 10%, #FFFFFF, #004098 90%);
   background: linear-gradient(to bottom right, #E60039 10%, #FFFFFF, #004098 90%);
@@ -65,6 +69,7 @@
   background: linear-gradient(to right, #198cca 60%, #000000);
 }
 .湘南, .平塚 {
+  color: black;
   background-color: #8dd64c;
 }
 .福岡, .アビスパ福岡U-18 {
@@ -309,6 +314,7 @@
   background-color: #00205b;
 }
 .ユナイテッドシティ {
+  color: black;
   background-color: #fff100;
 }
 .タンピネス {
