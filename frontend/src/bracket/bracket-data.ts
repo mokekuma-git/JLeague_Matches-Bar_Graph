@@ -35,13 +35,14 @@ function determineWinner(row: RawMatchRow): string | null {
 }
 
 /**
- * Find a CSV row matching a matchup between two teams.
+ * Find all CSV rows matching a matchup between two teams.
+ * For H&A ties, returns both legs (in CSV order, i.e. leg 1 first).
  */
-function findMatch(
+function findMatches(
   rows: RawMatchRow[], teamA: string | null, teamB: string | null,
-): RawMatchRow | undefined {
-  if (!teamA || !teamB) return undefined;
-  return rows.find(r =>
+): RawMatchRow[] {
+  if (!teamA || !teamB) return [];
+  return rows.filter(r =>
     (r.home_team === teamA && r.away_team === teamB) ||
     (r.home_team === teamB && r.away_team === teamA),
   );
@@ -55,7 +56,7 @@ function hasAnyTeam(node: BracketNode | null): boolean {
 }
 
 /**
- * Create a BracketNode from a CSV row (or a placeholder if no match found).
+ * Create a BracketNode from a single CSV row (or a placeholder if no match found).
  */
 function nodeFromMatch(
   row: RawMatchRow | undefined,
@@ -113,23 +114,93 @@ function nodeFromMatch(
 }
 
 /**
+ * Create a BracketNode from multiple H&A leg rows.
+ * Shows aggregate score; winner determined by total goals then PK.
+ */
+function nodeFromAggregate(
+  matches: RawMatchRow[],
+  upperTeam: string | null,
+  lowerTeam: string | null,
+  children: [BracketNode | null, BracketNode | null] = [null, null],
+): BracketNode {
+  let upperTotal = 0;
+  let lowerTotal = 0;
+  let allPlayed = true;
+  let anyPlayed = false;
+  let roundName = '';
+
+  for (const row of matches) {
+    if (!row.home_goal || !row.away_goal) { allPlayed = false; continue; }
+    anyPlayed = true;
+    const hg = parseInt(row.home_goal, 10);
+    const ag = parseInt(row.away_goal, 10);
+    const hex = row.home_score_ex ? parseInt(row.home_score_ex, 10) : 0;
+    const aex = row.away_score_ex ? parseInt(row.away_score_ex, 10) : 0;
+
+    const isUpperHome = row.home_team === upperTeam;
+    upperTotal += isUpperHome ? (hg + hex) : (ag + aex);
+    lowerTotal += isUpperHome ? (ag + aex) : (hg + hex);
+
+    if (!roundName && row.round) roundName = row.round;
+  }
+
+  let winner: string | null = null;
+  if (allPlayed) {
+    if (upperTotal > lowerTotal) winner = upperTeam;
+    else if (lowerTotal > upperTotal) winner = lowerTeam;
+    else {
+      // Aggregate tied — PK only happens in the decisive (last) leg
+      const lastMatch = [...matches].reverse().find(r => r.home_goal && r.away_goal);
+      if (lastMatch?.home_pk_score && lastMatch?.away_pk_score) {
+        const hpk = parseInt(lastMatch.home_pk_score, 10);
+        const apk = parseInt(lastMatch.away_pk_score, 10);
+        const pkWinner = hpk > apk ? lastMatch.home_team : lastMatch.away_team;
+        winner = pkWinner === upperTeam ? upperTeam : lowerTeam;
+      }
+    }
+  }
+
+  return {
+    round: roundName,
+    homeTeam: upperTeam,
+    awayTeam: lowerTeam,
+    homeGoal: anyPlayed ? upperTotal : undefined,
+    awayGoal: anyPlayed ? lowerTotal : undefined,
+    status: allPlayed ? '試合終了' : 'ＶＳ',
+    winner,
+    children,
+  };
+}
+
+/**
+ * Resolve a matchup: single match uses nodeFromMatch, H&A uses nodeFromAggregate.
+ */
+function resolveMatch(
+  rows: RawMatchRow[],
+  upperTeam: string | null,
+  lowerTeam: string | null,
+  children: [BracketNode | null, BracketNode | null] = [null, null],
+): BracketNode {
+  const matches = findMatches(rows, upperTeam, lowerTeam);
+  if (matches.length <= 1) {
+    return nodeFromMatch(matches[0], upperTeam, lowerTeam, children);
+  }
+  return nodeFromAggregate(matches, upperTeam, lowerTeam, children);
+}
+
+/**
  * Recursively build a bracket tree from bracket_order positions.
  */
 function buildNode(rows: RawMatchRow[], teams: (string | null)[]): BracketNode {
   if (teams.length === 2) {
-    const match = findMatch(rows, teams[0], teams[1]);
-    return nodeFromMatch(match, teams[0], teams[1]);
+    return resolveMatch(rows, teams[0], teams[1]);
   }
 
   const mid = Math.floor(teams.length / 2);
   const upper = buildNode(rows, teams.slice(0, mid));
   const lower = buildNode(rows, teams.slice(mid));
 
-  const upperWinner = upper.winner;
-  const lowerWinner = lower.winner;
-  const match = findMatch(rows, upperWinner, lowerWinner);
-
-  return nodeFromMatch(match, upperWinner, lowerWinner, [upper, lower]);
+  return resolveMatch(rows, upper.winner, lower.winner, [upper, lower]);
 }
 
 /**

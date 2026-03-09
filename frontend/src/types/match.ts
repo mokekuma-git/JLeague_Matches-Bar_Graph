@@ -18,6 +18,7 @@ export interface RawMatchRow {
   away_score_ex?: string;
   round?: string;           // Tournament round name (column may be absent)
   match_number?: string;    // Tournament match number (column may be absent)
+  leg?: string;             // H&A leg number: 1 or 2 (column may be absent)
 }
 
 // Per-match data from a single team's perspective, produced by parse_csvresults.

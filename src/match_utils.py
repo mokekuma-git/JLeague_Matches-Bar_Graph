@@ -64,6 +64,7 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
     'away_score_ex': 'nullable_int',  # Extra-time score (column may be absent)
     'round': 'str',                   # Tournament round name (column may be absent)
     'match_number': 'nullable_int',   # Tournament match number (column may be absent)
+    'leg': 'nullable_int',             # H&A leg number: 1 or 2 (column may be absent)
 }
 
 
