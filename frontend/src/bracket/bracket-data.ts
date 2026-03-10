@@ -45,7 +45,7 @@ function findMatches(
 }
 
 /** Check if a subtree contains any real (non-null) team. */
-function hasAnyTeam(node: BracketNode | null): boolean {
+export function hasAnyTeam(node: BracketNode | null): boolean {
   if (!node) return false;
   if (node.homeTeam || node.awayTeam) return true;
   return hasAnyTeam(node.children[0]) || hasAnyTeam(node.children[1]);
