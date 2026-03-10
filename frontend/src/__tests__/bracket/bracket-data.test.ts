@@ -100,16 +100,21 @@ describe('buildBracket', () => {
   });
 
   it('handles extra time winner correctly', () => {
+    // home_goal/away_goal include ET: regular 1-1, ET 1-0, total 2-1
     const rows = [
       makeRow({
         home_team: 'A', away_team: 'B',
-        home_goal: '1', away_goal: '1',
+        home_goal: '2', away_goal: '1',
         home_score_ex: '1', away_score_ex: '0',
         round: '決勝',
       }),
     ];
     const root = buildBracket(rows, ['A', 'B']);
     expect(root.winner).toBe('A');
+    expect(root.homeGoal).toBe(2);
+    expect(root.awayGoal).toBe(1);
+    expect(root.homeScoreEx).toBe(1);
+    expect(root.awayScoreEx).toBe(0);
   });
 
   it('handles unplayed match (no CSV row for matchup)', () => {
@@ -139,5 +144,90 @@ describe('buildBracket', () => {
     expect(root.winner).toBeNull();
     expect(root.homeTeam).toBe('A');
     expect(root.awayTeam).toBeNull();
+  });
+
+  it('handles bye entries (team vs null) with auto-advance', () => {
+    // Bracket order with byes: A gets a bye, C vs D play
+    const rows = [
+      makeRow({
+        home_team: 'C', away_team: 'D',
+        home_goal: '1', away_goal: '0',
+        round: '準決勝',
+      }),
+      makeRow({
+        home_team: 'A', away_team: 'C',
+        home_goal: '2', away_goal: '1',
+        round: '決勝',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', null, 'C', 'D']);
+
+    // Upper SF: A gets bye (auto-advance)
+    const upperSf = root.children[0]!;
+    expect(upperSf.homeTeam).toBe('A');
+    expect(upperSf.awayTeam).toBeNull();
+    expect(upperSf.winner).toBe('A');
+
+    // Lower SF: C vs D, C wins
+    const lowerSf = root.children[1]!;
+    expect(lowerSf.homeTeam).toBe('C');
+    expect(lowerSf.awayTeam).toBe('D');
+    expect(lowerSf.winner).toBe('C');
+
+    // Final: A vs C
+    expect(root.homeTeam).toBe('A');
+    expect(root.awayTeam).toBe('C');
+    expect(root.winner).toBe('A');
+  });
+
+  it('handles multi-level bye chain (team passes through 2 rounds)', () => {
+    // 8-team bracket where A has byes in QF and SF
+    const rows = [
+      makeRow({
+        home_team: 'E', away_team: 'F',
+        home_goal: '2', away_goal: '0',
+        round: '準々決勝',
+      }),
+      makeRow({
+        home_team: 'G', away_team: 'H',
+        home_goal: '1', away_goal: '0',
+        round: '準々決勝',
+      }),
+      makeRow({
+        home_team: 'E', away_team: 'G',
+        home_goal: '3', away_goal: '1',
+        round: '準決勝',
+      }),
+      makeRow({
+        home_team: 'A', away_team: 'E',
+        home_goal: '2', away_goal: '1',
+        round: '決勝',
+      }),
+    ];
+    // A has byes at positions [0, null, null, null], real teams at [4..7]
+    const root = buildBracket(rows, ['A', null, null, null, 'E', 'F', 'G', 'H']);
+
+    // Upper half: A passes through 2 levels of byes
+    const upperSf = root.children[0]!;
+    expect(upperSf.winner).toBe('A');
+    expect(upperSf.homeTeam).toBe('A');
+    expect(upperSf.awayTeam).toBeNull();
+
+    // Upper SF's upper child: A bye leaf
+    const upperQf = upperSf.children[0]!;
+    expect(upperQf.winner).toBe('A');
+    expect(upperQf.homeTeam).toBe('A');
+    expect(upperQf.awayTeam).toBeNull();
+
+    // Upper SF's lower child: empty (no real teams)
+    const emptyQf = upperSf.children[1]!;
+    expect(emptyQf.homeTeam).toBeNull();
+    expect(emptyQf.awayTeam).toBeNull();
+    expect(emptyQf.winner).toBeNull();
+
+    // Final: A vs E
+    expect(root.homeTeam).toBe('A');
+    expect(root.awayTeam).toBe('E');
+    expect(root.winner).toBe('A');
   });
 });

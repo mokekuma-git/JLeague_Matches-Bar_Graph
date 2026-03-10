@@ -1,3 +1,18 @@
+/** Per-leg match detail for H&A aggregate nodes. */
+export interface LegDetail {
+  matchDate?: string;
+  stadium?: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeGoal?: number;
+  awayGoal?: number;
+  homePkScore?: number;
+  awayPkScore?: number;
+  homeScoreEx?: number;
+  awayScoreEx?: number;
+  leg?: string;
+}
+
 /** A single node in the tournament bracket tree. */
 export interface BracketNode {
   round: string;
@@ -14,6 +29,8 @@ export interface BracketNode {
   stadium?: string;
   status: string;
   winner: string | null;
+  /** Per-leg details for H&A aggregate nodes. Undefined for single-match nodes. */
+  legs?: LegDetail[];
   /** [upper child, lower child] — null for first-round byes or leaf nodes. */
   children: [BracketNode | null, BracketNode | null];
 }

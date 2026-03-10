@@ -1,6 +1,7 @@
 """Process and save J-League match results from data.j-league.or.jp into CSV files"""
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -57,6 +58,9 @@ def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
         dict: Dictionary containing DataFrames for each season {season_name: DataFrame}
     """
     _df = pd.read_csv(filename, index_col=0)
+    # Handle column name change between SFMS01 versions (シーズン → 年度)
+    if 'シーズン' in _df.columns and '年度' not in _df.columns:
+        _df = _df.rename(columns={'シーズン': '年度'})
     matches = _df[_df['大会'].isin(config.league_name[comp_index])].reset_index(drop=True)
     if matches.empty:
         return []
@@ -101,6 +105,120 @@ def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
     return season_dict
 
 
+_FW_DIGITS = str.maketrans('０１２３４５６７８９', '0123456789')
+
+
+def _derive_round(competition_name: str, section: str) -> str:
+    """Derive round name from SFMS01 大会 and 節 columns."""
+    if '1stラウンド' in competition_name:
+        m = re.match(r'([０-９\d]+回戦)', section)
+        return m.group(1).translate(_FW_DIGITS) if m else section
+    if 'プレーオフ' in competition_name:
+        return 'プレーオフラウンド'
+    if 'プライム' in competition_name:
+        for prefix in ('準々決勝', '準決勝', '決勝'):
+            if section.startswith(prefix):
+                return prefix
+    return section.translate(_FW_DIGITS)
+
+
+def _derive_leg(section: str) -> str:
+    """Derive H&A leg number from 節 column. Returns '' for single-match rounds."""
+    m = re.search(r'第([０-９\d]+)戦', section)
+    if m:
+        return m.group(1).translate(_FW_DIGITS)
+    return ''
+
+
+def make_leaguecup_csv(year: int) -> None:
+    """Convert Levain Cup (YLC) match results from intermediate CSV into final CSV.
+
+    Filters YLC matches from csv/{year}.csv, derives round/leg columns,
+    and outputs docs/csv/{year}_allmatch_result-JLeagueCup.csv.
+    """
+    filename = config.get_path('match_data.csv_path_format', year=year)
+    if not filename.exists():
+        return
+
+    _df = pd.read_csv(filename, index_col=0)
+    matches = _df[_df['大会'].str.contains('ＹＬＣ', na=False)].reset_index(drop=True)
+    if matches.empty:
+        return
+
+    # Date: YY/MM/DD(day) → YYYY/MM/DD
+    raw_date = matches['試合日'].str.replace(r'\(.+\)', '', regex=True)
+    matches['match_date'] = raw_date.apply(
+        lambda d: f'20{d}' if d.count('/') >= 2 else f'{year}/{d}'
+    )
+
+    # Round and leg derivation
+    matches['round'] = matches.apply(
+        lambda r: _derive_round(str(r['大会']), str(r['節'])), axis=1
+    )
+    matches['leg'] = matches['節'].apply(lambda s: _derive_leg(str(s)))
+
+    matches['section_no'] = 0
+
+    # Rename JP columns → English
+    rename_dict = config.rename_dict.to_dict()
+    matches = matches.rename(columns=rename_dict)
+
+    # Parse scores (handles both "1-0" and "1-1 (PK2-4)")
+    score_parts = matches['スコア'].str.extract(r'^(\d+)-(\d+)')
+    matches['home_goal'] = score_parts[0].fillna('')
+    matches['away_goal'] = score_parts[1].fillna('')
+
+    # PK scores
+    matches['home_pk_score'] = matches['スコア'].str.extract(
+        r'\(PK(\d+)-', expand=False).fillna('')
+    matches['away_pk_score'] = matches['スコア'].str.extract(
+        r'\(PK\d+-(\d+)\)', expand=False).fillna('')
+
+    # ET scores from enrich
+    if 'home_score_ex' in matches.columns:
+        for col in ('home_score_ex', 'away_score_ex'):
+            matches[col] = matches[col].fillna('').apply(
+                lambda x: str(int(float(x))) if x != '' else ''
+            )
+
+    # Status
+    matches['status'] = matches['スコア'].apply(
+        lambda x: '試合終了' if pd.notna(x) and re.match(r'\d', str(x)) else 'ＶＳ'
+    )
+
+    # match_index_in_section: sequential within each round+leg group
+    result_parts = []
+    for _, group_df in matches.groupby(['round', 'leg'], sort=False):
+        section = group_df.reset_index(drop=True).reset_index()
+        section['index'] += 1
+        section = section.rename(columns={'index': 'match_index_in_section'})
+        result_parts.append(section)
+    result = pd.concat(result_parts)
+
+    columns_list = [
+        'match_date', 'section_no', 'match_index_in_section',
+        'start_time', 'stadium', 'home_team', 'home_goal', 'away_goal',
+        'away_team', 'status', 'round', 'home_pk_score', 'away_pk_score',
+    ]
+    if 'home_score_ex' in result.columns:
+        columns_list.extend(['home_score_ex', 'away_score_ex'])
+    columns_list.append('leg')
+
+    # Normalize nullable_int columns to int-strings or empty
+    for col in ('leg', 'home_pk_score', 'away_pk_score',
+                'home_score_ex', 'away_score_ex'):
+        if col in result.columns:
+            result[col] = result[col].fillna('').apply(
+                lambda x: str(int(float(x))) if x != '' else ''
+            )
+
+    outfile = config.get_path('match_data.league_csv_path',
+                              season=str(year), competition='JLeagueCup')
+    result[columns_list].to_csv(outfile, lineterminator='\n',
+                                encoding=config.match_data.encoding)
+    logger.info("Stored: %s (%d rows)", outfile, len(result))
+
+
 def init_season_dict(matches: pd.DataFrame, year: int) -> dict[str, str]:
     """Create a dictionary mapping season names to their respective start dates
 
@@ -133,6 +251,22 @@ if __name__ == '__main__':
         format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
         datefmt='%H:%M:%S',
     )
+    import argparse as _ap
+    _parser = _ap.ArgumentParser(
+        description='Convert SFMS01 intermediate CSV to published CSV',
+        parents=[],
+    )
+    _parser.add_argument('--competition', nargs='*',
+                         default=['J1', 'J2', 'J3'],
+                         help='Competitions to process (default: J1 J2 J3). '
+                              'Use JLeagueCup for Levain Cup.')
+    # Inject competition arg before parse_years() consumes --year/--range/--list
+    _comp_args, _remaining = _parser.parse_known_args()
+    sys.argv = [sys.argv[0]] + _remaining  # Let parse_years() handle year args
     years = parse_years()
-    for _comp in ['J1', 'J2', 'J3']:
-        make_old_matches_csv(_comp, years)
+    for _comp in _comp_args.competition:
+        if _comp == 'JLeagueCup':
+            for year in years:
+                make_leaguecup_csv(year)
+        else:
+            make_old_matches_csv(_comp, years)

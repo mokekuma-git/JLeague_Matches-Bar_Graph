@@ -45,11 +45,13 @@ If the user needs to switch branches, offer to do it (stashing if needed).
 
 ### Parent Branch Detection
 
-When on a feature/fix/refactor branch, check whether it was branched from another feature branch (not `main`):
+When on a feature/fix/refactor branch, determine the PR target:
 
-1. `MAIN_BASE=$(git merge-base main HEAD)`
-2. For each local branch (excluding `main` and current): `BRANCH_BASE=$(git merge-base <branch> HEAD)`
-3. If `BRANCH_BASE` differs from `MAIN_BASE` (i.e., BRANCH_BASE is a descendant of MAIN_BASE), that branch is the **parent branch**
+1. **Issue description**: Extract the Issue number from the branch name (e.g., `feature/issue-139-...` → `#139`). Check `gh issue view {N}` for a parent Issue reference (e.g., `## 親 Issue` section). If present, the parent Issue's branch is the PR target.
+2. **`git merge-base` (fallback)**: If no parent is found in the Issue description:
+   - `MAIN_BASE=$(git merge-base main HEAD)`
+   - For each local feature branch (excluding `main` and current): `BRANCH_BASE=$(git merge-base <branch> HEAD)`
+   - If `BRANCH_BASE` is a descendant of `MAIN_BASE`, that branch is the parent
 
 If a parent branch is detected, confirm with the user:
 > "This branch appears to be based on `<parent-branch>` (not `main`). Should the PR target `<parent-branch>`?"

@@ -12,7 +12,7 @@ import {
   getCompetitionViewTypes,
 } from './config/season-map';
 import { buildBracket } from './bracket/bracket-data';
-import { renderBracket } from './bracket/bracket-renderer';
+import { renderBracket, adjustBracketPositions, drawBracketConnectors } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
 import type { Locale } from './i18n';
@@ -23,7 +23,11 @@ import type { BracketNode } from './bracket/bracket-types';
 interface BracketState {
   csvRows: RawMatchRow[];
   bracketOrder: string[];
-  matchDates: string[];       // sorted unique dates from CSV
+  fullRoot: BracketNode;        // full tree built from bracketOrder
+  roundsByDepth: string[];      // round labels root-to-leaf (e.g. ['決勝戦','準決勝','準々決勝','ラウンド16'])
+  allRounds: string[];          // all CSV rounds in chronological order
+  defaultRoundStart?: string;   // from season_map bracket_round_start
+  matchDates: string[];         // sorted unique dates from CSV
   cssFiles: string[];
   leagueDisplay: string;
   season: string;
@@ -90,7 +94,10 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
   const found = findCompetition(seasonMap, competition);
   if (!found) return;
   const seasons = Object.keys(found.competition.seasons)
-    .filter(s => found.competition.seasons[s][4]?.bracket_order != null)
+    .filter(s => {
+      const e = found.competition.seasons[s];
+      return e[4]?.bracket_order != null || e[3]?.length > 0;
+    })
     .sort().reverse();
   for (const s of seasons) {
     const opt = document.createElement('option');
@@ -117,6 +124,129 @@ function writeUrlParams(competition: string, season: string): void {
   history.replaceState(null, '', url.toString());
 }
 
+// ---- Round start helpers ---------------------------------------------------
+
+/** Collect round labels at each tree depth via BFS (root → leaf). */
+function collectRoundsByDepth(node: BracketNode): string[] {
+  const rounds: string[] = [];
+  let level: BracketNode[] = [node];
+  while (level.length > 0) {
+    const roundName = level.find(n => n.round)?.round ?? '';
+    if (roundName) rounds.push(roundName);
+    const next: BracketNode[] = [];
+    for (const n of level) {
+      for (const child of n.children) {
+        if (child) next.push(child);
+      }
+    }
+    level = next;
+  }
+  return rounds;
+}
+
+/** Collect unique rounds from CSV in chronological order. */
+function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
+  const seen = new Set<string>();
+  const rounds: string[] = [];
+  const sorted = [...rows].sort(
+    (a, b) => (a.match_date ?? '').localeCompare(b.match_date ?? ''),
+  );
+  for (const row of sorted) {
+    if (row.round && !seen.has(row.round)) {
+      seen.add(row.round);
+      rounds.push(row.round);
+    }
+  }
+  return rounds;
+}
+
+/** Collect winners at a given tree depth (in bracket positional order). */
+function collectWinnersAtDepth(
+  node: BracketNode, depth: number,
+): (string | null)[] {
+  if (depth === 0) return [node.winner];
+  const results: (string | null)[] = [];
+  for (const child of node.children) {
+    if (child) results.push(...collectWinnersAtDepth(child, depth - 1));
+  }
+  return results;
+}
+
+/**
+ * Extend bracket order backward by one round.
+ * For each team, find their match in the given round and expand to [home, away].
+ * Teams that entered at a later round (no match found) become [team, null] (bye).
+ */
+function extendBracketBackward(
+  order: (string | null)[],
+  rows: RawMatchRow[],
+  round: string,
+): (string | null)[] {
+  const extended: (string | null)[] = [];
+  for (const team of order) {
+    if (!team) {
+      extended.push(null, null);
+      continue;
+    }
+    const match = rows.find(r =>
+      r.round === round && (r.home_team === team || r.away_team === team),
+    );
+    if (match) {
+      extended.push(match.home_team, match.away_team);
+    } else {
+      // Team entered at a later round (bye)
+      extended.push(team, null);
+    }
+  }
+  return extended;
+}
+
+function populateRoundStartPulldown(
+  allRounds: string[], defaultRound?: string,
+): void {
+  const sel = document.getElementById('round_start_key') as HTMLSelectElement;
+  if (!sel) return;
+  sel.innerHTML = '';
+  for (const round of allRounds) {
+    const opt = document.createElement('option');
+    opt.value = round;
+    opt.textContent = round;
+    sel.appendChild(opt);
+  }
+  if (defaultRound && allRounds.includes(defaultRound)) {
+    sel.value = defaultRound;
+  }
+}
+
+/** Get effective bracket order for the selected start round. */
+function getEffectiveBracketOrder(): (string | null)[] {
+  if (!currentState) return [];
+  const { fullRoot, bracketOrder, roundsByDepth, allRounds, csvRows } = currentState;
+  const selected = getSelectValue('round_start_key');
+
+  const leafRound = roundsByDepth[roundsByDepth.length - 1];
+  const leafIdx = allRounds.indexOf(leafRound);
+  const selectedIdx = allRounds.indexOf(selected);
+  if (selectedIdx < 0) return bracketOrder;
+
+  if (selectedIdx === leafIdx) {
+    // Same as configured leaf → original bracket order
+    return bracketOrder;
+  } else if (selectedIdx > leafIdx) {
+    // Later round → collapse using bracket tree
+    const treeDepthIdx = roundsByDepth.indexOf(selected);
+    if (treeDepthIdx < 0) return bracketOrder;
+    return collectWinnersAtDepth(fullRoot, treeDepthIdx + 1);
+  } else {
+    // Earlier round → extend backward from leaf
+    let order: (string | null)[] = [...bracketOrder];
+    for (let i = leafIdx - 1; i >= selectedIdx; i--) {
+      order = extendBracketBackward(order, csvRows, allRounds[i]);
+    }
+    return order;
+  }
+}
+
 // ---- Bracket rendering with date filter ------------------------------------
 
 function getTargetDate(): string | null {
@@ -130,6 +260,7 @@ function getTargetDate(): string | null {
 /**
  * Mask a bracket tree for a target date.
  * - Nodes with matchDate > targetDate: clear scores and winner, keep date/stadium
+ * - Aggregate (H&A) nodes: use earliest leg date; partially mask if between legs
  * - Nodes whose child winner is unknown: set corresponding team to null (TBD)
  * Walks bottom-up (children before parent) so winner propagation works correctly.
  */
@@ -139,8 +270,18 @@ function maskBracketForDate(node: BracketNode, targetDate: string): BracketNode 
   const maskedUpper = upper ? maskBracketForDate(upper, targetDate) : null;
   const maskedLower = lower ? maskBracketForDate(lower, targetDate) : null;
 
-  // Determine if this match is in the future
-  const isFuture = node.matchDate != null && node.matchDate > targetDate;
+  // Determine effective match date.
+  // Aggregate (H&A) nodes don't have matchDate; derive from earliest leg date.
+  let effectiveDate = node.matchDate;
+  if (!effectiveDate && node.legs) {
+    const legDates = node.legs
+      .map(l => l.matchDate)
+      .filter((d): d is string => d != null)
+      .sort();
+    if (legDates.length > 0) effectiveDate = legDates[0];
+  }
+
+  const isFuture = effectiveDate != null && effectiveDate > targetDate;
 
   if (isFuture) {
     // Replace teams with child winners (may be null = TBD)
@@ -156,8 +297,38 @@ function maskBracketForDate(node: BracketNode, targetDate: string): BracketNode 
       awayPkScore: undefined,
       homeScoreEx: undefined,
       awayScoreEx: undefined,
+      legs: undefined,
       status: 'ＶＳ',
       winner: null,
+      children: [maskedUpper, maskedLower],
+    };
+  }
+
+  // Partial H&A masking: some legs played, some still in the future.
+  // Show only played legs and recalculate partial aggregate (no winner yet).
+  if (node.legs && node.legs.some(l => l.matchDate != null && l.matchDate > targetDate)) {
+    const playedLegs = node.legs.filter(
+      l => !l.matchDate || l.matchDate <= targetDate,
+    );
+    let upperTotal = 0;
+    let lowerTotal = 0;
+    for (const leg of playedLegs) {
+      if (leg.homeGoal == null || leg.awayGoal == null) continue;
+      const isUpperHome = leg.homeTeam === node.homeTeam;
+      upperTotal += isUpperHome ? leg.homeGoal : leg.awayGoal;
+      lowerTotal += isUpperHome ? leg.awayGoal : leg.homeGoal;
+    }
+    return {
+      ...node,
+      homeGoal: playedLegs.length > 0 ? upperTotal : undefined,
+      awayGoal: playedLegs.length > 0 ? lowerTotal : undefined,
+      homePkScore: undefined,
+      awayPkScore: undefined,
+      homeScoreEx: undefined,
+      awayScoreEx: undefined,
+      winner: null,
+      status: 'ＶＳ',
+      legs: playedLegs.length > 0 ? playedLegs : undefined,
       children: [maskedUpper, maskedLower],
     };
   }
@@ -171,8 +342,10 @@ function renderWithDateFilter(): void {
   const container = document.getElementById('bracket_container');
   if (!container) return;
 
-  // Build full tree from all CSV data, then mask for target date
-  const fullRoot = buildBracket(currentState.csvRows, currentState.bracketOrder);
+  // Build tree from effective bracket order, then mask for target date
+  const effectiveOrder = getEffectiveBracketOrder();
+  if (effectiveOrder.length < 2) return;
+  const fullRoot = buildBracket(currentState.csvRows, effectiveOrder);
   const targetDate = getTargetDate();
   const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
   const root = (targetDate && targetDate < lastDate)
@@ -183,6 +356,12 @@ function renderWithDateFilter(): void {
 
   // Apply layout class
   applyLayout();
+
+  // Adjust match card positions (bye children cause flexbox misalignment)
+  adjustBracketPositions(container);
+
+  // Draw SVG connector lines (must be after position adjustment)
+  drawBracketConnectors(container);
 }
 
 function updateSliderDisplay(): void {
@@ -245,8 +424,9 @@ function loadAndRender(seasonMap: SeasonMap): void {
   const seasonInfo = resolveSeasonInfo(
     found.group, found.competition, found.competition.seasons[season], found.groupKey,
   );
-  const bracketOrder = found.competition.seasons[season][4]?.bracket_order;
-  if (!bracketOrder) {
+  const entry = found.competition.seasons[season];
+  const bracketOrder = entry[4]?.bracket_order ?? entry[3];
+  if (!bracketOrder || bracketOrder.length === 0) {
     setStatus('No bracket data for this season.');
     return;
   }
@@ -264,15 +444,28 @@ function loadAndRender(seasonMap: SeasonMap): void {
     download: true,
     complete: (results) => {
       const matchDates = collectMatchDates(results.data);
+      const defaultRoundStart = entry[4]?.bracket_round_start;
+
+      // Build full tree to extract round structure
+      const fullRoot = buildBracket(results.data, bracketOrder);
+      const roundsByDepth = collectRoundsByDepth(fullRoot);
+      const allRounds = collectRoundsFromCsv(results.data);
 
       currentState = {
         csvRows: results.data,
         bracketOrder,
+        fullRoot,
+        roundsByDepth,
+        allRounds,
+        defaultRoundStart,
         matchDates,
         cssFiles: seasonInfo.cssFiles,
         leagueDisplay: seasonInfo.leagueDisplay,
         season,
       };
+
+      // Populate round start dropdown
+      populateRoundStartPulldown(allRounds, defaultRoundStart);
 
       // Set up date slider
       const slider = document.getElementById('date_slider') as HTMLInputElement | null;
@@ -421,8 +614,22 @@ async function main(): Promise<void> {
   if (layoutSel) {
     layoutSel.addEventListener('change', () => {
       applyLayout();
+      // Re-adjust positions and redraw SVG connectors after layout change
+      const cont = document.getElementById('bracket_container');
+      if (cont) {
+        adjustBracketPositions(cont);
+        drawBracketConnectors(cont);
+      }
     });
   }
+
+  // ---- Round start change events --------------------------------------------
+
+  document.getElementById('round_start_key')?.addEventListener('change', () => {
+    renderWithDateFilter();
+    const opSlider = document.getElementById('future_opacity') as HTMLInputElement | null;
+    if (opSlider) setBracketFutureOpacity(opSlider.value);
+  });
 
   // ---- Competition/season change events ------------------------------------
 

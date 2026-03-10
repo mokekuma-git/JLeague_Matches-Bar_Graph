@@ -33,6 +33,62 @@ competitions:
     groups: A, B, C, D, E, F, G, H
     match_in_section: 3
     timezone_diff: 06:00
+  EmperorsCup2025:
+    schedule_url: https://www.jfa.jp/match/emperorscup_2025/match/schedule.json
+    csv_path: ../docs/csv/2025_allmatch_result-EmperorsCup.csv
+    team_rename:
+      ヴィッセル神戸: 神戸
+      サンフレッチェ広島: 広島
+      鹿島アントラーズ: 鹿島
+      浦和レッズ: 浦和
+      ＦＣ東京: FC東京
+      セレッソ大阪: Ｃ大阪
+      名古屋グランパス: 名古屋
+      川崎フロンターレ: 川崎Ｆ
+      横浜Ｆ・マリノス: 横浜FM
+      横浜ＦＣ: 横浜FC
+      ガンバ大阪: Ｇ大阪
+      ジュビロ磐田: 磐田
+      アルビレックス新潟: 新潟
+      柏レイソル: 柏
+      湘南ベルマーレ: 湘南
+      清水エスパルス: 清水
+      ＦＣ町田ゼルビア: 町田
+      京都サンガＦ.Ｃ.: 京都
+      アビスパ福岡: 福岡
+      東京ヴェルディ: 東京Ｖ
+      ファジアーノ岡山: 岡山
+      北海道コンサドーレ札幌: 札幌
+      ブラウブリッツ秋田: 秋田
+      モンテディオ山形: 山形
+      ベガルタ仙台: 仙台
+      SC相模原: 相模原
+      ヴァンフォーレ甲府: 甲府
+      水戸ホーリーホック: 水戸
+      いわきＦＣ: いわき
+      ＦＣ今治: 今治
+      Ｖ・ファーレン長崎: 長崎
+      ＲＢ大宮アルディージャ: 大宮
+      ギラヴァンツ北九州: 北九州
+      藤枝ＭＹＦＣ: 藤枝
+      大分トリニータ: 大分
+      徳島ヴォルティス: 徳島
+      レノファ山口ＦＣ: 山口
+      カターレ富山: 富山
+      サガン鳥栖: 鳥栖
+      愛媛ＦＣ: 愛媛
+      ジェフユナイテッド千葉: 千葉
+      ロアッソ熊本: 熊本
+      栃木SC: 栃木
+      福島ユナイテッドFC: 福島
+      松本山雅FC: 松本
+      FC岐阜: 岐阜
+      FC大阪: FC大阪
+      ツエーゲン金沢: 金沢
+      カマタマーレ讃岐: 讃岐
+      いわてグルージャ盛岡: 盛岡
+      鹿児島ユナイテッドFC: 鹿児島
+      高知ユナイテッドSC: 高知
 
 ## Program Settings must be start with lower case letter and no space.
 debug: false
@@ -57,7 +113,8 @@ replace_key:
   home_team: homeTeamName
   away_team: awayTeamName
   status: matchStatus
-  matchNumber: matchNumber
+  match_number: matchNumber
+  round: matchTypeName
 
 # Key mapping for scoring data
 # our_key: JFA JSON key in score
@@ -66,3 +123,5 @@ score_data_key:
   home_goal: homeScore
   away_goal: awayScore
   extraTime: exMatch
+  home_pk_score: homePKScore
+  away_pk_score: awayPKScore
