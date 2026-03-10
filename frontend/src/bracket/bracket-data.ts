@@ -4,7 +4,7 @@
 // For 4 teams: [0] vs [1] → SF1, [2] vs [3] → SF2, winners → Final.
 
 import type { RawMatchRow } from '../types/match';
-import type { BracketNode } from './bracket-types';
+import type { BracketNode, LegDetail } from './bracket-types';
 
 /**
  * Determine the winner of a KO match from a CSV row.
@@ -128,6 +128,9 @@ function nodeFromAggregate(
   let allPlayed = true;
   let anyPlayed = false;
   let roundName = '';
+  const legs: LegDetail[] = [];
+  const parse = (v: string | undefined): number | undefined =>
+    v ? parseInt(v, 10) : undefined;
 
   for (const row of matches) {
     if (!row.home_goal || !row.away_goal) { allPlayed = false; continue; }
@@ -140,6 +143,21 @@ function nodeFromAggregate(
     const isUpperHome = row.home_team === upperTeam;
     upperTotal += isUpperHome ? (hg + hex) : (ag + aex);
     lowerTotal += isUpperHome ? (ag + aex) : (hg + hex);
+
+    // Store per-leg detail with scores aligned to bracket position (upper/lower)
+    legs.push({
+      matchDate: row.match_date,
+      stadium: row.stadium,
+      homeTeam: row.home_team,
+      awayTeam: row.away_team,
+      homeGoal: isUpperHome ? parse(row.home_goal) : parse(row.away_goal),
+      awayGoal: isUpperHome ? parse(row.away_goal) : parse(row.home_goal),
+      homePkScore: isUpperHome ? parse(row.home_pk_score) : parse(row.away_pk_score),
+      awayPkScore: isUpperHome ? parse(row.away_pk_score) : parse(row.home_pk_score),
+      homeScoreEx: isUpperHome ? parse(row.home_score_ex) : parse(row.away_score_ex),
+      awayScoreEx: isUpperHome ? parse(row.away_score_ex) : parse(row.home_score_ex),
+      leg: row.leg,
+    });
 
     if (!roundName && row.round) roundName = row.round;
   }
@@ -168,6 +186,7 @@ function nodeFromAggregate(
     awayGoal: anyPlayed ? lowerTotal : undefined,
     status: allPlayed ? '試合終了' : 'ＶＳ',
     winner,
+    legs: legs.length > 0 ? legs : undefined,
     children,
   };
 }

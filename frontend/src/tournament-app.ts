@@ -286,6 +286,7 @@ function maskBracketForDate(node: BracketNode, targetDate: string): BracketNode 
       awayPkScore: undefined,
       homeScoreEx: undefined,
       awayScoreEx: undefined,
+      legs: undefined,
       status: 'ＶＳ',
       winner: null,
       children: [maskedUpper, maskedLower],
