@@ -24,6 +24,8 @@ export const en: Record<MessageKey, string> = {
   'btn.resetPrefs': 'Reset preferences',
   'btn.sliderPrev': '<',
   'btn.sliderNext': '>',
+  'btn.collapseAll': 'Collapse all',
+  'btn.expandAll': 'Expand all',
 
   // Status messages
   'status.loading': 'Loading CSV...',

@@ -375,6 +375,25 @@ function renderSingleBracketInto(
 }
 
 /**
+ * Build and render a bracket tree (with date mask) into a container.
+ * Handles the common build → mask → render pipeline for both normal and single-round modes.
+ */
+function buildAndRenderBracket(
+  container: HTMLElement,
+  rows: RawMatchRow[],
+  order: (string | null)[],
+  targetDate: string | null,
+  lastDate: string,
+  cssFiles: string[],
+): void {
+  if (order.length < 2) return;
+  const fullRoot = buildBracket(rows, order);
+  const root = (targetDate && targetDate < lastDate)
+    ? maskBracketForDate(fullRoot, targetDate) : fullRoot;
+  renderSingleBracketInto(container, root, cssFiles);
+}
+
+/**
  * Render multi-section view: each BracketSection becomes an independent
  * collapsible bracket, all sharing the same CSV and date filter.
  */
@@ -383,7 +402,27 @@ function renderMultiSections(): void {
   const container = document.getElementById('bracket_container');
   if (!container) return;
 
+  // Save open/closed state of existing sections before re-render
+  const prevOpen = new Map<string, boolean>();
+  for (const d of Array.from(container.querySelectorAll<HTMLDetailsElement>('.bracket-section'))) {
+    const label = d.querySelector('.bracket-section-summary')?.textContent ?? '';
+    if (label) prevOpen.set(label, d.open);
+  }
+
   container.replaceChildren();
+
+  // Toggle-all button
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'toggle_section_all';
+  toggleBtn.textContent = t('btn.collapseAll');
+  toggleBtn.addEventListener('click', () => {
+    const allDetails = container.querySelectorAll<HTMLDetailsElement>('.bracket-section');
+    const anyOpen = Array.from(allDetails).some(d => d.open);
+    for (const d of Array.from(allDetails)) d.open = !anyOpen;
+    toggleBtn.textContent = anyOpen ? t('btn.expandAll') : t('btn.collapseAll');
+  });
+  container.appendChild(toggleBtn);
+
   const targetDate = getTargetDate();
   const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
 
@@ -395,15 +434,11 @@ function renderMultiSections(): void {
       ? currentState.csvRows.filter(r => section.round_filter!.includes(r.round ?? ''))
       : currentState.csvRows;
 
-    const fullRoot = buildBracket(rows, section.bracket_order);
-    const root = (targetDate && targetDate < lastDate)
-      ? maskBracketForDate(fullRoot, targetDate)
-      : fullRoot;
-
     // Create collapsible section
     const details = document.createElement('details');
     details.classList.add('bracket-section');
-    details.open = true;
+    // Restore previous open state; default to open for new sections
+    details.open = prevOpen.get(section.label) ?? true;
     const summary = document.createElement('summary');
     summary.classList.add('bracket-section-summary');
     summary.textContent = section.label;
@@ -416,7 +451,18 @@ function renderMultiSections(): void {
 
     // Append to DOM before rendering (getBoundingClientRect needs layout)
     container.appendChild(details);
-    renderSingleBracketInto(sectionWrapper, root, currentState.cssFiles);
+
+    if (section.single_round) {
+      // Single-round: split bracket_order into pairs and render each independently
+      const order = section.bracket_order;
+      for (let i = 0; i < order.length; i += 2) {
+        const pair = order.slice(i, i + 2);
+        if (pair.every(t => t == null)) continue;
+        buildAndRenderBracket(sectionWrapper, rows, pair, targetDate, lastDate, currentState.cssFiles);
+      }
+    } else {
+      buildAndRenderBracket(sectionWrapper, rows, section.bracket_order, targetDate, lastDate, currentState.cssFiles);
+    }
   }
 }
 
@@ -550,12 +596,23 @@ function loadAndRender(seasonMap: SeasonMap): void {
       // Populate round start dropdown (with multi-section option if sections exist)
       populateRoundStartPulldown(allRounds, defaultRoundStart, bracketSections != null);
 
+      // Restore saved round start if it matches an available option
+      const savedRoundStart = loadPrefs().roundStart;
+      const roundSel = document.getElementById('round_start_key') as HTMLSelectElement | null;
+      if (roundSel && savedRoundStart) {
+        const hasOption = Array.from(roundSel.options).some(o => o.value === savedRoundStart);
+        if (hasOption) roundSel.value = savedRoundStart;
+      }
+
       // Set up date slider
       const slider = document.getElementById('date_slider') as HTMLInputElement | null;
       if (slider && matchDates.length > 0) {
         slider.min = '0';
         slider.max = String(matchDates.length - 1);
-        slider.value = String(matchDates.length - 1);
+        // Restore saved date position; default to latest
+        const savedDate = loadPrefs().targetDate;
+        const savedIdx = savedDate ? matchDates.indexOf(savedDate) : -1;
+        slider.value = String(savedIdx >= 0 ? savedIdx : matchDates.length - 1);
       }
 
       renderWithDateFilter();
@@ -644,10 +701,15 @@ async function main(): Promise<void> {
     dateSlider.addEventListener('input', () => {
       updateSliderDisplay();
     });
+    const saveDatePref = () => {
+      const date = getTargetDate();
+      if (date) savePrefs({ targetDate: date });
+    };
     dateSlider.addEventListener('change', () => {
       renderWithDateFilter();
       // Re-apply opacity after re-render
       if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
+      saveDatePref();
     });
 
     document.getElementById('date_slider_down')?.addEventListener('click', () => {
@@ -655,6 +717,7 @@ async function main(): Promise<void> {
       updateSliderDisplay();
       renderWithDateFilter();
       if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
+      saveDatePref();
     });
     document.getElementById('date_slider_up')?.addEventListener('click', () => {
       dateSlider.value = String(Math.min(
@@ -663,6 +726,7 @@ async function main(): Promise<void> {
       updateSliderDisplay();
       renderWithDateFilter();
       if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
+      saveDatePref();
     });
     document.getElementById('date_slider_reset')?.addEventListener('click', () => {
       if (!currentState) return;
@@ -670,6 +734,7 @@ async function main(): Promise<void> {
       updateSliderDisplay();
       renderWithDateFilter();
       if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
+      saveDatePref();
     });
   }
 
@@ -708,6 +773,7 @@ async function main(): Promise<void> {
     renderWithDateFilter();
     const opSlider = document.getElementById('future_opacity') as HTMLInputElement | null;
     if (opSlider) setBracketFutureOpacity(opSlider.value);
+    savePrefs({ roundStart: getSelectValue('round_start_key') });
   });
 
   // ---- Competition/season change events ------------------------------------

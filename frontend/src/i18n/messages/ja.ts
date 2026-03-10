@@ -22,6 +22,8 @@ export const ja = {
   'btn.resetPrefs': '設定をリセット',
   'btn.sliderPrev': '＜',
   'btn.sliderNext': '＞',
+  'btn.collapseAll': '全て閉じる',
+  'btn.expandAll': '全て開く',
 
   // Status messages
   'status.loading': 'CSVを読み込み中...',

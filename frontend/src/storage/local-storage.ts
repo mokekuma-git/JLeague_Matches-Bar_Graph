@@ -8,13 +8,14 @@ const STORAGE_KEY = 'jleague_viewer_prefs';
 export interface ViewerPrefs {
   competition?: string;
   season?: string;
-  targetDate?: string;   // YYYY-MM-DD (HTML date input format)
+  targetDate?: string;   // YYYY/MM/DD (CSV date format) or YYYY-MM-DD (HTML date input)
   teamSortKey?: string;
   matchSortKey?: string;
   futureOpacity?: string;
   spaceColor?: string;
   scale?: string;
   locale?: string;
+  roundStart?: string;   // bracket round start selection (or '__multi_section__')
 }
 
 export function loadPrefs(): ViewerPrefs {

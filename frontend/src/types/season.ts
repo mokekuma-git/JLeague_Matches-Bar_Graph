@@ -46,6 +46,7 @@ export interface BracketSection {
   bracket_order: (string | null)[];  // Bracket position order (null = bye slot)
   round_filter?: string[];          // Filter CSV rows by round column
   bracket_round_start?: string;     // Override start round for this section
+  single_round?: boolean;           // Render as independent matches (no elimination tree)
 }
 
 // Merged optional dict at season entry index 4.

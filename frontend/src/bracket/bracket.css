@@ -208,6 +208,12 @@
 
 /* ---- Multi-section (collapsible brackets) ---- */
 
+#toggle_section_all {
+  margin-bottom: 8px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
 .bracket-section {
   margin-bottom: 16px;
   border: 1px solid #ddd;
