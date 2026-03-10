@@ -12,6 +12,7 @@ export const ja = {
   'label.dataTimestamp': 'データ取得時刻:',
   'label.language': '言語',
   'label.roundStart': '表示開始ラウンド',
+  'label.multiSection': 'マルチセクション',
   'label.bracketLayout': '表示方向',
   'label.layoutHorizontal': '横 (左→右)',
   'label.layoutVertical': '縦 (下→上)',

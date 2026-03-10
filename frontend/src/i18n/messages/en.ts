@@ -14,6 +14,7 @@ export const en: Record<MessageKey, string> = {
   'label.dataTimestamp': 'Data updated:',
   'label.language': 'Language',
   'label.roundStart': 'Start round',
+  'label.multiSection': 'Multi-section',
   'label.bracketLayout': 'Layout',
   'label.layoutHorizontal': 'Horizontal (L→R)',
   'label.layoutVertical': 'Vertical (bottom→up)',

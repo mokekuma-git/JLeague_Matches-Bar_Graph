@@ -6,7 +6,7 @@
 
 import Papa from 'papaparse';
 import type { RawMatchRow } from './types/match';
-import type { SeasonMap } from './types/season';
+import type { SeasonMap, BracketSection } from './types/season';
 import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
   getCompetitionViewTypes,
@@ -27,11 +27,14 @@ interface BracketState {
   roundsByDepth: string[];      // round labels root-to-leaf (e.g. ['決勝戦','準決勝','準々決勝','ラウンド16'])
   allRounds: string[];          // all CSV rounds in chronological order
   defaultRoundStart?: string;   // from season_map bracket_round_start
+  bracketSections?: BracketSection[];  // multi-section definitions from season_map
   matchDates: string[];         // sorted unique dates from CSV
   cssFiles: string[];
   leagueDisplay: string;
   season: string;
 }
+
+const MULTI_SECTION_VALUE = '__multi_section__';
 
 let currentState: BracketState | null = null;
 
@@ -96,7 +99,7 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
   const seasons = Object.keys(found.competition.seasons)
     .filter(s => {
       const e = found.competition.seasons[s];
-      return e[4]?.bracket_order != null || e[3]?.length > 0;
+      return e[4]?.bracket_order != null || e[4]?.bracket_sections != null || e[3]?.length > 0;
     })
     .sort().reverse();
   for (const s of seasons) {
@@ -203,17 +206,31 @@ function extendBracketBackward(
 
 function populateRoundStartPulldown(
   allRounds: string[], defaultRound?: string,
+  hasSections?: boolean,
 ): void {
   const sel = document.getElementById('round_start_key') as HTMLSelectElement;
   if (!sel) return;
   sel.innerHTML = '';
+
+  // Add multi-section option when bracket_sections is defined
+  if (hasSections) {
+    const opt = document.createElement('option');
+    opt.value = MULTI_SECTION_VALUE;
+    opt.textContent = t('label.multiSection');
+    sel.appendChild(opt);
+  }
+
   for (const round of allRounds) {
     const opt = document.createElement('option');
     opt.value = round;
     opt.textContent = round;
     sel.appendChild(opt);
   }
-  if (defaultRound && allRounds.includes(defaultRound)) {
+
+  // Default: multi-section if available, otherwise configured round
+  if (hasSections) {
+    sel.value = MULTI_SECTION_VALUE;
+  } else if (defaultRound && allRounds.includes(defaultRound)) {
     sel.value = defaultRound;
   }
 }
@@ -337,12 +354,84 @@ function maskBracketForDate(node: BracketNode, targetDate: string): BracketNode 
   return { ...node, children: [maskedUpper, maskedLower] };
 }
 
+/** Check if the current dropdown selection is multi-section mode. */
+function isMultiSectionMode(): boolean {
+  return getSelectValue('round_start_key') === MULTI_SECTION_VALUE;
+}
+
+/**
+ * Render a single bracket into a container, apply layout, adjust, and draw connectors.
+ * The container must already be in the DOM for getBoundingClientRect to work.
+ */
+function renderSingleBracketInto(
+  sectionContainer: HTMLElement,
+  root: BracketNode,
+  cssFiles: string[],
+): void {
+  sectionContainer.appendChild(renderBracket(root, cssFiles));
+  applyLayoutTo(sectionContainer);
+  adjustBracketPositions(sectionContainer);
+  drawBracketConnectors(sectionContainer);
+}
+
+/**
+ * Render multi-section view: each BracketSection becomes an independent
+ * collapsible bracket, all sharing the same CSV and date filter.
+ */
+function renderMultiSections(): void {
+  if (!currentState?.bracketSections) return;
+  const container = document.getElementById('bracket_container');
+  if (!container) return;
+
+  container.replaceChildren();
+  const targetDate = getTargetDate();
+  const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
+
+  for (const section of currentState.bracketSections) {
+    if (section.bracket_order.length < 2) continue;
+
+    // Pre-filter CSV rows by round_filter if specified
+    const rows = section.round_filter
+      ? currentState.csvRows.filter(r => section.round_filter!.includes(r.round ?? ''))
+      : currentState.csvRows;
+
+    const fullRoot = buildBracket(rows, section.bracket_order);
+    const root = (targetDate && targetDate < lastDate)
+      ? maskBracketForDate(fullRoot, targetDate)
+      : fullRoot;
+
+    // Create collapsible section
+    const details = document.createElement('details');
+    details.classList.add('bracket-section');
+    details.open = true;
+    const summary = document.createElement('summary');
+    summary.classList.add('bracket-section-summary');
+    summary.textContent = section.label;
+    details.appendChild(summary);
+
+    // Bracket wrapper (needed as container for adjustBracketPositions)
+    const sectionWrapper = document.createElement('div');
+    sectionWrapper.classList.add('bracket-section-content');
+    details.appendChild(sectionWrapper);
+
+    // Append to DOM before rendering (getBoundingClientRect needs layout)
+    container.appendChild(details);
+    renderSingleBracketInto(sectionWrapper, root, currentState.cssFiles);
+  }
+}
+
 function renderWithDateFilter(): void {
   if (!currentState) return;
   const container = document.getElementById('bracket_container');
   if (!container) return;
 
-  // Build tree from effective bracket order, then mask for target date
+  // Multi-section mode: render all sections independently
+  if (isMultiSectionMode() && currentState.bracketSections) {
+    renderMultiSections();
+    return;
+  }
+
+  // Single bracket mode: use effective bracket order + date mask
   const effectiveOrder = getEffectiveBracketOrder();
   if (effectiveOrder.length < 2) return;
   const fullRoot = buildBracket(currentState.csvRows, effectiveOrder);
@@ -352,16 +441,8 @@ function renderWithDateFilter(): void {
     ? maskBracketForDate(fullRoot, targetDate)
     : fullRoot;
 
-  container.replaceChildren(renderBracket(root, currentState.cssFiles));
-
-  // Apply layout class
-  applyLayout();
-
-  // Adjust match card positions (bye children cause flexbox misalignment)
-  adjustBracketPositions(container);
-
-  // Draw SVG connector lines (must be after position adjustment)
-  drawBracketConnectors(container);
+  container.replaceChildren();
+  renderSingleBracketInto(container, root, currentState.cssFiles);
 }
 
 function updateSliderDisplay(): void {
@@ -395,14 +476,14 @@ function setBracketScale(value: string): void {
   if (display) display.textContent = value;
 }
 
-function applyLayout(): void {
+/** Apply layout class to a specific container's bracket element(s). */
+function applyLayoutTo(container: HTMLElement): void {
   const layoutSel = document.getElementById('layout_toggle') as HTMLSelectElement | null;
-  const bracket = document.querySelector('.bracket');
-  if (!bracket || !layoutSel) return;
-  if (layoutSel.value === 'vertical') {
-    bracket.classList.add('vertical');
-  } else {
-    bracket.classList.remove('vertical');
+  if (!layoutSel) return;
+  const isVertical = layoutSel.value === 'vertical';
+  for (const bracket of Array.from(container.querySelectorAll('.bracket'))) {
+    if (isVertical) bracket.classList.add('vertical');
+    else bracket.classList.remove('vertical');
   }
 }
 
@@ -445,6 +526,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     complete: (results) => {
       const matchDates = collectMatchDates(results.data);
       const defaultRoundStart = entry[4]?.bracket_round_start;
+      const bracketSections = entry[4]?.bracket_sections;
 
       // Build full tree to extract round structure
       const fullRoot = buildBracket(results.data, bracketOrder);
@@ -458,14 +540,15 @@ function loadAndRender(seasonMap: SeasonMap): void {
         roundsByDepth,
         allRounds,
         defaultRoundStart,
+        bracketSections,
         matchDates,
         cssFiles: seasonInfo.cssFiles,
         leagueDisplay: seasonInfo.leagueDisplay,
         season,
       };
 
-      // Populate round start dropdown
-      populateRoundStartPulldown(allRounds, defaultRoundStart);
+      // Populate round start dropdown (with multi-section option if sections exist)
+      populateRoundStartPulldown(allRounds, defaultRoundStart, bracketSections != null);
 
       // Set up date slider
       const slider = document.getElementById('date_slider') as HTMLInputElement | null;
@@ -613,13 +696,9 @@ async function main(): Promise<void> {
   const layoutSel = document.getElementById('layout_toggle') as HTMLSelectElement | null;
   if (layoutSel) {
     layoutSel.addEventListener('change', () => {
-      applyLayout();
-      // Re-adjust positions and redraw SVG connectors after layout change
-      const cont = document.getElementById('bracket_container');
-      if (cont) {
-        adjustBracketPositions(cont);
-        drawBracketConnectors(cont);
-      }
+      // Full re-render to recompute positions and connectors per section
+      renderWithDateFilter();
+      if (opacitySlider) setBracketFutureOpacity(opacitySlider.value);
     });
   }
 
