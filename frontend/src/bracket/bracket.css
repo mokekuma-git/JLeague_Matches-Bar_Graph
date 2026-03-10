@@ -186,6 +186,52 @@
   text-align: center;
 }
 
+/* ---- Tooltip (floating, appended to body) ---- */
+
+.bracket-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #999;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 8px 12px;
+  font-size: 0.85em;
+  max-width: 320px;
+  pointer-events: none;
+}
+
+.bracket-tooltip-title {
+  font-weight: bold;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #ddd;
+}
+
+.bracket-tooltip-leg-header {
+  font-weight: bold;
+  margin-top: 6px;
+  color: #555;
+}
+
+.bracket-tooltip-leg-stadium {
+  font-size: 0.9em;
+  color: #777;
+}
+
+.bracket-tooltip-leg-score {
+  font-family: monospace;
+  margin: 2px 0;
+}
+
+.bracket-tooltip-total {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px solid #ddd;
+  font-weight: bold;
+}
+
 /* ---- Vertical layout (bottom-to-top) ---- */
 
 .bracket.vertical {

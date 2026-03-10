@@ -23,14 +23,10 @@ function determineWinner(row: RawMatchRow): string | null {
     return hpk > apk ? row.home_team : row.away_team;
   }
 
-  // Total score (regular + extra time if present)
-  const hex = row.home_score_ex ? parseInt(row.home_score_ex, 10) : 0;
-  const aex = row.away_score_ex ? parseInt(row.away_score_ex, 10) : 0;
-  const totalH = hg + hex;
-  const totalA = ag + aex;
-  if (totalH !== totalA) return totalH > totalA ? row.home_team : row.away_team;
+  // home_goal/away_goal already include ET — no need to add score_ex
+  if (hg !== ag) return hg > ag ? row.home_team : row.away_team;
 
-  // Equal total score without PK — shouldn't happen in KO but return null
+  // Equal score without PK — shouldn't happen in KO but return null
   return null;
 }
 
@@ -137,25 +133,24 @@ function nodeFromAggregate(
     anyPlayed = true;
     const hg = parseInt(row.home_goal, 10);
     const ag = parseInt(row.away_goal, 10);
-    const hex = row.home_score_ex ? parseInt(row.home_score_ex, 10) : 0;
-    const aex = row.away_score_ex ? parseInt(row.away_score_ex, 10) : 0;
 
+    // home_goal/away_goal already include ET — don't add score_ex again
     const isUpperHome = row.home_team === upperTeam;
-    upperTotal += isUpperHome ? (hg + hex) : (ag + aex);
-    lowerTotal += isUpperHome ? (ag + aex) : (hg + hex);
+    upperTotal += isUpperHome ? hg : ag;
+    lowerTotal += isUpperHome ? ag : hg;
 
-    // Store per-leg detail with scores aligned to bracket position (upper/lower)
+    // Store per-leg detail in CSV original order (homeTeam/awayTeam match homeGoal/awayGoal)
     legs.push({
       matchDate: row.match_date,
       stadium: row.stadium,
       homeTeam: row.home_team,
       awayTeam: row.away_team,
-      homeGoal: isUpperHome ? parse(row.home_goal) : parse(row.away_goal),
-      awayGoal: isUpperHome ? parse(row.away_goal) : parse(row.home_goal),
-      homePkScore: isUpperHome ? parse(row.home_pk_score) : parse(row.away_pk_score),
-      awayPkScore: isUpperHome ? parse(row.away_pk_score) : parse(row.home_pk_score),
-      homeScoreEx: isUpperHome ? parse(row.home_score_ex) : parse(row.away_score_ex),
-      awayScoreEx: isUpperHome ? parse(row.away_score_ex) : parse(row.home_score_ex),
+      homeGoal: parse(row.home_goal),
+      awayGoal: parse(row.away_goal),
+      homePkScore: parse(row.home_pk_score),
+      awayPkScore: parse(row.away_pk_score),
+      homeScoreEx: parse(row.home_score_ex),
+      awayScoreEx: parse(row.away_score_ex),
       leg: row.leg,
     });
 

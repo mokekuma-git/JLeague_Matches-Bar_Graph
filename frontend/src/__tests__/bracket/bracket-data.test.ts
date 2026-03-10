@@ -100,16 +100,21 @@ describe('buildBracket', () => {
   });
 
   it('handles extra time winner correctly', () => {
+    // home_goal/away_goal include ET: regular 1-1, ET 1-0, total 2-1
     const rows = [
       makeRow({
         home_team: 'A', away_team: 'B',
-        home_goal: '1', away_goal: '1',
+        home_goal: '2', away_goal: '1',
         home_score_ex: '1', away_score_ex: '0',
         round: '決勝',
       }),
     ];
     const root = buildBracket(rows, ['A', 'B']);
     expect(root.winner).toBe('A');
+    expect(root.homeGoal).toBe(2);
+    expect(root.awayGoal).toBe(1);
+    expect(root.homeScoreEx).toBe(1);
+    expect(root.awayScoreEx).toBe(0);
   });
 
   it('handles unplayed match (no CSV row for matchup)', () => {

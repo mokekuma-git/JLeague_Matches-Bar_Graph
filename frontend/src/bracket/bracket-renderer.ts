@@ -44,6 +44,107 @@ function legDateRange(legs: LegDetail[]): string {
   return `${first} - ${last}`;
 }
 
+/** Format a leg score annotation (PK/ET) for tooltip display. */
+function formatLegAnnotation(leg: LegDetail): string {
+  if (leg.homePkScore != null && leg.awayPkScore != null) {
+    return ` (PK${leg.homePkScore}-${leg.awayPkScore})`;
+  }
+  if (leg.homeScoreEx != null && leg.awayScoreEx != null) {
+    return ` (ET${leg.homeScoreEx}-${leg.awayScoreEx})`;
+  }
+  return '';
+}
+
+// ---- Tooltip (shared floating element) ------------------------------------
+
+let tooltipEl: HTMLElement | null = null;
+
+function getTooltip(): HTMLElement {
+  if (!tooltipEl) {
+    tooltipEl = document.createElement('div');
+    tooltipEl.classList.add('bracket-tooltip');
+    document.body.appendChild(tooltipEl);
+  }
+  return tooltipEl;
+}
+
+/** Build tooltip inner HTML for an H&A aggregate node. */
+function buildAggregateTooltip(node: BracketNode): string {
+  const legs = node.legs!;
+  const lines: string[] = [];
+  lines.push(`<div class="bracket-tooltip-title">${node.round} (${legs.length}試合合計)</div>`);
+
+  for (const leg of legs) {
+    const label = leg.leg ? `第${leg.leg}戦` : '';
+    const date = leg.matchDate ?? '';
+    lines.push(`<div class="bracket-tooltip-leg-header">${label} ${date}</div>`);
+    lines.push(`<div class="bracket-tooltip-leg-stadium">${leg.stadium ?? ''}</div>`);
+    const hg = leg.homeGoal ?? '';
+    const ag = leg.awayGoal ?? '';
+    const ann = formatLegAnnotation(leg);
+    // Show original CSV home/away order
+    lines.push(`<div class="bracket-tooltip-leg-score">${leg.homeTeam} ${hg}-${ag} ${leg.awayTeam}${ann}</div>`);
+  }
+
+  // Aggregate total
+  const upper = node.homeTeam ?? '';
+  const lower = node.awayTeam ?? '';
+  const hTotal = node.homeGoal ?? '';
+  const aTotal = node.awayGoal ?? '';
+  lines.push(`<div class="bracket-tooltip-total">合計: ${upper} ${hTotal}-${aTotal} ${lower}</div>`);
+
+  return lines.join('');
+}
+
+/** Build tooltip inner HTML for a single match node. */
+function buildSingleTooltip(node: BracketNode): string {
+  const lines: string[] = [];
+  lines.push(`<div class="bracket-tooltip-title">${node.round}</div>`);
+  if (node.matchDate) lines.push(`<div class="bracket-tooltip-leg-header">${node.matchDate}</div>`);
+  if (node.stadium) lines.push(`<div class="bracket-tooltip-leg-stadium">${node.stadium}</div>`);
+
+  const home = node.homeTeam ?? 'TBD';
+  const away = node.awayTeam ?? 'TBD';
+  const hg = node.homeGoal ?? '';
+  const ag = node.awayGoal ?? '';
+  let ann = '';
+  if (node.homePkScore != null && node.awayPkScore != null) {
+    ann = ` (PK${node.homePkScore}-${node.awayPkScore})`;
+  } else if (node.homeScoreEx != null && node.awayScoreEx != null) {
+    ann = ` (ET${node.homeScoreEx}-${node.awayScoreEx})`;
+  }
+  if (hg !== '' && ag !== '') {
+    lines.push(`<div class="bracket-tooltip-leg-score">${home} ${hg}-${ag} ${away}${ann}</div>`);
+  }
+
+  return lines.join('');
+}
+
+/** Attach tooltip hover events to a match card. */
+function attachTooltip(card: HTMLElement, node: BracketNode): void {
+  // Only show tooltip for played matches
+  if (node.status === 'ＶＳ' && !node.legs) return;
+
+  card.addEventListener('mouseenter', () => {
+    const tip = getTooltip();
+    const isAggregate = node.legs != null && node.legs.length > 0;
+    tip.innerHTML = isAggregate
+      ? buildAggregateTooltip(node)
+      : buildSingleTooltip(node);
+    tip.style.display = 'block';
+
+    // Position below the card
+    const rect = card.getBoundingClientRect();
+    tip.style.left = `${rect.left + window.scrollX}px`;
+    tip.style.top = `${rect.bottom + window.scrollY + 4}px`;
+  });
+
+  card.addEventListener('mouseleave', () => {
+    const tip = getTooltip();
+    tip.style.display = 'none';
+  });
+}
+
 /** Compute combined stadium text from legs (e.g. "ニッパツ / ノエスタ"). */
 function legStadiums(legs: LegDetail[]): string {
   const stadiums = legs.map(l => l.stadium).filter((s): s is string => s != null);
@@ -124,6 +225,8 @@ function createMatchCard(node: BracketNode): HTMLElement {
     ? legStadiums(node.legs!)
     : (node.stadium || '\u00A0');
   card.appendChild(stadiumLine);
+
+  attachTooltip(card, node);
 
   return card;
 }
