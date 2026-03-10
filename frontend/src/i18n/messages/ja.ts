@@ -12,6 +12,7 @@ export const ja = {
   'label.dataTimestamp': 'データ取得時刻:',
   'label.language': '言語',
   'label.roundStart': '表示開始ラウンド',
+  'label.multiSection': 'マルチセクション',
   'label.bracketLayout': '表示方向',
   'label.layoutHorizontal': '横 (左→右)',
   'label.layoutVertical': '縦 (下→上)',
@@ -21,6 +22,8 @@ export const ja = {
   'btn.resetPrefs': '設定をリセット',
   'btn.sliderPrev': '＜',
   'btn.sliderNext': '＞',
+  'btn.collapseAll': '全て閉じる',
+  'btn.expandAll': '全て開く',
 
   // Status messages
   'status.loading': 'CSVを読み込み中...',

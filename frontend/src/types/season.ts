@@ -39,6 +39,16 @@ export interface DataSource {
   url: string;
 }
 
+// An independent bracket section within a multi-section tournament.
+// Each section is rendered as a separate bracket tree on the same page.
+export interface BracketSection {
+  label: string;                    // Section heading (e.g. "1st Round Group A")
+  bracket_order: (string | null)[];  // Bracket position order (null = bye slot)
+  round_filter?: string[];          // Filter CSV rows by round column
+  bracket_round_start?: string;     // Override start round for this section
+  single_round?: boolean;           // Render as independent matches (no elimination tree)
+}
+
 // Merged optional dict at season entry index 4.
 // Combines what was previously separate at index 4 (RankClassMap) and index 5 (SeasonExtraInfo).
 export interface SeasonEntryOptions {
@@ -59,6 +69,7 @@ export interface SeasonEntryOptions {
   promotion_label?: string;
   bracket_order?: string[];
   bracket_round_start?: string;
+  bracket_sections?: BracketSection[];
   view_type?: ViewType[];
 }
 

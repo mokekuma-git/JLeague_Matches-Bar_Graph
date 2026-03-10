@@ -1,0 +1,7 @@
+interface:
+  display_name: "Extract Bracket Layout"
+  short_description: "公開ブラケットから初期配置と接続定義を起こす"
+  default_prompt: "Use $extract-bracket-layout to derive a reusable bracket definition from an official tournament HTML, PDF, or image page."
+
+policy:
+  allow_implicit_invocation: true
