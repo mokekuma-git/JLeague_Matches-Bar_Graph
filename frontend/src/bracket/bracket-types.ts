@@ -14,7 +14,13 @@ export interface LegDetail {
 }
 
 /** How the winner of a bracket node was decided. */
-export type DecidedBy = 'score' | 'penalties' | 'pending';
+export type DecidedBy =
+  | 'score'             // Single match, regular time
+  | 'extra_time'        // Single match, decided in extra time
+  | 'penalties'         // Single match, decided by PK
+  | 'aggregate_score'   // H&A aggregate, total goals differ
+  | 'aggregate_penalties' // H&A aggregate tied, decided by PK
+  | 'pending';          // Not yet decided
 
 /** A single node in the tournament bracket tree. */
 export interface BracketNode {

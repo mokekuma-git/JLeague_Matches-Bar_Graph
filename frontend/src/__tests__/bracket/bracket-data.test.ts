@@ -116,7 +116,7 @@ describe('buildBracket', () => {
     ];
     const root = buildBracket(rows, ['A', 'B']);
     expect(root.winner).toBe('A');
-    expect(root.decidedBy).toBe('score');
+    expect(root.decidedBy).toBe('extra_time');
     expect(root.homeGoal).toBe(2);
     expect(root.awayGoal).toBe(1);
     expect(root.homeScoreEx).toBe(1);
@@ -266,7 +266,7 @@ describe('buildBracket — H&A aggregate', () => {
     const root = buildBracket(rows, ['A', 'B']);
     // A total: 2+1=3, B total: 1+0=1
     expect(root.winner).toBe('A');
-    expect(root.decidedBy).toBe('score');
+    expect(root.decidedBy).toBe('aggregate_score');
     expect(root.legs).toHaveLength(2);
   });
 
@@ -287,7 +287,7 @@ describe('buildBracket — H&A aggregate', () => {
     const root = buildBracket(rows, ['A', 'B']);
     // Aggregate: A=1, B=1 (tied) → PK in leg 2: B wins (home=B, 4-3)
     expect(root.winner).toBe('B');
-    expect(root.decidedBy).toBe('penalties');
+    expect(root.decidedBy).toBe('aggregate_penalties');
     expect(root.legs).toHaveLength(2);
   });
 
