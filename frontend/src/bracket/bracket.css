@@ -176,6 +176,13 @@
   pointer-events: none;
 }
 
+/* Pinned tooltip: interactable and visually highlighted */
+.bracket-tooltip.pinned {
+  pointer-events: auto;
+  border-color: #4a90d9;
+  box-shadow: 0 2px 12px rgba(74, 144, 217, 0.3);
+}
+
 .bracket-tooltip-title {
   font-weight: bold;
   margin-bottom: 6px;

@@ -12,7 +12,7 @@ import {
   getCompetitionViewTypes,
 } from './config/season-map';
 import { buildBracket } from './bracket/bracket-data';
-import { renderBracket, adjustBracketPositions, drawBracketConnectors } from './bracket/bracket-renderer';
+import { renderBracket, adjustBracketPositions, drawBracketConnectors, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
 import type { Locale } from './i18n';
@@ -472,6 +472,9 @@ function renderWithDateFilter(): void {
   if (!currentState) return;
   const container = document.getElementById('bracket_container');
   if (!container) return;
+
+  // Dismiss any pinned tooltip before re-render (DOM will be replaced)
+  unpinTooltip();
 
   // Multi-section mode: render all sections independently
   if (isMultiSectionMode() && currentState.bracketSections) {

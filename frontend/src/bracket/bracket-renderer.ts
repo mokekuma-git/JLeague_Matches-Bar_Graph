@@ -73,6 +73,8 @@ function formatLegAnnotation(leg: LegDetail): string {
 // ---- Tooltip (shared floating element) ------------------------------------
 
 let tooltipEl: HTMLElement | null = null;
+let pinnedCardId: string | null = null;
+let _globalListenersAttached = false;
 
 function getTooltip(): HTMLElement {
   if (!tooltipEl) {
@@ -81,6 +83,35 @@ function getTooltip(): HTMLElement {
     document.body.appendChild(tooltipEl);
   }
   return tooltipEl;
+}
+
+/** Unpin the tooltip and hide it. Called on re-render and dismissal. */
+export function unpinTooltip(): void {
+  pinnedCardId = null;
+  if (tooltipEl) {
+    tooltipEl.style.display = 'none';
+    tooltipEl.classList.remove('pinned');
+  }
+}
+
+/** Set up document-level listeners for background click and Escape to dismiss pinned tooltip. */
+function setupGlobalListeners(): void {
+  if (_globalListenersAttached) return;
+  _globalListenersAttached = true;
+
+  document.addEventListener('click', (e) => {
+    if (pinnedCardId == null) return;
+    const target = e.target as Element;
+    // Keep tooltip open when clicking on the tooltip itself
+    if (target.closest('.bracket-tooltip')) return;
+    unpinTooltip();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && pinnedCardId != null) {
+      unpinTooltip();
+    }
+  });
 }
 
 /** Build tooltip inner HTML for an H&A aggregate node. */
@@ -135,28 +166,58 @@ function buildSingleTooltip(node: BracketNode): string {
   return lines.join('');
 }
 
-/** Attach tooltip hover events to a match card. */
+/** Show tooltip content for a node, positioned below the card. */
+function showTooltipForCard(card: HTMLElement, node: BracketNode): void {
+  const tip = getTooltip();
+  const isAggregate = node.legs != null && node.legs.length > 0;
+  tip.innerHTML = isAggregate
+    ? buildAggregateTooltip(node)
+    : buildSingleTooltip(node);
+  tip.style.display = 'block';
+
+  const rect = card.getBoundingClientRect();
+  tip.style.left = `${rect.left + window.scrollX}px`;
+  tip.style.top = `${rect.bottom + window.scrollY + 4}px`;
+}
+
+/** Attach tooltip hover/click events to a match card. */
 function attachTooltip(card: HTMLElement, node: BracketNode): void {
   // Only show tooltip for played matches
   if (node.status === 'ＶＳ' && !node.legs) return;
 
-  card.addEventListener('mouseenter', () => {
-    const tip = getTooltip();
-    const isAggregate = node.legs != null && node.legs.length > 0;
-    tip.innerHTML = isAggregate
-      ? buildAggregateTooltip(node)
-      : buildSingleTooltip(node);
-    tip.style.display = 'block';
+  setupGlobalListeners();
+  card.style.cursor = 'pointer';
 
-    // Position below the card
-    const rect = card.getBoundingClientRect();
-    tip.style.left = `${rect.left + window.scrollX}px`;
-    tip.style.top = `${rect.bottom + window.scrollY + 4}px`;
+  card.addEventListener('mouseenter', () => {
+    const cardId = card.getAttribute('data-bracket-id');
+    // Another card is pinned — suppress hover
+    if (pinnedCardId != null && pinnedCardId !== cardId) return;
+    showTooltipForCard(card, node);
   });
 
   card.addEventListener('mouseleave', () => {
+    const cardId = card.getAttribute('data-bracket-id');
+    // This card is pinned — keep tooltip visible
+    if (pinnedCardId === cardId) return;
     const tip = getTooltip();
     tip.style.display = 'none';
+  });
+
+  card.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const cardId = card.getAttribute('data-bracket-id');
+    if (!cardId) return;
+
+    if (pinnedCardId === cardId) {
+      // Click pinned card again → unpin
+      unpinTooltip();
+      return;
+    }
+
+    // Pin this card
+    pinnedCardId = cardId;
+    showTooltipForCard(card, node);
+    getTooltip().classList.add('pinned');
   });
 }
 
