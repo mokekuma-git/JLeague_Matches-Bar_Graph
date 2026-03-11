@@ -23,7 +23,7 @@ describe('buildBracket', () => {
     expect(() => buildBracket([], ['A'])).toThrow('at least 2 teams');
   });
 
-  it('builds a 2-team bracket (final only)', () => {
+  it('builds a 2-team bracket (final only) — PK decides', () => {
     const rows = [
       makeRow({
         home_team: '浦和', away_team: '東京NB',
@@ -42,6 +42,7 @@ describe('buildBracket', () => {
     expect(root.homePkScore).toBe(4);
     expect(root.awayPkScore).toBe(2);
     expect(root.winner).toBe('浦和');
+    expect(root.decidedBy).toBe('penalties');
     expect(root.children).toEqual([null, null]);
   });
 
@@ -70,6 +71,7 @@ describe('buildBracket', () => {
     expect(root.homeTeam).toBe('S広島R');
     expect(root.awayTeam).toBe('I神戸');
     expect(root.winner).toBe('S広島R');
+    expect(root.decidedBy).toBe('score');
 
     // Upper SF
     const upper = root.children[0]!;
@@ -77,6 +79,7 @@ describe('buildBracket', () => {
     expect(upper.homeTeam).toBe('S広島R');
     expect(upper.awayTeam).toBe('浦和');
     expect(upper.winner).toBe('S広島R');
+    expect(upper.decidedBy).toBe('score');
 
     // Lower SF
     const lower = root.children[1]!;
@@ -84,6 +87,7 @@ describe('buildBracket', () => {
     expect(lower.homeTeam).toBe('I神戸');
     expect(lower.awayTeam).toBe('新潟L');
     expect(lower.winner).toBe('I神戸');
+    expect(lower.decidedBy).toBe('score');
   });
 
   it('handles PK winner correctly', () => {
@@ -97,6 +101,7 @@ describe('buildBracket', () => {
     ];
     const root = buildBracket(rows, ['A', 'B']);
     expect(root.winner).toBe('B');
+    expect(root.decidedBy).toBe('penalties');
   });
 
   it('handles extra time winner correctly', () => {
@@ -111,6 +116,7 @@ describe('buildBracket', () => {
     ];
     const root = buildBracket(rows, ['A', 'B']);
     expect(root.winner).toBe('A');
+    expect(root.decidedBy).toBe('score');
     expect(root.homeGoal).toBe(2);
     expect(root.awayGoal).toBe(1);
     expect(root.homeScoreEx).toBe(1);
@@ -122,6 +128,7 @@ describe('buildBracket', () => {
     expect(root.homeTeam).toBe('A');
     expect(root.awayTeam).toBe('B');
     expect(root.winner).toBeNull();
+    expect(root.decidedBy).toBe('pending');
     expect(root.status).toBe('ＶＳ');
   });
 
@@ -138,10 +145,13 @@ describe('buildBracket', () => {
 
     // Upper SF completed
     expect(root.children[0]!.winner).toBe('A');
+    expect(root.children[0]!.decidedBy).toBe('score');
     // Lower SF not played
     expect(root.children[1]!.winner).toBeNull();
+    expect(root.children[1]!.decidedBy).toBe('pending');
     // Final not played (no winner from lower SF)
     expect(root.winner).toBeNull();
+    expect(root.decidedBy).toBe('pending');
     expect(root.homeTeam).toBe('A');
     expect(root.awayTeam).toBeNull();
   });
@@ -162,22 +172,25 @@ describe('buildBracket', () => {
     ];
     const root = buildBracket(rows, ['A', null, 'C', 'D']);
 
-    // Upper SF: A gets bye (auto-advance)
+    // Upper SF: A gets bye (auto-advance) — decidedBy is null
     const upperSf = root.children[0]!;
     expect(upperSf.homeTeam).toBe('A');
     expect(upperSf.awayTeam).toBeNull();
     expect(upperSf.winner).toBe('A');
+    expect(upperSf.decidedBy).toBeNull();
 
     // Lower SF: C vs D, C wins
     const lowerSf = root.children[1]!;
     expect(lowerSf.homeTeam).toBe('C');
     expect(lowerSf.awayTeam).toBe('D');
     expect(lowerSf.winner).toBe('C');
+    expect(lowerSf.decidedBy).toBe('score');
 
     // Final: A vs C
     expect(root.homeTeam).toBe('A');
     expect(root.awayTeam).toBe('C');
     expect(root.winner).toBe('A');
+    expect(root.decidedBy).toBe('score');
   });
 
   it('handles multi-level bye chain (team passes through 2 rounds)', () => {
@@ -212,22 +225,88 @@ describe('buildBracket', () => {
     expect(upperSf.winner).toBe('A');
     expect(upperSf.homeTeam).toBe('A');
     expect(upperSf.awayTeam).toBeNull();
+    expect(upperSf.decidedBy).toBeNull();
 
     // Upper SF's upper child: A bye leaf
     const upperQf = upperSf.children[0]!;
     expect(upperQf.winner).toBe('A');
     expect(upperQf.homeTeam).toBe('A');
     expect(upperQf.awayTeam).toBeNull();
+    expect(upperQf.decidedBy).toBeNull();
 
     // Upper SF's lower child: empty (no real teams)
     const emptyQf = upperSf.children[1]!;
     expect(emptyQf.homeTeam).toBeNull();
     expect(emptyQf.awayTeam).toBeNull();
     expect(emptyQf.winner).toBeNull();
+    expect(emptyQf.decidedBy).toBe('pending');
 
     // Final: A vs E
     expect(root.homeTeam).toBe('A');
     expect(root.awayTeam).toBe('E');
     expect(root.winner).toBe('A');
+    expect(root.decidedBy).toBe('score');
+  });
+});
+
+describe('buildBracket — H&A aggregate', () => {
+  it('decides by score when aggregate totals differ', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '2', away_goal: '1',
+        round: '決勝', match_date: '2024/12/01',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A',
+        home_goal: '0', away_goal: '1',
+        round: '決勝', match_date: '2024/12/08',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B']);
+    // A total: 2+1=3, B total: 1+0=1
+    expect(root.winner).toBe('A');
+    expect(root.decidedBy).toBe('score');
+    expect(root.legs).toHaveLength(2);
+  });
+
+  it('decides by penalties when aggregate is tied and PK played', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '1', away_goal: '0',
+        round: '決勝', match_date: '2024/12/01',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A',
+        home_goal: '1', away_goal: '0',
+        home_pk_score: '4', away_pk_score: '3',
+        round: '決勝', match_date: '2024/12/08',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B']);
+    // Aggregate: A=1, B=1 (tied) → PK in leg 2: B wins (home=B, 4-3)
+    expect(root.winner).toBe('B');
+    expect(root.decidedBy).toBe('penalties');
+    expect(root.legs).toHaveLength(2);
+  });
+
+  it('is pending when not all legs played', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '2', away_goal: '1',
+        round: '決勝', match_date: '2024/12/01',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A',
+        home_goal: '', away_goal: '',
+        round: '決勝', match_date: '2024/12/08',
+        status: 'ＶＳ',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B']);
+    expect(root.winner).toBeNull();
+    expect(root.decidedBy).toBe('pending');
   });
 });
