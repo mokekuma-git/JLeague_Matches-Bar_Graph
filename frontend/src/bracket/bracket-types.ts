@@ -13,6 +13,9 @@ export interface LegDetail {
   leg?: string;
 }
 
+/** How the winner of a bracket node was decided. */
+export type DecidedBy = 'score' | 'penalties' | 'pending';
+
 /** A single node in the tournament bracket tree. */
 export interface BracketNode {
   round: string;
@@ -29,6 +32,8 @@ export interface BracketNode {
   stadium?: string;
   status: string;
   winner: string | null;
+  /** How the winner was decided. null for byes (no match played). */
+  decidedBy: DecidedBy | null;
   /** Per-leg details for H&A aggregate nodes. Undefined for single-match nodes. */
   legs?: LegDetail[];
   /** [upper child, lower child] — null for first-round byes or leaf nodes. */

@@ -317,6 +317,7 @@ function maskBracketForDate(node: BracketNode, targetDate: string): BracketNode 
       legs: undefined,
       status: 'ＶＳ',
       winner: null,
+      decidedBy: 'pending',
       children: [maskedUpper, maskedLower],
     };
   }
@@ -344,6 +345,7 @@ function maskBracketForDate(node: BracketNode, targetDate: string): BracketNode 
       homeScoreEx: undefined,
       awayScoreEx: undefined,
       winner: null,
+      decidedBy: 'pending',
       status: 'ＶＳ',
       legs: playedLegs.length > 0 ? playedLegs : undefined,
       children: [maskedUpper, maskedLower],

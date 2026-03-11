@@ -4,7 +4,7 @@
 // For 4 teams: [0] vs [1] → SF1, [2] vs [3] → SF2, winners → Final.
 
 import type { RawMatchRow } from '../types/match';
-import type { BracketNode, LegDetail } from './bracket-types';
+import type { BracketNode, DecidedBy, LegDetail } from './bracket-types';
 
 /**
  * Determine the winner of a KO match from a CSV row.
@@ -76,6 +76,7 @@ function nodeFromMatch(
       awayTeam: lowerTeam,
       status: 'ＶＳ',
       winner,
+      decidedBy: winner ? null : 'pending',
       children,
     };
   }
@@ -93,6 +94,16 @@ function nodeFromMatch(
   const [hEx, aEx] = needsSwap ? [parse(row.away_score_ex), parse(row.home_score_ex)]
     : [parse(row.home_score_ex), parse(row.away_score_ex)];
 
+  const winner = determineWinner(row);
+  let decidedBy: DecidedBy | null;
+  if (!winner) {
+    decidedBy = 'pending';
+  } else if (hPk != null && aPk != null) {
+    decidedBy = 'penalties';
+  } else {
+    decidedBy = 'score';
+  }
+
   return {
     round: row.round ?? '',
     matchNumber: row.match_number ? parseInt(row.match_number, 10) : undefined,
@@ -104,7 +115,8 @@ function nodeFromMatch(
     matchDate: row.match_date,
     stadium: row.stadium,
     status: row.status,
-    winner: determineWinner(row),
+    winner,
+    decidedBy,
     children,
   };
 }
@@ -173,6 +185,16 @@ function nodeFromAggregate(
     }
   }
 
+  let decidedBy: DecidedBy | null;
+  if (!winner) {
+    decidedBy = 'pending';
+  } else if (upperTotal === lowerTotal) {
+    // Aggregate tied → winner decided by PK
+    decidedBy = 'penalties';
+  } else {
+    decidedBy = 'score';
+  }
+
   return {
     round: roundName,
     homeTeam: upperTeam,
@@ -181,6 +203,7 @@ function nodeFromAggregate(
     awayGoal: anyPlayed ? lowerTotal : undefined,
     status: allPlayed ? '試合終了' : 'ＶＳ',
     winner,
+    decidedBy,
     legs: legs.length > 0 ? legs : undefined,
     children,
   };
