@@ -169,7 +169,25 @@ function nodeFromAggregate(
     if (!roundName && row.round) roundName = row.round;
   }
 
+  // Aggregate ET scores across all legs (mapped to upper/lower position)
+  let upperExTotal = 0;
+  let lowerExTotal = 0;
+  let hasEx = false;
+  for (const row of matches) {
+    if (!row.home_goal || !row.away_goal) continue;
+    if (row.home_score_ex && row.away_score_ex) {
+      hasEx = true;
+      const hex = parseInt(row.home_score_ex, 10);
+      const aex = parseInt(row.away_score_ex, 10);
+      const isUpperHome = row.home_team === upperTeam;
+      upperExTotal += isUpperHome ? hex : aex;
+      lowerExTotal += isUpperHome ? aex : hex;
+    }
+  }
+
   let winner: string | null = null;
+  let upperPk: number | undefined;
+  let lowerPk: number | undefined;
   if (allPlayed) {
     if (upperTotal > lowerTotal) winner = upperTeam;
     else if (lowerTotal > upperTotal) winner = lowerTeam;
@@ -179,6 +197,9 @@ function nodeFromAggregate(
       if (lastMatch?.home_pk_score && lastMatch?.away_pk_score) {
         const hpk = parseInt(lastMatch.home_pk_score, 10);
         const apk = parseInt(lastMatch.away_pk_score, 10);
+        const isUpperHome = lastMatch.home_team === upperTeam;
+        upperPk = isUpperHome ? hpk : apk;
+        lowerPk = isUpperHome ? apk : hpk;
         const pkWinner = hpk > apk ? lastMatch.home_team : lastMatch.away_team;
         winner = pkWinner === upperTeam ? upperTeam : lowerTeam;
       }
@@ -201,6 +222,10 @@ function nodeFromAggregate(
     awayTeam: lowerTeam,
     homeGoal: anyPlayed ? upperTotal : undefined,
     awayGoal: anyPlayed ? lowerTotal : undefined,
+    homePkScore: upperPk,
+    awayPkScore: lowerPk,
+    homeScoreEx: hasEx ? upperExTotal : undefined,
+    awayScoreEx: hasEx ? lowerExTotal : undefined,
     status: allPlayed ? '試合終了' : 'ＶＳ',
     winner,
     decidedBy,
