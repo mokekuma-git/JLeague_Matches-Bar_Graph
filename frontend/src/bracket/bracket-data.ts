@@ -100,6 +100,8 @@ function nodeFromMatch(
     decidedBy = 'pending';
   } else if (hPk != null && aPk != null) {
     decidedBy = 'penalties';
+  } else if (hEx != null && aEx != null) {
+    decidedBy = 'extra_time';
   } else {
     decidedBy = 'score';
   }
@@ -211,9 +213,9 @@ function nodeFromAggregate(
     decidedBy = 'pending';
   } else if (upperTotal === lowerTotal) {
     // Aggregate tied → winner decided by PK
-    decidedBy = 'penalties';
+    decidedBy = 'aggregate_penalties';
   } else {
-    decidedBy = 'score';
+    decidedBy = 'aggregate_score';
   }
 
   return {
