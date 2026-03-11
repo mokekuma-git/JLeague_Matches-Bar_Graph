@@ -11,7 +11,7 @@ import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
   getCompetitionViewTypes,
 } from './config/season-map';
-import { buildBracket } from './bracket/bracket-data';
+import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
 import { renderBracket, adjustBracketPositions, drawBracketConnectors, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
@@ -272,88 +272,6 @@ function getTargetDate(): string | null {
   if (!slider) return null;
   const idx = parseInt(slider.value, 10);
   return currentState.matchDates[idx] ?? null;
-}
-
-/**
- * Mask a bracket tree for a target date.
- * - Nodes with matchDate > targetDate: clear scores and winner, keep date/stadium
- * - Aggregate (H&A) nodes: use earliest leg date; partially mask if between legs
- * - Nodes whose child winner is unknown: set corresponding team to null (TBD)
- * Walks bottom-up (children before parent) so winner propagation works correctly.
- */
-function maskBracketForDate(node: BracketNode, targetDate: string): BracketNode {
-  // Recurse into children first
-  const [upper, lower] = node.children;
-  const maskedUpper = upper ? maskBracketForDate(upper, targetDate) : null;
-  const maskedLower = lower ? maskBracketForDate(lower, targetDate) : null;
-
-  // Determine effective match date.
-  // Aggregate (H&A) nodes don't have matchDate; derive from earliest leg date.
-  let effectiveDate = node.matchDate;
-  if (!effectiveDate && node.legs) {
-    const legDates = node.legs
-      .map(l => l.matchDate)
-      .filter((d): d is string => d != null)
-      .sort();
-    if (legDates.length > 0) effectiveDate = legDates[0];
-  }
-
-  const isFuture = effectiveDate != null && effectiveDate > targetDate;
-
-  if (isFuture) {
-    // Replace teams with child winners (may be null = TBD)
-    const homeTeam = maskedUpper ? maskedUpper.winner : node.homeTeam;
-    const awayTeam = maskedLower ? maskedLower.winner : node.awayTeam;
-    return {
-      ...node,
-      homeTeam,
-      awayTeam,
-      homeGoal: undefined,
-      awayGoal: undefined,
-      homePkScore: undefined,
-      awayPkScore: undefined,
-      homeScoreEx: undefined,
-      awayScoreEx: undefined,
-      legs: undefined,
-      status: 'ＶＳ',
-      winner: null,
-      decidedBy: 'pending',
-      children: [maskedUpper, maskedLower],
-    };
-  }
-
-  // Partial H&A masking: some legs played, some still in the future.
-  // Show only played legs and recalculate partial aggregate (no winner yet).
-  if (node.legs && node.legs.some(l => l.matchDate != null && l.matchDate > targetDate)) {
-    const playedLegs = node.legs.filter(
-      l => !l.matchDate || l.matchDate <= targetDate,
-    );
-    let upperTotal = 0;
-    let lowerTotal = 0;
-    for (const leg of playedLegs) {
-      if (leg.homeGoal == null || leg.awayGoal == null) continue;
-      const isUpperHome = leg.homeTeam === node.homeTeam;
-      upperTotal += isUpperHome ? leg.homeGoal : leg.awayGoal;
-      lowerTotal += isUpperHome ? leg.awayGoal : leg.homeGoal;
-    }
-    return {
-      ...node,
-      homeGoal: playedLegs.length > 0 ? upperTotal : undefined,
-      awayGoal: playedLegs.length > 0 ? lowerTotal : undefined,
-      homePkScore: undefined,
-      awayPkScore: undefined,
-      homeScoreEx: undefined,
-      awayScoreEx: undefined,
-      winner: null,
-      decidedBy: 'pending',
-      status: 'ＶＳ',
-      legs: playedLegs.length > 0 ? playedLegs : undefined,
-      children: [maskedUpper, maskedLower],
-    };
-  }
-
-  // Not future: keep original data but use masked children
-  return { ...node, children: [maskedUpper, maskedLower] };
 }
 
 /** Check if the current dropdown selection is multi-section mode. */

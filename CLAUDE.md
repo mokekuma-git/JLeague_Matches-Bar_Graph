@@ -199,6 +199,9 @@ uv run python scripts/check_type_sync.py
   - `'pk-win2-loss1'` (2026特別大会): 勝3/PK勝2/PK負1/負0
 - **SeasonEntry バリデーション**: index 0〜3 の型不正は即エラー。index 4 の未知キーは Warning で無視
 - **ルール説明ノート自動生成** (`config/rule-notes.ts`): `pointSystem` が `'standard'` 以外、または `tiebreakOrder` がデフォルト (`['goal_diff', 'goal_get']`) と異なる場合、`resolveSeasonInfo()` が note 配列末尾にルール説明を自動追加。メッセージは辞書オブジェクトで管理し、将来の多言語化に備える (locale 引数 + `Record<Locale, ...>` への拡張で対応可能)
+- **スコアアノテーション規則 (リーグ・トーナメント共通)**: メインスコア (`homeGoal`/`awayGoal`) は常に ET 込みの最終結果。`formatScore` が `(PKn)` / `(ETn)` アノテーションを付加。PK がある場合は PK のみ表示 (ET 後も同点なので ET スコアに情報価値なし)。単試合・H&A aggregate 共通ロジック
+  - **単試合**: CSV の `home_pk_score`/`away_pk_score`/`home_score_ex`/`away_score_ex` をそのままマッピング
+  - **H&A aggregate**: PK → 決定 leg (最終 played leg) の PK スコアを upper/lower にマッピング。ET → 全 leg の ET スコアを upper/lower で合算。合計スコアには ET が含まれるため、ET アノテーションは「合計のうち延長分がいくら」を示す
 - **ツールチップ表示規則**: ボックス内スコアは `ET`/`PK` プレフィックスで種別を明示 (`3-2 (ET1-0)`, `1-1 (PK5-3)`)。PKまで行った場合のET情報は省略 (ET後も同点のためスコアに情報価値なし)。チーム名ツールチップの成績は勝/分/敗を1行、延長勝負・PK勝負を各1行で表示
 - **描画の不変条件 (View Invariants)**: 以下はどの大会・日程・Preference でも必ず維持する。違反時はできる限り原因を調査し、適切な表示ができないことをユーザーに伝える
   - **(I1) バーグラフ高さ一致**: 全チーム列と勝ち点列の高さが等しい (スペースボックスで差を埋める)
