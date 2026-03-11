@@ -139,7 +139,7 @@
 
 .bracket-score-pk {
   font-size: 0.85em;
-  color: #666;
+  color: inherit;
   margin-left: 4px;
 }
 
