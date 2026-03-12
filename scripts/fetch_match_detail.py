@@ -54,7 +54,7 @@ def load_match_card_ids(year: int, *, filter_pattern: str | None = None) -> list
     return ids
 
 
-def fetch_and_save(year: int, match_card_id: str, *, delay: float, dry_run: bool) -> bool:
+def fetch_and_save(year: int, match_card_id: str, *, delay: float, dry_run: bool, count: int, total: int) -> bool:
     """Fetch a single match detail page and save it locally.
 
     Returns True if a new file was downloaded, False if skipped.
@@ -75,7 +75,7 @@ def fetch_and_save(year: int, match_card_id: str, *, delay: float, dry_run: bool
     resp = requests.get(url, timeout=60)
     resp.raise_for_status()
     out_path.write_text(resp.text, encoding='utf-8')
-    logger.info('Saved: %s (%d bytes)', out_path, len(resp.text))
+    logger.info('Saved: %s (%d bytes) [%d/%d]', out_path, len(resp.text), count, total)
 
     time.sleep(delay)
     return True
@@ -90,8 +90,9 @@ def fetch_year(year: int, *, delay: float, dry_run: bool,
 
     fetched = 0
     skipped = 0
-    for card_id in ids:
-        if fetch_and_save(year, card_id, delay=delay, dry_run=dry_run):
+    total = len(ids)
+    for count, card_id in enumerate(ids):
+        if fetch_and_save(year, card_id, delay=delay, dry_run=dry_run, count=count + 1, total=total):
             fetched += 1
         else:
             skipped += 1
