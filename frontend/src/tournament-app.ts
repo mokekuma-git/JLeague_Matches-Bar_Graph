@@ -570,7 +570,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const defaultRoundStart = entry[4]?.bracket_round_start
         ? normalizeBracketRoundLabel(entry[4].bracket_round_start)
         : undefined;
-      const aggregateTiebreakOrder = entry[4]?.aggregate_tiebreak_order ?? [];
+      const aggregateTiebreakOrder = entry[4]?.aggregate_tiebreak_order ?? ['penalties'];
       const bracketSections = entry[4]?.bracket_sections;
       const bracketRows = collectBracketSourceRows(results.data, bracketSections);
       const matchDates = collectMatchDates(bracketRows);

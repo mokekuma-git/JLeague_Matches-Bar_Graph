@@ -118,6 +118,7 @@ export const ja = {
   'bracketNote.aggregateScore': 'H&A (ホーム&アウェー) 方式の得点は2試合の合計です',
   'bracketNote.etIncluded': '延長戦 (ET) がある場合、メインスコアに延長分が含まれます',
   'bracketNote.pkAnnotation': 'PK戦の結果は (PKn) として別表示されます',
+  'bracketNote.agAnnotation': 'アウェイゴール数は (AGn) として別表示されます',
 
   // Links
   'link.github': 'Github公開場所',
