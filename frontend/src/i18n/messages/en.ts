@@ -116,6 +116,11 @@ export const en: Record<MessageKey, string> = {
   'note.playoffNote': 'Promotion/Relegation: Playoff qualification is also shown as "Clinched" or "Relegated"',
   'note.otherLeague': 'Does not account for promotion/relegation slots affected by other leagues',
 
+  // Bracket notes
+  'bracketNote.aggregateScore': 'Scores in H&A (home & away) ties are the aggregate of both legs',
+  'bracketNote.etIncluded': 'When extra time (ET) is played, the main score includes extra-time goals',
+  'bracketNote.pkAnnotation': 'Penalty shootout results are shown separately as (PKn)',
+
   // Links
   'link.github': 'GitHub repository',
 

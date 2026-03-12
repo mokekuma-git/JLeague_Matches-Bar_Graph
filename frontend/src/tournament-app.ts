@@ -562,6 +562,22 @@ function loadAndRender(seasonMap: SeasonMap): void {
       applyFutureOpacity();
       applyScale();
 
+      // Update season notes + bracket-specific notes
+      const notesEl = document.getElementById('season_notes');
+      if (notesEl) {
+        notesEl.replaceChildren();
+        const bracketNotes = [
+          t('bracketNote.aggregateScore'),
+          t('bracketNote.etIncluded'),
+          t('bracketNote.pkAnnotation'),
+        ];
+        for (const text of [...seasonInfo.notes, ...bracketNotes]) {
+          const li = document.createElement('li');
+          li.textContent = text;
+          notesEl.appendChild(li);
+        }
+      }
+
       setStatus(t('status.loaded', {
         league: seasonInfo.leagueDisplay, season, rows: results.data.length,
       }));

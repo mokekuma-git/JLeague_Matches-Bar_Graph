@@ -114,6 +114,11 @@ export const ja = {
   'note.playoffNote': '昇格・降格: プレーオフ参戦決定も、それぞれ「確定」「降格」と表示',
   'note.otherLeague': '別リーグの影響で昇格・降格数が減るケースは考慮しない',
 
+  // Bracket notes
+  'bracketNote.aggregateScore': 'H&A (ホーム&アウェー) 方式の得点は2試合の合計です',
+  'bracketNote.etIncluded': '延長戦 (ET) がある場合、メインスコアに延長分が含まれます',
+  'bracketNote.pkAnnotation': 'PK戦の結果は (PKn) として別表示されます',
+
   // Links
   'link.github': 'Github公開場所',
 
