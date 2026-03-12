@@ -120,6 +120,7 @@ export const en: Record<MessageKey, string> = {
   'bracketNote.aggregateScore': 'Scores in H&A (home & away) ties are the aggregate of both legs',
   'bracketNote.etIncluded': 'When extra time (ET) is played, the main score includes extra-time goals',
   'bracketNote.pkAnnotation': 'Penalty shootout results are shown separately as (PKn)',
+  'bracketNote.agAnnotation': 'Away goals are shown separately as (AGn)',
 
   // Links
   'link.github': 'GitHub repository',

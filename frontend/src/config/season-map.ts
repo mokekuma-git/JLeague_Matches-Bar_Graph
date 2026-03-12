@@ -111,6 +111,12 @@ export function resolveSeasonInfo(
     ?? comp.tiebreak_order
     ?? ['goal_diff', 'goal_get'];
 
+  // aggregate_tiebreak_order: scalar cascade (lowest defined level wins)
+  const aggregateTiebreakOrder = opts.aggregate_tiebreak_order
+    ?? comp.aggregate_tiebreak_order
+    ?? group.aggregate_tiebreak_order
+    ?? [];
+
   // season_start_month: scalar cascade (lowest defined level wins, code default 7)
   const seasonStartMonth: number = opts.season_start_month
     ?? comp.season_start_month
@@ -154,7 +160,7 @@ export function resolveSeasonInfo(
     ...toArray(group.note),
     ...toArray(comp.note),
     ...toArray(opts.note),
-    ...generateRuleNotes(pointSystem, tiebreakOrder),
+    ...generateRuleNotes(pointSystem, tiebreakOrder, aggregateTiebreakOrder),
   ];
 
   // view_type: array union across all three levels (deduplicated).

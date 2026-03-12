@@ -160,15 +160,6 @@
   text-align: center;
 }
 
-.bracket-match-decision {
-  font-size: 0.72em;
-  color: #7a4b00;
-  background: #f8ecd1;
-  padding: 3px 8px;
-  text-align: center;
-  min-height: 1.2em;
-}
-
 /* ---- Tooltip (floating, appended to body) ---- */
 
 .bracket-tooltip {
@@ -219,12 +210,6 @@
   margin-top: 6px;
   padding-top: 4px;
   border-top: 1px solid #ddd;
-  font-weight: bold;
-}
-
-.bracket-tooltip-note {
-  margin-top: 4px;
-  color: #7a4b00;
   font-weight: bold;
 }
 

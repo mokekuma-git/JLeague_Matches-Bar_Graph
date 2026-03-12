@@ -260,7 +260,7 @@ describe('renderBracket — DOM structure', () => {
     expect(texts).toContain('(ET1)');
   });
 
-  it('renders aggregate away-goals decision note on the card', () => {
+  it('renders aggregate away-goals annotation in score', () => {
     const rows = [
       makeRow({
         home_team: 'A', away_team: 'B',
@@ -276,34 +276,11 @@ describe('renderBracket — DOM structure', () => {
     const root = buildBracket(rows, ['A', 'B'], ['away_goals', 'penalties']);
     const el = renderToElement(root);
 
-    const decisionLine = el.querySelector('.bracket-match-decision');
-    expect(decisionLine).not.toBeNull();
-    expect(decisionLine!.textContent).toBe('AがAG勝ち上がり');
-  });
-
-  it('renders aggregate decision reason in tooltip', () => {
-    const rows = [
-      makeRow({
-        home_team: 'A', away_team: 'B',
-        home_goal: '1', away_goal: '0',
-        match_date: '2024/12/01', round: '決勝', leg: '1',
-      }),
-      makeRow({
-        home_team: 'B', away_team: 'A',
-        home_goal: '1', away_goal: '0',
-        home_pk_score: '4', away_pk_score: '3',
-        match_date: '2024/12/08', round: '決勝', leg: '2',
-      }),
-    ];
-    const root = buildBracket(rows, ['A', 'B'], ['away_goals', 'penalties']);
-    const el = renderToElement(root);
-
-    const card = el.querySelector('.bracket-match') as HTMLElement;
-    card.dispatchEvent(new Event('mouseenter'));
-
-    const tooltip = document.body.querySelector('.bracket-tooltip');
-    expect(tooltip).not.toBeNull();
-    expect(tooltip!.textContent).toContain('BがPK勝ち上がり');
+    const agAnnotations = el.querySelectorAll('.bracket-score-pk');
+    expect(agAnnotations).toHaveLength(2);
+    const texts = Array.from(agAnnotations).map(e => e.textContent);
+    expect(texts).toContain('(AG2)');
+    expect(texts).toContain('(AG0)');
   });
 
   it('renders single-round pair (2-team minimal bracket)', () => {

@@ -42,6 +42,16 @@ function formatScore(
     return { main, annotation: `(ET${ex})` };
   }
 
+  if (node.decidedBy === 'aggregate_away_goals' && node.legs) {
+    let sideAwayGoals = 0;
+    const sideTeam = isHome ? node.homeTeam : node.awayTeam;
+    for (const leg of node.legs) {
+      if (!sideTeam || leg.homeGoal == null || leg.awayGoal == null) continue;
+      if (leg.awayTeam === sideTeam) sideAwayGoals += leg.awayGoal;
+    }
+    return { main, annotation: `(AG${sideAwayGoals})` };
+  }
+
   return { main, annotation: '' };
 }
 
@@ -68,17 +78,6 @@ function formatLegAnnotation(leg: LegDetail): string {
     return ` (ET${leg.homeScoreEx}-${leg.awayScoreEx})`;
   }
   return '';
-}
-
-function aggregateDecisionText(node: BracketNode): string {
-  switch (node.decidedBy) {
-    case 'aggregate_away_goals':
-      return 'AG勝ち上がり';
-    case 'aggregate_penalties':
-      return 'PK勝ち上がり';
-    default:
-      return '';
-  }
 }
 
 // ---- Tooltip (shared floating element) ------------------------------------
@@ -149,10 +148,6 @@ function buildAggregateTooltip(node: BracketNode): string {
   const hTotal = node.homeGoal ?? '';
   const aTotal = node.awayGoal ?? '';
   lines.push(`<div class="bracket-tooltip-total">合計: ${upper} ${hTotal}-${aTotal} ${lower}</div>`);
-  const decisionText = aggregateDecisionText(node);
-  if (decisionText && node.winner) {
-    lines.push(`<div class="bracket-tooltip-note">${node.winner}が${decisionText}</div>`);
-  }
 
   return lines.join('');
 }
@@ -322,15 +317,6 @@ function createMatchCard(node: BracketNode, bracketId: number): HTMLElement {
     ? legStadiums(node.legs!)
     : (node.stadium || '\u00A0');
   card.appendChild(stadiumLine);
-
-  // Aggregate decision note — keep a fixed row so card heights stay aligned.
-  const decisionLine = document.createElement('div');
-  decisionLine.classList.add('bracket-match-decision');
-  const decisionText = aggregateDecisionText(node);
-  decisionLine.textContent = (decisionText && node.winner)
-    ? `${node.winner}が${decisionText}`
-    : '\u00A0';
-  card.appendChild(decisionLine);
 
   attachTooltip(card, node);
 

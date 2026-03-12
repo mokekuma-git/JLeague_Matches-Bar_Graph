@@ -60,4 +60,11 @@ describe('generateRuleNotes', () => {
     expect(notes).toHaveLength(1);
     expect(notes[0]).toContain('unknown_key');
   });
+
+  test('aggregate away-goals annotation note is added when configured', () => {
+    const notes = generateRuleNotes('standard', ['goal_diff', 'goal_get'], ['away_goals']);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toContain('(AGn)');
+    expect(notes[0]).toContain('アウェイゴール');
+  });
 });
