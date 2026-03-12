@@ -4,6 +4,7 @@
 // For 4 teams: [0] vs [1] → SF1, [2] vs [3] → SF2, winners → Final.
 
 import type { RawMatchRow } from '../types/match';
+import type { AggregateTiebreakCriterion } from '../types/season';
 import type { BracketNode, DecidedBy, LegDetail } from './bracket-types';
 import { normalizeBracketRoundLabel } from './round-label';
 
@@ -132,10 +133,13 @@ function nodeFromAggregate(
   matches: RawMatchRow[],
   upperTeam: string | null,
   lowerTeam: string | null,
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[],
   children: [BracketNode | null, BracketNode | null] = [null, null],
 ): BracketNode {
   let upperTotal = 0;
   let lowerTotal = 0;
+  let upperAwayGoals = 0;
+  let lowerAwayGoals = 0;
   let allPlayed = true;
   let anyPlayed = false;
   let roundName = '';
@@ -153,6 +157,8 @@ function nodeFromAggregate(
     const isUpperHome = row.home_team === upperTeam;
     upperTotal += isUpperHome ? hg : ag;
     lowerTotal += isUpperHome ? ag : hg;
+    upperAwayGoals += isUpperHome ? 0 : ag;
+    lowerAwayGoals += isUpperHome ? ag : 0;
 
     // Store per-leg detail in CSV original order (homeTeam/awayTeam match homeGoal/awayGoal)
     legs.push({
@@ -191,32 +197,47 @@ function nodeFromAggregate(
   let winner: string | null = null;
   let upperPk: number | undefined;
   let lowerPk: number | undefined;
+  let decidedBy: DecidedBy | null = 'pending';
   if (allPlayed) {
     if (upperTotal > lowerTotal) winner = upperTeam;
     else if (lowerTotal > upperTotal) winner = lowerTeam;
-    else {
-      // Aggregate tied — PK only happens in the decisive (last) leg
-      const lastMatch = [...matches].reverse().find(r => r.home_goal && r.away_goal);
-      if (lastMatch?.home_pk_score && lastMatch?.away_pk_score) {
-        const hpk = parseInt(lastMatch.home_pk_score, 10);
-        const apk = parseInt(lastMatch.away_pk_score, 10);
-        const isUpperHome = lastMatch.home_team === upperTeam;
-        upperPk = isUpperHome ? hpk : apk;
-        lowerPk = isUpperHome ? apk : hpk;
-        const pkWinner = hpk > apk ? lastMatch.home_team : lastMatch.away_team;
-        winner = pkWinner === upperTeam ? upperTeam : lowerTeam;
+    if (winner) {
+      decidedBy = 'aggregate_score';
+    } else {
+      for (const criterion of aggregateTiebreakOrder) {
+        if (criterion === 'away_goals' && matches.length === 2) {
+          if (upperAwayGoals > lowerAwayGoals) {
+            winner = upperTeam;
+            decidedBy = 'aggregate_away_goals';
+            break;
+          }
+          if (lowerAwayGoals > upperAwayGoals) {
+            winner = lowerTeam;
+            decidedBy = 'aggregate_away_goals';
+            break;
+          }
+        }
+
+        if (criterion === 'penalties') {
+          const lastMatch = [...matches].reverse().find(r => r.home_goal && r.away_goal);
+          if (lastMatch?.home_pk_score && lastMatch?.away_pk_score) {
+            const hpk = parseInt(lastMatch.home_pk_score, 10);
+            const apk = parseInt(lastMatch.away_pk_score, 10);
+            const isUpperHome = lastMatch.home_team === upperTeam;
+            upperPk = isUpperHome ? hpk : apk;
+            lowerPk = isUpperHome ? apk : hpk;
+            const pkWinner = hpk > apk ? lastMatch.home_team : lastMatch.away_team;
+            winner = pkWinner === upperTeam ? upperTeam : lowerTeam;
+            decidedBy = 'aggregate_penalties';
+            break;
+          }
+        }
       }
     }
   }
 
-  let decidedBy: DecidedBy | null;
   if (!winner) {
     decidedBy = 'pending';
-  } else if (upperTotal === lowerTotal) {
-    // Aggregate tied → winner decided by PK
-    decidedBy = 'aggregate_penalties';
-  } else {
-    decidedBy = 'aggregate_score';
   }
 
   return {
@@ -244,28 +265,75 @@ function resolveMatch(
   rows: RawMatchRow[],
   upperTeam: string | null,
   lowerTeam: string | null,
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[],
   children: [BracketNode | null, BracketNode | null] = [null, null],
 ): BracketNode {
   const matches = findMatches(rows, upperTeam, lowerTeam);
   if (matches.length <= 1) {
     return nodeFromMatch(matches[0], upperTeam, lowerTeam, children);
   }
-  return nodeFromAggregate(matches, upperTeam, lowerTeam, children);
+  return nodeFromAggregate(matches, upperTeam, lowerTeam, aggregateTiebreakOrder, children);
 }
 
 /**
  * Recursively build a bracket tree from bracket_order positions.
  */
-function buildNode(rows: RawMatchRow[], teams: (string | null)[]): BracketNode {
+function isValidPairingOrder(order: number[], width: number): boolean {
+  if (order.length !== width) return false;
+  const seen = new Set<number>();
+  for (const index of order) {
+    if (!Number.isInteger(index) || index < 0 || index >= width || seen.has(index)) {
+      return false;
+    }
+    seen.add(index);
+  }
+  return true;
+}
+
+function buildNode(
+  rows: RawMatchRow[],
+  teams: (string | null)[],
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[],
+  pairingOrders?: number[][],
+): BracketNode {
   if (teams.length === 2) {
-    return resolveMatch(rows, teams[0], teams[1]);
+    return resolveMatch(rows, teams[0], teams[1], aggregateTiebreakOrder);
   }
 
-  const mid = Math.floor(teams.length / 2);
-  const upper = buildNode(rows, teams.slice(0, mid));
-  const lower = buildNode(rows, teams.slice(mid));
+  let levelNodes: BracketNode[] = [];
+  for (let i = 0; i < teams.length; i += 2) {
+    levelNodes.push(resolveMatch(
+      rows,
+      teams[i] ?? null,
+      teams[i + 1] ?? null,
+      aggregateTiebreakOrder,
+    ));
+  }
+  let level = 0;
 
-  return resolveMatch(rows, upper.winner, lower.winner, [upper, lower]);
+  while (levelNodes.length > 1) {
+    const pairingOrder = pairingOrders?.[level];
+    const orderedNodes = (pairingOrder && isValidPairingOrder(pairingOrder, levelNodes.length))
+      ? pairingOrder.map(index => levelNodes[index])
+      : levelNodes;
+
+    const nextLevel: BracketNode[] = [];
+    for (let i = 0; i < orderedNodes.length; i += 2) {
+      const upper = orderedNodes[i];
+      const lower = orderedNodes[i + 1];
+      nextLevel.push(resolveMatch(
+        rows,
+        upper.winner,
+        lower.winner,
+        aggregateTiebreakOrder,
+        [upper, lower],
+      ));
+    }
+    levelNodes = nextLevel;
+    level += 1;
+  }
+
+  return levelNodes[0];
 }
 
 /**
@@ -275,11 +343,16 @@ function buildNode(rows: RawMatchRow[], teams: (string | null)[]): BracketNode {
  * @param bracketOrder - Teams in bracket position order (top to bottom).
  * @returns Root BracketNode of the tournament tree.
  */
-export function buildBracket(rows: RawMatchRow[], bracketOrder: (string | null)[]): BracketNode {
+export function buildBracket(
+  rows: RawMatchRow[],
+  bracketOrder: (string | null)[],
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[] = ['penalties'],
+  pairingOrders?: number[][],
+): BracketNode {
   if (bracketOrder.length < 2) {
     throw new Error(`bracket_order must have at least 2 teams, got ${bracketOrder.length}`);
   }
-  return buildNode(rows, bracketOrder);
+  return buildNode(rows, bracketOrder, aggregateTiebreakOrder, pairingOrders);
 }
 
 /**
