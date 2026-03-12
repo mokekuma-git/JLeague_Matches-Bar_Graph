@@ -12,6 +12,7 @@ import {
   getCompetitionViewTypes,
 } from './config/season-map';
 import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
+import { normalizeBracketRoundLabel } from './bracket/round-label';
 import { renderBracket, adjustBracketPositions, drawBracketConnectors, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
@@ -163,6 +164,49 @@ function collectRoundsByDepth(node: BracketNode): string[] {
   return rounds;
 }
 
+/** Collect unique normalized KO rounds from the built bracket tree in play order. */
+function collectBracketRounds(node: BracketNode): string[] {
+  return collectRoundsByDepth(node)
+    .map(r => normalizeBracketRoundLabel(r))
+    .reverse();
+}
+
+/** Filter rows by round using raw or normalized bracket labels. */
+function filterRowsByRounds(rows: RawMatchRow[], roundFilter: string[]): RawMatchRow[] {
+  const rawSet = new Set(roundFilter);
+  const normalizedSet = new Set(roundFilter.map(r => normalizeBracketRoundLabel(r)));
+  return rows.filter((r) => {
+    const round = r.round ?? '';
+    return rawSet.has(round) || normalizedSet.has(normalizeBracketRoundLabel(round));
+  });
+}
+
+function collectBracketSourceRows(rows: RawMatchRow[], sections?: BracketSection[]): RawMatchRow[] {
+  if (!sections || sections.length === 0) return rows;
+  const merged: RawMatchRow[] = [];
+  const seen = new Set<string>();
+  for (const section of sections) {
+    const sectionRows = section.round_filter
+      ? filterRowsByRounds(rows, section.round_filter)
+      : rows;
+    for (const row of sectionRows) {
+      const key = [
+        row.match_date ?? '',
+        row.home_team ?? '',
+        row.away_team ?? '',
+        row.round ?? '',
+        row.leg ?? '',
+        row.section_no ?? '',
+        row.match_index_in_section ?? '',
+      ].join('|');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(row);
+    }
+  }
+  return merged;
+}
+
 /** Collect unique rounds from CSV in chronological order. */
 function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
   const seen = new Set<string>();
@@ -171,9 +215,10 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
     (a, b) => (a.match_date ?? '').localeCompare(b.match_date ?? ''),
   );
   for (const row of sorted) {
-    if (row.round && !seen.has(row.round)) {
-      seen.add(row.round);
-      rounds.push(row.round);
+    const normalized = row.round ? normalizeBracketRoundLabel(row.round) : '';
+    if (normalized && !seen.has(normalized)) {
+      seen.add(normalized);
+      rounds.push(normalized);
     }
   }
   return rounds;
@@ -208,7 +253,8 @@ function extendBracketBackward(
       continue;
     }
     const match = rows.find(r =>
-      r.round === round && (r.home_team === team || r.away_team === team),
+      normalizeBracketRoundLabel(r.round ?? '') === round
+        && (r.home_team === team || r.away_team === team),
     );
     if (match) {
       extended.push(match.home_team, match.away_team);
@@ -363,7 +409,7 @@ function renderMultiSections(): void {
 
     // Pre-filter CSV rows by round_filter if specified
     const rows = section.round_filter
-      ? currentState.csvRows.filter(r => section.round_filter!.includes(r.round ?? ''))
+      ? filterRowsByRounds(currentState.csvRows, section.round_filter)
       : currentState.csvRows;
 
     // Create collapsible section
@@ -509,17 +555,23 @@ function loadAndRender(seasonMap: SeasonMap): void {
     skipEmptyLines: 'greedy',
     download: true,
     complete: (results) => {
-      const matchDates = collectMatchDates(results.data);
-      const defaultRoundStart = entry[4]?.bracket_round_start;
+      const defaultRoundStart = entry[4]?.bracket_round_start
+        ? normalizeBracketRoundLabel(entry[4].bracket_round_start)
+        : undefined;
       const bracketSections = entry[4]?.bracket_sections;
+      const bracketRows = collectBracketSourceRows(results.data, bracketSections);
+      const matchDates = collectMatchDates(bracketRows);
 
       // Build full tree to extract round structure
-      const fullRoot = buildBracket(results.data, bracketOrder);
+      const fullRoot = buildBracket(bracketRows, bracketOrder);
       const roundsByDepth = collectRoundsByDepth(fullRoot);
-      const allRounds = collectRoundsFromCsv(results.data);
+      const bracketRounds = collectBracketRounds(fullRoot);
+      const allRounds = bracketSections
+        ? bracketRounds
+        : collectRoundsFromCsv(bracketRows).filter(r => bracketRounds.includes(r));
 
       currentState = {
-        csvRows: results.data,
+        csvRows: bracketRows,
         bracketOrder,
         fullRoot,
         roundsByDepth,
@@ -538,9 +590,11 @@ function loadAndRender(seasonMap: SeasonMap): void {
       // Sync round start: restore from controlState or pick up dropdown default
       const roundSel = document.getElementById('round_start_key') as HTMLSelectElement | null;
       if (roundSel && controlState.roundStart) {
-        const hasOption = Array.from(roundSel.options).some(o => o.value === controlState.roundStart);
+        const normalizedSelected = normalizeBracketRoundLabel(controlState.roundStart);
+        const hasOption = Array.from(roundSel.options).some(o => o.value === normalizedSelected);
         if (hasOption) {
-          roundSel.value = controlState.roundStart;
+          roundSel.value = normalizedSelected;
+          controlState.roundStart = normalizedSelected;
         } else {
           controlState.roundStart = roundSel.value;
         }
@@ -579,7 +633,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
       }
 
       setStatus(t('status.loaded', {
-        league: seasonInfo.leagueDisplay, season, rows: results.data.length,
+        league: seasonInfo.leagueDisplay, season, rows: bracketRows.length,
       }));
     },
     error: (err: unknown) => {
