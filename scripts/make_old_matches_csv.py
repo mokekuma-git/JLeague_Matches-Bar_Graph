@@ -132,7 +132,7 @@ def _derive_leg(section: str) -> str:
     return ''
 
 
-def make_leaguecup_csv(year: int) -> None:
+def make_jleaguecup_csv(year: int) -> None:
     """Convert Levain Cup (YLC) match results from intermediate CSV into final CSV.
 
     Filters YLC matches from csv/{year}.csv, derives round/leg columns,
@@ -143,7 +143,7 @@ def make_leaguecup_csv(year: int) -> None:
         return
 
     _df = pd.read_csv(filename, index_col=0)
-    matches = _df[_df['大会'].str.contains(FILTER_ALIASES['leaguecup'], na=False)].reset_index(drop=True)
+    matches = _df[_df['大会'].str.contains(FILTER_ALIASES['JLeagueCup'], na=False)].reset_index(drop=True)
     if matches.empty:
         return
 
@@ -261,16 +261,16 @@ if __name__ == '__main__':
     _parser.add_argument('--competition', nargs='*',
                          default=['J1', 'J2', 'J3'],
                          help='Competitions to process (default: J1 J2 J3). '
-                              'Use leaguecup for Levain/Nabisco Cup '
-                              '(aliases: JLeagueCup, levain, nabisco).')
+                              'Use JLeagueCup for Levain/Nabisco Cup '
+                              '(aliases: leaguecup, levain, nabisco).')
     # Inject competition arg before parse_years() consumes --year/--range/--list
     _comp_args, _remaining = _parser.parse_known_args()
     sys.argv = [sys.argv[0]] + _remaining  # Let parse_years() handle year args
     years = parse_years()
-    _leaguecup_aliases = {'JLeagueCup', 'leaguecup', 'levain', 'nabisco'}
+    _jleaguecup_aliases = {'JLeagueCup', 'leaguecup', 'levain', 'nabisco'}
     for _comp in _comp_args.competition:
-        if _comp in _leaguecup_aliases:
+        if _comp in _jleaguecup_aliases:
             for year in years:
-                make_leaguecup_csv(year)
+                make_jleaguecup_csv(year)
         else:
             make_old_matches_csv(_comp, years)

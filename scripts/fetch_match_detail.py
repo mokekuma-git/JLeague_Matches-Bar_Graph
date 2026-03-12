@@ -24,7 +24,7 @@ OUTPUT_DIR = Path(__file__).parent / '../local_data/match_detail'
 
 # Shorthand aliases for --filter
 FILTER_ALIASES: dict[str, str] = {
-    'leaguecup': 'ＹＬＣ|ＹＮＣ',
+    'JLeagueCup': 'ＹＬＣ|ＹＮＣ',
     'nabisco': 'ＹＮＣ',
     'levain': 'ＹＬＣ',
     'jleague': 'Ｊ',
@@ -109,7 +109,7 @@ def parse_args() -> argparse.Namespace:
                        help='Range of years (inclusive)')
     parser.add_argument('--filter',
                         help='Filter by 大会 column substring (regex). '
-                             'Aliases: leaguecup→ＹＬＣ|ＹＮＣ, '
+                             'Aliases: JLeagueCup→ＹＬＣ|ＹＮＣ, '
                              'nabisco→ＹＮＣ, levain→ＹＬＣ, jleague→Ｊ. '
                              'Or pass a literal pattern (e.g. プライム).')
     parser.add_argument('--delay', type=float, default=3.0,
