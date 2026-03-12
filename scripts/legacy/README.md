@@ -21,20 +21,6 @@ uv run python scripts/legacy/read_older2020_matches.py --range 1993 2002
 - **依存**: `src/set_config.py`
 - **出力**: `csv/{year}.csv` (中間フォーマット。`docs/csv/` の最終フォーマットではない)
 
-### make_old_matches_csv.py
-
-`read_older2020_matches.py` が生成した中間CSVを、
-標準フォーマット (`docs/csv/{season}_allmatch_result-{competition}.csv`) に変換する。
-前期後期制 (1993年 サントリー/NICOS 等) の自動分割にも対応。
-
-```bash
-uv run python scripts/legacy/make_old_matches_csv.py --range 1993 2002
-```
-
-- **設定**: `old_matches.yaml`
-- **依存**: `src/set_config.py`, `read_older2020_matches.parse_years()`
-- **出力**: `docs/csv/*_allmatch_result-J{1,2,3}.csv`
-
 ### old_matches.yaml
 
 上記スクリプトの設定ファイル。URL フォーマット、リーグ名パターン (全角日本語)、
@@ -47,6 +33,7 @@ uv run python scripts/legacy/make_old_matches_csv.py --range 1993 2002
 1. `scripts/fetch_match_detail.py` — 試合詳細HTMLをダウンロード
 2. `scripts/parse_match_detail.py` — HTMLから延長戦・PKスコアを抽出
 3. `scripts/enrich_match_detail.py` — 抽出結果を中間CSVに反映
+4. `scripts/make_old_matches_csv.py` — 中間CSVを標準フォーマットに変換
 
 典型的なワークフロー:
 
@@ -61,5 +48,5 @@ uv run python scripts/fetch_match_detail.py --range 1993 1998
 uv run python scripts/enrich_match_detail.py --range 1993 1998
 
 # 4. 標準CSVフォーマットに変換
-uv run python scripts/legacy/make_old_matches_csv.py --range 1993 1998
+uv run python scripts/make_old_matches_csv.py --range 1993 1998
 ```
