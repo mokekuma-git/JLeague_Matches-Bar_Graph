@@ -300,7 +300,7 @@
       }
     }
   },
-  "leaguecup": {
+  "JLeagueCup": {
     "display_name": "Jリーグカップ",
     "css_files": ["team_style.css"],
     "season_start_month": 1,
