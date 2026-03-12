@@ -93,7 +93,9 @@ class SeasonEntry:
         'team_rename_map', 'tiebreak_order', 'season_start_month',
         'shown_groups', 'cross_group_standing', 'group_team_count',
         'note', 'data_source', 'promotion_label',
+        'aggregate_tiebreak_order',
         'bracket_order', 'bracket_round_start', 'bracket_sections',
+        'bracket_pairing_orders',
         'view_type',
     }
 
