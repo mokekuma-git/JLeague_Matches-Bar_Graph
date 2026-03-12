@@ -6,7 +6,7 @@
 
 import Papa from 'papaparse';
 import type { RawMatchRow } from './types/match';
-import type { SeasonMap, BracketSection } from './types/season';
+import type { SeasonMap, BracketSection, AggregateTiebreakCriterion } from './types/season';
 import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
   getCompetitionViewTypes,
@@ -24,6 +24,7 @@ import type { BracketNode } from './bracket/bracket-types';
 interface BracketState {
   csvRows: RawMatchRow[];
   bracketOrder: string[];
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[];
   fullRoot: BracketNode;        // full tree built from bracketOrder
   roundsByDepth: string[];      // round labels root-to-leaf (e.g. ['決勝戦','準決勝','準々決勝','ラウンド16'])
   allRounds: string[];          // all CSV rounds in chronological order
@@ -360,12 +361,13 @@ function buildAndRenderBracket(
   container: HTMLElement,
   rows: RawMatchRow[],
   order: (string | null)[],
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[],
   targetDate: string | null,
   lastDate: string,
   cssFiles: string[],
 ): void {
   if (order.length < 2) return;
-  const fullRoot = buildBracket(rows, order);
+  const fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
   const root = (targetDate && targetDate < lastDate)
     ? maskBracketForDate(fullRoot, targetDate) : fullRoot;
   renderSingleBracketInto(container, root, cssFiles);
@@ -436,10 +438,16 @@ function renderMultiSections(): void {
       for (let i = 0; i < order.length; i += 2) {
         const pair = order.slice(i, i + 2);
         if (pair.every(t => t == null)) continue;
-        buildAndRenderBracket(sectionWrapper, rows, pair, targetDate, lastDate, currentState.cssFiles);
+        buildAndRenderBracket(
+          sectionWrapper, rows, pair, currentState.aggregateTiebreakOrder,
+          targetDate, lastDate, currentState.cssFiles,
+        );
       }
     } else {
-      buildAndRenderBracket(sectionWrapper, rows, section.bracket_order, targetDate, lastDate, currentState.cssFiles);
+      buildAndRenderBracket(
+        sectionWrapper, rows, section.bracket_order, currentState.aggregateTiebreakOrder,
+        targetDate, lastDate, currentState.cssFiles,
+      );
     }
   }
 }
@@ -461,7 +469,11 @@ function renderWithDateFilter(): void {
   // Single bracket mode: use effective bracket order + date mask
   const effectiveOrder = getEffectiveBracketOrder();
   if (effectiveOrder.length < 2) return;
-  const fullRoot = buildBracket(currentState.csvRows, effectiveOrder);
+  const fullRoot = buildBracket(
+    currentState.csvRows,
+    effectiveOrder,
+    currentState.aggregateTiebreakOrder,
+  );
   const targetDate = getTargetDate();
   const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
   const root = (targetDate && targetDate < lastDate)
@@ -558,12 +570,13 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const defaultRoundStart = entry[4]?.bracket_round_start
         ? normalizeBracketRoundLabel(entry[4].bracket_round_start)
         : undefined;
+      const aggregateTiebreakOrder = entry[4]?.aggregate_tiebreak_order ?? [];
       const bracketSections = entry[4]?.bracket_sections;
       const bracketRows = collectBracketSourceRows(results.data, bracketSections);
       const matchDates = collectMatchDates(bracketRows);
 
       // Build full tree to extract round structure
-      const fullRoot = buildBracket(bracketRows, bracketOrder);
+      const fullRoot = buildBracket(bracketRows, bracketOrder, aggregateTiebreakOrder);
       const roundsByDepth = collectRoundsByDepth(fullRoot);
       const bracketRounds = collectBracketRounds(fullRoot);
       const allRounds = bracketSections
@@ -573,6 +586,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
       currentState = {
         csvRows: bracketRows,
         bracketOrder,
+        aggregateTiebreakOrder,
         fullRoot,
         roundsByDepth,
         allRounds,
