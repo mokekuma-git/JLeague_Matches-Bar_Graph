@@ -5,6 +5,7 @@
 
 import type { RawMatchRow } from '../types/match';
 import type { BracketNode, DecidedBy, LegDetail } from './bracket-types';
+import { normalizeBracketRoundLabel } from './round-label';
 
 /**
  * Determine the winner of a KO match from a CSV row.
@@ -168,7 +169,7 @@ function nodeFromAggregate(
       leg: row.leg,
     });
 
-    if (!roundName && row.round) roundName = row.round;
+    if (!roundName && row.round) roundName = normalizeBracketRoundLabel(row.round);
   }
 
   // Aggregate ET scores across all legs (mapped to upper/lower position)
