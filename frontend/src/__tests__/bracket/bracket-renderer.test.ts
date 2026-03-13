@@ -260,6 +260,29 @@ describe('renderBracket — DOM structure', () => {
     expect(texts).toContain('(ET1)');
   });
 
+  it('renders aggregate away-goals annotation in score', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '1', away_goal: '0',
+        match_date: '2024/12/01', round: '決勝', leg: '1',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A',
+        home_goal: '3', away_goal: '2',
+        match_date: '2024/12/08', round: '決勝', leg: '2',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B'], ['away_goals', 'penalties']);
+    const el = renderToElement(root);
+
+    const agAnnotations = el.querySelectorAll('.bracket-score-pk');
+    expect(agAnnotations).toHaveLength(2);
+    const texts = Array.from(agAnnotations).map(e => e.textContent);
+    expect(texts).toContain('(AG2)');
+    expect(texts).toContain('(AG0)');
+  });
+
   it('renders single-round pair (2-team minimal bracket)', () => {
     const rows = [
       makeRow({

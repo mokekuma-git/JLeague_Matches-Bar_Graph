@@ -268,6 +268,7 @@ describe('buildBracket — H&A aggregate', () => {
     expect(root.winner).toBe('A');
     expect(root.decidedBy).toBe('aggregate_score');
     expect(root.legs).toHaveLength(2);
+    expect(root.round).toBe('決勝');
   });
 
   it('decides by penalties when aggregate is tied and PK played', () => {
@@ -289,6 +290,87 @@ describe('buildBracket — H&A aggregate', () => {
     expect(root.winner).toBe('B');
     expect(root.decidedBy).toBe('aggregate_penalties');
     expect(root.legs).toHaveLength(2);
+  });
+
+  it('decides by away goals when configured in aggregate tiebreak order', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '1', away_goal: '0',
+        round: '準決勝　第1戦', match_date: '2024/12/01',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A',
+        home_goal: '3', away_goal: '2',
+        round: '準決勝　第2戦', match_date: '2024/12/08',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B'], ['away_goals', 'penalties']);
+
+    expect(root.winner).toBe('A');
+    expect(root.decidedBy).toBe('aggregate_away_goals');
+    expect(root.homeGoal).toBe(3);
+    expect(root.awayGoal).toBe(3);
+  });
+
+  it('decides by penalties after extra time when regulation and away goals are tied', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '1', away_goal: '1',
+        round: '準決勝', match_date: '2024/10/10', leg: '1',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A',
+        home_goal: '2', away_goal: '2',
+        home_score_ex: '1', away_score_ex: '1',
+        home_pk_score: '5', away_pk_score: '4',
+        round: '準決勝', match_date: '2024/10/14', leg: '2',
+      }),
+    ];
+
+    const root = buildBracket(rows, ['A', 'B'], ['away_goals', 'penalties']);
+
+    expect(root.winner).toBe('B');
+    expect(root.decidedBy).toBe('aggregate_penalties');
+    expect(root.homeGoal).toBe(3);
+    expect(root.awayGoal).toBe(3);
+    expect(root.homeScoreEx).toBe(1);
+    expect(root.awayScoreEx).toBe(1);
+  });
+
+  it('normalizes Japanese H&A round labels by removing leg suffix', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '1', away_goal: '0',
+        round: '準々決勝第1戦', match_date: '2024/12/01',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A',
+        home_goal: '0', away_goal: '1',
+        round: '準々決勝第2戦', match_date: '2024/12/08',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B']);
+    expect(root.round).toBe('準々決勝');
+  });
+
+  it('normalizes English H&A round labels by removing leg suffix', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '1', away_goal: '0',
+        round: 'Round 1 1st Leg', match_date: '2024/12/01',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A',
+        home_goal: '0', away_goal: '1',
+        round: 'Round 1 2nd Leg', match_date: '2024/12/08',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B']);
+    expect(root.round).toBe('Round 1');
   });
 
   it('is pending when not all legs played', () => {

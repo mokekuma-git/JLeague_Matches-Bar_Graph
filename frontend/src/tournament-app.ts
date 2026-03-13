@@ -6,13 +6,15 @@
 
 import Papa from 'papaparse';
 import type { RawMatchRow } from './types/match';
-import type { SeasonMap, BracketSection } from './types/season';
+import type { SeasonMap, BracketSection, AggregateTiebreakCriterion } from './types/season';
 import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
   getCompetitionViewTypes,
 } from './config/season-map';
 import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
+import { normalizeBracketRoundLabel } from './bracket/round-label';
 import { renderBracket, adjustBracketPositions, drawBracketConnectors, unpinTooltip } from './bracket/bracket-renderer';
+import { findSliderIndex, formatSliderDate } from './graph/renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
 import type { Locale } from './i18n';
@@ -23,10 +25,12 @@ import type { BracketNode } from './bracket/bracket-types';
 interface BracketState {
   csvRows: RawMatchRow[];
   bracketOrder: string[];
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[];
   fullRoot: BracketNode;        // full tree built from bracketOrder
   roundsByDepth: string[];      // round labels root-to-leaf (e.g. ['決勝戦','準決勝','準々決勝','ラウンド16'])
   allRounds: string[];          // all CSV rounds in chronological order
   defaultRoundStart?: string;   // from season_map bracket_round_start
+  roundStartOptions?: string[];
   bracketSections?: BracketSection[];  // multi-section definitions from season_map
   matchDates: string[];         // sorted unique dates from CSV
   cssFiles: string[];
@@ -163,6 +167,49 @@ function collectRoundsByDepth(node: BracketNode): string[] {
   return rounds;
 }
 
+/** Collect unique normalized KO rounds from the built bracket tree in play order. */
+function collectBracketRounds(node: BracketNode): string[] {
+  return collectRoundsByDepth(node)
+    .map(r => normalizeBracketRoundLabel(r))
+    .reverse();
+}
+
+/** Filter rows by round using raw or normalized bracket labels. */
+function filterRowsByRounds(rows: RawMatchRow[], roundFilter: string[]): RawMatchRow[] {
+  const rawSet = new Set(roundFilter);
+  const normalizedSet = new Set(roundFilter.map(r => normalizeBracketRoundLabel(r)));
+  return rows.filter((r) => {
+    const round = r.round ?? '';
+    return rawSet.has(round) || normalizedSet.has(normalizeBracketRoundLabel(round));
+  });
+}
+
+function collectBracketSourceRows(rows: RawMatchRow[], sections?: BracketSection[]): RawMatchRow[] {
+  if (!sections || sections.length === 0) return rows;
+  const merged: RawMatchRow[] = [];
+  const seen = new Set<string>();
+  for (const section of sections) {
+    const sectionRows = section.round_filter
+      ? filterRowsByRounds(rows, section.round_filter)
+      : rows;
+    for (const row of sectionRows) {
+      const key = [
+        row.match_date ?? '',
+        row.home_team ?? '',
+        row.away_team ?? '',
+        row.round ?? '',
+        row.leg ?? '',
+        row.section_no ?? '',
+        row.match_index_in_section ?? '',
+      ].join('|');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(row);
+    }
+  }
+  return merged;
+}
+
 /** Collect unique rounds from CSV in chronological order. */
 function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
   const seen = new Set<string>();
@@ -171,9 +218,10 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
     (a, b) => (a.match_date ?? '').localeCompare(b.match_date ?? ''),
   );
   for (const row of sorted) {
-    if (row.round && !seen.has(row.round)) {
-      seen.add(row.round);
-      rounds.push(row.round);
+    const normalized = row.round ? normalizeBracketRoundLabel(row.round) : '';
+    if (normalized && !seen.has(normalized)) {
+      seen.add(normalized);
+      rounds.push(normalized);
     }
   }
   return rounds;
@@ -208,7 +256,8 @@ function extendBracketBackward(
       continue;
     }
     const match = rows.find(r =>
-      r.round === round && (r.home_team === team || r.away_team === team),
+      normalizeBracketRoundLabel(r.round ?? '') === round
+        && (r.home_team === team || r.away_team === team),
     );
     if (match) {
       extended.push(match.home_team, match.away_team);
@@ -223,31 +272,34 @@ function extendBracketBackward(
 function populateRoundStartPulldown(
   allRounds: string[], defaultRound?: string,
   hasSections?: boolean,
+  explicitOptions?: string[],
 ): void {
   const sel = document.getElementById('round_start_key') as HTMLSelectElement;
   if (!sel) return;
   sel.innerHTML = '';
+  sel.disabled = false;
 
-  // Add multi-section option when bracket_sections is defined
-  if (hasSections) {
-    const opt = document.createElement('option');
-    opt.value = MULTI_SECTION_VALUE;
-    opt.textContent = t('label.multiSection');
-    sel.appendChild(opt);
-  }
+  const options = explicitOptions ?? [
+    ...(hasSections ? [MULTI_SECTION_VALUE] : []),
+    ...allRounds,
+  ];
 
-  for (const round of allRounds) {
+  for (const round of options) {
     const opt = document.createElement('option');
     opt.value = round;
-    opt.textContent = round;
+    opt.textContent = round === MULTI_SECTION_VALUE ? t('label.multiSection') : round;
     sel.appendChild(opt);
   }
 
-  // Default: multi-section if available, otherwise configured round
-  if (hasSections) {
-    sel.value = MULTI_SECTION_VALUE;
-  } else if (defaultRound && allRounds.includes(defaultRound)) {
+  if (explicitOptions && explicitOptions.length === 1) {
+    sel.value = explicitOptions[0];
+    sel.disabled = true;
+  } else if (defaultRound && options.includes(defaultRound)) {
     sel.value = defaultRound;
+  } else if (options.includes(MULTI_SECTION_VALUE)) {
+    sel.value = MULTI_SECTION_VALUE;
+  } else if (options.length > 0) {
+    sel.value = options[0];
   }
 }
 
@@ -314,12 +366,13 @@ function buildAndRenderBracket(
   container: HTMLElement,
   rows: RawMatchRow[],
   order: (string | null)[],
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[],
   targetDate: string | null,
   lastDate: string,
   cssFiles: string[],
 ): void {
   if (order.length < 2) return;
-  const fullRoot = buildBracket(rows, order);
+  const fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
   const root = (targetDate && targetDate < lastDate)
     ? maskBracketForDate(fullRoot, targetDate) : fullRoot;
   renderSingleBracketInto(container, root, cssFiles);
@@ -352,6 +405,7 @@ function renderMultiSections(): void {
     const anyOpen = Array.from(allDetails).some(d => d.open);
     for (const d of Array.from(allDetails)) d.open = !anyOpen;
     toggleBtn.textContent = anyOpen ? t('btn.expandAll') : t('btn.collapseAll');
+    applyScale();
   });
   container.appendChild(toggleBtn);
 
@@ -363,7 +417,7 @@ function renderMultiSections(): void {
 
     // Pre-filter CSV rows by round_filter if specified
     const rows = section.round_filter
-      ? currentState.csvRows.filter(r => section.round_filter!.includes(r.round ?? ''))
+      ? filterRowsByRounds(currentState.csvRows, section.round_filter)
       : currentState.csvRows;
 
     // Create collapsible section
@@ -371,6 +425,9 @@ function renderMultiSections(): void {
     details.classList.add('bracket-section');
     // Restore previous open state; default to open for new sections
     details.open = prevOpen.get(section.label) ?? true;
+    details.addEventListener('toggle', () => {
+      applyScale();
+    });
     const summary = document.createElement('summary');
     summary.classList.add('bracket-section-summary');
     summary.textContent = section.label;
@@ -390,10 +447,16 @@ function renderMultiSections(): void {
       for (let i = 0; i < order.length; i += 2) {
         const pair = order.slice(i, i + 2);
         if (pair.every(t => t == null)) continue;
-        buildAndRenderBracket(sectionWrapper, rows, pair, targetDate, lastDate, currentState.cssFiles);
+        buildAndRenderBracket(
+          sectionWrapper, rows, pair, currentState.aggregateTiebreakOrder,
+          targetDate, lastDate, currentState.cssFiles,
+        );
       }
     } else {
-      buildAndRenderBracket(sectionWrapper, rows, section.bracket_order, targetDate, lastDate, currentState.cssFiles);
+      buildAndRenderBracket(
+        sectionWrapper, rows, section.bracket_order, currentState.aggregateTiebreakOrder,
+        targetDate, lastDate, currentState.cssFiles,
+      );
     }
   }
 }
@@ -415,7 +478,11 @@ function renderWithDateFilter(): void {
   // Single bracket mode: use effective bracket order + date mask
   const effectiveOrder = getEffectiveBracketOrder();
   if (effectiveOrder.length < 2) return;
-  const fullRoot = buildBracket(currentState.csvRows, effectiveOrder);
+  const fullRoot = buildBracket(
+    currentState.csvRows,
+    effectiveOrder,
+    currentState.aggregateTiebreakOrder,
+  );
   const targetDate = getTargetDate();
   const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
   const root = (targetDate && targetDate < lastDate)
@@ -427,15 +494,34 @@ function renderWithDateFilter(): void {
 }
 
 /** Sync controlState.selectedDate from slider position and update display label. */
+function syncSelectedDateFromSlider(): void {
+  if (!currentState) return;
+  const slider = document.getElementById('date_slider') as HTMLInputElement | null;
+  if (!slider) return;
+  const idx = parseInt(slider.value, 10);
+  const date = currentState.matchDates[idx];
+  controlState.selectedDate = date ?? null;
+}
+
+/** Align slider position to the kept target date without overwriting the target itself. */
+function syncSliderFromSelectedDate(): void {
+  if (!currentState) return;
+  const slider = document.getElementById('date_slider') as HTMLInputElement | null;
+  if (!slider || currentState.matchDates.length === 0) return;
+  const targetDate = controlState.selectedDate ?? currentState.matchDates[currentState.matchDates.length - 1];
+  slider.value = String(findSliderIndex(currentState.matchDates, targetDate));
+}
+
+/** Update display label from current slider position + kept target date. */
 function updateSliderDisplay(): void {
   if (!currentState) return;
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
   const display = document.getElementById('post_date_slider');
   if (!slider || !display) return;
   const idx = parseInt(slider.value, 10);
-  const date = currentState.matchDates[idx];
-  controlState.selectedDate = date ?? null;
-  display.textContent = date === PRESEASON_SENTINEL ? t('slider.preseason') : (date ?? '');
+  const sliderDate = currentState.matchDates[idx] ?? '';
+  const targetDate = controlState.selectedDate ?? sliderDate;
+  display.textContent = formatSliderDate(sliderDate, targetDate);
 }
 
 // ---- Controls: opacity, scale, layout --------------------------------------
@@ -452,6 +538,15 @@ function applyFutureOpacity(): void {
   if (display) display.textContent = value;
 }
 
+/** Keep layout height in sync with the visual scale of the bracket container. */
+function syncBracketContainerHeight(container: HTMLElement): void {
+  container.style.height = 'auto';
+  const rawHeight = container.scrollHeight;
+  if (rawHeight > 0) {
+    container.style.height = `${rawHeight * controlState.scale}px`;
+  }
+}
+
 /** Apply scale from controlState to bracket container. */
 function applyScale(): void {
   const container = document.getElementById('bracket_container');
@@ -459,6 +554,7 @@ function applyScale(): void {
   const value = String(controlState.scale);
   container.style.transform = `scale(${value})`;
   container.style.transformOrigin = 'top left';
+  syncBracketContainerHeight(container);
   const display = document.getElementById('current_scale');
   if (display) display.textContent = value;
 }
@@ -509,22 +605,34 @@ function loadAndRender(seasonMap: SeasonMap): void {
     skipEmptyLines: 'greedy',
     download: true,
     complete: (results) => {
-      const matchDates = collectMatchDates(results.data);
-      const defaultRoundStart = entry[4]?.bracket_round_start;
+      const defaultRoundStart = entry[4]?.bracket_round_start
+        ? normalizeBracketRoundLabel(entry[4].bracket_round_start)
+        : undefined;
+      const roundStartOptions = entry[4]?.round_start_options?.map((option) => (
+        option === MULTI_SECTION_VALUE ? option : normalizeBracketRoundLabel(option)
+      ));
+      const aggregateTiebreakOrder = entry[4]?.aggregate_tiebreak_order ?? ['penalties'];
       const bracketSections = entry[4]?.bracket_sections;
+      const bracketRows = collectBracketSourceRows(results.data, bracketSections);
+      const matchDates = collectMatchDates(bracketRows);
 
       // Build full tree to extract round structure
-      const fullRoot = buildBracket(results.data, bracketOrder);
+      const fullRoot = buildBracket(bracketRows, bracketOrder, aggregateTiebreakOrder);
       const roundsByDepth = collectRoundsByDepth(fullRoot);
-      const allRounds = collectRoundsFromCsv(results.data);
+      const bracketRounds = collectBracketRounds(fullRoot);
+      const allRounds = bracketSections
+        ? bracketRounds
+        : collectRoundsFromCsv(bracketRows).filter(r => bracketRounds.includes(r));
 
       currentState = {
-        csvRows: results.data,
+        csvRows: bracketRows,
         bracketOrder,
+        aggregateTiebreakOrder,
         fullRoot,
         roundsByDepth,
         allRounds,
         defaultRoundStart,
+        roundStartOptions,
         bracketSections,
         matchDates,
         cssFiles: seasonInfo.cssFiles,
@@ -533,14 +641,21 @@ function loadAndRender(seasonMap: SeasonMap): void {
       };
 
       // Populate round start dropdown (with multi-section option if sections exist)
-      populateRoundStartPulldown(allRounds, defaultRoundStart, bracketSections != null);
+      populateRoundStartPulldown(
+        allRounds,
+        defaultRoundStart,
+        bracketSections != null,
+        roundStartOptions,
+      );
 
       // Sync round start: restore from controlState or pick up dropdown default
       const roundSel = document.getElementById('round_start_key') as HTMLSelectElement | null;
       if (roundSel && controlState.roundStart) {
-        const hasOption = Array.from(roundSel.options).some(o => o.value === controlState.roundStart);
+        const normalizedSelected = normalizeBracketRoundLabel(controlState.roundStart);
+        const hasOption = Array.from(roundSel.options).some(o => o.value === normalizedSelected);
         if (hasOption) {
-          roundSel.value = controlState.roundStart;
+          roundSel.value = normalizedSelected;
+          controlState.roundStart = normalizedSelected;
         } else {
           controlState.roundStart = roundSel.value;
         }
@@ -553,8 +668,10 @@ function loadAndRender(seasonMap: SeasonMap): void {
       if (slider && matchDates.length > 0) {
         slider.min = '0';
         slider.max = String(matchDates.length - 1);
-        const savedIdx = controlState.selectedDate ? matchDates.indexOf(controlState.selectedDate) : -1;
-        slider.value = String(savedIdx >= 0 ? savedIdx : matchDates.length - 1);
+        if (!controlState.selectedDate) {
+          controlState.selectedDate = matchDates[matchDates.length - 1] ?? null;
+        }
+        syncSliderFromSelectedDate();
       }
 
       renderWithDateFilter();
@@ -579,7 +696,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
       }
 
       setStatus(t('status.loaded', {
-        league: seasonInfo.leagueDisplay, season, rows: results.data.length,
+        league: seasonInfo.leagueDisplay, season, rows: bracketRows.length,
       }));
     },
     error: (err: unknown) => {
@@ -660,9 +777,11 @@ async function main(): Promise<void> {
   const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (dateSlider) {
     dateSlider.addEventListener('input', () => {
+      syncSelectedDateFromSlider();
       updateSliderDisplay();
     });
     dateSlider.addEventListener('change', () => {
+      syncSelectedDateFromSlider();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
@@ -671,6 +790,7 @@ async function main(): Promise<void> {
 
     document.getElementById('date_slider_down')?.addEventListener('click', () => {
       dateSlider.value = String(Math.max(0, parseInt(dateSlider.value, 10) - 1));
+      syncSelectedDateFromSlider();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
@@ -680,6 +800,7 @@ async function main(): Promise<void> {
       dateSlider.value = String(Math.min(
         parseInt(dateSlider.max, 10), parseInt(dateSlider.value, 10) + 1,
       ));
+      syncSelectedDateFromSlider();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
@@ -687,7 +808,8 @@ async function main(): Promise<void> {
     });
     document.getElementById('date_slider_reset')?.addEventListener('click', () => {
       if (!currentState) return;
-      dateSlider.value = String(currentState.matchDates.length - 1);
+      controlState.selectedDate = currentState.matchDates[currentState.matchDates.length - 1] ?? null;
+      syncSliderFromSelectedDate();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();

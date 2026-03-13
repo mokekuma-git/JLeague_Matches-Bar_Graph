@@ -42,6 +42,16 @@ function formatScore(
     return { main, annotation: `(ET${ex})` };
   }
 
+  if (node.decidedBy === 'aggregate_away_goals' && node.legs) {
+    let sideAwayGoals = 0;
+    const sideTeam = isHome ? node.homeTeam : node.awayTeam;
+    for (const leg of node.legs) {
+      if (!sideTeam || leg.homeGoal == null || leg.awayGoal == null) continue;
+      if (leg.awayTeam === sideTeam) sideAwayGoals += leg.awayGoal;
+    }
+    return { main, annotation: `(AG${sideAwayGoals})` };
+  }
+
   return { main, annotation: '' };
 }
 

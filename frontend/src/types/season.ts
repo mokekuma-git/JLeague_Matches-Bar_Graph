@@ -39,6 +39,8 @@ export interface DataSource {
   url: string;
 }
 
+export type AggregateTiebreakCriterion = 'away_goals' | 'penalties';
+
 // An independent bracket section within a multi-section tournament.
 // Each section is rendered as a separate bracket tree on the same page.
 export interface BracketSection {
@@ -47,6 +49,7 @@ export interface BracketSection {
   round_filter?: string[];          // Filter CSV rows by round column
   bracket_round_start?: string;     // Override start round for this section
   single_round?: boolean;           // Render as independent matches (no elimination tree)
+  bracket_pairing_orders?: number[][]; // Per level reorder of child matches before pairing
 }
 
 // Merged optional dict at season entry index 4.
@@ -67,9 +70,12 @@ export interface SeasonEntryOptions {
   note?: string | string[];
   data_source?: DataSource;
   promotion_label?: string;
+  aggregate_tiebreak_order?: AggregateTiebreakCriterion[];
   bracket_order?: string[];
   bracket_round_start?: string;
+  round_start_options?: string[];
   bracket_sections?: BracketSection[];
+  bracket_pairing_orders?: number[][];
   view_type?: ViewType[];
 }
 

@@ -1,6 +1,7 @@
 // Auto-generated rule notes for non-standard point systems and tiebreak orders.
 
 import type { PointSystem } from '../types/config';
+import type { AggregateTiebreakCriterion } from '../types/season';
 import type { MessageKey } from '../i18n';
 import { t } from '../i18n';
 
@@ -35,6 +36,7 @@ function arraysEqual(a: readonly string[], b: readonly string[]): boolean {
 export function generateRuleNotes(
   pointSystem: PointSystem,
   tiebreakOrder: readonly string[],
+  aggregateTiebreakOrder: readonly AggregateTiebreakCriterion[] = [],
 ): string[] {
   const notes: string[] = [];
 
@@ -47,6 +49,10 @@ export function generateRuleNotes(
       return key ? t(key) : k;
     });
     notes.push(t('rule.tiebreakPrefix') + labels.join(' → '));
+  }
+
+  if (aggregateTiebreakOrder.includes('away_goals')) {
+    notes.push(t('bracketNote.agAnnotation'));
   }
 
   return notes;
