@@ -73,6 +73,7 @@ export interface SeasonEntryOptions {
   aggregate_tiebreak_order?: AggregateTiebreakCriterion[];
   bracket_order?: string[];
   bracket_round_start?: string;
+  round_start_options?: string[];
   bracket_sections?: BracketSection[];
   bracket_pairing_orders?: number[][];
   view_type?: ViewType[];
