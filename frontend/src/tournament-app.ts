@@ -405,6 +405,7 @@ function renderMultiSections(): void {
     const anyOpen = Array.from(allDetails).some(d => d.open);
     for (const d of Array.from(allDetails)) d.open = !anyOpen;
     toggleBtn.textContent = anyOpen ? t('btn.expandAll') : t('btn.collapseAll');
+    applyScale();
   });
   container.appendChild(toggleBtn);
 
@@ -424,6 +425,9 @@ function renderMultiSections(): void {
     details.classList.add('bracket-section');
     // Restore previous open state; default to open for new sections
     details.open = prevOpen.get(section.label) ?? true;
+    details.addEventListener('toggle', () => {
+      applyScale();
+    });
     const summary = document.createElement('summary');
     summary.classList.add('bracket-section-summary');
     summary.textContent = section.label;
@@ -534,6 +538,15 @@ function applyFutureOpacity(): void {
   if (display) display.textContent = value;
 }
 
+/** Keep layout height in sync with the visual scale of the bracket container. */
+function syncBracketContainerHeight(container: HTMLElement): void {
+  container.style.height = 'auto';
+  const rawHeight = container.scrollHeight;
+  if (rawHeight > 0) {
+    container.style.height = `${rawHeight * controlState.scale}px`;
+  }
+}
+
 /** Apply scale from controlState to bracket container. */
 function applyScale(): void {
   const container = document.getElementById('bracket_container');
@@ -541,6 +554,7 @@ function applyScale(): void {
   const value = String(controlState.scale);
   container.style.transform = `scale(${value})`;
   container.style.transformOrigin = 'top left';
+  syncBracketContainerHeight(container);
   const display = document.getElementById('current_scale');
   if (display) display.textContent = value;
 }
