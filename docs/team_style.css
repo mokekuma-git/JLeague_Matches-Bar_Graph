@@ -6,7 +6,7 @@
 }
 
 /**************************************************************** J League Team style definition */
-.仙台 {
+.仙台, .ベガルタ仙台ユース {
   color: #193076;
   background-color: #fcc800;
 }
@@ -115,7 +115,7 @@
   color: white;
   background-color: #750069;
 }
-.大宮, .大宮V, .大宮アルディージャU18, .RB大宮アルディージャU18 {
+.大宮, .大宮V, .大宮アルディージャU18, .RB大宮アルディージャU18, .ＲＢ大宮アルディージャU18 {
   color: white;
   background-color: #f18900;
 }
@@ -596,7 +596,7 @@
   color: white;
   background-color: darkgreen;
 }
-.流通経済大学付属柏高校 {
+.流通経済大学付属柏高校, .流経大柏B, .流通経済大学付属柏Ｂ, .流通経済大学付属柏B, .流通経済大学付属柏高校 B, .流通経済大学付属柏高校Ｂ {
   color: yellow;
   background-color: #9f002a;
 }
@@ -648,6 +648,10 @@
 .神村学園高等部 {
   color: white;
   background-color: #CD0004;
+}
+.東山高校 {
+  color: white;
+  background-color: #c40018;
 }
 .高崎健康福祉大学高崎高校 {
   color: white;
