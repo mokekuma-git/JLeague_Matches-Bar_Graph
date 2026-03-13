@@ -138,6 +138,8 @@ function nodeFromAggregate(
 ): BracketNode {
   let upperTotal = 0;
   let lowerTotal = 0;
+  let upperRegulationTotal = 0;
+  let lowerRegulationTotal = 0;
   let upperAwayGoals = 0;
   let lowerAwayGoals = 0;
   let allPlayed = true;
@@ -152,13 +154,19 @@ function nodeFromAggregate(
     anyPlayed = true;
     const hg = parseInt(row.home_goal, 10);
     const ag = parseInt(row.away_goal, 10);
+    const hex = parse(row.home_score_ex) ?? 0;
+    const aex = parse(row.away_score_ex) ?? 0;
+    const regulationHg = hg - hex;
+    const regulationAg = ag - aex;
 
     // home_goal/away_goal already include ET — don't add score_ex again
     const isUpperHome = row.home_team === upperTeam;
     upperTotal += isUpperHome ? hg : ag;
     lowerTotal += isUpperHome ? ag : hg;
-    upperAwayGoals += isUpperHome ? 0 : ag;
-    lowerAwayGoals += isUpperHome ? ag : 0;
+    upperRegulationTotal += isUpperHome ? regulationHg : regulationAg;
+    lowerRegulationTotal += isUpperHome ? regulationAg : regulationHg;
+    upperAwayGoals += isUpperHome ? 0 : regulationAg;
+    lowerAwayGoals += isUpperHome ? regulationAg : 0;
 
     // Store per-leg detail in CSV original order (homeTeam/awayTeam match homeGoal/awayGoal)
     legs.push({
@@ -199,8 +207,8 @@ function nodeFromAggregate(
   let lowerPk: number | undefined;
   let decidedBy: DecidedBy | null = 'pending';
   if (allPlayed) {
-    if (upperTotal > lowerTotal) winner = upperTeam;
-    else if (lowerTotal > upperTotal) winner = lowerTeam;
+    if (upperRegulationTotal > lowerRegulationTotal) winner = upperTeam;
+    else if (lowerRegulationTotal > upperRegulationTotal) winner = lowerTeam;
     if (winner) {
       decidedBy = 'aggregate_score';
     } else {
@@ -217,20 +225,29 @@ function nodeFromAggregate(
             break;
           }
         }
+      }
 
-        if (criterion === 'penalties') {
-          const lastMatch = [...matches].reverse().find(r => r.home_goal && r.away_goal);
-          if (lastMatch?.home_pk_score && lastMatch?.away_pk_score) {
-            const hpk = parseInt(lastMatch.home_pk_score, 10);
-            const apk = parseInt(lastMatch.away_pk_score, 10);
-            const isUpperHome = lastMatch.home_team === upperTeam;
-            upperPk = isUpperHome ? hpk : apk;
-            lowerPk = isUpperHome ? apk : hpk;
-            const pkWinner = hpk > apk ? lastMatch.home_team : lastMatch.away_team;
-            winner = pkWinner === upperTeam ? upperTeam : lowerTeam;
-            decidedBy = 'aggregate_penalties';
-            break;
-          }
+      if (!winner) {
+        if (upperTotal > lowerTotal) {
+          winner = upperTeam;
+          decidedBy = 'aggregate_extra_time';
+        } else if (lowerTotal > upperTotal) {
+          winner = lowerTeam;
+          decidedBy = 'aggregate_extra_time';
+        }
+      }
+
+      if (!winner && aggregateTiebreakOrder.includes('penalties')) {
+        const lastMatch = [...matches].reverse().find(r => r.home_goal && r.away_goal);
+        if (lastMatch?.home_pk_score && lastMatch?.away_pk_score) {
+          const hpk = parseInt(lastMatch.home_pk_score, 10);
+          const apk = parseInt(lastMatch.away_pk_score, 10);
+          const isUpperHome = lastMatch.home_team === upperTeam;
+          upperPk = isUpperHome ? hpk : apk;
+          lowerPk = isUpperHome ? apk : hpk;
+          const pkWinner = hpk > apk ? lastMatch.home_team : lastMatch.away_team;
+          winner = pkWinner === upperTeam ? upperTeam : lowerTeam;
+          decidedBy = 'aggregate_penalties';
         }
       }
     }
