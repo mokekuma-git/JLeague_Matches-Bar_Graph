@@ -130,6 +130,7 @@ export const ja = {
   'rule.exWin2': '90分勝ち=3点, 延長勝ち=2点, 引分け=1点',
   'rule.pkWin2Loss1': '勝ち=3点, PK勝ち=2点, PK負け=1点',
   'rule.tiebreakPrefix': '同勝点時の順位決定: ',
+  'rule.aggregateWinsFirst': 'H&Aの勝者決定: まず勝利数、次に2試合合計の得失点差を比較。同点なら延長戦、最後にPKを適用',
   'rule.headToHead': '直接対戦',
   'rule.goalDiff': '得失点差',
   'rule.goalGet': '総得点',

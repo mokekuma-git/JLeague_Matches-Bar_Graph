@@ -19,6 +19,7 @@ export type DecidedBy =
   | 'extra_time'        // Single match, decided in extra time
   | 'penalties'         // Single match, decided by PK
   | 'aggregate_score'   // H&A aggregate, total goals differ
+  | 'aggregate_wins'    // H&A aggregate, decided by match wins
   | 'aggregate_away_goals' // H&A aggregate tied, decided by away goals
   | 'aggregate_extra_time' // H&A aggregate tied after regulation, decided in ET
   | 'aggregate_penalties' // H&A aggregate tied, decided by PK

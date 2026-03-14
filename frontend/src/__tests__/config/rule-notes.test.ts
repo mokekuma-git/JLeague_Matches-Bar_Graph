@@ -67,4 +67,11 @@ describe('generateRuleNotes', () => {
     expect(notes[0]).toContain('(AGn)');
     expect(notes[0]).toContain('アウェイゴール');
   });
+
+  test('aggregate wins-first note is added when configured', () => {
+    const notes = generateRuleNotes('standard', ['goal_diff', 'goal_get'], ['wins', 'penalties']);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toContain('勝利数');
+    expect(notes[0]).toContain('PK');
+  });
 });

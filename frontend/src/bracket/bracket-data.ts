@@ -142,6 +142,8 @@ function nodeFromAggregate(
   let lowerRegulationTotal = 0;
   let upperAwayGoals = 0;
   let lowerAwayGoals = 0;
+  let upperWins = 0;
+  let lowerWins = 0;
   let allPlayed = true;
   let anyPlayed = false;
   let roundName = '';
@@ -167,6 +169,13 @@ function nodeFromAggregate(
     lowerRegulationTotal += isUpperHome ? regulationAg : regulationHg;
     upperAwayGoals += isUpperHome ? 0 : regulationAg;
     lowerAwayGoals += isUpperHome ? regulationAg : 0;
+    if (regulationHg > regulationAg) {
+      if (isUpperHome) upperWins += 1;
+      else lowerWins += 1;
+    } else if (regulationAg > regulationHg) {
+      if (isUpperHome) lowerWins += 1;
+      else upperWins += 1;
+    }
 
     // Store per-leg detail in CSV original order (homeTeam/awayTeam match homeGoal/awayGoal)
     legs.push({
@@ -207,12 +216,24 @@ function nodeFromAggregate(
   let lowerPk: number | undefined;
   let decidedBy: DecidedBy | null = 'pending';
   if (allPlayed) {
-    if (upperRegulationTotal > lowerRegulationTotal) winner = upperTeam;
-    else if (lowerRegulationTotal > upperRegulationTotal) winner = lowerTeam;
+    if (aggregateTiebreakOrder.includes('wins')) {
+      if (upperWins > lowerWins) {
+        winner = upperTeam;
+        decidedBy = 'aggregate_wins';
+      } else if (lowerWins > upperWins) {
+        winner = lowerTeam;
+        decidedBy = 'aggregate_wins';
+      }
+    }
+
+    if (!winner && upperRegulationTotal > lowerRegulationTotal) winner = upperTeam;
+    else if (!winner && lowerRegulationTotal > upperRegulationTotal) winner = lowerTeam;
     if (winner) {
-      decidedBy = 'aggregate_score';
+      decidedBy ??= 'aggregate_score';
+      if (decidedBy === 'pending') decidedBy = 'aggregate_score';
     } else {
       for (const criterion of aggregateTiebreakOrder) {
+        if (criterion === 'wins') continue;
         if (criterion === 'away_goals' && matches.length === 2) {
           if (upperAwayGoals > lowerAwayGoals) {
             winner = upperTeam;
