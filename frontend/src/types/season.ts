@@ -39,7 +39,7 @@ export interface DataSource {
   url: string;
 }
 
-export type AggregateTiebreakCriterion = 'away_goals' | 'penalties';
+export type AggregateTiebreakCriterion = 'wins' | 'away_goals' | 'penalties';
 
 // An independent bracket section within a multi-section tournament.
 // Each section is rendered as a separate bracket tree on the same page.

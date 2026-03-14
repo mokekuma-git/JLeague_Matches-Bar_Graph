@@ -55,5 +55,9 @@ export function generateRuleNotes(
     notes.push(t('bracketNote.agAnnotation'));
   }
 
+  if (aggregateTiebreakOrder.includes('wins')) {
+    notes.push(t('rule.aggregateWinsFirst'));
+  }
+
   return notes;
 }

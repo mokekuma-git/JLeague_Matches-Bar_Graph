@@ -313,6 +313,27 @@ describe('buildBracket — H&A aggregate', () => {
     expect(root.awayGoal).toBe(3);
   });
 
+  it('decides by wins first when configured in aggregate tiebreak order', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '1', away_goal: '0',
+        round: '準決勝　第1戦', match_date: '2024/12/01',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A',
+        home_goal: '1', away_goal: '1',
+        round: '準決勝　第2戦', match_date: '2024/12/08',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B'], ['wins', 'penalties']);
+
+    expect(root.winner).toBe('A');
+    expect(root.decidedBy).toBe('aggregate_wins');
+    expect(root.homeGoal).toBe(2);
+    expect(root.awayGoal).toBe(1);
+  });
+
   it('decides by penalties after extra time when regulation and away goals are tied', () => {
     const rows = [
       makeRow({

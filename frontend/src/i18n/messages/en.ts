@@ -132,6 +132,7 @@ export const en: Record<MessageKey, string> = {
   'rule.exWin2': '90-min win = 3 pts, ET win = 2 pts, draw = 1 pt',
   'rule.pkWin2Loss1': 'Win = 3 pts, PK win = 2 pts, PK loss = 1 pt',
   'rule.tiebreakPrefix': 'Tiebreaker order: ',
+  'rule.aggregateWinsFirst': 'H&A winner is determined by wins first, then aggregate goal difference; if still tied, extra time and finally penalties apply',
   'rule.headToHead': 'Head-to-head',
   'rule.goalDiff': 'Goal difference',
   'rule.goalGet': 'Goals scored',
