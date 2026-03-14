@@ -377,7 +377,7 @@
             {"aggregate_tiebreak_order": ["away_goals", "penalties"], "bracket_round_start": "準々決勝", "bracket_sections": [{"label": "決勝トーナメント", "bracket_order": ["浦和", "広島", "柏", "横浜FM", "川崎Ｆ", "Ｃ大阪", "Ｇ大阪", "神戸"], "round_filter": ["準々決勝　第1戦", "準々決勝　第2戦", "準決勝　第1戦", "準決勝　第2戦", "決勝"]}], "note": "公式トーナメント図で順序確認。準々決勝・準決勝はH&A、決勝は単試合。浦和, 柏, Ｇ大阪, 神戸は図中にGL順位注記あり."}],
           "2015": [8, 0, 0,
             ["鹿島", "FC東京", "神戸", "柏", "名古屋", "Ｇ大阪", "浦和", "新潟"],
-            {"aggregate_tiebreak_order": ["penalties"], "bracket_round_start": "準々決勝", "bracket_sections": [{"label": "決勝トーナメント", "bracket_order": ["鹿島", "FC東京", "神戸", "柏", "名古屋", "Ｇ大阪", "浦和", "新潟"], "round_filter": ["準々決勝　第1戦", "準々決勝　第2戦", "準決勝　第1戦", "準決勝　第2戦", "決勝"]}], "note": "公式トーナメント図で順序確認。2015年は名古屋-Ｇ大阪が合計3-3からPK決着のため、aggregate tiebreak は penalties のみで設定。鹿島, 神戸, 名古屋, 新潟は図中にGL順位注記あり."}],
+            {"aggregate_tiebreak_order": ["away_goals", "penalties"], "bracket_round_start": "準々決勝", "bracket_sections": [{"label": "決勝トーナメント", "bracket_order": ["鹿島", "FC東京", "神戸", "柏", "名古屋", "Ｇ大阪", "浦和", "新潟"], "round_filter": ["準々決勝　第1戦", "準々決勝　第2戦", "準決勝　第1戦", "準決勝　第2戦", "決勝"]}], "note": "公式トーナメント図で順序確認。2015年もH&Aはアウェイゴール適用。名古屋-Ｇ大阪は2戦合計得点・アウェイゴール数ともに並んだため延長・PK決着。鹿島, 神戸, 名古屋, 新潟は図中にGL順位注記あり."}],
           "2016": [8, 0, 0,
             ["横浜FM", "大宮", "Ｇ大阪", "広島", "浦和", "神戸", "福岡", "FC東京"],
             {"aggregate_tiebreak_order": ["away_goals", "penalties"], "bracket_round_start": "準々決勝", "bracket_sections": [{"label": "決勝トーナメント", "bracket_order": ["横浜FM", "大宮", "Ｇ大阪", "広島", "浦和", "神戸", "福岡", "FC東京"], "round_filter": ["準々決勝　第1戦", "準々決勝　第2戦", "準決勝　第1戦", "準決勝　第2戦", "決勝"]}], "note": "公式トーナメント図で順序確認。準々決勝・準決勝はH&A、決勝は単試合。横浜FM, 大宮, 神戸, 福岡は図中にGL順位注記あり."}],
