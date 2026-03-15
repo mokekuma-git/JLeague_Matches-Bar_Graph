@@ -20,6 +20,12 @@ logger = logging.getLogger(__name__)
 config = Config(Path(__file__).parent / 'legacy' / 'old_matches.yaml')
 
 
+def _derive_status(score: object) -> str:
+    """Map SFMS01 score text to the published CSV status vocabulary."""
+    score_text = '' if pd.isna(score) else str(score).strip()
+    return '試合終了' if re.match(r'^\d+\-\d+', score_text) else 'ＶＳ'
+
+
 def make_old_matches_csv(competition: str, years: list[int] | None = None) -> None:
     """Convert match results of the specified years for the given competition into CSV format
 
@@ -78,6 +84,7 @@ def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
     matches = matches.rename(columns=rename_dict)
     matches['home_goal'] = matches['スコア'].str.replace(r'\-.*$', '', regex=True)
     matches['away_goal'] = matches['スコア'].str.replace(r'^\d+\-', '', regex=True)
+    matches['status'] = matches['スコア'].apply(_derive_status)
     columns_list = config.columns_list.copy()
     if year <= 1998:  # Until 1998, there was a penalty kick rule
         matches['away_goal'] = matches['away_goal'].str.replace(r'\(PK.*', '', regex=True)
@@ -184,9 +191,7 @@ def make_jleaguecup_csv(year: int) -> None:
             )
 
     # Status
-    matches['status'] = matches['スコア'].apply(
-        lambda x: '試合終了' if pd.notna(x) and re.match(r'\d', str(x)) else 'ＶＳ'
-    )
+    matches['status'] = matches['スコア'].apply(_derive_status)
 
     # match_index_in_section: sequential within each round+leg group
     result_parts = []
