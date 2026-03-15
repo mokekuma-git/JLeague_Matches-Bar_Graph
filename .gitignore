@@ -17,9 +17,11 @@ frontend/dist/
 .venv
 
 # Planning documents
+# Local-only. Never force-add files under plan/ to git.
 plan/
 
 # Locally cached data (fetched by src/fetch_match_detail.py etc.)
+# Local-only. Never force-add files under local_data/ to git.
 local_data/
 
 # TypeScript build artifacts (managed by CI deploy-pages.yaml, not committed to git)
