@@ -1,4 +1,5 @@
 """Process and save J-League match results from data.j-league.or.jp into CSV files"""
+from datetime import date
 import logging
 import os
 import re
@@ -20,10 +21,26 @@ logger = logging.getLogger(__name__)
 config = Config(Path(__file__).parent / 'legacy' / 'old_matches.yaml')
 
 
-def _derive_status(score: object) -> str:
+def _derive_status(score: object, match_date: object = None) -> str:
     """Map SFMS01 score text to the published CSV status vocabulary."""
     score_text = '' if pd.isna(score) else str(score).strip()
-    return '試合終了' if re.match(r'^\d+\-\d+', score_text) else 'ＶＳ'
+    if re.match(r'^\d+\-\d+', score_text):
+        return '試合終了'
+    if '不実施' in score_text:
+        return '試合不実施'
+    if '中止' in score_text:
+        return '試合中止'
+
+    if match_date is not None:
+        date_text = '' if pd.isna(match_date) else str(match_date).strip()
+        try:
+            parsed = pd.to_datetime(date_text).date()
+        except (ValueError, TypeError):
+            parsed = None
+        if parsed is not None and parsed > date.today():
+            return 'ＶＳ'
+
+    return '試合中止'
 
 
 def make_old_matches_csv(competition: str, years: list[int] | None = None) -> None:
@@ -82,9 +99,13 @@ def make_each_csv(filename: str, comp_index: int) -> dict[str, pd.DataFrame]:
         .replace('節.*', '', regex=True).astype('int')
     rename_dict = config.rename_dict.to_dict()
     matches = matches.rename(columns=rename_dict)
+    matches['スコア'] = matches['スコア'].fillna('')
     matches['home_goal'] = matches['スコア'].str.replace(r'\-.*$', '', regex=True)
     matches['away_goal'] = matches['スコア'].str.replace(r'^\d+\-', '', regex=True)
-    matches['status'] = matches['スコア'].apply(_derive_status)
+    matches['status'] = matches.apply(
+        lambda row: _derive_status(row['スコア'], row['match_date']),
+        axis=1,
+    )
     columns_list = config.columns_list.copy()
     if year <= 1998:  # Until 1998, there was a penalty kick rule
         matches['away_goal'] = matches['away_goal'].str.replace(r'\(PK.*', '', regex=True)
@@ -171,6 +192,7 @@ def make_jleaguecup_csv(year: int) -> None:
     # Rename JP columns → English
     rename_dict = config.rename_dict.to_dict()
     matches = matches.rename(columns=rename_dict)
+    matches['スコア'] = matches['スコア'].fillna('')
 
     # Parse scores (handles both "1-0" and "1-1 (PK2-4)")
     score_parts = matches['スコア'].str.extract(r'^(\d+)-(\d+)')
@@ -191,7 +213,10 @@ def make_jleaguecup_csv(year: int) -> None:
             )
 
     # Status
-    matches['status'] = matches['スコア'].apply(_derive_status)
+    matches['status'] = matches.apply(
+        lambda row: _derive_status(row['スコア'], row['match_date']),
+        axis=1,
+    )
 
     # match_index_in_section: sequential within each round+leg group
     result_parts = []
