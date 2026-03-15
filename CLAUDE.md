@@ -159,6 +159,7 @@ npx playwright test --grep @full-render          # full-render のみ
 
 ## 開発プラクティス
 
+- **`plan/` と `local_data/` はローカル専用**: どちらも Git 管理しない。`git add` の対象に含めず、ignore 警告が出ても `git add -f` で突破しない。Issue plan や調査メモは作成・更新してよいが、commit / PR / GitHub Issue には載せない
 - **リファクタリング時のビルド確認**: テスト (`vitest`) だけでなく `npm run build` も確認する。CI は typecheck + vitest のみでビルドは PR 時に自動検証されない
 - **season_map.json 編集後**: `python scripts/format_season_map.py` でカスタム整形を実行
 
