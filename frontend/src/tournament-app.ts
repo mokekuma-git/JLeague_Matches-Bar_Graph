@@ -194,13 +194,13 @@ function collectBracketSourceRows(rows: RawMatchRow[], sections?: BracketSection
       : rows;
     for (const row of sectionRows) {
       const key = [
+        row.match_number ?? '',
         row.match_date ?? '',
         row.home_team ?? '',
         row.away_team ?? '',
         row.round ?? '',
         row.leg ?? '',
-        row.section_no ?? '',
-        row.match_index_in_section ?? '',
+        row.stadium ?? '',
       ].join('|');
       if (seen.has(key)) continue;
       seen.add(key);
@@ -226,6 +226,12 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
   }
   return rounds;
 }
+
+export const __testables = {
+  filterRowsByRounds,
+  collectBracketSourceRows,
+  collectRoundsFromCsv,
+};
 
 /** Collect winners at a given tree depth (in bracket positional order). */
 function collectWinnersAtDepth(
@@ -871,4 +877,6 @@ async function main(): Promise<void> {
   loadAndRender(seasonMap);
 }
 
-main().catch(console.error);
+if (typeof document !== 'undefined') {
+  main().catch(console.error);
+}

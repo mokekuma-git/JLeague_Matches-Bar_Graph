@@ -204,6 +204,15 @@ describe('parseCsvResults', () => {
     });
   });
 
+  describe('optional section columns', () => {
+    test('missing section_no falls back to 0 instead of NaN', () => {
+      const fields = BASE_FIELDS.filter(f => f !== 'section_no');
+      const row = makeRow({ section_no: undefined });
+      const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(result['DefaultGroup']['TeamA'].df[0].section_no).toBe(0);
+    });
+  });
+
   // Integration: parseCsvResults + calculateTeamStats on a full 3-team round-robin.
   // Rows: A 2-1 B (s1), A 1-1 C (s2), B 0-1 C (s3)
   // Expected totals (all games before targetDate):

@@ -2,8 +2,8 @@
 // Field names match the CSV header columns in docs/csv/*.csv exactly.
 export interface RawMatchRow {
   match_date: string;
-  section_no: string;
-  match_index_in_section: string;
+  section_no?: string;             // Required in League CSV, optional in Tournament CSV
+  match_index_in_section?: string; // Optional metadata; semantics vary by competition
   start_time: string;
   stadium: string;
   home_team: string;

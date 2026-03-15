@@ -30,6 +30,20 @@ from set_config import Config
 logger = logging.getLogger(__name__)
 
 
+def _sort_match_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Sort match-like DataFrames using the best available stable key set."""
+    sort_keys = [
+        col for col in [
+            'group', 'section_no', 'round', 'match_number',
+            'match_date', 'home_team', 'away_team',
+        ]
+        if col in df.columns
+    ]
+    if not sort_keys:
+        return df.reset_index(drop=True)
+    return df.sort_values(sort_keys).reset_index(drop=True)
+
+
 def _ensure_tzinfo(tz: str | tzinfo) -> tzinfo:
     """Convert a timezone string to a tzinfo object if needed."""
     if isinstance(tz, str):
@@ -345,7 +359,7 @@ class MatchUtils:
             FileNotFoundError: If the specified file does not exist
             ValueError: If the date format is not recognized
             TypeError: If the date format is not recognized
-            KeyError: If the DataFrame does not contain 'match_date' or 'section_no' columns
+            KeyError: If the DataFrame does not contain 'match_date' column
         """
         logger.info("Reading match file %s", matches_file)
         all_matches = pd.read_csv(matches_file, index_col=0, dtype=str, na_values='')
@@ -354,8 +368,10 @@ class MatchUtils:
         all_matches['match_date'] = all_matches['match_date'].map(self.to_datetime_aspossible)
         all_matches['home_goal'] = all_matches['home_goal'].fillna('')
         all_matches['away_goal'] = all_matches['away_goal'].fillna('')
-        all_matches['section_no'] = all_matches['section_no'].astype('int')
-        all_matches['match_index_in_section'] = all_matches['match_index_in_section'].astype('int')
+        if 'section_no' in all_matches.columns:
+            all_matches['section_no'] = all_matches['section_no'].astype('int')
+        if 'match_index_in_section' in all_matches.columns:
+            all_matches['match_index_in_section'] = all_matches['match_index_in_section'].astype('int')
         # Convert NaN to output as null in JSON
         all_matches = all_matches.where(pd.notnull(all_matches), None)
         return all_matches
@@ -386,10 +402,12 @@ class MatchUtils:
     # -------------------------------------------------------------------
     def matches_differ(self, foo_df: pd.DataFrame, bar_df: pd.DataFrame) -> bool:
         """Return True if two match DataFrames differ (ignoring 'match_index_in_section' and NaNs)."""
-        _foo = foo_df.drop(columns=['match_index_in_section']).fillna('')
-        _bar = bar_df.drop(columns=['match_index_in_section']).fillna('')
-        _foo = _foo.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
-        _bar = _bar.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
+        _foo = foo_df.drop(columns=['match_index_in_section'], errors='ignore').fillna('')
+        _bar = bar_df.drop(columns=['match_index_in_section'], errors='ignore').fillna('')
+        _foo = _foo.reindex(sorted(_foo.columns), axis=1)
+        _bar = _bar.reindex(sorted(_bar.columns), axis=1)
+        _foo = _sort_match_rows(_foo)
+        _bar = _sort_match_rows(_bar)
 
         if not _foo.equals(_bar):
             if logger.isEnabledFor(logging.DEBUG):
