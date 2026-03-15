@@ -122,10 +122,9 @@ def parse_group(tab_div) -> tuple[str, list[dict]]:
             'home_team': home_team,
             'away_team': away_team,
             'status': status,
-            'matchNumber': match_number,
+            'match_number': match_number,
             'home_goal': home_goal,
             'away_goal': away_goal,
-            'extraTime': 'False',
             'match_index_in_section': match_index,
             'group': group,
         })
