@@ -204,12 +204,11 @@ describe('parseCsvResults', () => {
     });
   });
 
-  describe('optional section columns', () => {
-    test('missing section_no falls back to 0 instead of NaN', () => {
-      const fields = BASE_FIELDS.filter(f => f !== 'section_no');
-      const row = makeRow({ section_no: undefined });
-      const result = parseCsvResults([row], fields, ['TeamA', 'TeamB'], 'DefaultGroup');
-      expect(result['DefaultGroup']['TeamA'].df[0].section_no).toBe(0);
+  describe('section_no semantics', () => {
+    test('negative tournament section_no is parsed as-is', () => {
+      const row = makeRow({ section_no: '-3' });
+      const result = parseCsvResults([row], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(result['DefaultGroup']['TeamA'].df[0].section_no).toBe(-3);
     });
   });
 

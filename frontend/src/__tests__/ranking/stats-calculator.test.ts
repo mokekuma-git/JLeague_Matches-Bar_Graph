@@ -198,6 +198,15 @@ describe('sortTeamMatches', () => {
     expect(td.df[0]).toBe(m2); // section 2 comes before section 10 numerically
   });
 
+  test('positive section_no sorts before negative knockout depths', () => {
+    const groupStage = makeMatch({ has_result: true, section_no: 7, match_date: '05/01', point: 3, goal_get: 1, goal_lose: 0 });
+    const knockout = makeMatch({ has_result: true, section_no: -4, match_date: '06/01', point: 3, goal_get: 2, goal_lose: 1 });
+    const final = makeMatch({ has_result: true, section_no: -1, match_date: '07/01', point: 3, goal_get: 1, goal_lose: 0 });
+    const td = makeTeamData([final, knockout, groupStage]);
+    sortTeamMatches(td, '2025/12/31', 'section_no');
+    expect(td.df).toEqual([groupStage, knockout, final]);
+  });
+
   test('within completed matches, match_date sort is lexicographic', () => {
     const m1 = makeMatch({ has_result: true, section_no: 2, match_date: '04/01', point: 3, goal_get: 1, goal_lose: 0 });
     const m2 = makeMatch({ has_result: true, section_no: 1, match_date: '03/01', point: 3, goal_get: 1, goal_lose: 0 });

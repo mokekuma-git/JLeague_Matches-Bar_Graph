@@ -4,8 +4,10 @@ import type { RawMatchRow } from '../../types/match';
 import type { BracketSection } from '../../types/season';
 
 function makeRow(overrides: Partial<RawMatchRow> = {}): RawMatchRow {
-  return {
+  const base: RawMatchRow = {
     match_date: '2025/03/15',
+    section_no: '98',
+    match_index_in_section: '1',
     start_time: '15:00',
     stadium: 'Test Stadium',
     home_team: 'TeamA',
@@ -14,8 +16,8 @@ function makeRow(overrides: Partial<RawMatchRow> = {}): RawMatchRow {
     away_team: 'TeamB',
     status: '試合終了',
     round: '準決勝 第1戦',
-    ...overrides,
   };
+  return { ...base, ...overrides };
 }
 
 describe('tournament-app helpers', () => {
@@ -29,17 +31,24 @@ describe('tournament-app helpers', () => {
     expect(filtered[0].round).toBe('準決勝 第1戦');
   });
 
-  test('collectBracketSourceRows deduplicates rows even without section columns', () => {
-    const row = makeRow({
-      section_no: undefined,
-      match_index_in_section: undefined,
-      round: '準決勝 第1戦',
-    });
+  test('collectBracketSourceRows ignores section columns in dedup keys', () => {
+    const rows = [
+      makeRow({
+        section_no: '98',
+        match_index_in_section: '1',
+        round: '準決勝 第1戦',
+      }),
+      makeRow({
+        section_no: '12',
+        match_index_in_section: '9',
+        round: '準決勝 第1戦',
+      }),
+    ];
     const sections: BracketSection[] = [
       { label: '準決勝', bracket_order: ['TeamA', 'TeamB'], round_filter: ['準決勝'] },
       { label: '第1戦', bracket_order: ['TeamA', 'TeamB'], round_filter: ['準決勝 第1戦'] },
     ];
-    const collected = __testables.collectBracketSourceRows([row], sections);
+    const collected = __testables.collectBracketSourceRows(rows, sections);
     expect(collected).toHaveLength(1);
   });
 });
