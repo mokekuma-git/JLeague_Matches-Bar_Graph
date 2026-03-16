@@ -18,6 +18,10 @@ function getPostponedSortPriority(row: TeamMatch, targetDate: string): number {
 // Which field of TeamMatch to use as the primary sort key within a priority group.
 export type MatchSortKey = 'section_no' | 'match_date';
 
+function sectionOrder(sectionNo: number): number {
+  return sectionNo > 0 ? sectionNo : 10000 + sectionNo;
+}
+
 // Sorts teamData.df in the order used for bar graph display (preserved for later graph use).
 export function sortTeamMatches(
   teamData: TeamData,
@@ -28,7 +32,7 @@ export function sortTeamMatches(
     const prioA = getPostponedSortPriority(a, targetDate);
     const prioB = getPostponedSortPriority(b, targetDate);
     if (prioA !== prioB) return prioA - prioB;
-    if (matchSortKey === 'section_no') return a.section_no - b.section_no;
+    if (matchSortKey === 'section_no') return sectionOrder(a.section_no) - sectionOrder(b.section_no);
     const vA = a.match_date;
     const vB = b.match_date;
     if (!/\d\d\/\d\d$/.test(vA)) {

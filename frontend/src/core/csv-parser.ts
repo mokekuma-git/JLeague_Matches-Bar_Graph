@@ -12,6 +12,12 @@ const CSV_STATUS_FINISHED = '試合終了';
 const CSV_STATUS_VS = 'ＶＳ';
 const CSV_STATUS_LIVE = '速報中';
 
+function parseOptionalInt(value: string | undefined): number | null {
+  if (value == null || value === '') return null;
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
 /**
  * Returns the display status string for a match row.
  * @param match - RawMatchRow object (must be normalized first)
@@ -74,13 +80,13 @@ export function parseCsvResults(
     const matchDate = new Date(match.match_date);
     if (!isNaN(matchDate.getTime())) matchDateStr = dateFormat(matchDate);
 
-    const homeGoal = match.home_goal ? parseInt(match.home_goal, 10) : null;
-    const awayGoal = match.away_goal ? parseInt(match.away_goal, 10) : null;
-    const sectionNo = parseInt(match.section_no, 10);
-    const homePk = match.home_pk_score ? parseInt(match.home_pk_score, 10) : null;
-    const awayPk = match.away_pk_score ? parseInt(match.away_pk_score, 10) : null;
-    const homeScoreEx = match.home_score_ex ? parseInt(match.home_score_ex, 10) : null;
-    const awayScoreEx = match.away_score_ex ? parseInt(match.away_score_ex, 10) : null;
+    const homeGoal = parseOptionalInt(match.home_goal);
+    const awayGoal = parseOptionalInt(match.away_goal);
+    const sectionNo = parseOptionalInt(match.section_no) ?? 0;
+    const homePk = parseOptionalInt(match.home_pk_score);
+    const awayPk = parseOptionalInt(match.away_pk_score);
+    const homeScoreEx = parseOptionalInt(match.home_score_ex);
+    const awayScoreEx = parseOptionalInt(match.away_score_ex);
     const hasResult = Boolean(match.home_goal && match.away_goal);
     const status = makeStatusAttr(match);
     const live = makeLiveAttr(match);

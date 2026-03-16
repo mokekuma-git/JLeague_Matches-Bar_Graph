@@ -2,8 +2,8 @@
 // Field names match the CSV header columns in docs/csv/*.csv exactly.
 export interface RawMatchRow {
   match_date: string;
-  section_no: string;
-  match_index_in_section: string;
+  section_no: string;              // Positive = league/group stage, negative = KO depth (-1 final)
+  match_index_in_section: string;  // 1-indexed round-local pairing/order number
   start_time: string;
   stadium: string;
   home_team: string;
@@ -38,7 +38,7 @@ export interface TeamMatch {
   has_result: boolean;
   point: number;
   match_date: string;
-  section_no: number;
+  section_no: number; // Same sign convention as RawMatchRow.section_no
   stadium: string;
   start_time: string;
   status: string;
