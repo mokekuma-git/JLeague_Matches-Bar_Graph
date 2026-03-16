@@ -193,16 +193,29 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
             _row['status'] = '試合不実施'
             logger.info("Forfeited match: %s", venue_full)
 
-        # Compute extra-time score from two-half differential values
+        # Compute extra-time score from two-half differential values.
+        # Some JFA feeds expose only the ET flag, so warn and fall back to 0-0
+        # to keep the CSV internally consistent without reviving extraTime.
         score = _match_data['score']
         if score.get('exMatch'):
+            missing_ex_score = False
             for side in ('home', 'away'):
                 s1 = score.get(f'{side}TeamScore1ex', '')
                 s2 = score.get(f'{side}TeamScore2ex', '')
                 if s1 != '' and s2 != '':
                     _row[f'{side}_score_ex'] = int(s1) + int(s2)
-
-        _row['extraTime'] = str(_row['extraTime'])  # Stringify for comparison with old style CSV
+                else:
+                    missing_ex_score = True
+            if missing_ex_score:
+                logger.warning(
+                    "exMatch=true but extra-time scores missing for %s vs %s on %s; "
+                    "filling 0-0 extra-time scores",
+                    _row['home_team'],
+                    _row['away_team'],
+                    _row['match_date'],
+                )
+                _row.setdefault('home_score_ex', 0)
+                _row.setdefault('away_score_ex', 0)
         _row['match_date'] = mu.to_datetime_aspossible(_row['match_date'])
 
         result_list.append(_row)

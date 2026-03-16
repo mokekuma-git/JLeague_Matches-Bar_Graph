@@ -77,6 +77,8 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
     'away_goal': 'nullable_int',
     'away_team': 'str',
     'status': 'str',
+    'broadcast': 'str',               # TV / streaming info (column may be absent)
+    'attendance': 'nullable_int',     # Attendance count (column may be absent)
     'group': 'str',
     'home_pk_score': 'nullable_int',  # PK shootout (column may be absent)
     'away_pk_score': 'nullable_int',  # PK shootout (column may be absent)

@@ -11,6 +11,8 @@ export interface RawMatchRow {
   away_goal: string;
   away_team: string;
   status: string;
+  broadcast?: string;       // TV / streaming info (column may be absent)
+  attendance?: string;      // Attendance count (column may be absent)
   group?: string;           // Only in group-stage CSVs (column may be absent)
   home_pk_score?: string;   // Only in matches with PK shootout (column may be absent)
   away_pk_score?: string;

@@ -122,6 +122,5 @@ replace_key:
 score_data_key:
   home_goal: homeScore
   away_goal: awayScore
-  extraTime: exMatch
   home_pk_score: homePKScore
   away_pk_score: awayPKScore
