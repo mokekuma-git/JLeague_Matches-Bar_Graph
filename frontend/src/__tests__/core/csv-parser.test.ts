@@ -204,6 +204,14 @@ describe('parseCsvResults', () => {
     });
   });
 
+  describe('section_no semantics', () => {
+    test('negative tournament section_no is parsed as-is', () => {
+      const row = makeRow({ section_no: '-3' });
+      const result = parseCsvResults([row], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup');
+      expect(result['DefaultGroup']['TeamA'].df[0].section_no).toBe(-3);
+    });
+  });
+
   // Integration: parseCsvResults + calculateTeamStats on a full 3-team round-robin.
   // Rows: A 2-1 B (s1), A 1-1 C (s2), B 0-1 C (s3)
   // Expected totals (all games before targetDate):

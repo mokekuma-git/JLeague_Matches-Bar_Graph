@@ -29,6 +29,23 @@ from set_config import Config
 
 logger = logging.getLogger(__name__)
 
+_FW_DIGITS = str.maketrans('０１２３４５６７８９', '0123456789')
+_GROUP_STAGE_ROUND_RE = re.compile(r'^第(\d+)節')
+
+
+def _sort_match_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Sort match-like DataFrames using the best available stable key set."""
+    sort_keys = [
+        col for col in [
+            'group', 'section_no', 'round', 'match_number',
+            'match_date', 'home_team', 'away_team',
+        ]
+        if col in df.columns
+    ]
+    if not sort_keys:
+        return df.reset_index(drop=True)
+    return df.sort_values(sort_keys).reset_index(drop=True)
+
 
 def _ensure_tzinfo(tz: str | tzinfo) -> tzinfo:
     """Convert a timezone string to a tzinfo object if needed."""
@@ -45,6 +62,9 @@ def _ensure_tzinfo(tz: str | tzinfo) -> tzinfo:
 #   'nullable_int' : integer when the match has been played, empty string otherwise
 #                    (home_goal, away_goal, etc.)
 #   'str'          : plain string
+# section_no semantics:
+#   positive = league/group-stage matchday number
+#   negative = tournament bracket depth (-1 final, -2 semifinal, ...)
 # Extend this dict whenever a new column is added to the CSV.
 CSV_COLUMN_SCHEMA: dict[str, str] = {
     'match_date': 'str',
@@ -57,6 +77,8 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
     'away_goal': 'nullable_int',
     'away_team': 'str',
     'status': 'str',
+    'broadcast': 'str',               # TV / streaming info (column may be absent)
+    'attendance': 'nullable_int',     # Attendance count (column may be absent)
     'group': 'str',
     'home_pk_score': 'nullable_int',  # PK shootout (column may be absent)
     'away_pk_score': 'nullable_int',  # PK shootout (column may be absent)
@@ -345,7 +367,7 @@ class MatchUtils:
             FileNotFoundError: If the specified file does not exist
             ValueError: If the date format is not recognized
             TypeError: If the date format is not recognized
-            KeyError: If the DataFrame does not contain 'match_date' or 'section_no' columns
+            KeyError: If the DataFrame does not contain 'match_date' column
         """
         logger.info("Reading match file %s", matches_file)
         all_matches = pd.read_csv(matches_file, index_col=0, dtype=str, na_values='')
@@ -354,8 +376,10 @@ class MatchUtils:
         all_matches['match_date'] = all_matches['match_date'].map(self.to_datetime_aspossible)
         all_matches['home_goal'] = all_matches['home_goal'].fillna('')
         all_matches['away_goal'] = all_matches['away_goal'].fillna('')
-        all_matches['section_no'] = all_matches['section_no'].astype('int')
-        all_matches['match_index_in_section'] = all_matches['match_index_in_section'].astype('int')
+        if 'section_no' in all_matches.columns:
+            all_matches['section_no'] = all_matches['section_no'].astype('int')
+        if 'match_index_in_section' in all_matches.columns:
+            all_matches['match_index_in_section'] = all_matches['match_index_in_section'].astype('int')
         # Convert NaN to output as null in JSON
         all_matches = all_matches.where(pd.notnull(all_matches), None)
         return all_matches
@@ -386,10 +410,12 @@ class MatchUtils:
     # -------------------------------------------------------------------
     def matches_differ(self, foo_df: pd.DataFrame, bar_df: pd.DataFrame) -> bool:
         """Return True if two match DataFrames differ (ignoring 'match_index_in_section' and NaNs)."""
-        _foo = foo_df.drop(columns=['match_index_in_section']).fillna('')
-        _bar = bar_df.drop(columns=['match_index_in_section']).fillna('')
-        _foo = _foo.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
-        _bar = _bar.sort_values(['section_no', 'match_date', 'home_team']).reset_index(drop=True)
+        _foo = foo_df.drop(columns=['match_index_in_section'], errors='ignore').fillna('')
+        _bar = bar_df.drop(columns=['match_index_in_section'], errors='ignore').fillna('')
+        _foo = _foo.reindex(sorted(_foo.columns), axis=1)
+        _bar = _bar.reindex(sorted(_bar.columns), axis=1)
+        _foo = _sort_match_rows(_foo)
+        _bar = _sort_match_rows(_bar)
 
         if not _foo.equals(_bar):
             if logger.isEnabledFor(logging.DEBUG):
@@ -493,6 +519,105 @@ mu = MatchUtils()
 # ---------------------------------------------------------------------------
 # Standalone functions (no config dependency)
 # ---------------------------------------------------------------------------
+def normalize_round_label(round_text: str) -> str:
+    """Return a canonical round label without leg suffix noise."""
+    if round_text is None:
+        return ''
+    normalized = str(round_text).translate(_FW_DIGITS).strip()
+    normalized = re.sub(r'[ 　]*第[12]戦$', '', normalized)
+    normalized = re.sub(r'[ ]+(?:1st|2nd) Leg$', '', normalized, flags=re.IGNORECASE)
+    return normalized.strip()
+
+
+def _recalculate_match_index_in_section(df: pd.DataFrame) -> pd.DataFrame:
+    """Recalculate match_index_in_section using section-aware ordering."""
+    if 'section_no' not in df.columns:
+        raise KeyError("section_no column is required")
+
+    result = df.copy()
+    result['_orig_order'] = range(len(result))
+    result['_match_date_sort'] = pd.to_datetime(result.get('match_date', ''), errors='coerce')
+    result['_existing_index_sort'] = pd.to_numeric(
+        result.get('match_index_in_section', pd.Series(index=result.index)),
+        errors='coerce',
+    ).fillna(0)
+    if 'leg' in result.columns:
+        result['_leg_sort'] = pd.to_numeric(result['leg'], errors='coerce').fillna(0)
+    else:
+        result['_leg_sort'] = 0
+
+    result = result.sort_values([
+        'section_no', '_match_date_sort', '_leg_sort',
+        '_existing_index_sort', 'home_team', 'away_team', '_orig_order',
+    ]).copy()
+
+    new_indexes: dict[int, int] = {}
+    for _, group in result.groupby('section_no', sort=False):
+        has_leg = (
+            'leg' in group.columns
+            and group['leg'].fillna('').astype(str).str.strip().ne('').any()
+        )
+        pair_to_index: dict[tuple[str, str], int] = {}
+        next_index = 1
+        for row_index, row in group.iterrows():
+            order_key = int(row['_orig_order'])
+            if has_leg:
+                pair_key = tuple(sorted((str(row['home_team']), str(row['away_team']))))
+                match_index = pair_to_index.setdefault(pair_key, len(pair_to_index) + 1)
+            else:
+                match_index = next_index
+                next_index += 1
+            new_indexes[order_key] = match_index
+
+    result['match_index_in_section'] = result['_orig_order'].map(new_indexes)
+    result = result.sort_values('_orig_order').drop(columns=[
+        '_orig_order', '_match_date_sort', '_existing_index_sort', '_leg_sort',
+    ])
+    return result
+
+
+def assign_bracket_section_no(df: pd.DataFrame) -> pd.DataFrame:
+    """Assign section_no from round labels and recalculate round-local indexes."""
+    if 'round' not in df.columns:
+        raise KeyError("round column is required")
+
+    result = df.copy()
+    canonical_round = result['round'].fillna('').map(normalize_round_label)
+    ko_round_info: dict[str, tuple[pd.Timestamp, int]] = {}
+    section_numbers: list[int] = []
+
+    for idx, (round_label, match_date) in enumerate(zip(canonical_round, result['match_date'].fillna(''))):
+        gs_match = _GROUP_STAGE_ROUND_RE.match(round_label)
+        if gs_match:
+            section_numbers.append(int(gs_match.group(1)))
+            continue
+
+        parsed_date = pd.to_datetime(match_date, errors='coerce')
+        previous = ko_round_info.get(round_label)
+        round_info = (parsed_date, idx)
+        if previous is None or (
+            (pd.isna(previous[0]) and not pd.isna(parsed_date))
+            or (not pd.isna(parsed_date) and (parsed_date, idx) < previous)
+        ):
+            ko_round_info[round_label] = round_info
+        section_numbers.append(0)
+
+    sorted_ko_rounds = sorted(
+        ko_round_info.items(),
+        key=lambda item: (pd.isna(item[1][0]), item[1][0], item[1][1]),
+    )
+    ko_section_map = {
+        round_label: index - len(sorted_ko_rounds)
+        for index, (round_label, _) in enumerate(sorted_ko_rounds)
+    }
+
+    result['section_no'] = [
+        section if section != 0 else ko_section_map[round_label]
+        for section, round_label in zip(section_numbers, canonical_round)
+    ]
+    return _recalculate_match_index_in_section(result)
+
+
 def get_season_from_date(reference_date: date = None, season_start_month: int = 7) -> str:
     """Return the season string for the given date.
 

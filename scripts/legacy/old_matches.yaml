@@ -36,6 +36,7 @@ columns_list:
   - "home_goal"
   - "away_goal"
   - "away_team"
+  - "status"
   - "broadcast"
   - "attendance"
 

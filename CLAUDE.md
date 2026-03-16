@@ -88,6 +88,8 @@ npx playwright test --grep @full-render          # full-render のみ
 `docs/csv/*.csv` のカラム:
 `match_date, section_no, match_index_in_section, start_time, stadium, home_team, home_goal, away_goal, away_team, status`
 
+- `section_no`: 正の整数 = リーグ/GS の節番号、負の整数 = KO ブラケット深度 (`-1` = 決勝, `-2` = 準決勝, ...)
+- `match_index_in_section`: `section_no` 内の 1-indexed 通番。H&A では同一カードが同じ番号を共有し、`leg` で第1戦/第2戦を区別
 - `status`: "試合終了" (完了) / "ＶＳ" (未実施)
 - `home_goal`/`away_goal`: 空 = 未実施
 - `group`: グループ名 (グループ分けがある場合のみ)
@@ -159,6 +161,7 @@ npx playwright test --grep @full-render          # full-render のみ
 
 ## 開発プラクティス
 
+- **`plan/` と `local_data/` はローカル専用**: どちらも Git 管理しない。`git add` の対象に含めず、ignore 警告が出ても `git add -f` で突破しない。Issue plan や調査メモは作成・更新してよいが、commit / PR / GitHub Issue には載せない
 - **リファクタリング時のビルド確認**: テスト (`vitest`) だけでなく `npm run build` も確認する。CI は typecheck + vitest のみでビルドは PR 時に自動検証されない
 - **season_map.json 編集後**: `python scripts/format_season_map.py` でカスタム整形を実行
 
