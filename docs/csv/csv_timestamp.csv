@@ -6,10 +6,10 @@ file,date
 ../docs/csv/2026EastB_allmatch_result-J2.csv,2026-03-18 01:22:41.107113+09:00
 ../docs/csv/2026WestA_allmatch_result-J2.csv,2026-03-18 01:22:41.146104+09:00
 ../docs/csv/2026WestB_allmatch_result-J2.csv,2026-03-18 01:22:41.185173+09:00
-../docs/csv/2026East_allmatch_result-J1.csv,2026-03-17 01:20:25.593757+09:00
-../docs/csv/2026West_allmatch_result-J1.csv,2026-03-17 01:20:25.634354+09:00
+../docs/csv/2026East_allmatch_result-J1.csv,2026-03-19 01:21:39.462691+09:00
+../docs/csv/2026West_allmatch_result-J1.csv,2026-03-19 01:21:39.497626+09:00
 ../docs/csv/25-26_allmatch_result-WE.csv,2026-03-10 01:20:36.154558+09:00
-../docs/csv/25-26_allmatch_result-WE_Cup.csv,2026-03-16 01:06:02.885385+09:00
+../docs/csv/25-26_allmatch_result-WE_Cup.csv,2026-03-19 01:22:59.951102+09:00
 ../docs/csv/21-22_allmatch_result-WE.csv,2026-03-03 13:22:52.355964+09:00
 ../docs/csv/22-23_allmatch_result-WE.csv,2026-03-03 13:23:03.445058+09:00
 ../docs/csv/22-23_allmatch_result-WE_Cup.csv,2026-03-03 13:23:03.451385+09:00
@@ -29,3 +29,4 @@ file,date
 ../docs/csv/2026_allmatch_result-PrinceKanto.csv,2026-03-13 17:50:58.243982+09:00
 ../docs/csv/2026_allmatch_result-PrincePremierE.csv,2026-03-13 17:50:58.425945+09:00
 ../docs/csv/2026_allmatch_result-PrincePremierW.csv,2026-03-13 17:50:58.676145+09:00
+../docs/csv/25-26_allmatch_result-WE_Cup_KO.csv,2026-03-19 01:22:59.956524+09:00
