@@ -31,6 +31,55 @@ describe('tournament-app helpers', () => {
     expect(filtered[0].round).toBe('準決勝 第1戦');
   });
 
+  describe('resolveSectionRoundFilters', () => {
+    test('applies default_round_filter to sections without round_filter', () => {
+      const sections: BracketSection[] = [
+        { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
+        { label: 'B', bracket_order: ['TeamC', 'TeamD'] },
+      ];
+      const resolved = __testables.resolveSectionRoundFilters(sections, ['1回戦', '2回戦']);
+      expect(resolved[0].round_filter).toEqual(['1回戦', '2回戦']);
+      expect(resolved[1].round_filter).toEqual(['1回戦', '2回戦']);
+    });
+
+    test('preserves section-level round_filter over default', () => {
+      const sections: BracketSection[] = [
+        { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
+        { label: 'B', bracket_order: ['TeamC', 'TeamD'], round_filter: ['準決勝', '決勝'] },
+      ];
+      const resolved = __testables.resolveSectionRoundFilters(sections, ['1回戦', '2回戦']);
+      expect(resolved[0].round_filter).toEqual(['1回戦', '2回戦']);
+      expect(resolved[1].round_filter).toEqual(['準決勝', '決勝']);
+    });
+
+    test('returns sections unchanged when no default provided', () => {
+      const sections: BracketSection[] = [
+        { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
+        { label: 'B', bracket_order: ['TeamC', 'TeamD'], round_filter: ['準決勝'] },
+      ];
+      const resolved = __testables.resolveSectionRoundFilters(sections, undefined);
+      expect(resolved[0].round_filter).toBeUndefined();
+      expect(resolved[1].round_filter).toEqual(['準決勝']);
+    });
+
+    test('returns sections unchanged when default is empty array', () => {
+      const sections: BracketSection[] = [
+        { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
+      ];
+      const resolved = __testables.resolveSectionRoundFilters(sections, []);
+      expect(resolved[0].round_filter).toBeUndefined();
+    });
+
+    test('does not mutate original sections', () => {
+      const sections: BracketSection[] = [
+        { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
+      ];
+      const resolved = __testables.resolveSectionRoundFilters(sections, ['1回戦']);
+      expect(resolved[0].round_filter).toEqual(['1回戦']);
+      expect(sections[0].round_filter).toBeUndefined();
+    });
+  });
+
   test('collectBracketSourceRows ignores section columns in dedup keys', () => {
     const rows = [
       makeRow({

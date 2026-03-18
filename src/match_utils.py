@@ -116,7 +116,8 @@ class SeasonEntry:
         'shown_groups', 'cross_group_standing', 'group_team_count',
         'note', 'data_source', 'promotion_label',
         'aggregate_tiebreak_order',
-        'bracket_order', 'bracket_round_start', 'round_start_options', 'bracket_sections',
+        'bracket_order', 'bracket_round_start', 'round_start_options',
+        'default_round_filter', 'bracket_sections',
         'bracket_pairing_orders',
         'view_type',
     }
