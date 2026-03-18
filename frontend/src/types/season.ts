@@ -74,6 +74,7 @@ export interface SeasonEntryOptions {
   bracket_order?: string[];
   bracket_round_start?: string;
   round_start_options?: string[];
+  default_round_filter?: string[];
   bracket_sections?: BracketSection[];
   bracket_pairing_orders?: number[][];
   view_type?: ViewType[];

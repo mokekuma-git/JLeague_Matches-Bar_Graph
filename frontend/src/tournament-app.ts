@@ -184,6 +184,16 @@ function filterRowsByRounds(rows: RawMatchRow[], roundFilter: string[]): RawMatc
   });
 }
 
+/** Apply default_round_filter to sections that lack their own round_filter. */
+function resolveSectionRoundFilters(
+  sections: BracketSection[], defaultRoundFilter?: string[],
+): BracketSection[] {
+  if (!defaultRoundFilter || defaultRoundFilter.length === 0) return sections;
+  return sections.map(s =>
+    s.round_filter ? s : { ...s, round_filter: defaultRoundFilter },
+  );
+}
+
 function collectBracketSourceRows(rows: RawMatchRow[], sections?: BracketSection[]): RawMatchRow[] {
   if (!sections || sections.length === 0) return rows;
   const merged: RawMatchRow[] = [];
@@ -229,6 +239,7 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
 
 export const __testables = {
   filterRowsByRounds,
+  resolveSectionRoundFilters,
   collectBracketSourceRows,
   collectRoundsFromCsv,
 };
@@ -618,7 +629,10 @@ function loadAndRender(seasonMap: SeasonMap): void {
         option === MULTI_SECTION_VALUE ? option : normalizeBracketRoundLabel(option)
       ));
       const aggregateTiebreakOrder = entry[4]?.aggregate_tiebreak_order ?? ['penalties'];
-      const bracketSections = entry[4]?.bracket_sections;
+      const rawSections = entry[4]?.bracket_sections;
+      const bracketSections = rawSections
+        ? resolveSectionRoundFilters(rawSections, entry[4]?.default_round_filter)
+        : undefined;
       const bracketRows = collectBracketSourceRows(results.data, bracketSections);
       const matchDates = collectMatchDates(bracketRows);
 
