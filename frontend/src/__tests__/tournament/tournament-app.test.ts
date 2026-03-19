@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { __testables } from '../../tournament-app';
 import type { RawMatchRow } from '../../types/match';
 import type { BracketSection } from '../../types/season';
+import type { BracketNode } from '../../bracket/bracket-types';
 
 function makeRow(overrides: Partial<RawMatchRow> = {}): RawMatchRow {
   const base: RawMatchRow = {
@@ -18,6 +19,19 @@ function makeRow(overrides: Partial<RawMatchRow> = {}): RawMatchRow {
     round: '準決勝 第1戦',
   };
   return { ...base, ...overrides };
+}
+
+function makeNode(overrides: Partial<BracketNode> = {}): BracketNode {
+  return {
+    round: '準決勝',
+    homeTeam: null,
+    awayTeam: null,
+    status: '試合終了',
+    winner: null,
+    decidedBy: null,
+    children: [null, null],
+    ...overrides,
+  };
 }
 
 describe('tournament-app helpers', () => {
@@ -99,5 +113,58 @@ describe('tournament-app helpers', () => {
     ];
     const collected = __testables.collectBracketSourceRows(rows, sections);
     expect(collected).toHaveLength(1);
+  });
+
+  describe('resolveInclusiveBracketOrder', () => {
+    const fullRoot = makeNode({
+      round: '決勝',
+      winner: 'TeamA',
+      children: [
+        makeNode({ round: '準決勝', winner: 'TeamA' }),
+        makeNode({ round: '準決勝', winner: 'TeamC' }),
+      ],
+    });
+
+    test('collapses to winners when a later round is selected', () => {
+      const order = __testables.resolveInclusiveBracketOrder({
+        fullRoot,
+        bracketOrder: ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
+        roundsByDepth: ['決勝', '準決勝'],
+        allRounds: ['準決勝', '決勝'],
+        csvRows: [],
+      }, '決勝');
+
+      expect(order).toEqual(['TeamA', 'TeamC']);
+    });
+
+    test('extends backward when an earlier round is selected', () => {
+      const order = __testables.resolveInclusiveBracketOrder({
+        fullRoot,
+        bracketOrder: ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
+        roundsByDepth: ['決勝', '2回戦'],
+        allRounds: ['1回戦', '2回戦', '決勝'],
+        csvRows: [
+          makeRow({ round: '1回戦', home_team: 'TeamA', away_team: 'TeamX' }),
+          makeRow({ round: '1回戦', home_team: 'TeamC', away_team: 'TeamY' }),
+          makeRow({ round: '1回戦', home_team: 'TeamD', away_team: 'TeamZ' }),
+        ],
+      }, '1回戦');
+
+      expect(order).toEqual(['TeamA', 'TeamX', 'TeamB', null, 'TeamC', 'TeamY', 'TeamD', 'TeamZ']);
+    });
+  });
+
+  describe('shouldRenderMultiSectionView', () => {
+    test('returns true only when multi-section option and sections are both present', () => {
+      expect(__testables.shouldRenderMultiSectionView(
+        [{ label: 'A', bracket_order: ['TeamA', 'TeamB'] }],
+        '__multi_section__',
+      )).toBe(true);
+      expect(__testables.shouldRenderMultiSectionView(
+        [{ label: 'A', bracket_order: ['TeamA', 'TeamB'] }],
+        '準決勝',
+      )).toBe(false);
+      expect(__testables.shouldRenderMultiSectionView(undefined, '__multi_section__')).toBe(false);
+    });
   });
 });

@@ -46,6 +46,15 @@ interface ControlState {
   roundStart: string | null;
 }
 
+interface SingleBracketRenderInput {
+  rows: RawMatchRow[];
+  order: (string | null)[];
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[];
+  targetDate: string | null;
+  lastDate: string;
+  cssFiles: string[];
+}
+
 const MULTI_SECTION_VALUE = '__multi_section__';
 
 let currentState: BracketState | null = null;
@@ -242,6 +251,8 @@ export const __testables = {
   resolveSectionRoundFilters,
   collectBracketSourceRows,
   collectRoundsFromCsv,
+  resolveInclusiveBracketOrder,
+  shouldRenderMultiSectionView,
 };
 
 /** Collect winners at a given tree depth (in bracket positional order). */
@@ -320,12 +331,13 @@ function populateRoundStartPulldown(
   }
 }
 
-/** Get effective bracket order for the selected start round. */
-function getEffectiveBracketOrder(): (string | null)[] {
-  if (!currentState) return [];
-  const { fullRoot, bracketOrder, roundsByDepth, allRounds, csvRows } = currentState;
-  const selected = controlState.roundStart ?? '';
-
+/** Resolve bracket order for the single-tree ("inclusive") bracket view. */
+function resolveInclusiveBracketOrder(
+  state: Pick<BracketState, 'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds' | 'csvRows'>,
+  selectedRoundStart: string | null,
+): (string | null)[] {
+  const { fullRoot, bracketOrder, roundsByDepth, allRounds, csvRows } = state;
+  const selected = selectedRoundStart ?? '';
   const leafRound = roundsByDepth[roundsByDepth.length - 1];
   const leafIdx = allRounds.indexOf(leafRound);
   const selectedIdx = allRounds.indexOf(selected);
@@ -355,9 +367,12 @@ function getTargetDate(): string | null {
   return controlState.selectedDate;
 }
 
-/** Check if the current dropdown selection is multi-section mode. */
-function isMultiSectionMode(): boolean {
-  return controlState.roundStart === MULTI_SECTION_VALUE;
+/** Check whether the selection should render bracket sections independently. */
+function shouldRenderMultiSectionView(
+  bracketSections: BracketSection[] | undefined,
+  roundStart: string | null,
+): boolean {
+  return roundStart === MULTI_SECTION_VALUE && bracketSections != null;
 }
 
 /**
@@ -381,18 +396,40 @@ function renderSingleBracketInto(
  */
 function buildAndRenderBracket(
   container: HTMLElement,
-  rows: RawMatchRow[],
-  order: (string | null)[],
-  aggregateTiebreakOrder: AggregateTiebreakCriterion[],
-  targetDate: string | null,
-  lastDate: string,
-  cssFiles: string[],
+  input: SingleBracketRenderInput,
 ): void {
+  const { rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles } = input;
   if (order.length < 2) return;
   const fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
   const root = (targetDate && targetDate < lastDate)
     ? maskBracketForDate(fullRoot, targetDate) : fullRoot;
   renderSingleBracketInto(container, root, cssFiles);
+}
+
+function createSingleBracketRenderInput(
+  state: Pick<BracketState, 'csvRows' | 'aggregateTiebreakOrder' | 'matchDates' | 'cssFiles'>,
+  order: (string | null)[],
+): SingleBracketRenderInput | null {
+  if (order.length < 2 || state.matchDates.length === 0) return null;
+  return {
+    rows: state.csvRows,
+    order,
+    aggregateTiebreakOrder: state.aggregateTiebreakOrder,
+    targetDate: getTargetDate(),
+    lastDate: state.matchDates[state.matchDates.length - 1],
+    cssFiles: state.cssFiles,
+  };
+}
+
+function createInclusiveBracketRenderInput(
+  state: Pick<
+  BracketState,
+  'csvRows' | 'aggregateTiebreakOrder' | 'matchDates' | 'cssFiles' |
+  'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds'
+  >,
+): SingleBracketRenderInput | null {
+  const order = resolveInclusiveBracketOrder(state, controlState.roundStart);
+  return createSingleBracketRenderInput(state, order);
 }
 
 /**
@@ -425,9 +462,6 @@ function renderMultiSections(): void {
     applyScale();
   });
   container.appendChild(toggleBtn);
-
-  const targetDate = getTargetDate();
-  const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
 
   for (const section of currentState.bracketSections) {
     if (section.bracket_order.length < 2) continue;
@@ -464,18 +498,29 @@ function renderMultiSections(): void {
       for (let i = 0; i < order.length; i += 2) {
         const pair = order.slice(i, i + 2);
         if (pair.every(t => t == null)) continue;
-        buildAndRenderBracket(
-          sectionWrapper, rows, pair, currentState.aggregateTiebreakOrder,
-          targetDate, lastDate, currentState.cssFiles,
+        const input = createSingleBracketRenderInput(
+          { ...currentState, csvRows: rows },
+          pair,
         );
+        if (input) buildAndRenderBracket(sectionWrapper, input);
       }
     } else {
-      buildAndRenderBracket(
-        sectionWrapper, rows, section.bracket_order, currentState.aggregateTiebreakOrder,
-        targetDate, lastDate, currentState.cssFiles,
+      const input = createSingleBracketRenderInput(
+        { ...currentState, csvRows: rows },
+        section.bracket_order,
       );
+      if (input) buildAndRenderBracket(sectionWrapper, input);
     }
   }
+}
+
+/** Render the single-tree ("inclusive") bracket view. */
+function renderInclusiveBracket(container: HTMLElement): void {
+  if (!currentState) return;
+  const input = createInclusiveBracketRenderInput(currentState);
+  if (!input) return;
+  container.replaceChildren();
+  buildAndRenderBracket(container, input);
 }
 
 function renderWithDateFilter(): void {
@@ -486,28 +531,14 @@ function renderWithDateFilter(): void {
   // Dismiss any pinned tooltip before re-render (DOM will be replaced)
   unpinTooltip();
 
-  // Multi-section mode: render all sections independently
-  if (isMultiSectionMode() && currentState.bracketSections) {
+  // Multi-section mode: render each section as its own bracket block.
+  if (shouldRenderMultiSectionView(currentState.bracketSections, controlState.roundStart)) {
     renderMultiSections();
     return;
   }
 
-  // Single bracket mode: use effective bracket order + date mask
-  const effectiveOrder = getEffectiveBracketOrder();
-  if (effectiveOrder.length < 2) return;
-  const fullRoot = buildBracket(
-    currentState.csvRows,
-    effectiveOrder,
-    currentState.aggregateTiebreakOrder,
-  );
-  const targetDate = getTargetDate();
-  const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
-  const root = (targetDate && targetDate < lastDate)
-    ? maskBracketForDate(fullRoot, targetDate)
-    : fullRoot;
-
-  container.replaceChildren();
-  renderSingleBracketInto(container, root, currentState.cssFiles);
+  // Inclusive mode: resolve one effective bracket order, then render it as one tree.
+  renderInclusiveBracket(container);
 }
 
 /** Sync controlState.selectedDate from slider position and update display label. */
