@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { __testables } from '../../tournament-app';
 import type { RawMatchRow } from '../../types/match';
-import type { BracketSection } from '../../types/season';
+import type { BracketBlock } from '../../types/season';
 import type { BracketNode } from '../../bracket/bracket-types';
 
 function makeRow(overrides: Partial<RawMatchRow> = {}): RawMatchRow {
@@ -44,7 +44,7 @@ describe('tournament-app helpers', () => {
         ['LegacyA', 'LegacyB'],
         {
           bracket_order: ['ExplicitA', null, 'ExplicitB'],
-          bracket_sections: [{ label: 'S1', bracket_order: ['SectionA', 'SectionB'] }],
+          bracket_blocks: [{ label: 'S1', bracket_order: ['SectionA', 'SectionB'] }],
         },
       ]);
 
@@ -62,14 +62,14 @@ describe('tournament-app helpers', () => {
       expect(order).toEqual(['LegacyA', 'LegacyB', 'LegacyC', 'LegacyD']);
     });
 
-    test('derives default global order from bracket_sections when entry[3] is empty', () => {
+    test('derives default global order from bracket_blocks when entry[3] is empty', () => {
       const order = __testables.resolveSeasonBracketOrder([
         4,
         0,
         0,
         [],
         {
-          bracket_sections: [
+          bracket_blocks: [
             { label: 'A', bracket_order: ['A1', 'A2'] },
             { label: 'B', bracket_order: ['B1', null, 'B2'] },
           ],
@@ -138,7 +138,7 @@ describe('tournament-app helpers', () => {
 
   describe('resolveSectionRoundFilters', () => {
     test('applies default_round_filter to sections without round_filter', () => {
-      const sections: BracketSection[] = [
+      const sections: BracketBlock[] = [
         { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
         { label: 'B', bracket_order: ['TeamC', 'TeamD'] },
       ];
@@ -148,7 +148,7 @@ describe('tournament-app helpers', () => {
     });
 
     test('preserves section-level round_filter over default', () => {
-      const sections: BracketSection[] = [
+      const sections: BracketBlock[] = [
         { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
         { label: 'B', bracket_order: ['TeamC', 'TeamD'], round_filter: ['準決勝', '決勝'] },
       ];
@@ -158,7 +158,7 @@ describe('tournament-app helpers', () => {
     });
 
     test('returns sections unchanged when no default provided', () => {
-      const sections: BracketSection[] = [
+      const sections: BracketBlock[] = [
         { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
         { label: 'B', bracket_order: ['TeamC', 'TeamD'], round_filter: ['準決勝'] },
       ];
@@ -168,7 +168,7 @@ describe('tournament-app helpers', () => {
     });
 
     test('returns sections unchanged when default is empty array', () => {
-      const sections: BracketSection[] = [
+      const sections: BracketBlock[] = [
         { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
       ];
       const resolved = __testables.resolveSectionRoundFilters(sections, []);
@@ -176,7 +176,7 @@ describe('tournament-app helpers', () => {
     });
 
     test('does not mutate original sections', () => {
-      const sections: BracketSection[] = [
+      const sections: BracketBlock[] = [
         { label: 'A', bracket_order: ['TeamA', 'TeamB'] },
       ];
       const resolved = __testables.resolveSectionRoundFilters(sections, ['1回戦']);
@@ -198,7 +198,7 @@ describe('tournament-app helpers', () => {
         round: '準決勝 第1戦',
       }),
     ];
-    const sections: BracketSection[] = [
+    const sections: BracketBlock[] = [
       { label: '準決勝', bracket_order: ['TeamA', 'TeamB'], round_filter: ['準決勝'] },
       { label: '第1戦', bracket_order: ['TeamA', 'TeamB'], round_filter: ['準決勝 第1戦'] },
     ];
@@ -213,7 +213,7 @@ describe('tournament-app helpers', () => {
         makeRow({ home_team: 'C', away_team: 'D', round: '準決勝', match_date: '2024/11/01', start_time: '16:00' }),
         makeRow({ home_team: 'A', away_team: 'C', round: '決勝', match_date: '2024/12/08', start_time: '14:00' }),
       ];
-      const sections: BracketSection[] = [
+      const sections: BracketBlock[] = [
         { label: 'KO', bracket_order: ['A', 'B', 'C', 'D'] },
       ];
       const result = __testables.inferMissingSectionRoundFilters(sections, rows);
@@ -225,7 +225,7 @@ describe('tournament-app helpers', () => {
         makeRow({ home_team: 'A', away_team: 'B', round: '準決勝', match_date: '2024/11/01' }),
         makeRow({ home_team: 'A', away_team: 'C', round: '決勝', match_date: '2024/12/08' }),
       ];
-      const sections: BracketSection[] = [
+      const sections: BracketBlock[] = [
         { label: 'KO', bracket_order: ['A', 'B', 'C', 'D'], round_filter: ['決勝'] },
       ];
       const result = __testables.inferMissingSectionRoundFilters(sections, rows);
@@ -236,7 +236,7 @@ describe('tournament-app helpers', () => {
       const rows = [
         makeRow({ home_team: 'X', away_team: 'Y', round: '決勝' }),
       ];
-      const sections: BracketSection[] = [
+      const sections: BracketBlock[] = [
         { label: 'KO', bracket_order: ['A', 'B'] },
       ];
       const result = __testables.inferMissingSectionRoundFilters(sections, rows);
@@ -250,7 +250,7 @@ describe('tournament-app helpers', () => {
         makeRow({ home_team: 'E', away_team: 'F', round: '1回戦', match_date: '2024/06/01' }),
         makeRow({ home_team: 'E', away_team: 'G', round: '2回戦', match_date: '2024/09/01' }),
       ];
-      const sections: BracketSection[] = [
+      const sections: BracketBlock[] = [
         { label: 'Explicit', bracket_order: ['A', 'B', 'C', 'D'], round_filter: ['決勝'] },
         { label: 'Default', bracket_order: ['A', 'B', 'C', 'D'], round_filter: ['準決勝'] },
         { label: 'Inferred', bracket_order: ['E', 'F', null, 'G'] },

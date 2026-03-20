@@ -7,7 +7,7 @@ import { normalizeBracketRoundLabel } from './round-label';
  * Algorithm:
  *  1. Collect candidate matches where both teams appear in bracketOrder
  *  2. Group by normalized round label, find earliest datetime and match count
- *  3a. single_round: pick the round with the most candidate matches
+ *  3a. matchup_pairs: pick the round with the most candidate matches
  *      (no time filter — bracket_order teams share GS/KO, count separates them)
  *  3b. normal: estimate bracket_start = first of chronologically last K rounds
  *      (K = ceil(log2(bracketOrder.length))), return rounds on or after it
@@ -17,7 +17,7 @@ import { normalizeBracketRoundLabel } from './round-label';
 export function inferRoundFilter(
   rows: RawMatchRow[],
   bracketOrder: (string | null)[],
-  singleRound?: boolean,
+  matchupPairs?: boolean,
 ): string[] | undefined {
   // Extract real teams from bracket positions
   const teams = new Set(bracketOrder.filter((t): t is string => t !== null));
@@ -49,8 +49,8 @@ export function inferRoundFilter(
     .sort((a, b) => a[1].localeCompare(b[1]))
     .map(([round]) => round);
 
-  // single_round: pick the round with the most matches (ties → latest by date)
-  if (singleRound) {
+  // matchup_pairs: pick the round with the most matches (ties → latest by date)
+  if (matchupPairs) {
     let bestRound: string | undefined;
     let bestCount = 0;
     for (const round of roundsByDate) {

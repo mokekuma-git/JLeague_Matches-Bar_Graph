@@ -33,6 +33,7 @@ import { DEFAULT_HEIGHT_UNIT, getHeightUnit, setFutureOpacity, setSpace, setScal
 import { findTeamsWithoutColor } from './graph/css-validator';
 import { teamCssClass } from './core/team-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
+import type { ViewerPrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
 import type { Locale } from './i18n';
 
@@ -60,6 +61,42 @@ const state: AppState = {
   currentMatchDates: [],
   heightUnit: DEFAULT_HEIGHT_UNIT,
 };
+
+// ---- Control state (symmetric with tournament-app.ts) -----------------
+
+interface ViewerControlState {
+  scale: number;
+  futureOpacity: number;
+  targetDate: string | null;
+}
+
+interface LeagueControlState {
+  teamSortKey: string;
+  matchSortKey: string;
+  spaceColor: string;
+}
+
+interface ControlState {
+  viewer: ViewerControlState;
+  league: LeagueControlState;
+}
+
+function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
+  return {
+    viewer: {
+      scale: prefs.scale ? parseFloat(prefs.scale) : 1,
+      futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.1,
+      targetDate: prefs.targetDate ?? null,
+    },
+    league: {
+      teamSortKey: prefs.teamSortKey ?? 'disp_point',
+      matchSortKey: prefs.matchSortKey ?? 'old_bottom',
+      spaceColor: prefs.spaceColor ?? '#cccccc',
+    },
+  };
+}
+
+let controlState: ControlState = createControlStateFromPrefs({});
 
 const DEFAULT_COMPETITION = 'J1';
 const DEFAULT_GROUP = 'matches';
@@ -408,14 +445,12 @@ function loadAndRender(seasonMap: SeasonMap): void {
   const season      = getSelectValue('season_key');
   const csvKey      = `${competition}/${season}`;
 
-  const targetDateRaw = (document.getElementById('target_date') as HTMLInputElement).value;
-  const targetDate    = targetDateRaw.replace(/-/g, '/');
+  const targetDate    = controlState.viewer.targetDate?.replace(/-/g, '/') ?? dateFormat(new Date(), '/');
 
-  const matchSortUiValue = getSelectValue('match_sort_key');
-  const sortKey          = getSelectValue('team_sort_key');
-  const matchSortKey     = getMatchSortKey(matchSortUiValue);
-  const bottomFirst      = isBottomFirst(matchSortUiValue);
-  const disp             = sortKey.startsWith('disp_');
+  const sortKey      = controlState.league.teamSortKey;
+  const matchSortKey = getMatchSortKey(controlState.league.matchSortKey);
+  const bottomFirst  = isBottomFirst(controlState.league.matchSortKey);
+  const disp         = sortKey.startsWith('disp_');
 
   const found = findCompetition(seasonMap, competition);
   if (!found || !found.competition.seasons[season]) {
@@ -426,7 +461,12 @@ function loadAndRender(seasonMap: SeasonMap): void {
   const leagueDisplay = resolveSeasonInfo(found.group, found.competition, found.competition.seasons[season], found.groupKey).leagueDisplay;
 
   writeUrlParams(competition, season);
-  savePrefs({ competition, season, targetDate: targetDateRaw, teamSortKey: sortKey, matchSortKey: matchSortUiValue });
+  savePrefs({
+    competition, season,
+    targetDate: controlState.viewer.targetDate ?? undefined,
+    teamSortKey: sortKey,
+    matchSortKey: controlState.league.matchSortKey,
+  });
 
   const filename = getCsvFilename(competition, season);
 
@@ -519,26 +559,26 @@ async function main(): Promise<void> {
     : seasonSel.options[0]?.value ?? '';
   seasonSel.value = initSeason;
 
-  // Restore sort keys from prefs
+  // Restore control state from prefs
+  controlState = createControlStateFromPrefs(prefs);
+
   const teamSortSel  = document.getElementById('team_sort_key') as HTMLSelectElement | null;
   const matchSortSel = document.getElementById('match_sort_key') as HTMLSelectElement | null;
-  if (teamSortSel  && prefs.teamSortKey)   teamSortSel.value  = prefs.teamSortKey;
-  if (matchSortSel && prefs.matchSortKey)  matchSortSel.value = prefs.matchSortKey;
+  if (teamSortSel)  teamSortSel.value  = controlState.league.teamSortKey;
+  if (matchSortSel) matchSortSel.value = controlState.league.matchSortKey;
 
-  // Restore appearance from prefs
   const futureOpacityEl = document.getElementById('future_opacity') as HTMLInputElement | null;
   const spaceColorEl    = document.getElementById('space_color')    as HTMLInputElement | null;
   const scaleSliderEl   = document.getElementById('scale_slider')   as HTMLInputElement | null;
-  if (futureOpacityEl && prefs.futureOpacity) futureOpacityEl.value = prefs.futureOpacity;
-  if (spaceColorEl    && prefs.spaceColor)    spaceColorEl.value    = prefs.spaceColor;
-  if (scaleSliderEl   && prefs.scale)         scaleSliderEl.value   = prefs.scale;
+  if (futureOpacityEl) futureOpacityEl.value = String(controlState.viewer.futureOpacity);
+  if (spaceColorEl)    spaceColorEl.value    = controlState.league.spaceColor;
+  if (scaleSliderEl)   scaleSliderEl.value   = String(controlState.viewer.scale);
 
-  setFutureOpacity(futureOpacityEl?.value ?? '0.1', false);
-  if (prefs.spaceColor) setSpace(prefs.spaceColor, false);
+  setFutureOpacity(String(controlState.viewer.futureOpacity), false);
+  if (prefs.spaceColor) setSpace(controlState.league.spaceColor, false);
 
-  // Restore target date from prefs; fall back to today.
   const dateInput = document.getElementById('target_date') as HTMLInputElement;
-  dateInput.value = prefs.targetDate ?? dateFormat(new Date(), '-');
+  dateInput.value = controlState.viewer.targetDate ?? dateFormat(new Date(), '-');
 
   // ---- Data-selection events ----
 
@@ -553,11 +593,20 @@ async function main(): Promise<void> {
     loadAndRender(seasonMap);
   });
 
-  for (const id of ['target_date', 'team_sort_key', 'match_sort_key']) {
-    document.getElementById(id)?.addEventListener('change', () => {
-      loadAndRender(seasonMap);
-    });
-  }
+  document.getElementById('target_date')?.addEventListener('change', () => {
+    controlState.viewer.targetDate = (document.getElementById('target_date') as HTMLInputElement).value;
+    loadAndRender(seasonMap);
+  });
+
+  document.getElementById('team_sort_key')?.addEventListener('change', () => {
+    controlState.league.teamSortKey = getSelectValue('team_sort_key');
+    loadAndRender(seasonMap);
+  });
+
+  document.getElementById('match_sort_key')?.addEventListener('change', () => {
+    controlState.league.matchSortKey = getSelectValue('match_sort_key');
+    loadAndRender(seasonMap);
+  });
 
   // ---- Date slider events ----
 
@@ -566,7 +615,9 @@ async function main(): Promise<void> {
     const updateFromSlider = (): void => {
       const date = getSliderDate(state.currentMatchDates, parseInt(dateSlider.value, 10));
       if (!date) return;
-      (document.getElementById('target_date') as HTMLInputElement).value = date.replace(/\//g, '-');
+      const htmlDate = date.replace(/\//g, '-');
+      (document.getElementById('target_date') as HTMLInputElement).value = htmlDate;
+      controlState.viewer.targetDate = htmlDate;
       loadAndRender(seasonMap);
     };
 
@@ -588,7 +639,9 @@ async function main(): Promise<void> {
       updateFromSlider();
     });
     document.getElementById('reset_date_slider')?.addEventListener('click', () => {
-      (document.getElementById('target_date') as HTMLInputElement).value = dateFormat(new Date(), '-');
+      const today = dateFormat(new Date(), '-');
+      (document.getElementById('target_date') as HTMLInputElement).value = today;
+      controlState.viewer.targetDate = today;
       loadAndRender(seasonMap);
     });
   }
@@ -599,18 +652,21 @@ async function main(): Promise<void> {
 
   document.getElementById('scale_slider')?.addEventListener('input', (e) => {
     const v = (e.target as HTMLInputElement).value;
+    controlState.viewer.scale = parseFloat(v);
     setScale(boxCon, v);
     savePrefs({ scale: v });
   });
 
   document.getElementById('future_opacity')?.addEventListener('input', (e) => {
     const v = (e.target as HTMLInputElement).value;
+    controlState.viewer.futureOpacity = parseFloat(v);
     setFutureOpacity(v);
     savePrefs({ futureOpacity: v });
   });
 
   document.getElementById('space_color')?.addEventListener('input', (e) => {
     const v = (e.target as HTMLInputElement).value;
+    controlState.league.spaceColor = v;
     setSpace(v);
     savePrefs({ spaceColor: v });
   });
