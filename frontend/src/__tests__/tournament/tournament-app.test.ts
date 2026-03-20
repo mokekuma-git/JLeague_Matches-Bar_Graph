@@ -35,6 +35,41 @@ function makeNode(overrides: Partial<BracketNode> = {}): BracketNode {
 }
 
 describe('tournament-app helpers', () => {
+  describe('createControlStateFromPrefs', () => {
+    test('separates viewer-common prefs from bracket-specific prefs', () => {
+      const state = __testables.createControlStateFromPrefs({
+        scale: '1.5',
+        futureOpacity: '0.35',
+        targetDate: '2025/03/20',
+        roundStart: '準決勝',
+      });
+
+      expect(state.viewer).toEqual({
+        scale: 1.5,
+        futureOpacity: 0.35,
+        targetDate: '2025/03/20',
+      });
+      expect(state.bracket).toEqual({
+        layout: 'horizontal',
+        roundStart: '準決勝',
+      });
+    });
+
+    test('falls back to current defaults when prefs are absent', () => {
+      const state = __testables.createControlStateFromPrefs({});
+
+      expect(state.viewer).toEqual({
+        scale: 1,
+        futureOpacity: 0.2,
+        targetDate: null,
+      });
+      expect(state.bracket).toEqual({
+        layout: 'horizontal',
+        roundStart: null,
+      });
+    });
+  });
+
   test('filterRowsByRounds matches both raw and normalized round labels', () => {
     const rows = [
       makeRow({ round: '準決勝 第1戦' }),

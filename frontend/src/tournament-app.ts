@@ -23,6 +23,7 @@ import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
 import { normalizeBracketRoundLabel } from './bracket/round-label';
 import { renderBracket, adjustBracketPositions, drawBracketConnectors, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
+import type { ViewerPrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
 import type { Locale } from './i18n';
 import type { BracketNode } from './bracket/bracket-types';
@@ -45,12 +46,20 @@ interface BracketState {
   season: string;
 }
 
-interface ControlState {
-  layout: 'horizontal' | 'vertical';
+interface ViewerControlState {
   scale: number;
   futureOpacity: number;
   targetDate: string | null;
+}
+
+interface BracketControlState {
+  layout: 'horizontal' | 'vertical';
   roundStart: string | null;
+}
+
+interface ControlState {
+  viewer: ViewerControlState;
+  bracket: BracketControlState;
 }
 
 interface SingleBracketRenderInput {
@@ -67,12 +76,30 @@ const MULTI_SECTION_VALUE = '__multi_section__';
 let currentState: BracketState | null = null;
 
 let controlState: ControlState = {
-  layout: 'horizontal',
-  scale: 1,
-  futureOpacity: 0.2,
-  targetDate: null,
-  roundStart: null,
+  viewer: {
+    scale: 1,
+    futureOpacity: 0.2,
+    targetDate: null,
+  },
+  bracket: {
+    layout: 'horizontal',
+    roundStart: null,
+  },
 };
+
+function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
+  return {
+    viewer: {
+      scale: prefs.scale ? parseFloat(prefs.scale) : 1,
+      futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.2,
+      targetDate: prefs.targetDate ?? null,
+    },
+    bracket: {
+      layout: 'horizontal',
+      roundStart: prefs.roundStart ?? null,
+    },
+  };
+}
 
 // ---- DOM helpers -----------------------------------------------------------
 
@@ -252,6 +279,7 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
 }
 
 export const __testables = {
+  createControlStateFromPrefs,
   filterRowsByRounds,
   resolveSectionRoundFilters,
   collectBracketSourceRows,
@@ -369,7 +397,7 @@ function resolveInclusiveBracketOrder(
 // ---- Bracket rendering with date filter ------------------------------------
 
 function getTargetDate(): string | null {
-  return controlState.targetDate;
+  return controlState.viewer.targetDate;
 }
 
 /** Check whether the selection should render bracket sections independently. */
@@ -433,7 +461,7 @@ function createInclusiveBracketRenderInput(
   'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds'
   >,
 ): SingleBracketRenderInput | null {
-  const order = resolveInclusiveBracketOrder(state, controlState.roundStart);
+  const order = resolveInclusiveBracketOrder(state, controlState.bracket.roundStart);
   return createSingleBracketRenderInput(state, order);
 }
 
@@ -537,7 +565,7 @@ function renderWithDateFilter(): void {
   unpinTooltip();
 
   // Multi-section mode: render each section as its own bracket block.
-  if (shouldRenderMultiSectionView(currentState.bracketSections, controlState.roundStart)) {
+  if (shouldRenderMultiSectionView(currentState.bracketSections, controlState.bracket.roundStart)) {
     renderMultiSections();
     return;
   }
@@ -546,19 +574,19 @@ function renderWithDateFilter(): void {
   renderInclusiveBracket(container);
 }
 
-/** Sync controlState.targetDate from slider position. */
+/** Sync viewer control targetDate from slider position. */
 function syncTargetDateFromSlider(): void {
   if (!currentState) return;
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (!slider) return;
-  controlState.targetDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10));
+  controlState.viewer.targetDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10));
 }
 
 /** Align slider position to the kept target date without overwriting the target itself. */
 function syncSliderFromTargetDate(): void {
   if (!currentState) return;
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
-  syncSliderToTargetDate(slider, currentState.matchDates, controlState.targetDate);
+  syncSliderToTargetDate(slider, currentState.matchDates, controlState.viewer.targetDate);
 }
 
 /** Update display label from current slider position + kept target date. */
@@ -568,7 +596,7 @@ function updateSliderDisplay(): void {
   const display = document.getElementById('post_date_slider');
   if (!slider || !display) return;
   const sliderDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10)) ?? '';
-  const targetDate = resolveTargetDate(currentState.matchDates, controlState.targetDate) ?? sliderDate;
+  const targetDate = resolveTargetDate(currentState.matchDates, controlState.viewer.targetDate) ?? sliderDate;
   display.textContent = formatSliderDate(sliderDate, targetDate);
 }
 
@@ -578,7 +606,7 @@ function updateSliderDisplay(): void {
 function applyFutureOpacity(): void {
   const container = document.getElementById('bracket_container');
   if (!container) return;
-  const value = String(controlState.futureOpacity);
+  const value = String(controlState.viewer.futureOpacity);
   for (const el of Array.from(container.querySelectorAll('.bracket-future'))) {
     (el as HTMLElement).style.opacity = value;
   }
@@ -591,7 +619,7 @@ function syncBracketContainerHeight(container: HTMLElement): void {
   container.style.height = 'auto';
   const rawHeight = container.scrollHeight;
   if (rawHeight > 0) {
-    container.style.height = `${rawHeight * controlState.scale}px`;
+    container.style.height = `${rawHeight * controlState.viewer.scale}px`;
   }
 }
 
@@ -599,7 +627,7 @@ function syncBracketContainerHeight(container: HTMLElement): void {
 function applyScale(): void {
   const container = document.getElementById('bracket_container');
   if (!container) return;
-  const value = String(controlState.scale);
+  const value = String(controlState.viewer.scale);
   container.style.transform = `scale(${value})`;
   container.style.transformOrigin = 'top left';
   syncBracketContainerHeight(container);
@@ -609,7 +637,7 @@ function applyScale(): void {
 
 /** Apply layout class to a specific container's bracket element(s). */
 function applyLayoutTo(container: HTMLElement): void {
-  const isVertical = controlState.layout === 'vertical';
+  const isVertical = controlState.bracket.layout === 'vertical';
   for (const bracket of Array.from(container.querySelectorAll('.bracket'))) {
     if (isVertical) bracket.classList.add('vertical');
     else bracket.classList.remove('vertical');
@@ -701,25 +729,25 @@ function loadAndRender(seasonMap: SeasonMap): void {
 
       // Sync round start: restore from controlState or pick up dropdown default
       const roundSel = document.getElementById('round_start_key') as HTMLSelectElement | null;
-      if (roundSel && controlState.roundStart) {
-        const normalizedSelected = normalizeBracketRoundLabel(controlState.roundStart);
+      if (roundSel && controlState.bracket.roundStart) {
+        const normalizedSelected = normalizeBracketRoundLabel(controlState.bracket.roundStart);
         const hasOption = Array.from(roundSel.options).some(o => o.value === normalizedSelected);
         if (hasOption) {
           roundSel.value = normalizedSelected;
-          controlState.roundStart = normalizedSelected;
+          controlState.bracket.roundStart = normalizedSelected;
         } else {
-          controlState.roundStart = roundSel.value;
+          controlState.bracket.roundStart = roundSel.value;
         }
       } else if (roundSel) {
-        controlState.roundStart = roundSel.value;
+        controlState.bracket.roundStart = roundSel.value;
       }
 
-      // Set up date slider and sync controlState.targetDate
+      // Set up date slider and sync viewer control targetDate
       const slider = document.getElementById('date_slider') as HTMLInputElement | null;
       if (slider && matchDates.length > 0) {
         slider.min = '0';
-        if (!controlState.targetDate) {
-          controlState.targetDate = getLastMatchDate(matchDates);
+        if (!controlState.viewer.targetDate) {
+          controlState.viewer.targetDate = getLastMatchDate(matchDates);
         }
         syncSliderFromTargetDate();
       }
@@ -777,13 +805,7 @@ async function main(): Promise<void> {
   const prefs = loadPrefs();
 
   // Initialize control state from saved preferences
-  controlState = {
-    layout: 'horizontal',
-    scale: prefs.scale ? parseFloat(prefs.scale) : 1,
-    futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.2,
-    targetDate: prefs.targetDate ?? null,
-    roundStart: prefs.roundStart ?? null,
-  };
+  controlState = createControlStateFromPrefs(prefs);
 
   const competitionSel = document.getElementById('competition_key') as HTMLSelectElement;
   const initCompetition = (urlParams.competition && findCompetition(seasonMap, urlParams.competition))
@@ -817,10 +839,10 @@ async function main(): Promise<void> {
   // ---- Sync DOM sliders from controlState ----------------------------------
 
   const opacitySlider = document.getElementById('future_opacity') as HTMLInputElement | null;
-  if (opacitySlider) opacitySlider.value = String(controlState.futureOpacity);
+  if (opacitySlider) opacitySlider.value = String(controlState.viewer.futureOpacity);
 
   const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
-  if (scaleSlider) scaleSlider.value = String(controlState.scale);
+  if (scaleSlider) scaleSlider.value = String(controlState.viewer.scale);
 
   // ---- Date slider events --------------------------------------------------
 
@@ -835,7 +857,7 @@ async function main(): Promise<void> {
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.targetDate ?? undefined });
+      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
     });
 
     document.getElementById('date_slider_down')?.addEventListener('click', () => {
@@ -844,7 +866,7 @@ async function main(): Promise<void> {
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.targetDate ?? undefined });
+      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
     });
     document.getElementById('date_slider_up')?.addEventListener('click', () => {
       dateSlider.value = String(Math.min(
@@ -854,16 +876,16 @@ async function main(): Promise<void> {
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.targetDate ?? undefined });
+      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
     });
     document.getElementById('date_slider_reset')?.addEventListener('click', () => {
       if (!currentState) return;
-      controlState.targetDate = getLastMatchDate(currentState.matchDates);
+      controlState.viewer.targetDate = getLastMatchDate(currentState.matchDates);
       syncSliderFromTargetDate();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.targetDate ?? undefined });
+      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
     });
   }
 
@@ -871,7 +893,7 @@ async function main(): Promise<void> {
 
   if (opacitySlider) {
     opacitySlider.addEventListener('input', () => {
-      controlState.futureOpacity = parseFloat(opacitySlider.value);
+      controlState.viewer.futureOpacity = parseFloat(opacitySlider.value);
       applyFutureOpacity();
       savePrefs({ futureOpacity: opacitySlider.value });
     });
@@ -881,7 +903,7 @@ async function main(): Promise<void> {
 
   if (scaleSlider) {
     scaleSlider.addEventListener('input', () => {
-      controlState.scale = parseFloat(scaleSlider.value);
+      controlState.viewer.scale = parseFloat(scaleSlider.value);
       applyScale();
       savePrefs({ scale: scaleSlider.value });
     });
@@ -892,7 +914,7 @@ async function main(): Promise<void> {
   const layoutSel = document.getElementById('layout_toggle') as HTMLSelectElement | null;
   if (layoutSel) {
     layoutSel.addEventListener('change', () => {
-      controlState.layout = layoutSel.value as 'horizontal' | 'vertical';
+      controlState.bracket.layout = layoutSel.value as 'horizontal' | 'vertical';
       // Full re-render to recompute positions and connectors per section
       renderWithDateFilter();
       applyFutureOpacity();
@@ -902,10 +924,10 @@ async function main(): Promise<void> {
   // ---- Round start change events --------------------------------------------
 
   document.getElementById('round_start_key')?.addEventListener('change', () => {
-    controlState.roundStart = getSelectValue('round_start_key');
+    controlState.bracket.roundStart = getSelectValue('round_start_key');
     renderWithDateFilter();
     applyFutureOpacity();
-    savePrefs({ roundStart: controlState.roundStart });
+    savePrefs({ roundStart: controlState.bracket.roundStart });
   });
 
   // ---- Competition/season change events ------------------------------------
