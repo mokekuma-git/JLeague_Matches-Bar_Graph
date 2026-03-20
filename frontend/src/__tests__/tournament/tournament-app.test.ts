@@ -150,6 +150,65 @@ describe('tournament-app helpers', () => {
     expect(collected).toHaveLength(1);
   });
 
+  describe('inferMissingSectionRoundFilters', () => {
+    test('infers round_filter for sections without one', () => {
+      const rows = [
+        makeRow({ home_team: 'A', away_team: 'B', round: '準決勝', match_date: '2024/11/01', start_time: '14:00' }),
+        makeRow({ home_team: 'C', away_team: 'D', round: '準決勝', match_date: '2024/11/01', start_time: '16:00' }),
+        makeRow({ home_team: 'A', away_team: 'C', round: '決勝', match_date: '2024/12/08', start_time: '14:00' }),
+      ];
+      const sections: BracketSection[] = [
+        { label: 'KO', bracket_order: ['A', 'B', 'C', 'D'] },
+      ];
+      const result = __testables.inferMissingSectionRoundFilters(sections, rows);
+      expect(result[0].round_filter).toEqual(['準決勝', '決勝']);
+    });
+
+    test('preserves explicit round_filter (does not overwrite)', () => {
+      const rows = [
+        makeRow({ home_team: 'A', away_team: 'B', round: '準決勝', match_date: '2024/11/01' }),
+        makeRow({ home_team: 'A', away_team: 'C', round: '決勝', match_date: '2024/12/08' }),
+      ];
+      const sections: BracketSection[] = [
+        { label: 'KO', bracket_order: ['A', 'B', 'C', 'D'], round_filter: ['決勝'] },
+      ];
+      const result = __testables.inferMissingSectionRoundFilters(sections, rows);
+      expect(result[0].round_filter).toEqual(['決勝']);
+    });
+
+    test('leaves section unchanged when inference returns undefined', () => {
+      const rows = [
+        makeRow({ home_team: 'X', away_team: 'Y', round: '決勝' }),
+      ];
+      const sections: BracketSection[] = [
+        { label: 'KO', bracket_order: ['A', 'B'] },
+      ];
+      const result = __testables.inferMissingSectionRoundFilters(sections, rows);
+      expect(result[0].round_filter).toBeUndefined();
+    });
+
+    test('priority: explicit > default > inferred', () => {
+      const rows = [
+        makeRow({ home_team: 'A', away_team: 'B', round: '準決勝', match_date: '2024/11/01' }),
+        makeRow({ home_team: 'A', away_team: 'C', round: '決勝', match_date: '2024/12/08' }),
+        makeRow({ home_team: 'E', away_team: 'F', round: '1回戦', match_date: '2024/06/01' }),
+        makeRow({ home_team: 'E', away_team: 'G', round: '2回戦', match_date: '2024/09/01' }),
+      ];
+      const sections: BracketSection[] = [
+        { label: 'Explicit', bracket_order: ['A', 'B', 'C', 'D'], round_filter: ['決勝'] },
+        { label: 'Default', bracket_order: ['A', 'B', 'C', 'D'], round_filter: ['準決勝'] },
+        { label: 'Inferred', bracket_order: ['E', 'F', null, 'G'] },
+      ];
+      // First apply default (no-op here since both have round_filter already set)
+      const withDefault = __testables.resolveSectionRoundFilters(sections, undefined);
+      // Then infer missing
+      const result = __testables.inferMissingSectionRoundFilters(withDefault, rows);
+      expect(result[0].round_filter).toEqual(['決勝']);       // explicit preserved
+      expect(result[1].round_filter).toEqual(['準決勝']);      // default preserved
+      expect(result[2].round_filter).toEqual(['1回戦', '2回戦']); // inferred
+    });
+  });
+
   describe('resolveInclusiveBracketOrder', () => {
     const fullRoot = makeNode({
       round: '決勝',
