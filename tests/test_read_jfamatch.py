@@ -4,7 +4,13 @@ from pathlib import Path
 from match_utils import mu
 
 _ORIGINAL_CONFIG = mu.config
-from read_jfamatch import _parse_years, _resolve_schedule_url, read_jfa_match, read_group
+from read_jfamatch import (
+    _finalize_match_df,
+    _parse_years,
+    _resolve_schedule_url,
+    read_jfa_match,
+    read_group,
+)
 import read_jfamatch as read_jfamatch_module
 mu.config = read_jfamatch_module.config
 
@@ -170,3 +176,52 @@ def test_read_group_writes_only_existing_multi_year_csvs(monkeypatch) -> None:
 
     assert [path for _, path in written] == ['../docs/csv/1994_allmatch_result-EmperorsCup.csv']
     assert written[0][0]['home_team'].tolist() == ['鹿島']
+
+
+def test_finalize_match_df_assigns_tournament_section_numbers() -> None:
+    class DummyTeamRename:
+        _data = {'鹿島アントラーズ': '鹿島'}
+
+    class DummyCompConf(dict):
+        def __getattr__(self, name):
+            return self[name]
+
+    comp_conf = DummyCompConf({
+        'team_rename': DummyTeamRename(),
+        'tournament': True,
+    })
+    df = read_jfamatch_module.pd.DataFrame([
+        {
+            'match_date': '2025/05/25',
+            'round': '1回戦',
+            'home_team': '鹿島アントラーズ',
+            'away_team': 'A',
+            'status': '試合終了',
+            'match_index_in_section': 9,
+            'section_no': 1,
+        },
+        {
+            'match_date': '2025/06/18',
+            'round': '準決勝',
+            'home_team': 'B',
+            'away_team': '鹿島アントラーズ',
+            'status': '試合終了',
+            'match_index_in_section': 5,
+            'section_no': 0,
+        },
+        {
+            'match_date': '2025/11/22',
+            'round': '決勝戦',
+            'home_team': '鹿島アントラーズ',
+            'away_team': 'C',
+            'status': '試合終了',
+            'match_index_in_section': 7,
+            'section_no': 0,
+        },
+    ])
+
+    actual = _finalize_match_df(df, comp_conf, 'EmperorsCup')
+
+    assert actual['home_team'].tolist()[0] == '鹿島'
+    assert actual['section_no'].tolist() == [-3, -2, -1]
+    assert actual['match_index_in_section'].tolist() == [1, 1, 1]

@@ -41,7 +41,7 @@ from typing import Any
 import pandas as pd
 import requests
 
-from match_utils import mu
+from match_utils import assign_bracket_section_no, mu
 from set_config import Config
 
 logger = logging.getLogger(__name__)
@@ -289,26 +289,34 @@ def read_group(competition: str) -> None:
             if match_df.empty:
                 logger.info("Skip %s %d: no match rows", competition, year)
                 continue
-            _finalize_match_df(match_df, comp_conf, competition)
+            match_df = _finalize_match_df(match_df, comp_conf, competition)
             mu.update_if_diff(match_df, comp_conf.csv_path.format(year=year))
         return
 
     match_df = read_all_group(comp_conf)
-    _finalize_match_df(match_df, comp_conf, competition)
+    match_df = _finalize_match_df(match_df, comp_conf, competition)
     mu.update_if_diff(match_df, comp_conf.csv_path)
 
 
-def _finalize_match_df(match_df: pd.DataFrame, comp_conf: dict[str, Any], competition: str) -> None:
+def _finalize_match_df(match_df: pd.DataFrame, comp_conf: dict[str, Any], competition: str) -> pd.DataFrame:
     """Apply post-processing shared by single-year and multi-year fetches."""
+    result = match_df.copy()
+
     # Apply team name rename if configured
     if 'team_rename' in comp_conf:
         rename_map = dict(comp_conf.team_rename._data)
         for col in ('home_team', 'away_team'):
-            match_df[col] = match_df[col].replace(rename_map)
+            result[col] = result[col].replace(rename_map)
         logger.info("Applied team_rename (%d mappings) to %s", len(rename_map), competition)
 
-    if 'status' in match_df:
-        logger.debug("Match status:\n%s", match_df['status'])
+    if comp_conf.get('tournament'):
+        result = assign_bracket_section_no(result)
+        logger.info("Assigned tournament section_no semantics for %s", competition)
+
+    if 'status' in result:
+        logger.debug("Match status:\n%s", result['status'])
+
+    return result
 
 
 def read_all_group(comp_conf: dict[str, Any], year: int = None) -> pd.DataFrame:
