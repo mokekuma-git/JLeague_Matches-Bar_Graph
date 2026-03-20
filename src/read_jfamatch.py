@@ -83,6 +83,49 @@ def _prepare_config() -> Config:
 config = _prepare_config()
 
 
+def _parse_years(raw_years: Any) -> list[int]:
+    """Parse config years into a sorted integer list.
+
+    Accepts:
+      - list[int]
+      - list[str]
+      - comma-separated string: "2015,2016"
+      - inclusive range string: "1993-2025"
+    """
+    if raw_years is None:
+        return []
+    if isinstance(raw_years, list):
+        years = [int(year) for year in raw_years]
+    elif isinstance(raw_years, str):
+        raw_years = raw_years.strip()
+        if not raw_years:
+            return []
+        if ',' in raw_years:
+            years = [int(year.strip()) for year in raw_years.split(',')]
+        elif re.fullmatch(r'\d{4}-\d{4}', raw_years):
+            start, end = map(int, raw_years.split('-'))
+            years = list(range(start, end + 1))
+        else:
+            years = [int(raw_years)]
+    else:
+        raise ValueError(f"Invalid type for 'years': {type(raw_years).__name__}")
+
+    return sorted(years)
+
+
+def _resolve_schedule_url(comp_conf: dict[str, Any], group: str, year: int | None = None) -> str:
+    """Resolve the schedule URL with optional per-year overrides."""
+    if year is not None and 'year_overrides' in comp_conf:
+        override_url = comp_conf.year_overrides.get(str(year))
+        if override_url:
+            return override_url
+
+    format_kwargs = {'group': group}
+    if year is not None:
+        format_kwargs['year'] = year
+    return comp_conf.schedule_url.format(**format_kwargs)
+
+
 def read_match_json(_url: str) -> dict[str, Any]:
     """Read the match JSON data from the given URL
 
@@ -98,8 +141,13 @@ def read_match_json(_url: str) -> dict[str, Any]:
     while result is None and counter < 10:
         try:
             logger.info("Access %s", _url)
-            result = json.loads(requests.get(_url, timeout=config.http_timeout).text)
-        except (TypeError, json.JSONDecodeError) as _ex:
+            response = requests.get(_url, timeout=config.http_timeout)
+            if response.status_code == 404:
+                logger.warning("Match data not found (404): %s", _url)
+                return json.loads('{"matchScheduleList":{"matchSchedule": []}}')
+            response.raise_for_status()
+            result = json.loads(response.text)
+        except (TypeError, json.JSONDecodeError, requests.RequestException) as _ex:
             logger.warning("Retry %d/%d: %s", counter, 10, _ex)
 
         counter += 1
@@ -234,8 +282,24 @@ def read_group(competition: str) -> None:
         return
 
     comp_conf = config.competitions[competition]
-    match_df = read_all_group(comp_conf)
+    years = _parse_years(comp_conf.get('years'))
+    if years:
+        for year in years:
+            match_df = read_all_group(comp_conf, year=year)
+            if match_df.empty:
+                logger.info("Skip %s %d: no match rows", competition, year)
+                continue
+            _finalize_match_df(match_df, comp_conf, competition)
+            mu.update_if_diff(match_df, comp_conf.csv_path.format(year=year))
+        return
 
+    match_df = read_all_group(comp_conf)
+    _finalize_match_df(match_df, comp_conf, competition)
+    mu.update_if_diff(match_df, comp_conf.csv_path)
+
+
+def _finalize_match_df(match_df: pd.DataFrame, comp_conf: dict[str, Any], competition: str) -> None:
+    """Apply post-processing shared by single-year and multi-year fetches."""
     # Apply team name rename if configured
     if 'team_rename' in comp_conf:
         rename_map = dict(comp_conf.team_rename._data)
@@ -243,11 +307,11 @@ def read_group(competition: str) -> None:
             match_df[col] = match_df[col].replace(rename_map)
         logger.info("Applied team_rename (%d mappings) to %s", len(rename_map), competition)
 
-    logger.debug("Match status:\n%s", match_df['status'])
-    mu.update_if_diff(match_df, comp_conf.csv_path)
+    if 'status' in match_df:
+        logger.debug("Match status:\n%s", match_df['status'])
 
 
-def read_all_group(comp_conf: dict[str, Any]) -> pd.DataFrame:
+def read_all_group(comp_conf: dict[str, Any], year: int = None) -> pd.DataFrame:
     """Read the match data for all groups in the specified competition.
 
     Args:
@@ -261,9 +325,12 @@ def read_all_group(comp_conf: dict[str, Any]) -> pd.DataFrame:
         _mis = None
         if 'match_in_section' in comp_conf:
             _mis = comp_conf.match_in_section
-        _df = read_jfa_match(comp_conf.schedule_url.format(group), _mis)
+        _df = read_jfa_match(_resolve_schedule_url(comp_conf, group, year), _mis)
         _df['group'] = group
-        df_list.append(_df)
+        if not _df.empty:
+            df_list.append(_df)
+    if not df_list:
+        return pd.DataFrame()
     match_df = pd.concat(df_list, ignore_index=True)
 
     # I don't know why but JFA set the local time into 'matchDateJpn' and 'matchTimeJpn'

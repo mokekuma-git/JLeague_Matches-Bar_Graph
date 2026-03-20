@@ -33,9 +33,12 @@ competitions:
     groups: A, B, C, D, E, F, G, H
     match_in_section: 3
     timezone_diff: 06:00
-  EmperorsCup2025:
-    schedule_url: https://www.jfa.jp/match/emperorscup_2025/match/schedule.json
-    csv_path: ../docs/csv/2025_allmatch_result-EmperorsCup.csv
+  EmperorsCup:
+    schedule_url: https://www.jfa.jp/match/emperorscup_{year}/match/schedule.json
+    csv_path: ../docs/csv/{year}_allmatch_result-EmperorsCup.csv
+    years: 1993-2025
+    year_overrides:
+      "2014": https://www.jfa.jp/match/emperorscup_2014/2014/match/schedule.json
     team_rename:
       ヴィッセル神戸: 神戸
       サンフレッチェ広島: 広島
