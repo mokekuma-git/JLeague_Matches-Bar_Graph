@@ -644,10 +644,10 @@
         "seasons": {
           "22-23": [2, 0, 0,
             ["浦和", "東京NB"],
-            {"bracket_order": ["浦和", "東京NB"], "bracket_round_start": "決勝"}],
+            {"bracket_round_start": "決勝"}],
           "23-24": [2, 0, 0,
             ["S広島R", "新潟L"],
-            {"bracket_order": ["S広島R", "新潟L"], "bracket_round_start": "決勝"}],
+            {"bracket_round_start": "決勝"}],
           "24-25": [4, 0, 0,
             ["S広島R", "浦和", "I神戸", "新潟L"],
             {"bracket_round_start": "準決勝"}]

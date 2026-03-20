@@ -35,6 +35,62 @@ function makeNode(overrides: Partial<BracketNode> = {}): BracketNode {
 }
 
 describe('tournament-app helpers', () => {
+  describe('resolveSeasonBracketOrder', () => {
+    test('uses explicit options.bracket_order with highest priority', () => {
+      const order = __testables.resolveSeasonBracketOrder([
+        4,
+        0,
+        0,
+        ['LegacyA', 'LegacyB'],
+        {
+          bracket_order: ['ExplicitA', null, 'ExplicitB'],
+          bracket_sections: [{ label: 'S1', bracket_order: ['SectionA', 'SectionB'] }],
+        },
+      ]);
+
+      expect(order).toEqual(['ExplicitA', null, 'ExplicitB']);
+    });
+
+    test('falls back to legacy entry[3] when explicit bracket_order is absent', () => {
+      const order = __testables.resolveSeasonBracketOrder([
+        4,
+        0,
+        0,
+        ['LegacyA', 'LegacyB', 'LegacyC', 'LegacyD'],
+      ]);
+
+      expect(order).toEqual(['LegacyA', 'LegacyB', 'LegacyC', 'LegacyD']);
+    });
+
+    test('derives default global order from bracket_sections when entry[3] is empty', () => {
+      const order = __testables.resolveSeasonBracketOrder([
+        4,
+        0,
+        0,
+        [],
+        {
+          bracket_sections: [
+            { label: 'A', bracket_order: ['A1', 'A2'] },
+            { label: 'B', bracket_order: ['B1', null, 'B2'] },
+          ],
+        },
+      ]);
+
+      expect(order).toEqual(['A1', 'A2', 'B1', null, 'B2']);
+    });
+
+    test('returns undefined when no source bracket order exists', () => {
+      const order = __testables.resolveSeasonBracketOrder([
+        4,
+        0,
+        0,
+        [],
+      ]);
+
+      expect(order).toBeUndefined();
+    });
+  });
+
   describe('createControlStateFromPrefs', () => {
     test('separates viewer-common prefs from bracket-specific prefs', () => {
       const state = __testables.createControlStateFromPrefs({

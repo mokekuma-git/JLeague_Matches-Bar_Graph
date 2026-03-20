@@ -71,7 +71,7 @@ export interface SeasonEntryOptions {
   data_source?: DataSource;
   promotion_label?: string;
   aggregate_tiebreak_order?: AggregateTiebreakCriterion[];
-  bracket_order?: string[];
+  bracket_order?: (string | null)[];
   bracket_round_start?: string;
   round_start_options?: string[];
   default_round_filter?: string[];
