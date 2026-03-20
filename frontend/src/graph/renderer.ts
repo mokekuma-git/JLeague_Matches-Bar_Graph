@@ -5,6 +5,7 @@
 
 import type { TeamData } from '../types/match';
 import type { SeasonInfo } from '../types/season';
+import { PRESEASON_SENTINEL } from '../core/date-slider';
 import { getPointHeightScale } from '../core/point-calculator';
 import { buildTeamColumn } from './bar-column';
 import type { ColumnResult } from './bar-column';
@@ -180,7 +181,7 @@ export function renderBarGraph(
 
   // Sentinel: slider position 0 always maps to "開幕前" (before season start).
   // '1970/01/01' sorts before any J-League date (1993–), so it will be first after sort.
-  matchDateSet.add('1970/01/01');
+  matchDateSet.add(PRESEASON_SENTINEL);
 
   for (const teamName of sortedTeams) {
     const teamData = groupData[teamName];
@@ -217,35 +218,4 @@ export function renderBarGraph(
   fragment.appendChild(pointColumn.cloneNode(true));
 
   return { fragment, matchDates };
-}
-
-// ---- Slider utilities (pure, exported for testing) ----------------------
-
-/**
- * Returns the slider index for a given target date within the matchDates array.
- *
- * Finds the last index i where matchDates[i] <= targetDate.
- * If targetDate is before the first real match (or equals the sentinel '1970/01/01'),
- * returns 0 (the "開幕前" sentinel position).
- */
-export function findSliderIndex(matchDates: string[], targetDate: string): number {
-  let idx = matchDates.length - 1;
-  for (let i = 0; i < matchDates.length; i++) {
-    if (matchDates[i] > targetDate) {
-      idx = Math.max(0, i - 1);
-      break;
-    }
-  }
-  return idx;
-}
-
-/**
- * Returns the display text for a resolved slider date.
- *
- * When sliderDate is the sentinel '1970/01/01', returns '開幕前'.
- * Otherwise returns targetDate (the exact date the user requested,
- * which may differ from sliderDate when typed between match days).
- */
-export function formatSliderDate(sliderDate: string, targetDate: string): string {
-  return sliderDate === '1970/01/01' ? t('slider.preseason') : targetDate;
 }

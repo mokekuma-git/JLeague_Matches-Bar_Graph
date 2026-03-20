@@ -11,10 +11,17 @@ import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
   getCompetitionViewTypes,
 } from './config/season-map';
+import {
+  PRESEASON_SENTINEL,
+  formatSliderDate,
+  getLastMatchDate,
+  getSliderDate,
+  resolveTargetDate,
+  syncSliderToTargetDate,
+} from './core/date-slider';
 import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
 import { normalizeBracketRoundLabel } from './bracket/round-label';
 import { renderBracket, adjustBracketPositions, drawBracketConnectors, unpinTooltip } from './bracket/bracket-renderer';
-import { findSliderIndex, formatSliderDate } from './graph/renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
 import type { Locale } from './i18n';
@@ -42,7 +49,7 @@ interface ControlState {
   layout: 'horizontal' | 'vertical';
   scale: number;
   futureOpacity: number;
-  selectedDate: string | null;
+  targetDate: string | null;
   roundStart: string | null;
 }
 
@@ -63,7 +70,7 @@ let controlState: ControlState = {
   layout: 'horizontal',
   scale: 1,
   futureOpacity: 0.2,
-  selectedDate: null,
+  targetDate: null,
   roundStart: null,
 };
 
@@ -79,8 +86,6 @@ function setStatus(msg: string): void {
 }
 
 // ---- Match date collection --------------------------------------------------
-
-const PRESEASON_SENTINEL = '1970/01/01';
 
 function collectMatchDates(rows: RawMatchRow[]): string[] {
   const dates = new Set<string>();
@@ -364,7 +369,7 @@ function resolveInclusiveBracketOrder(
 // ---- Bracket rendering with date filter ------------------------------------
 
 function getTargetDate(): string | null {
-  return controlState.selectedDate;
+  return controlState.targetDate;
 }
 
 /** Check whether the selection should render bracket sections independently. */
@@ -541,23 +546,19 @@ function renderWithDateFilter(): void {
   renderInclusiveBracket(container);
 }
 
-/** Sync controlState.selectedDate from slider position and update display label. */
-function syncSelectedDateFromSlider(): void {
+/** Sync controlState.targetDate from slider position. */
+function syncTargetDateFromSlider(): void {
   if (!currentState) return;
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (!slider) return;
-  const idx = parseInt(slider.value, 10);
-  const date = currentState.matchDates[idx];
-  controlState.selectedDate = date ?? null;
+  controlState.targetDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10));
 }
 
 /** Align slider position to the kept target date without overwriting the target itself. */
-function syncSliderFromSelectedDate(): void {
+function syncSliderFromTargetDate(): void {
   if (!currentState) return;
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
-  if (!slider || currentState.matchDates.length === 0) return;
-  const targetDate = controlState.selectedDate ?? currentState.matchDates[currentState.matchDates.length - 1];
-  slider.value = String(findSliderIndex(currentState.matchDates, targetDate));
+  syncSliderToTargetDate(slider, currentState.matchDates, controlState.targetDate);
 }
 
 /** Update display label from current slider position + kept target date. */
@@ -566,9 +567,8 @@ function updateSliderDisplay(): void {
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
   const display = document.getElementById('post_date_slider');
   if (!slider || !display) return;
-  const idx = parseInt(slider.value, 10);
-  const sliderDate = currentState.matchDates[idx] ?? '';
-  const targetDate = controlState.selectedDate ?? sliderDate;
+  const sliderDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10)) ?? '';
+  const targetDate = resolveTargetDate(currentState.matchDates, controlState.targetDate) ?? sliderDate;
   display.textContent = formatSliderDate(sliderDate, targetDate);
 }
 
@@ -714,15 +714,14 @@ function loadAndRender(seasonMap: SeasonMap): void {
         controlState.roundStart = roundSel.value;
       }
 
-      // Set up date slider and sync controlState.selectedDate
+      // Set up date slider and sync controlState.targetDate
       const slider = document.getElementById('date_slider') as HTMLInputElement | null;
       if (slider && matchDates.length > 0) {
         slider.min = '0';
-        slider.max = String(matchDates.length - 1);
-        if (!controlState.selectedDate) {
-          controlState.selectedDate = matchDates[matchDates.length - 1] ?? null;
+        if (!controlState.targetDate) {
+          controlState.targetDate = getLastMatchDate(matchDates);
         }
-        syncSliderFromSelectedDate();
+        syncSliderFromTargetDate();
       }
 
       renderWithDateFilter();
@@ -782,7 +781,7 @@ async function main(): Promise<void> {
     layout: 'horizontal',
     scale: prefs.scale ? parseFloat(prefs.scale) : 1,
     futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.2,
-    selectedDate: prefs.targetDate ?? null,
+    targetDate: prefs.targetDate ?? null,
     roundStart: prefs.roundStart ?? null,
   };
 
@@ -828,43 +827,43 @@ async function main(): Promise<void> {
   const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (dateSlider) {
     dateSlider.addEventListener('input', () => {
-      syncSelectedDateFromSlider();
+      syncTargetDateFromSlider();
       updateSliderDisplay();
     });
     dateSlider.addEventListener('change', () => {
-      syncSelectedDateFromSlider();
+      syncTargetDateFromSlider();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.selectedDate ?? undefined });
+      savePrefs({ targetDate: controlState.targetDate ?? undefined });
     });
 
     document.getElementById('date_slider_down')?.addEventListener('click', () => {
       dateSlider.value = String(Math.max(0, parseInt(dateSlider.value, 10) - 1));
-      syncSelectedDateFromSlider();
+      syncTargetDateFromSlider();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.selectedDate ?? undefined });
+      savePrefs({ targetDate: controlState.targetDate ?? undefined });
     });
     document.getElementById('date_slider_up')?.addEventListener('click', () => {
       dateSlider.value = String(Math.min(
         parseInt(dateSlider.max, 10), parseInt(dateSlider.value, 10) + 1,
       ));
-      syncSelectedDateFromSlider();
+      syncTargetDateFromSlider();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.selectedDate ?? undefined });
+      savePrefs({ targetDate: controlState.targetDate ?? undefined });
     });
     document.getElementById('date_slider_reset')?.addEventListener('click', () => {
       if (!currentState) return;
-      controlState.selectedDate = currentState.matchDates[currentState.matchDates.length - 1] ?? null;
-      syncSliderFromSelectedDate();
+      controlState.targetDate = getLastMatchDate(currentState.matchDates);
+      syncSliderFromTargetDate();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.selectedDate ?? undefined });
+      savePrefs({ targetDate: controlState.targetDate ?? undefined });
     });
   }
 
