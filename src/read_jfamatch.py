@@ -316,6 +316,32 @@ def _finalize_match_df(match_df: pd.DataFrame, comp_conf: dict[str, Any], compet
     if 'status' in result:
         logger.debug("Match status:\n%s", result['status'])
 
+    if 'group' not in result:
+        result['group'] = ''
+
+    if 'match_number' in result:
+        result['_sort_match_number'] = pd.to_numeric(result['match_number'], errors='coerce')
+        if result['_sort_match_number'].notna().any():
+            sort_columns = ['group', '_sort_match_number']
+            ascending = [True, True]
+            if 'section_no' in result:
+                sort_columns.append('section_no')
+                ascending.append(True)
+            if 'match_index_in_section' in result:
+                sort_columns.append('match_index_in_section')
+                ascending.append(True)
+            result = result.sort_values(
+                sort_columns,
+                ascending=ascending,
+                kind='stable',
+                na_position='last',
+            ).reset_index(drop=True)
+        result = result.drop(columns=['_sort_match_number'])
+    else:
+        result = result.sort_values(
+            ['group', 'section_no', 'match_index_in_section']
+        ).reset_index(drop=True)
+
     return result
 
 

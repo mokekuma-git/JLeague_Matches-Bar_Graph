@@ -225,3 +225,51 @@ def test_finalize_match_df_assigns_tournament_section_numbers() -> None:
     assert actual['home_team'].tolist()[0] == '鹿島'
     assert actual['section_no'].tolist() == [-3, -2, -1]
     assert actual['match_index_in_section'].tolist() == [1, 1, 1]
+
+
+def test_finalize_match_df_sorts_by_match_number_when_available() -> None:
+    class DummyCompConf(dict):
+        def __getattr__(self, name):
+            return self[name]
+
+    comp_conf = DummyCompConf({})
+    df = read_jfamatch_module.pd.DataFrame([
+        {
+            'match_date': '2024/09/25',
+            'round': '準々決勝',
+            'home_team': 'B',
+            'away_team': 'C',
+            'status': '試合終了',
+            'group': '',
+            'match_number': '81',
+            'section_no': -3,
+            'match_index_in_section': 3,
+        },
+        {
+            'match_date': '2024/08/21',
+            'round': 'ラウンド16',
+            'home_team': 'A',
+            'away_team': 'B',
+            'status': '試合終了',
+            'group': '',
+            'match_number': '73',
+            'section_no': -4,
+            'match_index_in_section': 1,
+        },
+        {
+            'match_date': '2024/09/11',
+            'round': '準々決勝',
+            'home_team': 'C',
+            'away_team': 'D',
+            'status': '試合終了',
+            'group': '',
+            'match_number': '82',
+            'section_no': -3,
+            'match_index_in_section': 1,
+        },
+    ])
+
+    actual = _finalize_match_df(df, comp_conf, 'EmperorsCup')
+
+    assert actual['match_number'].tolist() == ['73', '81', '82']
+    assert actual['round'].tolist() == ['ラウンド16', '準々決勝', '準々決勝']
