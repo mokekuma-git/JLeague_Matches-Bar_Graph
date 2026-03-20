@@ -174,6 +174,23 @@ describe('resolveSeasonInfo', () => {
     expect(info.teamRenameMap).toEqual({ 'オーストラリア': '豪州', 'アメリカ': 'USA' });
   });
 
+  test('cascade: team_rename_map does not inherit group-level entries', () => {
+    const group: GroupEntry = {
+      display_name: '国際大会',
+      team_rename_map: { 'イングランド': 'ENG' },
+      competitions: {},
+    };
+    const comp: CompetitionEntry = {
+      league_display: 'WC GS',
+      team_rename_map: { 'オーストラリア': '豪州' },
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = [32, 0, 0, []];
+    const info = resolveSeasonInfo(group, comp, entry);
+
+    expect(info.teamRenameMap).toEqual({ 'オーストラリア': '豪州' });
+  });
+
   test('international group inherits national CSS', () => {
     const entry: RawSeasonEntry = [32, 0, 0, []];
     const info = resolveSeasonInfo(intlGroup, intlGroup.competitions.WC_GS, entry);
@@ -304,6 +321,58 @@ describe('resolveSeasonInfo', () => {
     const info = resolveSeasonInfo(sampleGroup, comp, entry);
 
     expect(info.shownGroups).toEqual(['C']);
+  });
+
+  test('cascade: group_team_count merges competition and season only', () => {
+    const group: GroupEntry = {
+      display_name: 'Test',
+      group_team_count: { A: 5 },
+      competitions: {},
+    };
+    const comp: CompetitionEntry = {
+      seasons: {},
+      group_team_count: { B: 4, C: 4 },
+    };
+    const entry: RawSeasonEntry = [16, 0, 0, [], { group_team_count: { C: 3, D: 4 } }];
+    const info = resolveSeasonInfo(group, comp, entry);
+
+    expect(info.groupTeamCount).toEqual({ B: 4, C: 3, D: 4 });
+  });
+
+  test('cascade: notes append group, competition, season, and generated rule notes', () => {
+    const group: GroupEntry = {
+      display_name: 'Test',
+      note: 'group note',
+      aggregate_tiebreak_order: ['away_goals'],
+      competitions: {},
+    };
+    const comp: CompetitionEntry = {
+      seasons: {},
+      note: ['competition note'],
+      point_system: 'victory-count',
+    };
+    const entry: RawSeasonEntry = [4, 0, 0, [], { note: 'season note' }];
+    const info = resolveSeasonInfo(group, comp, entry);
+
+    expect(info.notes.slice(0, 3)).toEqual(['group note', 'competition note', 'season note']);
+    expect(info.notes.some((note) => note.includes('勝敗数のみカウント'))).toBe(true);
+    expect(info.notes.some((note) => note.includes('アウェイゴール'))).toBe(true);
+  });
+
+  test('cascade: view_type unions all levels and defaults only when empty', () => {
+    const group: GroupEntry = {
+      display_name: 'Test',
+      view_type: ['league'],
+      competitions: {},
+    };
+    const comp: CompetitionEntry = {
+      seasons: {},
+      view_type: ['bracket'],
+    };
+    const entry: RawSeasonEntry = [8, 0, 0, [], { view_type: ['league', 'bracket'] }];
+    const info = resolveSeasonInfo(group, comp, entry);
+
+    expect(info.viewTypes).toEqual(['league', 'bracket']);
   });
 
   test('promotionLabel defaults to "昇格" when not set', () => {
