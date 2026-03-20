@@ -17,6 +17,9 @@ import {
 } from './config/season-map';
 import { parseCsvResults } from './core/csv-parser';
 import { dateFormat } from './core/date-utils';
+import {
+  getLastMatchDate, getSliderDate, syncSliderToTargetDate,
+} from './core/date-slider';
 import { prepareRenderData } from './core/prepare-render';
 import type { MatchSortKey } from './ranking/stats-calculator';
 import {
@@ -25,7 +28,7 @@ import {
 } from './ranking/rank-table';
 import type { GroupRenderResult } from './ranking/rank-table';
 import { getMaxPointsPerGame } from './core/point-calculator';
-import { renderBarGraph, findSliderIndex } from './graph/renderer';
+import { renderBarGraph } from './graph/renderer';
 import { DEFAULT_HEIGHT_UNIT, getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
 import { findTeamsWithoutColor } from './graph/css-validator';
 import { teamCssClass } from './core/team-utils';
@@ -241,14 +244,11 @@ function resetDateSlider(matchDates: string[], targetDate: string): void {
   state.currentMatchDates = matchDates;
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (!slider || matchDates.length === 0) return;
-
-  slider.max = String(matchDates.length - 1);
-
-  const idx = findSliderIndex(matchDates, targetDate);
-  slider.value = String(idx);
+  syncSliderToTargetDate(slider, matchDates, targetDate);
 
   const postEl = document.getElementById('post_date_slider');
-  if (postEl) postEl.textContent = matchDates[matchDates.length - 1] ?? '';
+  const lastDate = getLastMatchDate(matchDates);
+  if (postEl && lastDate) postEl.textContent = lastDate;
 }
 
 // ---- Core render pipeline ----------------------------------------------
@@ -564,7 +564,7 @@ async function main(): Promise<void> {
   const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (dateSlider) {
     const updateFromSlider = (): void => {
-      const date = state.currentMatchDates[parseInt(dateSlider.value, 10)];
+      const date = getSliderDate(state.currentMatchDates, parseInt(dateSlider.value, 10));
       if (!date) return;
       (document.getElementById('target_date') as HTMLInputElement).value = date.replace(/\//g, '-');
       loadAndRender(seasonMap);
@@ -574,7 +574,7 @@ async function main(): Promise<void> {
 
     // Show date label in real-time while dragging (no graph redraw)
     dateSlider.addEventListener('input', () => {
-      const date = state.currentMatchDates[parseInt(dateSlider.value, 10)];
+      const date = getSliderDate(state.currentMatchDates, parseInt(dateSlider.value, 10));
       if (!date) return;
       (document.getElementById('target_date') as HTMLInputElement).value = date.replace(/\//g, '-');
     });
