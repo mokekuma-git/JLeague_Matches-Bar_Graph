@@ -2,17 +2,15 @@ import json
 from pathlib import Path
 
 from match_utils import mu
-
-_ORIGINAL_CONFIG = mu.config
 from read_jfamatch import (
     _finalize_match_df,
     _parse_years,
     _resolve_schedule_url,
+    _select_target_years,
     read_jfa_match,
     read_group,
 )
 import read_jfamatch as read_jfamatch_module
-mu.config = read_jfamatch_module.config
 
 
 def test_read_jfa_match_parses_two_digit_section_numbers(monkeypatch, tmp_path: Path) -> None:
@@ -114,6 +112,13 @@ def test_parse_years_supports_inclusive_ranges() -> None:
     assert _parse_years(['2024', '2025']) == [2024, 2025]
 
 
+def test_select_target_years_defaults_to_latest_configured_year() -> None:
+    assert _select_target_years({'years': '1993-2025'}) == [2025]
+    assert _select_target_years({'years': '2014,2016,2015'}) == [2016]
+    assert _select_target_years({'years': '1993-2025'}, fetch_all_years=True) == list(range(1993, 2026))
+    assert _select_target_years({'years': '1993-2025'}, requested_years=[2014, 2024]) == [2014, 2024]
+
+
 def test_resolve_schedule_url_prefers_year_override() -> None:
     class DummyCompConf(dict):
         def __getattr__(self, name):
@@ -130,7 +135,7 @@ def test_resolve_schedule_url_prefers_year_override() -> None:
     )
 
 
-def test_read_group_writes_only_existing_multi_year_csvs(monkeypatch) -> None:
+def test_read_group_writes_latest_configured_year_by_default(monkeypatch) -> None:
     class DummyTeamRename:
         _data = {'鹿島アントラーズ': '鹿島'}
 
@@ -176,6 +181,51 @@ def test_read_group_writes_only_existing_multi_year_csvs(monkeypatch) -> None:
 
     assert [path for _, path in written] == ['../docs/csv/1994_allmatch_result-EmperorsCup.csv']
     assert written[0][0]['home_team'].tolist() == ['鹿島']
+
+
+def test_read_group_writes_all_configured_years_when_requested(monkeypatch) -> None:
+    class DummyCompConf(dict):
+        def __getattr__(self, name):
+            return self[name]
+
+    comp_conf = DummyCompConf({
+        'schedule_url': 'https://example.com/emperorscup_{year}/match/schedule.json',
+        'csv_path': '../docs/csv/{year}_allmatch_result-EmperorsCup.csv',
+        'groups': [''],
+        'years': '1993-1994',
+    })
+    monkeypatch.setitem(read_jfamatch_module.config.competitions._data, 'EmperorsCup', comp_conf)
+    setattr(read_jfamatch_module.config.competitions, 'EmperorsCup', comp_conf)
+
+    written = []
+
+    monkeypatch.setattr(
+        read_jfamatch_module,
+        'read_all_group',
+        lambda conf, year=None: read_jfamatch_module.pd.DataFrame([
+            {
+                'match_date': '1994/01/01',
+                'section_no': 1,
+                'match_index_in_section': 1,
+                'start_time': '13:00',
+                'stadium': '国立',
+                'home_team': f'Team-{year}',
+                'home_goal': 2,
+                'away_goal': 1,
+                'away_team': 'A',
+                'status': '試合終了',
+                'group': '',
+            }
+        ]),
+    )
+    monkeypatch.setattr(mu, 'update_if_diff', lambda df, path: written.append((df.copy(), path)))
+
+    read_group('EmperorsCup', fetch_all_years=True)
+
+    assert [path for _, path in written] == [
+        '../docs/csv/1993_allmatch_result-EmperorsCup.csv',
+        '../docs/csv/1994_allmatch_result-EmperorsCup.csv',
+    ]
 
 
 def test_finalize_match_df_assigns_tournament_section_numbers() -> None:

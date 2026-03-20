@@ -126,6 +126,27 @@ def _resolve_schedule_url(comp_conf: dict[str, Any], group: str, year: int | Non
     return comp_conf.schedule_url.format(**format_kwargs)
 
 
+def _select_target_years(
+    comp_conf: dict[str, Any],
+    requested_years: list[int] | None = None,
+    fetch_all_years: bool = False,
+) -> list[int]:
+    """Resolve which years to fetch for a competition.
+
+    By default, multi-year competitions fetch only their latest configured year.
+    Historical backfill is opt-in via explicit year selection or --all-years.
+    """
+    if requested_years:
+        return sorted(requested_years)
+
+    configured_years = _parse_years(comp_conf.get('years'))
+    if not configured_years:
+        return []
+    if fetch_all_years:
+        return configured_years
+    return [configured_years[-1]]
+
+
 def read_match_json(_url: str) -> dict[str, Any]:
     """Read the match JSON data from the given URL
 
@@ -271,7 +292,11 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
     return pd.DataFrame(result_list)
 
 
-def read_group(competition: str) -> None:
+def read_group(
+    competition: str,
+    requested_years: list[int] | None = None,
+    fetch_all_years: bool = False,
+) -> None:
     """Reead the match data for the specified competition and update the CSV file.
 
     Args:
@@ -282,7 +307,11 @@ def read_group(competition: str) -> None:
         return
 
     comp_conf = config.competitions[competition]
-    years = _parse_years(comp_conf.get('years'))
+    years = _select_target_years(
+        comp_conf,
+        requested_years=requested_years,
+        fetch_all_years=fetch_all_years,
+    )
     if years:
         for year in years:
             match_df = read_all_group(comp_conf, year=year)
@@ -418,6 +447,16 @@ def make_args() -> argparse.Namespace:
                         f'{config.competition_names}', default=['PrincePremierE'])
     parser.add_argument('-d', '--debug', action='store_true',
                         help='Enable debug mode.')
+    parser.add_argument(
+        '--all-years',
+        action='store_true',
+        help='Fetch all configured years for competitions that define years.',
+    )
+    parser.add_argument(
+        '--years',
+        type=str,
+        help='Explicit years to fetch, e.g. 2014 or 2014,2024 or 2014-2024.',
+    )
 
     return parser.parse_args()
 
@@ -432,5 +471,6 @@ if __name__ == '__main__':
         datefmt='%H:%M:%S',
     )
 
+    requested_years = _parse_years(args.years) if args.years else None
     for compt in args.competition:
-        read_group(compt)
+        read_group(compt, requested_years=requested_years, fetch_all_years=args.all_years)

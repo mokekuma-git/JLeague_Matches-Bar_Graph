@@ -256,8 +256,21 @@ class MatchUtils:
         if competition not in season_map:
             return None
 
-        season_str = str(cfg.season)
         comp_seasons = season_map[competition]
+        if hasattr(cfg, 'season'):
+            season_str = str(cfg.season)
+        else:
+            prefix_counts: dict[str, int] = {}
+            for key in comp_seasons:
+                if len(key) < 4 or not key[:4].isdigit():
+                    continue
+                prefix = key[:4]
+                if key != prefix:
+                    prefix_counts[prefix] = prefix_counts.get(prefix, 0) + 1
+            season_prefixes = sorted(prefix for prefix, count in prefix_counts.items() if count >= 2)
+            if not season_prefixes:
+                return None
+            season_str = season_prefixes[-1]
         sub_keys = sorted(k for k in comp_seasons if k.startswith(season_str) and k != season_str)
 
         # No entry at all for this season (neither bare key nor sub-keys)

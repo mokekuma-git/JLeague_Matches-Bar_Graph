@@ -36,7 +36,7 @@ competitions:
   EmperorsCup:
     schedule_url: https://www.jfa.jp/match/emperorscup_{year}/match/schedule.json
     csv_path: ../docs/csv/{year}_allmatch_result-EmperorsCup.csv
-    years: 1993-2025
+    years: 2014-2025
     tournament: true
     year_overrides:
       "2014": https://www.jfa.jp/match/emperorscup_2014/2014/match/schedule.json
