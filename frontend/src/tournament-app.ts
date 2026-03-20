@@ -21,6 +21,7 @@ import {
 } from './core/date-slider';
 import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
 import { normalizeBracketRoundLabel } from './bracket/round-label';
+import { inferRoundFilter } from './bracket/round-filter-inference';
 import { renderBracket, adjustBracketPositions, drawBracketConnectors, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import type { ViewerPrefs } from './storage/local-storage';
@@ -235,6 +236,17 @@ function resolveSectionRoundFilters(
   );
 }
 
+/** Infer round_filter for sections still without one after default resolution. */
+function inferMissingSectionRoundFilters(
+  sections: BracketSection[], rows: RawMatchRow[],
+): BracketSection[] {
+  return sections.map(s => {
+    if (s.round_filter) return s;
+    const inferred = inferRoundFilter(rows, s.bracket_order, s.single_round);
+    return inferred ? { ...s, round_filter: inferred } : s;
+  });
+}
+
 function collectBracketSourceRows(rows: RawMatchRow[], sections?: BracketSection[]): RawMatchRow[] {
   if (!sections || sections.length === 0) return rows;
   const merged: RawMatchRow[] = [];
@@ -282,6 +294,7 @@ export const __testables = {
   createControlStateFromPrefs,
   filterRowsByRounds,
   resolveSectionRoundFilters,
+  inferMissingSectionRoundFilters,
   collectBracketSourceRows,
   collectRoundsFromCsv,
   resolveInclusiveBracketOrder,
@@ -689,8 +702,11 @@ function loadAndRender(seasonMap: SeasonMap): void {
       ));
       const aggregateTiebreakOrder = entry[4]?.aggregate_tiebreak_order ?? ['penalties'];
       const rawSections = entry[4]?.bracket_sections;
-      const bracketSections = rawSections
+      const resolved = rawSections
         ? resolveSectionRoundFilters(rawSections, entry[4]?.default_round_filter)
+        : undefined;
+      const bracketSections = resolved
+        ? inferMissingSectionRoundFilters(resolved, results.data)
         : undefined;
       const bracketRows = collectBracketSourceRows(results.data, bracketSections);
       const matchDates = collectMatchDates(bracketRows);
