@@ -64,6 +64,13 @@ export function inferRoundFilter(
   }
 
   // Normal: expected bracket depth K = ceil(log2(leaf positions))
+  // TODO: K can over-estimate for mid-join blocks (e.g. 2011 JLeagueCup where
+  // block winners merge into a shared QF). Possible refinements:
+  //   - Detect bye positions to derive effective pair count
+  //   - Account for seeded-team single-side placement
+  //   - Use section pair count instead of full leaf count
+  // Currently all sections infer correctly without these, but edge cases in
+  // future tournaments may benefit from a more precise K calculation.
   const K = Math.max(1, Math.ceil(Math.log2(bracketOrder.length)));
 
   // bracket_start = first of the chronologically last K rounds
