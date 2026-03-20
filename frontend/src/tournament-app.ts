@@ -6,7 +6,12 @@
 
 import Papa from 'papaparse';
 import type { RawMatchRow } from './types/match';
-import type { SeasonMap, BracketSection, AggregateTiebreakCriterion } from './types/season';
+import type {
+  SeasonMap,
+  BracketSection,
+  AggregateTiebreakCriterion,
+  RawSeasonEntry,
+} from './types/season';
 import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
   getCompetitionViewTypes,
@@ -33,7 +38,7 @@ import type { BracketNode } from './bracket/bracket-types';
 
 interface BracketState {
   csvRows: RawMatchRow[];
-  bracketOrder: string[];
+  bracketOrder: (string | null)[];
   aggregateTiebreakOrder: AggregateTiebreakCriterion[];
   fullRoot: BracketNode;        // full tree built from bracketOrder
   roundsByDepth: string[];      // round labels root-to-leaf (e.g. ['決勝戦','準決勝','準々決勝','ラウンド16'])
@@ -124,6 +129,25 @@ function collectMatchDates(rows: RawMatchRow[]): string[] {
   // Prepend sentinel so slider index 0 = "before any match"
   sorted.unshift(PRESEASON_SENTINEL);
   return sorted;
+}
+
+function resolveSeasonBracketOrder(entry: RawSeasonEntry): (string | null)[] | undefined {
+  const explicitOrder = entry[4]?.bracket_order;
+  if (explicitOrder != null && explicitOrder.length > 0) {
+    return explicitOrder;
+  }
+
+  const legacyOrder = entry[3];
+  if (legacyOrder.length > 0) {
+    return legacyOrder;
+  }
+
+  const sectionOrder = entry[4]?.bracket_sections?.flatMap((section) => section.bracket_order);
+  if (sectionOrder != null && sectionOrder.length > 0) {
+    return sectionOrder;
+  }
+
+  return undefined;
 }
 
 // ---- Dropdown population ---------------------------------------------------
@@ -292,6 +316,7 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
 
 export const __testables = {
   createControlStateFromPrefs,
+  resolveSeasonBracketOrder,
   filterRowsByRounds,
   resolveSectionRoundFilters,
   inferMissingSectionRoundFilters,
@@ -676,7 +701,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     found.group, found.competition, found.competition.seasons[season], found.groupKey,
   );
   const entry = found.competition.seasons[season];
-  const bracketOrder = entry[4]?.bracket_order ?? entry[3];
+  const bracketOrder = resolveSeasonBracketOrder(entry);
   if (!bracketOrder || bracketOrder.length === 0) {
     setStatus('No bracket data for this season.');
     return;
