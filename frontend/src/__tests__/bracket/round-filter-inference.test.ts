@@ -94,7 +94,7 @@ describe('inferRoundFilter', () => {
     expect(inferRoundFilter(rows, ['A', 'B', 'C', 'D'])).toEqual(['準決勝', '決勝']);
   });
 
-  describe('singleRound', () => {
+  describe('matchupPairs', () => {
     it('picks the round with the most matches among bracket_order teams', () => {
       const rows = [
         makeRow({ home_team: 'A', away_team: 'B', round: '1回戦', match_date: '2024/06/01' }),
