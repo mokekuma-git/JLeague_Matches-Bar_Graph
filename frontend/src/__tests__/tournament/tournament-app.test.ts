@@ -302,6 +302,96 @@ describe('tournament-app helpers', () => {
 
       expect(order).toEqual(['TeamA', 'TeamX', 'TeamB', null, 'TeamC', 'TeamY', 'TeamD', 'TeamZ']);
     });
+
+    test('returns original order when same as leaf round', () => {
+      const order = __testables.resolveInclusiveBracketOrder({
+        fullRoot,
+        bracketOrder: ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
+        roundsByDepth: ['決勝', '準決勝'],
+        allRounds: ['準決勝', '決勝'],
+        csvRows: [],
+      }, '準決勝');
+
+      expect(order).toEqual(['TeamA', 'TeamB', 'TeamC', 'TeamD']);
+    });
+
+    test('returns original order for null selectedRoundStart', () => {
+      const order = __testables.resolveInclusiveBracketOrder({
+        fullRoot,
+        bracketOrder: ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
+        roundsByDepth: ['決勝', '準決勝'],
+        allRounds: ['準決勝', '決勝'],
+        csvRows: [],
+      }, null);
+
+      expect(order).toEqual(['TeamA', 'TeamB', 'TeamC', 'TeamD']);
+    });
+
+    test('returns original order for unknown round', () => {
+      const order = __testables.resolveInclusiveBracketOrder({
+        fullRoot,
+        bracketOrder: ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
+        roundsByDepth: ['決勝', '準決勝'],
+        allRounds: ['準決勝', '決勝'],
+        csvRows: [],
+      }, '存在しないラウンド');
+
+      expect(order).toEqual(['TeamA', 'TeamB', 'TeamC', 'TeamD']);
+    });
+
+    test('collapses 3-level tree to final winners', () => {
+      const deepRoot = makeNode({
+        round: '決勝',
+        winner: 'A',
+        children: [
+          makeNode({
+            round: '準決勝',
+            winner: 'A',
+            children: [
+              makeNode({ round: '準々決勝', winner: 'A' }),
+              makeNode({ round: '準々決勝', winner: 'C' }),
+            ],
+          }),
+          makeNode({
+            round: '準決勝',
+            winner: 'E',
+            children: [
+              makeNode({ round: '準々決勝', winner: 'E' }),
+              makeNode({ round: '準々決勝', winner: 'G' }),
+            ],
+          }),
+        ],
+      });
+
+      const order = __testables.resolveInclusiveBracketOrder({
+        fullRoot: deepRoot,
+        bracketOrder: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+        roundsByDepth: ['決勝', '準決勝', '準々決勝'],
+        allRounds: ['準々決勝', '準決勝', '決勝'],
+        csvRows: [],
+      }, '準決勝');
+
+      expect(order).toEqual(['A', 'C', 'E', 'G']);
+    });
+  });
+
+  describe('collectRoundsFromCsv', () => {
+    test('returns unique normalized rounds in chronological order', () => {
+      const rows = [
+        makeRow({ round: '1回戦', match_date: '2024/06/01' }),
+        makeRow({ round: '準決勝 第1戦', match_date: '2024/09/01' }),
+        makeRow({ round: '準決勝 第2戦', match_date: '2024/09/15' }),
+        makeRow({ round: '決勝', match_date: '2024/12/01' }),
+      ];
+      const rounds = __testables.collectRoundsFromCsv(rows);
+      expect(rounds).toEqual(['1回戦', '準決勝', '決勝']);
+    });
+
+    test('returns empty array for rows without round', () => {
+      const rows = [makeRow({ round: undefined })];
+      const rounds = __testables.collectRoundsFromCsv(rows);
+      expect(rounds).toEqual([]);
+    });
   });
 
   describe('shouldRenderMultiSectionView', () => {

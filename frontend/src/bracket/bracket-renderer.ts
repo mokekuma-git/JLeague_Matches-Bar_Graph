@@ -750,3 +750,28 @@ export function renderBracket(root: BracketNode, _cssFiles: string[]): DocumentF
   fragment.appendChild(wrapper);
   return fragment;
 }
+
+/**
+ * Full render pipeline: create DOM, apply layout, adjust positions, draw connectors.
+ * The container must already be in the DOM for getBoundingClientRect to work.
+ *
+ * @param container - DOM element to render bracket into.
+ * @param root - Root BracketNode (the final match).
+ * @param cssFiles - CSS file names for team colors.
+ * @param layout - Bracket layout orientation.
+ */
+export function renderBracketInto(
+  container: HTMLElement,
+  root: BracketNode,
+  cssFiles: string[],
+  layout: 'horizontal' | 'vertical',
+): void {
+  container.appendChild(renderBracket(root, cssFiles));
+  const isVertical = layout === 'vertical';
+  for (const el of Array.from(container.querySelectorAll('.bracket'))) {
+    if (isVertical) el.classList.add('vertical');
+    else el.classList.remove('vertical');
+  }
+  adjustBracketPositions(container);
+  drawBracketConnectors(container);
+}

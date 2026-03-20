@@ -27,7 +27,7 @@ import {
 import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
 import { normalizeBracketRoundLabel } from './bracket/round-label';
 import { inferRoundFilter } from './bracket/round-filter-inference';
-import { renderBracket, adjustBracketPositions, drawBracketConnectors, unpinTooltip } from './bracket/bracket-renderer';
+import { renderBracketInto, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import type { ViewerPrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
@@ -80,6 +80,9 @@ interface SingleBracketRenderInput {
 const MULTI_SECTION_VALUE = '__multi_section__';
 
 let currentState: BracketState | null = null;
+
+/** Cache buildBracket results to avoid redundant rebuilds on slider/layout changes. */
+let bracketCache = new Map<string, BracketNode>();
 
 let controlState: ControlState = {
   viewer: {
@@ -447,23 +450,8 @@ function shouldRenderMultiSectionView(
 }
 
 /**
- * Render a single bracket into a container, apply layout, adjust, and draw connectors.
- * The container must already be in the DOM for getBoundingClientRect to work.
- */
-function renderSingleBracketInto(
-  sectionContainer: HTMLElement,
-  root: BracketNode,
-  cssFiles: string[],
-): void {
-  sectionContainer.appendChild(renderBracket(root, cssFiles));
-  applyLayoutTo(sectionContainer);
-  adjustBracketPositions(sectionContainer);
-  drawBracketConnectors(sectionContainer);
-}
-
-/**
  * Build and render a bracket tree (with date mask) into a container.
- * Handles the common build → mask → render pipeline for both normal and single-round modes.
+ * Uses cache to avoid redundant buildBracket calls on slider/layout changes.
  */
 function buildAndRenderBracket(
   container: HTMLElement,
@@ -471,10 +459,15 @@ function buildAndRenderBracket(
 ): void {
   const { rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles } = input;
   if (order.length < 2) return;
-  const fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
+  const cacheKey = JSON.stringify(order);
+  let fullRoot = bracketCache.get(cacheKey);
+  if (!fullRoot) {
+    fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
+    bracketCache.set(cacheKey, fullRoot);
+  }
   const root = (targetDate && targetDate < lastDate)
     ? maskBracketForDate(fullRoot, targetDate) : fullRoot;
-  renderSingleBracketInto(container, root, cssFiles);
+  renderBracketInto(container, root, cssFiles, controlState.bracket.layout);
 }
 
 function createSingleBracketRenderInput(
@@ -673,15 +666,6 @@ function applyScale(): void {
   if (display) display.textContent = value;
 }
 
-/** Apply layout class to a specific container's bracket element(s). */
-function applyLayoutTo(container: HTMLElement): void {
-  const isVertical = controlState.bracket.layout === 'vertical';
-  for (const bracket of Array.from(container.querySelectorAll('.bracket'))) {
-    if (isVertical) bracket.classList.add('vertical');
-    else bracket.classList.remove('vertical');
-  }
-}
-
 // ---- Render pipeline -------------------------------------------------------
 
 const CACHE_BUST_WINDOW_SEC = 300;
@@ -736,8 +720,10 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const bracketRows = collectBracketSourceRows(results.data, bracketBlocks);
       const matchDates = collectMatchDates(bracketRows);
 
-      // Build full tree to extract round structure
+      // Build full tree to extract round structure and pre-populate cache
       const fullRoot = buildBracket(bracketRows, bracketOrder, aggregateTiebreakOrder);
+      bracketCache = new Map();
+      bracketCache.set(JSON.stringify(bracketOrder), fullRoot);
       const roundsByDepth = collectRoundsByDepth(fullRoot);
       const bracketRounds = collectBracketRounds(fullRoot);
       const allRounds = bracketBlocks
