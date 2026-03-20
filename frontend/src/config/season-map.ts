@@ -57,10 +57,42 @@ export function findCompetition(
  * Returns ['league'] as the default when no level specifies view_type.
  */
 export function getCompetitionViewTypes(group: GroupEntry, comp: CompetitionEntry): ViewType[] {
-  const set = new Set<ViewType>();
-  for (const v of (group.view_type ?? [])) set.add(v);
-  for (const v of (comp.view_type ?? [])) set.add(v);
-  return set.size > 0 ? [...set] : ['league'];
+  const viewTypes = mergeUniqueArrays(group.view_type, comp.view_type);
+  return viewTypes.length > 0 ? viewTypes : ['league'];
+}
+
+function pickCascade<T>(...values: (T | undefined)[]): T | undefined {
+  return values.find((value) => value !== undefined);
+}
+
+function mergeObjects<T extends Record<string, unknown>>(...values: (T | undefined)[]): T {
+  return Object.assign({}, ...values) as T;
+}
+
+function mergeUniqueArrays<T>(...values: (readonly T[] | undefined)[]): T[] {
+  const merged: T[] = [];
+  const seen = new Set<T>();
+
+  for (const value of values) {
+    for (const item of value ?? []) {
+      if (!seen.has(item)) {
+        seen.add(item);
+        merged.push(item);
+      }
+    }
+  }
+
+  return merged;
+}
+
+function toArray<T>(value: T | readonly T[] | undefined): T[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return [...value];
+  return [value as T];
+}
+
+function hasEntries(value: Record<string, unknown>): boolean {
+  return Object.keys(value).length > 0;
 }
 
 /**
@@ -79,97 +111,85 @@ export function resolveSeasonInfo(
   groupKey: string = '',
 ): SeasonInfo {
   const opts = entry[4] ?? {};
+  const cssFiles = mergeUniqueArrays(group.css_files, comp.css_files, opts.css_files);
 
-  // css_files: union across all three levels (deduplicated, preserving order)
-  const cssSet = new Set<string>();
-  const cssFiles: string[] = [];
-  for (const file of [...(group.css_files ?? []), ...(comp.css_files ?? []), ...(opts.css_files ?? [])]) {
-    if (!cssSet.has(file)) {
-      cssSet.add(file);
-      cssFiles.push(file);
-    }
-  }
+  // team_rename_map currently cascades only competition -> season.
+  const teamRenameMap = mergeObjects<Record<string, string>>(
+    comp.team_rename_map,
+    opts.team_rename_map,
+  );
 
-  // team_rename_map: merge (lower overrides)
-  const teamRenameMap: Record<string, string> = {
-    ...(comp.team_rename_map ?? {}),
-    ...(opts.team_rename_map ?? {}),
-  };
+  const leagueDisplay = pickCascade(
+    opts.league_display,
+    comp.league_display,
+    group.display_name,
+    groupKey,
+  )!;
 
-  // Scalars: lowest defined level wins
-  const leagueDisplay = opts.league_display
-    ?? comp.league_display
-    ?? group.display_name
-    ?? groupKey;
+  const pointSystem: PointSystem = pickCascade(
+    opts.point_system,
+    comp.point_system,
+    'standard',
+  )!;
 
-  const pointSystem: PointSystem = opts.point_system
-    ?? comp.point_system
-    ?? 'standard';
+  const tiebreakOrder = pickCascade(
+    opts.tiebreak_order,
+    comp.tiebreak_order,
+    ['goal_diff', 'goal_get'],
+  )!;
 
-  // tiebreak_order: scalar cascade (lowest defined level wins)
-  const tiebreakOrder: string[] = opts.tiebreak_order
-    ?? comp.tiebreak_order
-    ?? ['goal_diff', 'goal_get'];
+  const aggregateTiebreakOrder = pickCascade(
+    opts.aggregate_tiebreak_order,
+    comp.aggregate_tiebreak_order,
+    group.aggregate_tiebreak_order,
+    [],
+  )!;
 
-  // aggregate_tiebreak_order: scalar cascade (lowest defined level wins)
-  const aggregateTiebreakOrder = opts.aggregate_tiebreak_order
-    ?? comp.aggregate_tiebreak_order
-    ?? group.aggregate_tiebreak_order
-    ?? [];
+  const seasonStartMonth = pickCascade(
+    opts.season_start_month,
+    comp.season_start_month,
+    group.season_start_month,
+    7,
+  )!;
 
-  // season_start_month: scalar cascade (lowest defined level wins, code default 7)
-  const seasonStartMonth: number = opts.season_start_month
-    ?? comp.season_start_month
-    ?? group.season_start_month
-    ?? 7;
+  const shownGroups = pickCascade(
+    opts.shown_groups,
+    comp.shown_groups,
+  );
 
-  // shown_groups: scalar cascade (lowest defined level wins)
-  const shownGroups: string[] | undefined = opts.shown_groups
-    ?? comp.shown_groups
-    ?? undefined;
+  const crossGroupStanding: CrossGroupStanding | undefined = pickCascade(
+    opts.cross_group_standing,
+    comp.cross_group_standing,
+  );
 
-  // cross_group_standing: scalar cascade (lowest defined level wins)
-  const crossGroupStanding: CrossGroupStanding | undefined = opts.cross_group_standing
-    ?? comp.cross_group_standing
-    ?? undefined;
+  // group_team_count currently cascades only competition -> season.
+  const groupTeamCountRaw = mergeObjects<Record<string, number>>(
+    comp.group_team_count,
+    opts.group_team_count,
+  );
+  const groupTeamCount = hasEntries(groupTeamCountRaw) ? groupTeamCountRaw : undefined;
 
-  // group_team_count: merge (lower overrides) — per-group team count overrides
-  const groupTeamCountRaw = {
-    ...(comp.group_team_count ?? {}),
-    ...(opts.group_team_count ?? {}),
-  };
-  const groupTeamCount: Record<string, number> | undefined =
-    Object.keys(groupTeamCountRaw).length > 0 ? groupTeamCountRaw : undefined;
+  const dataSource: DataSource | undefined = pickCascade(
+    opts.data_source,
+    comp.data_source,
+    group.data_source,
+  );
 
-  // data_source: scalar cascade (lowest defined level wins)
-  const dataSource: DataSource | undefined = opts.data_source
-    ?? comp.data_source
-    ?? group.data_source
-    ?? undefined;
+  const promotionLabel = pickCascade(
+    opts.promotion_label,
+    comp.promotion_label,
+    group.promotion_label,
+    t('col.promotion'),
+  )!;
 
-  // promotion_label: scalar cascade (lowest defined level wins, default '昇格')
-  const promotionLabel: string = opts.promotion_label
-    ?? comp.promotion_label
-    ?? group.promotion_label
-    ?? t('col.promotion');
-
-  // notes: union across all three levels (flattened, preserving order)
-  const toArray = (v: string | string[] | undefined): string[] =>
-    v == null ? [] : Array.isArray(v) ? v : [v];
-  const notes: string[] = [
+  const notes = [
     ...toArray(group.note),
     ...toArray(comp.note),
     ...toArray(opts.note),
     ...generateRuleNotes(pointSystem, tiebreakOrder, aggregateTiebreakOrder),
   ];
 
-  // view_type: array union across all three levels (deduplicated).
-  // Default ['league'] when no level specifies it.
-  const vtSet = new Set<ViewType>();
-  for (const v of (group.view_type ?? [])) vtSet.add(v);
-  for (const v of (comp.view_type ?? [])) vtSet.add(v);
-  for (const v of (opts.view_type ?? [])) vtSet.add(v);
-  const viewTypes: ViewType[] = vtSet.size > 0 ? [...vtSet] : ['league'];
+  const viewTypes = mergeUniqueArrays(group.view_type, comp.view_type, opts.view_type);
 
   return {
     teamCount: entry[0],
@@ -191,6 +211,6 @@ export function resolveSeasonInfo(
     dataSource,
     notes,
     promotionLabel,
-    viewTypes,
+    viewTypes: viewTypes.length > 0 ? viewTypes : ['league'],
   };
 }
