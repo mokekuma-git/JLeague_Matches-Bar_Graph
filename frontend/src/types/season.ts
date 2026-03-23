@@ -41,14 +41,14 @@ export interface DataSource {
 
 export type AggregateTiebreakCriterion = 'wins' | 'away_goals' | 'penalties';
 
-// An independent bracket section within a multi-section tournament.
-// Each section is rendered as a separate bracket tree on the same page.
-export interface BracketSection {
+// An independent bracket block within a multi-block tournament.
+// Each block is rendered as a separate bracket tree on the same page.
+export interface BracketBlock {
   label: string;                    // Section heading (e.g. "1st Round Group A")
   bracket_order: (string | null)[];  // Bracket position order (null = bye slot)
   round_filter?: string[];          // Filter CSV rows by round column
   bracket_round_start?: string;     // Override start round for this section
-  single_round?: boolean;           // Render as independent matches (no elimination tree)
+  matchup_pairs?: boolean;          // Render as independent matchup pairs (no elimination tree)
   bracket_pairing_orders?: number[][]; // Per level reorder of child matches before pairing
 }
 
@@ -71,11 +71,11 @@ export interface SeasonEntryOptions {
   data_source?: DataSource;
   promotion_label?: string;
   aggregate_tiebreak_order?: AggregateTiebreakCriterion[];
-  bracket_order?: string[];
+  bracket_order?: (string | null)[];
   bracket_round_start?: string;
   round_start_options?: string[];
   default_round_filter?: string[];
-  bracket_sections?: BracketSection[];
+  bracket_blocks?: BracketBlock[];
   bracket_pairing_orders?: number[][];
   view_type?: ViewType[];
 }

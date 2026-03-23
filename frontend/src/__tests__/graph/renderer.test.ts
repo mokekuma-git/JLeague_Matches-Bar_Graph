@@ -6,8 +6,6 @@ import {
   makePointColumn,
   assembleTeamColumn,
   renderBarGraph,
-  findSliderIndex,
-  formatSliderDate,
 } from '../../graph/renderer';
 import { buildTeamColumn } from '../../graph/bar-column';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
@@ -273,57 +271,5 @@ describe('renderBarGraph', () => {
     // Count point_column occurrences: start + insertions + end ≥ 3
     const count = container.querySelectorAll('.point_column').length;
     expect(count).toBeGreaterThanOrEqual(3);
-  });
-});
-
-// ─── findSliderIndex ─────────────────────────────────────────────────────────
-
-describe('findSliderIndex', () => {
-  // Typical matchDates as returned by renderBarGraph (sentinel + real dates).
-  const DATES = ['1970/01/01', '2026/03/08', '2026/03/15', '2026/03/22'];
-
-  test('targetDate before first real match → 0 (sentinel / 開幕前)', () => {
-    expect(findSliderIndex(DATES, '2026/01/01')).toBe(0);
-  });
-
-  test('targetDate equals sentinel → 0', () => {
-    expect(findSliderIndex(DATES, '1970/01/01')).toBe(0);
-  });
-
-  test('targetDate equals first real match → 1', () => {
-    expect(findSliderIndex(DATES, '2026/03/08')).toBe(1);
-  });
-
-  test('targetDate between two match dates → last index ≤ targetDate', () => {
-    expect(findSliderIndex(DATES, '2026/03/10')).toBe(1); // '2026/03/08' ≤ '2026/03/10' < '2026/03/15'
-  });
-
-  test('targetDate equals last match → last index', () => {
-    expect(findSliderIndex(DATES, '2026/03/22')).toBe(3);
-  });
-
-  test('targetDate after last match → last index', () => {
-    expect(findSliderIndex(DATES, '2099/12/31')).toBe(3);
-  });
-
-  test('single-element array (sentinel only) → 0', () => {
-    expect(findSliderIndex(['1970/01/01'], '2026/03/08')).toBe(0);
-  });
-});
-
-// ─── formatSliderDate ────────────────────────────────────────────────────────
-
-describe('formatSliderDate', () => {
-  test('sentinel 1970/01/01 → 開幕前', () => {
-    expect(formatSliderDate('1970/01/01', '2026/03/08')).toBe('開幕前');
-  });
-
-  test('real match date → targetDate (exact user-requested date)', () => {
-    // Slider snapped to '2026/03/08' but user typed '2026/03/10' → show targetDate.
-    expect(formatSliderDate('2026/03/08', '2026/03/10')).toBe('2026/03/10');
-  });
-
-  test('real match date equals targetDate → that date', () => {
-    expect(formatSliderDate('2026/03/08', '2026/03/08')).toBe('2026/03/08');
   });
 });

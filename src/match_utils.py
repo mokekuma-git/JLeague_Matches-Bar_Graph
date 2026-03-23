@@ -117,7 +117,7 @@ class SeasonEntry:
         'note', 'data_source', 'promotion_label',
         'aggregate_tiebreak_order',
         'bracket_order', 'bracket_round_start', 'round_start_options',
-        'default_round_filter', 'bracket_sections',
+        'default_round_filter', 'bracket_blocks',
         'bracket_pairing_orders',
         'view_type',
     }

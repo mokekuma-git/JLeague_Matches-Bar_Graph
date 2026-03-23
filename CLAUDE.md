@@ -1,6 +1,6 @@
 # JLeague_Matches-Bar_Graph
 
-Jリーグ・各種サッカー大会の勝ち点積み上げグラフを可視化するWebアプリケーション。
+Jリーグ・各種サッカー大会の試合結果を勝ち点積み上げグラフなどで可視化するWebアプリケーション。
 GitHub Pages で公開: <https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/>
 
 チーム固有カラーの積み上げバーグラフで勝ち点推移を一望でき、日時スライダーで任意時点の順位を再現する。
@@ -93,8 +93,12 @@ npx playwright test --grep @full-render          # full-render のみ
 - `status`: "試合終了" (完了) / "ＶＳ" (未実施)
 - `home_goal`/`away_goal`: 空 = 未実施
 - `group`: グループ名 (グループ分けがある場合のみ)
-- `home_pk_score`/`away_pk_score`: PK得点 (省略可能。JFA JSONの命名に倣った)
-- `home_score_ex`/`away_score_ex`: 延長戦得点 (省略可能。延長戦がない大会では列自体が存在しない)
+- `home_pk_score`/`away_pk_score`: PK得点 (省略可能。JFA JSONの命名由来)
+- `home_score_ex`/`away_score_ex`: 延長戦得点 (省略可能)
+- `round`: トーナメントのラウンド名 (省略可能。Tournament View のブラケット構築・ラベル・絞り込みに使用)
+- `leg`: H&A の第1戦/第2戦を示す整数 1 or 2 (省略可能。aggregate 合算処理の識別子)
+- `match_number`: 公式の試合採番 (省略可能。data.j-league.jpやJFA JSONなどから取得可能な場合に付与)
+- その他付加情報 [`broadcast`, `attendance`]
 
 ## season_map.json 構造
 

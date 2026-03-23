@@ -158,7 +158,7 @@ def check_view_type_consistency() -> list[str]:
                 resolved_vt = comp_vt | set(opts.get('view_type', []))
                 if not resolved_vt:
                     resolved_vt = {'league'}
-                has_bracket = opts.get('bracket_order') or opts.get('bracket_sections')
+                has_bracket = opts.get('bracket_order') or opts.get('bracket_blocks')
                 if has_bracket and 'bracket' not in resolved_vt:
                     errors.append(
                         f"{group_key}/{comp_key}/{season_key}: "

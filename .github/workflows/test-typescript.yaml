@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - 'feature/**'
+      - 'refactor/**'
     paths:
       - 'frontend/**'
   push:

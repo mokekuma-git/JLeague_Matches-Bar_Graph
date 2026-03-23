@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
-import { renderBracket } from '../../bracket/bracket-renderer';
+import { renderBracket, renderBracketInto } from '../../bracket/bracket-renderer';
 import { buildBracket } from '../../bracket/bracket-data';
 import type { RawMatchRow } from '../../types/match';
 import type { BracketNode } from '../../bracket/bracket-types';
@@ -299,5 +299,70 @@ describe('renderBracket — DOM structure', () => {
     expect(cards).toHaveLength(1);
     const roundLabel = el.querySelector('.bracket-round-label');
     expect(roundLabel!.textContent).toBe('1回戦');
+  });
+});
+
+describe('renderBracketInto — pipeline integration', () => {
+  function makeContainer(): HTMLElement {
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    return el;
+  }
+
+  it('renders bracket into container with horizontal layout', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '2', away_goal: '1', round: '決勝',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B']);
+    const container = makeContainer();
+
+    renderBracketInto(container, root, [], 'horizontal');
+
+    expect(container.querySelector('.bracket')).not.toBeNull();
+    expect(container.querySelector('.bracket')!.classList.contains('vertical')).toBe(false);
+    expect(container.querySelectorAll('.bracket-match')).toHaveLength(1);
+  });
+
+  it('applies vertical class when layout is vertical', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '2', away_goal: '1', round: '決勝',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B']);
+    const container = makeContainer();
+
+    renderBracketInto(container, root, [], 'vertical');
+
+    expect(container.querySelector('.bracket')!.classList.contains('vertical')).toBe(true);
+  });
+
+  it('creates SVG connector elements for multi-match bracket', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '2', away_goal: '1', round: '準決勝',
+      }),
+      makeRow({
+        home_team: 'C', away_team: 'D',
+        home_goal: '1', away_goal: '0', round: '準決勝',
+      }),
+      makeRow({
+        home_team: 'A', away_team: 'C',
+        home_goal: '3', away_goal: '2', round: '決勝',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B', 'C', 'D']);
+    const container = makeContainer();
+
+    renderBracketInto(container, root, [], 'horizontal');
+
+    // SVG overlay should be created (coordinates are 0 in happy-dom but element exists)
+    const svg = container.querySelector('.bracket-svg');
+    expect(svg).not.toBeNull();
   });
 });

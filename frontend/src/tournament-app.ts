@@ -6,16 +6,30 @@
 
 import Papa from 'papaparse';
 import type { RawMatchRow } from './types/match';
-import type { SeasonMap, BracketSection, AggregateTiebreakCriterion } from './types/season';
+import type {
+  SeasonMap,
+  BracketBlock,
+  AggregateTiebreakCriterion,
+  RawSeasonEntry,
+} from './types/season';
 import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
   getCompetitionViewTypes,
 } from './config/season-map';
+import {
+  PRESEASON_SENTINEL,
+  formatSliderDate,
+  getLastMatchDate,
+  getSliderDate,
+  resolveTargetDate,
+  syncSliderToTargetDate,
+} from './core/date-slider';
 import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
 import { normalizeBracketRoundLabel } from './bracket/round-label';
-import { renderBracket, adjustBracketPositions, drawBracketConnectors, unpinTooltip } from './bracket/bracket-renderer';
-import { findSliderIndex, formatSliderDate } from './graph/renderer';
+import { inferRoundFilter } from './bracket/round-filter-inference';
+import { renderBracketInto, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
+import type { ViewerPrefs } from './storage/local-storage';
 import { t, applyI18nAttributes, setLocale } from './i18n';
 import type { Locale } from './i18n';
 import type { BracketNode } from './bracket/bracket-types';
@@ -24,39 +38,77 @@ import type { BracketNode } from './bracket/bracket-types';
 
 interface BracketState {
   csvRows: RawMatchRow[];
-  bracketOrder: string[];
+  bracketOrder: (string | null)[];
   aggregateTiebreakOrder: AggregateTiebreakCriterion[];
   fullRoot: BracketNode;        // full tree built from bracketOrder
   roundsByDepth: string[];      // round labels root-to-leaf (e.g. ['決勝戦','準決勝','準々決勝','ラウンド16'])
   allRounds: string[];          // all CSV rounds in chronological order
   defaultRoundStart?: string;   // from season_map bracket_round_start
   roundStartOptions?: string[];
-  bracketSections?: BracketSection[];  // multi-section definitions from season_map
+  bracketBlocks?: BracketBlock[];  // multi-section definitions from season_map
   matchDates: string[];         // sorted unique dates from CSV
   cssFiles: string[];
   leagueDisplay: string;
   season: string;
 }
 
-interface ControlState {
-  layout: 'horizontal' | 'vertical';
+interface ViewerControlState {
   scale: number;
   futureOpacity: number;
-  selectedDate: string | null;
+  targetDate: string | null;
+}
+
+interface BracketControlState {
+  layout: 'horizontal' | 'vertical';
   roundStart: string | null;
+}
+
+interface ControlState {
+  viewer: ViewerControlState;
+  bracket: BracketControlState;
+}
+
+interface SingleBracketRenderInput {
+  rows: RawMatchRow[];
+  order: (string | null)[];
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[];
+  targetDate: string | null;
+  lastDate: string;
+  cssFiles: string[];
 }
 
 const MULTI_SECTION_VALUE = '__multi_section__';
 
 let currentState: BracketState | null = null;
 
+/** Cache buildBracket results to avoid redundant rebuilds on slider/layout changes. */
+let bracketCache = new Map<string, BracketNode>();
+
 let controlState: ControlState = {
-  layout: 'horizontal',
-  scale: 1,
-  futureOpacity: 0.2,
-  selectedDate: null,
-  roundStart: null,
+  viewer: {
+    scale: 1,
+    futureOpacity: 0.2,
+    targetDate: null,
+  },
+  bracket: {
+    layout: 'horizontal',
+    roundStart: null,
+  },
 };
+
+function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
+  return {
+    viewer: {
+      scale: prefs.scale ? parseFloat(prefs.scale) : 1,
+      futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.2,
+      targetDate: prefs.targetDate ?? null,
+    },
+    bracket: {
+      layout: 'horizontal',
+      roundStart: prefs.roundStart ?? null,
+    },
+  };
+}
 
 // ---- DOM helpers -----------------------------------------------------------
 
@@ -71,8 +123,6 @@ function setStatus(msg: string): void {
 
 // ---- Match date collection --------------------------------------------------
 
-const PRESEASON_SENTINEL = '1970/01/01';
-
 function collectMatchDates(rows: RawMatchRow[]): string[] {
   const dates = new Set<string>();
   for (const r of rows) {
@@ -82,6 +132,25 @@ function collectMatchDates(rows: RawMatchRow[]): string[] {
   // Prepend sentinel so slider index 0 = "before any match"
   sorted.unshift(PRESEASON_SENTINEL);
   return sorted;
+}
+
+function resolveSeasonBracketOrder(entry: RawSeasonEntry): (string | null)[] | undefined {
+  const explicitOrder = entry[4]?.bracket_order;
+  if (explicitOrder != null && explicitOrder.length > 0) {
+    return explicitOrder;
+  }
+
+  const legacyOrder = entry[3];
+  if (legacyOrder.length > 0) {
+    return legacyOrder;
+  }
+
+  const sectionOrder = entry[4]?.bracket_blocks?.flatMap((section) => section.bracket_order);
+  if (sectionOrder != null && sectionOrder.length > 0) {
+    return sectionOrder;
+  }
+
+  return undefined;
 }
 
 // ---- Dropdown population ---------------------------------------------------
@@ -119,7 +188,7 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
   const seasons = Object.keys(found.competition.seasons)
     .filter(s => {
       const e = found.competition.seasons[s];
-      return e[4]?.bracket_order != null || e[4]?.bracket_sections != null || e[3]?.length > 0;
+      return e[4]?.bracket_order != null || e[4]?.bracket_blocks != null || e[3]?.length > 0;
     })
     .sort().reverse();
   for (const s of seasons) {
@@ -186,15 +255,26 @@ function filterRowsByRounds(rows: RawMatchRow[], roundFilter: string[]): RawMatc
 
 /** Apply default_round_filter to sections that lack their own round_filter. */
 function resolveSectionRoundFilters(
-  sections: BracketSection[], defaultRoundFilter?: string[],
-): BracketSection[] {
+  sections: BracketBlock[], defaultRoundFilter?: string[],
+): BracketBlock[] {
   if (!defaultRoundFilter || defaultRoundFilter.length === 0) return sections;
   return sections.map(s =>
     s.round_filter ? s : { ...s, round_filter: defaultRoundFilter },
   );
 }
 
-function collectBracketSourceRows(rows: RawMatchRow[], sections?: BracketSection[]): RawMatchRow[] {
+/** Infer round_filter for sections still without one after default resolution. */
+function inferMissingSectionRoundFilters(
+  sections: BracketBlock[], rows: RawMatchRow[],
+): BracketBlock[] {
+  return sections.map(s => {
+    if (s.round_filter) return s;
+    const inferred = inferRoundFilter(rows, s.bracket_order, s.matchup_pairs);
+    return inferred ? { ...s, round_filter: inferred } : s;
+  });
+}
+
+function collectBracketSourceRows(rows: RawMatchRow[], sections?: BracketBlock[]): RawMatchRow[] {
   if (!sections || sections.length === 0) return rows;
   const merged: RawMatchRow[] = [];
   const seen = new Set<string>();
@@ -238,10 +318,15 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
 }
 
 export const __testables = {
+  createControlStateFromPrefs,
+  resolveSeasonBracketOrder,
   filterRowsByRounds,
   resolveSectionRoundFilters,
+  inferMissingSectionRoundFilters,
   collectBracketSourceRows,
   collectRoundsFromCsv,
+  resolveInclusiveBracketOrder,
+  shouldRenderMultiSectionView,
 };
 
 /** Collect winners at a given tree depth (in bracket positional order). */
@@ -320,12 +405,13 @@ function populateRoundStartPulldown(
   }
 }
 
-/** Get effective bracket order for the selected start round. */
-function getEffectiveBracketOrder(): (string | null)[] {
-  if (!currentState) return [];
-  const { fullRoot, bracketOrder, roundsByDepth, allRounds, csvRows } = currentState;
-  const selected = controlState.roundStart ?? '';
-
+/** Resolve bracket order for the single-tree ("inclusive") bracket view. */
+function resolveInclusiveBracketOrder(
+  state: Pick<BracketState, 'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds' | 'csvRows'>,
+  selectedRoundStart: string | null,
+): (string | null)[] {
+  const { fullRoot, bracketOrder, roundsByDepth, allRounds, csvRows } = state;
+  const selected = selectedRoundStart ?? '';
   const leafRound = roundsByDepth[roundsByDepth.length - 1];
   const leafIdx = allRounds.indexOf(leafRound);
   const selectedIdx = allRounds.indexOf(selected);
@@ -352,55 +438,70 @@ function getEffectiveBracketOrder(): (string | null)[] {
 // ---- Bracket rendering with date filter ------------------------------------
 
 function getTargetDate(): string | null {
-  return controlState.selectedDate;
+  return controlState.viewer.targetDate;
 }
 
-/** Check if the current dropdown selection is multi-section mode. */
-function isMultiSectionMode(): boolean {
-  return controlState.roundStart === MULTI_SECTION_VALUE;
-}
-
-/**
- * Render a single bracket into a container, apply layout, adjust, and draw connectors.
- * The container must already be in the DOM for getBoundingClientRect to work.
- */
-function renderSingleBracketInto(
-  sectionContainer: HTMLElement,
-  root: BracketNode,
-  cssFiles: string[],
-): void {
-  sectionContainer.appendChild(renderBracket(root, cssFiles));
-  applyLayoutTo(sectionContainer);
-  adjustBracketPositions(sectionContainer);
-  drawBracketConnectors(sectionContainer);
+/** Check whether the selection should render bracket sections independently. */
+function shouldRenderMultiSectionView(
+  bracketBlocks: BracketBlock[] | undefined,
+  roundStart: string | null,
+): boolean {
+  return roundStart === MULTI_SECTION_VALUE && bracketBlocks != null;
 }
 
 /**
  * Build and render a bracket tree (with date mask) into a container.
- * Handles the common build → mask → render pipeline for both normal and single-round modes.
+ * Uses cache to avoid redundant buildBracket calls on slider/layout changes.
  */
 function buildAndRenderBracket(
   container: HTMLElement,
-  rows: RawMatchRow[],
-  order: (string | null)[],
-  aggregateTiebreakOrder: AggregateTiebreakCriterion[],
-  targetDate: string | null,
-  lastDate: string,
-  cssFiles: string[],
+  input: SingleBracketRenderInput,
 ): void {
+  const { rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles } = input;
   if (order.length < 2) return;
-  const fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
+  const cacheKey = JSON.stringify(order);
+  let fullRoot = bracketCache.get(cacheKey);
+  if (!fullRoot) {
+    fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
+    bracketCache.set(cacheKey, fullRoot);
+  }
   const root = (targetDate && targetDate < lastDate)
     ? maskBracketForDate(fullRoot, targetDate) : fullRoot;
-  renderSingleBracketInto(container, root, cssFiles);
+  renderBracketInto(container, root, cssFiles, controlState.bracket.layout);
+}
+
+function createSingleBracketRenderInput(
+  state: Pick<BracketState, 'csvRows' | 'aggregateTiebreakOrder' | 'matchDates' | 'cssFiles'>,
+  order: (string | null)[],
+): SingleBracketRenderInput | null {
+  if (order.length < 2 || state.matchDates.length === 0) return null;
+  return {
+    rows: state.csvRows,
+    order,
+    aggregateTiebreakOrder: state.aggregateTiebreakOrder,
+    targetDate: getTargetDate(),
+    lastDate: state.matchDates[state.matchDates.length - 1],
+    cssFiles: state.cssFiles,
+  };
+}
+
+function createInclusiveBracketRenderInput(
+  state: Pick<
+  BracketState,
+  'csvRows' | 'aggregateTiebreakOrder' | 'matchDates' | 'cssFiles' |
+  'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds'
+  >,
+): SingleBracketRenderInput | null {
+  const order = resolveInclusiveBracketOrder(state, controlState.bracket.roundStart);
+  return createSingleBracketRenderInput(state, order);
 }
 
 /**
- * Render multi-section view: each BracketSection becomes an independent
+ * Render multi-section view: each BracketBlock becomes an independent
  * collapsible bracket, all sharing the same CSV and date filter.
  */
 function renderMultiSections(): void {
-  if (!currentState?.bracketSections) return;
+  if (!currentState?.bracketBlocks) return;
   const container = document.getElementById('bracket_container');
   if (!container) return;
 
@@ -426,10 +527,7 @@ function renderMultiSections(): void {
   });
   container.appendChild(toggleBtn);
 
-  const targetDate = getTargetDate();
-  const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
-
-  for (const section of currentState.bracketSections) {
+  for (const section of currentState.bracketBlocks) {
     if (section.bracket_order.length < 2) continue;
 
     // Pre-filter CSV rows by round_filter if specified
@@ -458,24 +556,35 @@ function renderMultiSections(): void {
     // Append to DOM before rendering (getBoundingClientRect needs layout)
     container.appendChild(details);
 
-    if (section.single_round) {
-      // Single-round: split bracket_order into pairs and render each independently
+    if (section.matchup_pairs) {
+      // Matchup pairs: split bracket_order into pairs and render each independently
       const order = section.bracket_order;
       for (let i = 0; i < order.length; i += 2) {
         const pair = order.slice(i, i + 2);
         if (pair.every(t => t == null)) continue;
-        buildAndRenderBracket(
-          sectionWrapper, rows, pair, currentState.aggregateTiebreakOrder,
-          targetDate, lastDate, currentState.cssFiles,
+        const input = createSingleBracketRenderInput(
+          { ...currentState, csvRows: rows },
+          pair,
         );
+        if (input) buildAndRenderBracket(sectionWrapper, input);
       }
     } else {
-      buildAndRenderBracket(
-        sectionWrapper, rows, section.bracket_order, currentState.aggregateTiebreakOrder,
-        targetDate, lastDate, currentState.cssFiles,
+      const input = createSingleBracketRenderInput(
+        { ...currentState, csvRows: rows },
+        section.bracket_order,
       );
+      if (input) buildAndRenderBracket(sectionWrapper, input);
     }
   }
+}
+
+/** Render the single-tree ("inclusive") bracket view. */
+function renderInclusiveBracket(container: HTMLElement): void {
+  if (!currentState) return;
+  const input = createInclusiveBracketRenderInput(currentState);
+  if (!input) return;
+  container.replaceChildren();
+  buildAndRenderBracket(container, input);
 }
 
 function renderWithDateFilter(): void {
@@ -486,47 +595,29 @@ function renderWithDateFilter(): void {
   // Dismiss any pinned tooltip before re-render (DOM will be replaced)
   unpinTooltip();
 
-  // Multi-section mode: render all sections independently
-  if (isMultiSectionMode() && currentState.bracketSections) {
+  // Multi-section mode: render each section as its own bracket block.
+  if (shouldRenderMultiSectionView(currentState.bracketBlocks, controlState.bracket.roundStart)) {
     renderMultiSections();
     return;
   }
 
-  // Single bracket mode: use effective bracket order + date mask
-  const effectiveOrder = getEffectiveBracketOrder();
-  if (effectiveOrder.length < 2) return;
-  const fullRoot = buildBracket(
-    currentState.csvRows,
-    effectiveOrder,
-    currentState.aggregateTiebreakOrder,
-  );
-  const targetDate = getTargetDate();
-  const lastDate = currentState.matchDates[currentState.matchDates.length - 1];
-  const root = (targetDate && targetDate < lastDate)
-    ? maskBracketForDate(fullRoot, targetDate)
-    : fullRoot;
-
-  container.replaceChildren();
-  renderSingleBracketInto(container, root, currentState.cssFiles);
+  // Inclusive mode: resolve one effective bracket order, then render it as one tree.
+  renderInclusiveBracket(container);
 }
 
-/** Sync controlState.selectedDate from slider position and update display label. */
-function syncSelectedDateFromSlider(): void {
+/** Sync viewer control targetDate from slider position. */
+function syncTargetDateFromSlider(): void {
   if (!currentState) return;
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (!slider) return;
-  const idx = parseInt(slider.value, 10);
-  const date = currentState.matchDates[idx];
-  controlState.selectedDate = date ?? null;
+  controlState.viewer.targetDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10));
 }
 
 /** Align slider position to the kept target date without overwriting the target itself. */
-function syncSliderFromSelectedDate(): void {
+function syncSliderFromTargetDate(): void {
   if (!currentState) return;
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
-  if (!slider || currentState.matchDates.length === 0) return;
-  const targetDate = controlState.selectedDate ?? currentState.matchDates[currentState.matchDates.length - 1];
-  slider.value = String(findSliderIndex(currentState.matchDates, targetDate));
+  syncSliderToTargetDate(slider, currentState.matchDates, controlState.viewer.targetDate);
 }
 
 /** Update display label from current slider position + kept target date. */
@@ -535,9 +626,8 @@ function updateSliderDisplay(): void {
   const slider = document.getElementById('date_slider') as HTMLInputElement | null;
   const display = document.getElementById('post_date_slider');
   if (!slider || !display) return;
-  const idx = parseInt(slider.value, 10);
-  const sliderDate = currentState.matchDates[idx] ?? '';
-  const targetDate = controlState.selectedDate ?? sliderDate;
+  const sliderDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10)) ?? '';
+  const targetDate = resolveTargetDate(currentState.matchDates, controlState.viewer.targetDate) ?? sliderDate;
   display.textContent = formatSliderDate(sliderDate, targetDate);
 }
 
@@ -547,7 +637,7 @@ function updateSliderDisplay(): void {
 function applyFutureOpacity(): void {
   const container = document.getElementById('bracket_container');
   if (!container) return;
-  const value = String(controlState.futureOpacity);
+  const value = String(controlState.viewer.futureOpacity);
   for (const el of Array.from(container.querySelectorAll('.bracket-future'))) {
     (el as HTMLElement).style.opacity = value;
   }
@@ -560,7 +650,7 @@ function syncBracketContainerHeight(container: HTMLElement): void {
   container.style.height = 'auto';
   const rawHeight = container.scrollHeight;
   if (rawHeight > 0) {
-    container.style.height = `${rawHeight * controlState.scale}px`;
+    container.style.height = `${rawHeight * controlState.viewer.scale}px`;
   }
 }
 
@@ -568,21 +658,12 @@ function syncBracketContainerHeight(container: HTMLElement): void {
 function applyScale(): void {
   const container = document.getElementById('bracket_container');
   if (!container) return;
-  const value = String(controlState.scale);
+  const value = String(controlState.viewer.scale);
   container.style.transform = `scale(${value})`;
   container.style.transformOrigin = 'top left';
   syncBracketContainerHeight(container);
   const display = document.getElementById('current_scale');
   if (display) display.textContent = value;
-}
-
-/** Apply layout class to a specific container's bracket element(s). */
-function applyLayoutTo(container: HTMLElement): void {
-  const isVertical = controlState.layout === 'vertical';
-  for (const bracket of Array.from(container.querySelectorAll('.bracket'))) {
-    if (isVertical) bracket.classList.add('vertical');
-    else bracket.classList.remove('vertical');
-  }
 }
 
 // ---- Render pipeline -------------------------------------------------------
@@ -604,7 +685,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     found.group, found.competition, found.competition.seasons[season], found.groupKey,
   );
   const entry = found.competition.seasons[season];
-  const bracketOrder = entry[4]?.bracket_order ?? entry[3];
+  const bracketOrder = resolveSeasonBracketOrder(entry);
   if (!bracketOrder || bracketOrder.length === 0) {
     setStatus('No bracket data for this season.');
     return;
@@ -629,18 +710,23 @@ function loadAndRender(seasonMap: SeasonMap): void {
         option === MULTI_SECTION_VALUE ? option : normalizeBracketRoundLabel(option)
       ));
       const aggregateTiebreakOrder = entry[4]?.aggregate_tiebreak_order ?? ['penalties'];
-      const rawSections = entry[4]?.bracket_sections;
-      const bracketSections = rawSections
+      const rawSections = entry[4]?.bracket_blocks;
+      const resolved = rawSections
         ? resolveSectionRoundFilters(rawSections, entry[4]?.default_round_filter)
         : undefined;
-      const bracketRows = collectBracketSourceRows(results.data, bracketSections);
+      const bracketBlocks = resolved
+        ? inferMissingSectionRoundFilters(resolved, results.data)
+        : undefined;
+      const bracketRows = collectBracketSourceRows(results.data, bracketBlocks);
       const matchDates = collectMatchDates(bracketRows);
 
-      // Build full tree to extract round structure
+      // Build full tree to extract round structure and pre-populate cache
       const fullRoot = buildBracket(bracketRows, bracketOrder, aggregateTiebreakOrder);
+      bracketCache = new Map();
+      bracketCache.set(JSON.stringify(bracketOrder), fullRoot);
       const roundsByDepth = collectRoundsByDepth(fullRoot);
       const bracketRounds = collectBracketRounds(fullRoot);
-      const allRounds = bracketSections
+      const allRounds = bracketBlocks
         ? bracketRounds
         : collectRoundsFromCsv(bracketRows).filter(r => bracketRounds.includes(r));
 
@@ -653,7 +739,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
         allRounds,
         defaultRoundStart,
         roundStartOptions,
-        bracketSections,
+        bracketBlocks,
         matchDates,
         cssFiles: seasonInfo.cssFiles,
         leagueDisplay: seasonInfo.leagueDisplay,
@@ -664,34 +750,33 @@ function loadAndRender(seasonMap: SeasonMap): void {
       populateRoundStartPulldown(
         allRounds,
         defaultRoundStart,
-        bracketSections != null,
+        bracketBlocks != null,
         roundStartOptions,
       );
 
       // Sync round start: restore from controlState or pick up dropdown default
       const roundSel = document.getElementById('round_start_key') as HTMLSelectElement | null;
-      if (roundSel && controlState.roundStart) {
-        const normalizedSelected = normalizeBracketRoundLabel(controlState.roundStart);
+      if (roundSel && controlState.bracket.roundStart) {
+        const normalizedSelected = normalizeBracketRoundLabel(controlState.bracket.roundStart);
         const hasOption = Array.from(roundSel.options).some(o => o.value === normalizedSelected);
         if (hasOption) {
           roundSel.value = normalizedSelected;
-          controlState.roundStart = normalizedSelected;
+          controlState.bracket.roundStart = normalizedSelected;
         } else {
-          controlState.roundStart = roundSel.value;
+          controlState.bracket.roundStart = roundSel.value;
         }
       } else if (roundSel) {
-        controlState.roundStart = roundSel.value;
+        controlState.bracket.roundStart = roundSel.value;
       }
 
-      // Set up date slider and sync controlState.selectedDate
+      // Set up date slider and sync viewer control targetDate
       const slider = document.getElementById('date_slider') as HTMLInputElement | null;
       if (slider && matchDates.length > 0) {
         slider.min = '0';
-        slider.max = String(matchDates.length - 1);
-        if (!controlState.selectedDate) {
-          controlState.selectedDate = matchDates[matchDates.length - 1] ?? null;
+        if (!controlState.viewer.targetDate) {
+          controlState.viewer.targetDate = getLastMatchDate(matchDates);
         }
-        syncSliderFromSelectedDate();
+        syncSliderFromTargetDate();
       }
 
       renderWithDateFilter();
@@ -747,13 +832,7 @@ async function main(): Promise<void> {
   const prefs = loadPrefs();
 
   // Initialize control state from saved preferences
-  controlState = {
-    layout: 'horizontal',
-    scale: prefs.scale ? parseFloat(prefs.scale) : 1,
-    futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.2,
-    selectedDate: prefs.targetDate ?? null,
-    roundStart: prefs.roundStart ?? null,
-  };
+  controlState = createControlStateFromPrefs(prefs);
 
   const competitionSel = document.getElementById('competition_key') as HTMLSelectElement;
   const initCompetition = (urlParams.competition && findCompetition(seasonMap, urlParams.competition))
@@ -787,53 +866,53 @@ async function main(): Promise<void> {
   // ---- Sync DOM sliders from controlState ----------------------------------
 
   const opacitySlider = document.getElementById('future_opacity') as HTMLInputElement | null;
-  if (opacitySlider) opacitySlider.value = String(controlState.futureOpacity);
+  if (opacitySlider) opacitySlider.value = String(controlState.viewer.futureOpacity);
 
   const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
-  if (scaleSlider) scaleSlider.value = String(controlState.scale);
+  if (scaleSlider) scaleSlider.value = String(controlState.viewer.scale);
 
   // ---- Date slider events --------------------------------------------------
 
   const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
   if (dateSlider) {
     dateSlider.addEventListener('input', () => {
-      syncSelectedDateFromSlider();
+      syncTargetDateFromSlider();
       updateSliderDisplay();
     });
     dateSlider.addEventListener('change', () => {
-      syncSelectedDateFromSlider();
+      syncTargetDateFromSlider();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.selectedDate ?? undefined });
+      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
     });
 
     document.getElementById('date_slider_down')?.addEventListener('click', () => {
       dateSlider.value = String(Math.max(0, parseInt(dateSlider.value, 10) - 1));
-      syncSelectedDateFromSlider();
+      syncTargetDateFromSlider();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.selectedDate ?? undefined });
+      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
     });
     document.getElementById('date_slider_up')?.addEventListener('click', () => {
       dateSlider.value = String(Math.min(
         parseInt(dateSlider.max, 10), parseInt(dateSlider.value, 10) + 1,
       ));
-      syncSelectedDateFromSlider();
+      syncTargetDateFromSlider();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.selectedDate ?? undefined });
+      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
     });
     document.getElementById('date_slider_reset')?.addEventListener('click', () => {
       if (!currentState) return;
-      controlState.selectedDate = currentState.matchDates[currentState.matchDates.length - 1] ?? null;
-      syncSliderFromSelectedDate();
+      controlState.viewer.targetDate = getLastMatchDate(currentState.matchDates);
+      syncSliderFromTargetDate();
       updateSliderDisplay();
       renderWithDateFilter();
       applyFutureOpacity();
-      savePrefs({ targetDate: controlState.selectedDate ?? undefined });
+      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
     });
   }
 
@@ -841,7 +920,7 @@ async function main(): Promise<void> {
 
   if (opacitySlider) {
     opacitySlider.addEventListener('input', () => {
-      controlState.futureOpacity = parseFloat(opacitySlider.value);
+      controlState.viewer.futureOpacity = parseFloat(opacitySlider.value);
       applyFutureOpacity();
       savePrefs({ futureOpacity: opacitySlider.value });
     });
@@ -851,7 +930,7 @@ async function main(): Promise<void> {
 
   if (scaleSlider) {
     scaleSlider.addEventListener('input', () => {
-      controlState.scale = parseFloat(scaleSlider.value);
+      controlState.viewer.scale = parseFloat(scaleSlider.value);
       applyScale();
       savePrefs({ scale: scaleSlider.value });
     });
@@ -862,7 +941,7 @@ async function main(): Promise<void> {
   const layoutSel = document.getElementById('layout_toggle') as HTMLSelectElement | null;
   if (layoutSel) {
     layoutSel.addEventListener('change', () => {
-      controlState.layout = layoutSel.value as 'horizontal' | 'vertical';
+      controlState.bracket.layout = layoutSel.value as 'horizontal' | 'vertical';
       // Full re-render to recompute positions and connectors per section
       renderWithDateFilter();
       applyFutureOpacity();
@@ -872,10 +951,10 @@ async function main(): Promise<void> {
   // ---- Round start change events --------------------------------------------
 
   document.getElementById('round_start_key')?.addEventListener('change', () => {
-    controlState.roundStart = getSelectValue('round_start_key');
+    controlState.bracket.roundStart = getSelectValue('round_start_key');
     renderWithDateFilter();
     applyFutureOpacity();
-    savePrefs({ roundStart: controlState.roundStart });
+    savePrefs({ roundStart: controlState.bracket.roundStart });
   });
 
   // ---- Competition/season change events ------------------------------------

@@ -68,7 +68,7 @@ test.describe('Bracket rendering — connectors and layout', () => {
 
 test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-render' }, () => {
   test('multi-section mode renders separate section containers', async ({ page }) => {
-    // JLeagueCup 2025 has bracket_sections (1回戦, 2回戦, プレーオフ, プライム)
+    // JLeagueCup 2025 has bracket_blocks (1回戦, 2回戦, プレーオフ, プライム)
     await page.goto('/tournament.html?competition=JLeagueCup&season=2025');
     await waitForBracketRender(page);
 
@@ -88,7 +88,7 @@ test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-
     }
   });
 
-  test('single_round sections render as pair-based brackets', async ({ page }) => {
+  test('matchup_pairs blocks render as pair-based brackets', async ({ page }) => {
     await page.goto('/tournament.html?competition=JLeagueCup&season=2025');
     await waitForBracketRender(page);
 
@@ -100,7 +100,7 @@ test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-
       await roundSelect.selectOption({ label: multiOption });
       await page.locator('.bracket-match').first().waitFor({ timeout: 10000 });
 
-      // single_round sections (1回戦, 2回戦) should render individual match cards
+      // matchup_pairs blocks (1回戦, 2回戦) should render individual match cards
       // Each section has its own bracket wrapper
       const brackets = page.locator('.bracket');
       const bracketCount = await brackets.count();
