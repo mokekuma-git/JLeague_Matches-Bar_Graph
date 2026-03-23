@@ -36,56 +36,44 @@ function makeNode(overrides: Partial<BracketNode> = {}): BracketNode {
 
 describe('tournament-app helpers', () => {
   describe('resolveSeasonBracketOrder', () => {
-    test('uses explicit options.bracket_order with highest priority', () => {
-      const order = __testables.resolveSeasonBracketOrder([
-        4,
-        0,
-        0,
-        ['LegacyA', 'LegacyB'],
-        {
-          bracket_order: ['ExplicitA', null, 'ExplicitB'],
-          bracket_blocks: [{ label: 'S1', bracket_order: ['SectionA', 'SectionB'] }],
-        },
-      ]);
+    test('uses explicit bracket_order with highest priority', () => {
+      const order = __testables.resolveSeasonBracketOrder({
+        team_count: 4, promotion_count: 0, relegation_count: 0,
+        teams: ['LegacyA', 'LegacyB'],
+        bracket_order: ['ExplicitA', null, 'ExplicitB'],
+        bracket_blocks: [{ label: 'S1', bracket_order: ['SectionA', 'SectionB'] }],
+      });
 
       expect(order).toEqual(['ExplicitA', null, 'ExplicitB']);
     });
 
-    test('falls back to legacy entry[3] when explicit bracket_order is absent', () => {
-      const order = __testables.resolveSeasonBracketOrder([
-        4,
-        0,
-        0,
-        ['LegacyA', 'LegacyB', 'LegacyC', 'LegacyD'],
-      ]);
+    test('falls back to teams when explicit bracket_order is absent', () => {
+      const order = __testables.resolveSeasonBracketOrder({
+        team_count: 4, promotion_count: 0, relegation_count: 0,
+        teams: ['LegacyA', 'LegacyB', 'LegacyC', 'LegacyD'],
+      });
 
       expect(order).toEqual(['LegacyA', 'LegacyB', 'LegacyC', 'LegacyD']);
     });
 
-    test('derives default global order from bracket_blocks when entry[3] is empty', () => {
-      const order = __testables.resolveSeasonBracketOrder([
-        4,
-        0,
-        0,
-        [],
-        {
-          bracket_blocks: [
-            { label: 'A', bracket_order: ['A1', 'A2'] },
-            { label: 'B', bracket_order: ['B1', null, 'B2'] },
-          ],
-        },
-      ]);
+    test('derives default global order from bracket_blocks when teams is empty', () => {
+      const order = __testables.resolveSeasonBracketOrder({
+        team_count: 4, promotion_count: 0, relegation_count: 0,
+        teams: [],
+        bracket_blocks: [
+          { label: 'A', bracket_order: ['A1', 'A2'] },
+          { label: 'B', bracket_order: ['B1', null, 'B2'] },
+        ],
+      });
 
       expect(order).toEqual(['A1', 'A2', 'B1', null, 'B2']);
     });
 
     test('returns undefined when no source bracket order exists', () => {
-      const order = __testables.resolveSeasonBracketOrder([
-        4,
-        0,
-        0,
-        [],
-      ]);
+      const order = __testables.resolveSeasonBracketOrder({
+        team_count: 4, promotion_count: 0, relegation_count: 0,
+        teams: [],
+      });
 
       expect(order).toBeUndefined();
     });

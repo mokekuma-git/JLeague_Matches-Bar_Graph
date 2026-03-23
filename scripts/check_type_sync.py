@@ -1,7 +1,7 @@
 """Cross-language type drift detector.
 
 Compares Python canonical type definitions (CSV_COLUMN_SCHEMA,
-SeasonEntry.KNOWN_OPTION_KEYS, POINT_SYSTEM_VALUES) against their
+SeasonEntry.OPTIONAL_KEYS, POINT_SYSTEM_VALUES) against their
 TypeScript counterparts (RawMatchRow, SeasonEntryOptions, POINT_MAPS).
 
 Exit code 0 = all checks pass, 1 = drift detected.
@@ -95,12 +95,12 @@ def check_csv_columns() -> list[str]:
 
 
 def check_season_entry_options() -> list[str]:
-    """Check KNOWN_OPTION_KEYS against SeasonEntryOptions fields."""
+    """Check OPTIONAL_KEYS against SeasonEntryOptions fields."""
     errors: list[str] = []
     ts_content = SEASON_TS.read_text(encoding='utf-8')
     ts_fields = _parse_interface_fields(ts_content, 'SeasonEntryOptions')
 
-    py_keys = SeasonEntry.KNOWN_OPTION_KEYS
+    py_keys = SeasonEntry.OPTIONAL_KEYS
     ts_keys = set(ts_fields.keys())
 
     only_py = py_keys - ts_keys
@@ -111,7 +111,7 @@ def check_season_entry_options() -> list[str]:
             f"{sorted(only_py)}")
     if only_ts:
         errors.append(
-            f"SeasonEntryOptions fields in TS but missing in Python KNOWN_OPTION_KEYS: "
+            f"SeasonEntryOptions fields in TS but missing in Python OPTIONAL_KEYS: "
             f"{sorted(only_ts)}")
 
     return errors
@@ -152,13 +152,12 @@ def check_view_type_consistency() -> list[str]:
                 continue
             comp_vt = group_vt | set(comp.get('view_type', []))
             for season_key, entry in comp.get('seasons', {}).items():
-                if not isinstance(entry, list) or len(entry) < 5:
+                if not isinstance(entry, dict):
                     continue
-                opts = entry[4] if isinstance(entry[4], dict) else {}
-                resolved_vt = comp_vt | set(opts.get('view_type', []))
+                resolved_vt = comp_vt | set(entry.get('view_type', []))
                 if not resolved_vt:
                     resolved_vt = {'league'}
-                has_bracket = opts.get('bracket_order') or opts.get('bracket_blocks')
+                has_bracket = entry.get('bracket_order') or entry.get('bracket_blocks')
                 if has_bracket and 'bracket' not in resolved_vt:
                     errors.append(
                         f"{group_key}/{comp_key}/{season_key}: "

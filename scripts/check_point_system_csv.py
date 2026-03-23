@@ -58,14 +58,12 @@ def parse_point_maps_pk(config_path: Path) -> dict[str, int]:
 
 
 def resolve_point_system(
-    comp_data: dict, season_entry: list,
+    comp_data: dict, season_entry: dict,
 ) -> str:
-    """Resolve point_system with cascade: season options -> competition -> default."""
-    # Season entry options (index 4)
-    if len(season_entry) > 4 and isinstance(season_entry[4], dict):
-        ps = season_entry[4].get('point_system')
-        if ps:
-            return ps
+    """Resolve point_system with cascade: season entry -> competition -> default."""
+    ps = season_entry.get('point_system')
+    if ps:
+        return ps
     # Competition level
     ps = comp_data.get('point_system')
     if ps:
@@ -74,15 +72,12 @@ def resolve_point_system(
 
 
 def resolve_view_types(
-    group_data: dict, comp_data: dict, season_entry: list,
+    group_data: dict, comp_data: dict, season_entry: dict,
 ) -> set[str]:
     """Resolve view_type with array union cascade: group -> competition -> season."""
     vt: set[str] = set()
-    for level in (group_data, comp_data):
+    for level in (group_data, comp_data, season_entry):
         for v in level.get('view_type', []):
-            vt.add(v)
-    if len(season_entry) > 4 and isinstance(season_entry[4], dict):
-        for v in season_entry[4].get('view_type', []):
             vt.add(v)
     return vt if vt else {'league'}
 

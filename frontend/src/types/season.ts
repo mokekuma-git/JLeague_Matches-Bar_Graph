@@ -9,7 +9,7 @@
 //       "J1": {                             ← competition
 //         "league_display": "J1リーグ",
 //         "seasons": {
-//           "2026East": [10, 1, 0, [...], {"group_display": "EAST"}]  ← entry
+//           "2026East": {"team_count": 10, ...}  ← entry
 //         }
 //       }
 //     }
@@ -52,8 +52,8 @@ export interface BracketBlock {
   bracket_pairing_orders?: number[][]; // Per level reorder of child matches before pairing
 }
 
-// Merged optional dict at season entry index 4.
-// Combines what was previously separate at index 4 (RankClassMap) and index 5 (SeasonExtraInfo).
+// Optional properties that can appear at group, competition, or season level.
+// Used by cascade resolution (group → competition → season).
 export interface SeasonEntryOptions {
   rank_properties?: RankClassMap;
   group_display?: string;
@@ -80,15 +80,14 @@ export interface SeasonEntryOptions {
   view_type?: ViewType[];
 }
 
-// Raw array format as loaded from season_map.json (tuple type).
-//   [teamCount, promotionCount, relegationCount, teams, options?]
-export type RawSeasonEntry = [
-  number,               // [0] number of teams
-  number,               // [1] promotion slots
-  number,               // [2] relegation slots
-  string[],             // [3] team list (ordered by previous season finish)
-  SeasonEntryOptions?,  // [4] optional: merged properties
-];
+// Object format as loaded from season_map.json.
+// Required fields + optional cascade properties (flattened).
+export interface RawSeasonEntry extends SeasonEntryOptions {
+  team_count: number;
+  promotion_count: number;
+  relegation_count: number;
+  teams: string[];
+}
 
 // A single competition within a group (e.g., J1 within jleague).
 // Extends SeasonEntryOptions because cascade allows any option at this level.

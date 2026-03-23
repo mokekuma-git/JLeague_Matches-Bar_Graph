@@ -2,22 +2,25 @@
 """Custom formatter for season_map.json.
 
 Formats the 4-tier season_map.json with readable indentation for the outer
-structure, while keeping season entry arrays compact.
+structure, while keeping season entry objects compact.
 
 Rules:
 - Outer dicts (group, competition, seasons key) use indent=2 formatting
-- Season entry arrays: always break after scalars
-    "2025": [20, 3, 3,
-      ["team1", "team2", ...]]
-- With optional dict: one more line
-    "2026East": [10, 1, 0,
-      ["team1", "team2", ...],
-      {"group_display": "EAST"}]
+- Season entry objects: scalars on the first line, teams on the next,
+  then any extra options on a third line
+    "2025": {"team_count": 20, "promotion_count": 3, "relegation_count": 3,
+      "teams": ["team1", "team2", ...]}
+- With extra options:
+    "2026East": {"team_count": 10, "promotion_count": 1, "relegation_count": 0,
+      "teams": ["team1", "team2", ...],
+      "group_display": "EAST", "point_system": "pk-win2-loss1"}
 - Short arrays (e.g. css_files) are inlined
 """
 import json
 import sys
 from pathlib import Path
+
+SEASON_ENTRY_REQUIRED_KEYS = ('team_count', 'promotion_count', 'relegation_count', 'teams')
 
 
 def compact_json(obj):
@@ -26,40 +29,44 @@ def compact_json(obj):
 
 
 def is_season_entry(obj):
-    """Check if obj looks like a season entry array: [int, int, int, [...], ...]."""
-    return (isinstance(obj, list)
-            and len(obj) >= 4
-            and isinstance(obj[0], int)
-            and isinstance(obj[1], int)
-            and isinstance(obj[2], int)
-            and isinstance(obj[3], list))
+    """Check if obj looks like a season entry object."""
+    return (isinstance(obj, dict)
+            and all(k in obj for k in SEASON_ENTRY_REQUIRED_KEYS)
+            and isinstance(obj.get('teams'), list))
 
 
 def format_season_entry(entry, cont_indent):
-    """Format a season entry array.
+    """Format a season entry object compactly.
 
-    Always break after scalars:
-      [20, 3, 3,
-        ["team1", "team2", ...]]
+    Scalars on the first line, teams on the next, extras on a third:
+      {"team_count": 20, "promotion_count": 3, "relegation_count": 3,
+        "teams": ["team1", "team2", ...]}
 
-    With optional dict, one more line:
-      [10, 1, 0,
-        ["team1", "team2", ...],
-        {"group_display": "EAST"}]
+    With extra options:
+      {"team_count": 10, "promotion_count": 1, "relegation_count": 0,
+        "teams": ["team1", "team2", ...],
+        "group_display": "EAST", "point_system": "pk-win2-loss1"}
     """
-    scalars = entry[:3]  # [teamCount, promo, releg]
-    teams = entry[3]
-    scalars_str = ", ".join(str(s) for s in scalars)
-    teams_str = compact_json(teams)
+    scalars_str = (
+        f'"team_count": {entry["team_count"]}, '
+        f'"promotion_count": {entry["promotion_count"]}, '
+        f'"relegation_count": {entry["relegation_count"]}'
+    )
+    teams_str = f'"teams": {compact_json(entry["teams"])}'
 
-    if len(entry) <= 4:
-        return (f"[{scalars_str},\n"
-                f"{cont_indent}{teams_str}]")
+    extras = {k: v for k, v in entry.items() if k not in SEASON_ENTRY_REQUIRED_KEYS}
 
-    opt_str = compact_json(entry[4])
-    return (f"[{scalars_str},\n"
+    if not extras:
+        return (f"{{{scalars_str},\n"
+                f"{cont_indent}{teams_str}}}")
+
+    extras_str = ", ".join(
+        f"{json.dumps(k, ensure_ascii=False)}: {compact_json(v)}"
+        for k, v in extras.items()
+    )
+    return (f"{{{scalars_str},\n"
             f"{cont_indent}{teams_str},\n"
-            f"{cont_indent}{opt_str}]")
+            f"{cont_indent}{extras_str}}}")
 
 
 def format_value(obj, depth, key_context=None):
@@ -96,10 +103,7 @@ def format_value(obj, depth, key_context=None):
                 lines.append(f"{child_indent}{k_str}: {v_str}{comma}")
             else:
                 v_str = format_value(v, depth + 1, key_context=k)
-                if "\n" in v_str:
-                    lines.append(f"{child_indent}{k_str}: {v_str}{comma}")
-                else:
-                    lines.append(f"{child_indent}{k_str}: {v_str}{comma}")
+                lines.append(f"{child_indent}{k_str}: {v_str}{comma}")
         lines.append(f"{indent}}}")
         return "\n".join(lines)
 

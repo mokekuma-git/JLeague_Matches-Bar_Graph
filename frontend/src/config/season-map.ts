@@ -110,73 +110,72 @@ export function resolveSeasonInfo(
   entry: RawSeasonEntry,
   groupKey: string = '',
 ): SeasonInfo {
-  const opts = entry[4] ?? {};
-  const cssFiles = mergeUniqueArrays(group.css_files, comp.css_files, opts.css_files);
+  const cssFiles = mergeUniqueArrays(group.css_files, comp.css_files, entry.css_files);
 
   // team_rename_map currently cascades only competition -> season.
   const teamRenameMap = mergeObjects<Record<string, string>>(
     comp.team_rename_map,
-    opts.team_rename_map,
+    entry.team_rename_map,
   );
 
   const leagueDisplay = pickCascade(
-    opts.league_display,
+    entry.league_display,
     comp.league_display,
     group.display_name,
     groupKey,
   )!;
 
   const pointSystem: PointSystem = pickCascade(
-    opts.point_system,
+    entry.point_system,
     comp.point_system,
     'standard',
   )!;
 
   const tiebreakOrder = pickCascade(
-    opts.tiebreak_order,
+    entry.tiebreak_order,
     comp.tiebreak_order,
     ['goal_diff', 'goal_get'],
   )!;
 
   const aggregateTiebreakOrder = pickCascade(
-    opts.aggregate_tiebreak_order,
+    entry.aggregate_tiebreak_order,
     comp.aggregate_tiebreak_order,
     group.aggregate_tiebreak_order,
     [],
   )!;
 
   const seasonStartMonth = pickCascade(
-    opts.season_start_month,
+    entry.season_start_month,
     comp.season_start_month,
     group.season_start_month,
     7,
   )!;
 
   const shownGroups = pickCascade(
-    opts.shown_groups,
+    entry.shown_groups,
     comp.shown_groups,
   );
 
   const crossGroupStanding: CrossGroupStanding | undefined = pickCascade(
-    opts.cross_group_standing,
+    entry.cross_group_standing,
     comp.cross_group_standing,
   );
 
   // group_team_count currently cascades only competition -> season.
   const groupTeamCountRaw = mergeObjects<Record<string, number>>(
     comp.group_team_count,
-    opts.group_team_count,
+    entry.group_team_count,
   );
   const groupTeamCount = hasEntries(groupTeamCountRaw) ? groupTeamCountRaw : undefined;
 
   const dataSource: DataSource | undefined = pickCascade(
-    opts.data_source,
+    entry.data_source,
     comp.data_source,
     group.data_source,
   );
 
   const promotionLabel = pickCascade(
-    opts.promotion_label,
+    entry.promotion_label,
     comp.promotion_label,
     group.promotion_label,
     t('col.promotion'),
@@ -185,20 +184,20 @@ export function resolveSeasonInfo(
   const notes = [
     ...toArray(group.note),
     ...toArray(comp.note),
-    ...toArray(opts.note),
+    ...toArray(entry.note),
     ...generateRuleNotes(pointSystem, tiebreakOrder, aggregateTiebreakOrder),
   ];
 
-  const viewTypes = mergeUniqueArrays(group.view_type, comp.view_type, opts.view_type);
+  const viewTypes = mergeUniqueArrays(group.view_type, comp.view_type, entry.view_type);
 
   return {
-    teamCount: entry[0],
-    promotionCount: entry[1],
-    relegationCount: entry[2],
-    teams: entry[3],
-    rankClass: opts.rank_properties ?? {},
-    groupDisplay: opts.group_display,
-    urlCategory: opts.url_category,
+    teamCount: entry.team_count,
+    promotionCount: entry.promotion_count,
+    relegationCount: entry.relegation_count,
+    teams: entry.teams,
+    rankClass: entry.rank_properties ?? {},
+    groupDisplay: entry.group_display,
+    urlCategory: entry.url_category,
     leagueDisplay,
     pointSystem,
     cssFiles,
