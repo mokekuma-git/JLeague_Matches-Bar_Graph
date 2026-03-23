@@ -135,17 +135,17 @@ function collectMatchDates(rows: RawMatchRow[]): string[] {
 }
 
 function resolveSeasonBracketOrder(entry: RawSeasonEntry): (string | null)[] | undefined {
-  const explicitOrder = entry[4]?.bracket_order;
+  const explicitOrder = entry.bracket_order;
   if (explicitOrder != null && explicitOrder.length > 0) {
     return explicitOrder;
   }
 
-  const legacyOrder = entry[3];
+  const legacyOrder = entry.teams;
   if (legacyOrder.length > 0) {
     return legacyOrder;
   }
 
-  const sectionOrder = entry[4]?.bracket_blocks?.flatMap((section) => section.bracket_order);
+  const sectionOrder = entry.bracket_blocks?.flatMap((section) => section.bracket_order);
   if (sectionOrder != null && sectionOrder.length > 0) {
     return sectionOrder;
   }
@@ -188,7 +188,7 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
   const seasons = Object.keys(found.competition.seasons)
     .filter(s => {
       const e = found.competition.seasons[s];
-      return e[4]?.bracket_order != null || e[4]?.bracket_blocks != null || e[3]?.length > 0;
+      return e.bracket_order != null || e.bracket_blocks != null || e.teams?.length > 0;
     })
     .sort().reverse();
   for (const s of seasons) {
@@ -703,16 +703,16 @@ function loadAndRender(seasonMap: SeasonMap): void {
     skipEmptyLines: 'greedy',
     download: true,
     complete: (results) => {
-      const defaultRoundStart = entry[4]?.bracket_round_start
-        ? normalizeBracketRoundLabel(entry[4].bracket_round_start)
+      const defaultRoundStart = entry.bracket_round_start
+        ? normalizeBracketRoundLabel(entry.bracket_round_start)
         : undefined;
-      const roundStartOptions = entry[4]?.round_start_options?.map((option) => (
+      const roundStartOptions = entry.round_start_options?.map((option) => (
         option === MULTI_SECTION_VALUE ? option : normalizeBracketRoundLabel(option)
       ));
-      const aggregateTiebreakOrder = entry[4]?.aggregate_tiebreak_order ?? ['penalties'];
-      const rawSections = entry[4]?.bracket_blocks;
+      const aggregateTiebreakOrder = entry.aggregate_tiebreak_order ?? ['penalties'];
+      const rawSections = entry.bracket_blocks;
       const resolved = rawSections
-        ? resolveSectionRoundFilters(rawSections, entry[4]?.default_round_filter)
+        ? resolveSectionRoundFilters(rawSections, entry.default_round_filter)
         : undefined;
       const bracketBlocks = resolved
         ? inferMissingSectionRoundFilters(resolved, results.data)

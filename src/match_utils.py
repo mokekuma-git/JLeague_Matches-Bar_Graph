@@ -105,11 +105,19 @@ POINT_SYSTEM_VALUES: set[str] = {
 class SeasonEntry:
     """Parsed season entry from season_map.json.
 
-    Corresponds to the raw JSON array:
-        [team_count, promotion_count, relegation_count, teams, options?]
+    Corresponds to the raw JSON object::
+
+        {
+            "team_count": 10, "promotion_count": 1, "relegation_count": 0,
+            "teams": [...], "point_system": "pk-win2-loss1", ...
+        }
     """
 
-    KNOWN_OPTION_KEYS: set[str] = {
+    REQUIRED_KEYS: set[str] = {
+        'team_count', 'promotion_count', 'relegation_count', 'teams',
+    }
+
+    OPTIONAL_KEYS: set[str] = {
         'rank_properties', 'group_display', 'url_category',
         'league_display', 'point_system', 'css_files',
         'team_rename_map', 'tiebreak_order', 'season_start_month',
@@ -122,50 +130,53 @@ class SeasonEntry:
         'view_type',
     }
 
-    def __init__(self, season_key: str, raw: list):
-        """Parse and validate a raw season entry array.
+    KNOWN_KEYS: set[str] = REQUIRED_KEYS | OPTIONAL_KEYS
+
+    def __init__(self, season_key: str, raw: dict):
+        """Parse and validate a raw season entry object.
 
         Args:
             season_key: Season name (for error messages, e.g. '2026East').
-            raw: Raw JSON array from season_map.json.
+            raw: Raw JSON object from season_map.json.
 
         Raises:
-            ValueError: If required elements are missing.
-            TypeError: If element types are wrong.
+            ValueError: If required keys are missing.
+            TypeError: If value types are wrong.
         """
-        if len(raw) < 4:
-            raise ValueError(
-                f"Season '{season_key}': expected at least 4 elements, got {len(raw)}")
-
-        for i, label in enumerate(['team_count', 'promotion_count', 'relegation_count']):
-            if not isinstance(raw[i], int):
-                raise TypeError(
-                    f"Season '{season_key}': {label} (index {i}) must be int, "
-                    f"got {type(raw[i]).__name__}")
-
-        if not isinstance(raw[3], list):
+        if not isinstance(raw, dict):
             raise TypeError(
-                f"Season '{season_key}': teams (index 3) must be list, "
-                f"got {type(raw[3]).__name__}")
+                f"Season '{season_key}': expected dict, got {type(raw).__name__}")
 
-        self.team_count: int = raw[0]
-        self.promotion_count: int = raw[1]
-        self.relegation_count: int = raw[2]
-        self.teams: list[str] = raw[3]
-        self.options: dict[str, Any] = {}
+        missing = self.REQUIRED_KEYS - set(raw.keys())
+        if missing:
+            raise ValueError(
+                f"Season '{season_key}': missing required keys: {missing}")
 
-        if len(raw) > 4:
-            if not isinstance(raw[4], dict):
+        for key in ('team_count', 'promotion_count', 'relegation_count'):
+            if not isinstance(raw[key], int):
                 raise TypeError(
-                    f"Season '{season_key}': options (index 4) must be dict, "
-                    f"got {type(raw[4]).__name__}")
-            self.options = raw[4]
-            unknown = set(self.options.keys()) - self.KNOWN_OPTION_KEYS
-            if unknown:
-                logger.warning("Season '%s': unknown option keys: %s", season_key, unknown)
-            ps = self.options.get('point_system')
-            if ps is not None and ps not in POINT_SYSTEM_VALUES:
-                logger.warning("Season '%s': unknown point_system: '%s'", season_key, ps)
+                    f"Season '{season_key}': {key} must be int, "
+                    f"got {type(raw[key]).__name__}")
+
+        if not isinstance(raw['teams'], list):
+            raise TypeError(
+                f"Season '{season_key}': teams must be list, "
+                f"got {type(raw['teams']).__name__}")
+
+        self.team_count: int = raw['team_count']
+        self.promotion_count: int = raw['promotion_count']
+        self.relegation_count: int = raw['relegation_count']
+        self.teams: list[str] = raw['teams']
+        self.options: dict[str, Any] = {
+            k: v for k, v in raw.items() if k not in self.REQUIRED_KEYS
+        }
+
+        unknown = set(self.options.keys()) - self.OPTIONAL_KEYS
+        if unknown:
+            logger.warning("Season '%s': unknown option keys: %s", season_key, unknown)
+        ps = self.options.get('point_system')
+        if ps is not None and ps not in POINT_SYSTEM_VALUES:
+            logger.warning("Season '%s': unknown point_system: '%s'", season_key, ps)
 
 
 class MatchUtils:

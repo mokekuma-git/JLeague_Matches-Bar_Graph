@@ -114,11 +114,11 @@ npx playwright test --grep @full-render          # full-render のみ
       "J1": {
         "league_display": "J1リーグ",
         "seasons": {
-          "2026East": [10, 1, 0,
-            ["鹿島", "柏", ...],
-            {"group_display": "EAST"}],
-          "2025": [20, 3, 3,
-            ["神戸", "広島", ...]]
+          "2026East": {"team_count": 10, "promotion_count": 1, "relegation_count": 0,
+            "teams": ["鹿島", "柏", ...],
+            "group_display": "EAST"},
+          "2025": {"team_count": 20, "promotion_count": 3, "relegation_count": 3,
+            "teams": ["神戸", "広島", ...]}
         }
       }
     }
@@ -131,21 +131,23 @@ npx playwright test --grep @full-render          # full-render のみ
 - **Group** (`jleague` 等): `display_name`, `css_files?`, `season_start_month?`, `data_source?`, `note?`
 - **Competition** (`J1` 等): `league_display?`, `css_files?`, `point_system?`, `team_rename_map?`, `tiebreak_order?`, `season_start_month?`, `data_source?`, `note?`, `seasons`
 
-### Season Entry (配列)
+### Season Entry (オブジェクト)
 
-| Index | 内容 | 必須 | 例 |
-| ----- | ---- | ---- | -- |
-| 0 | チーム数 | 必須 | `10` |
-| 1 | 昇格枠数 | 必須 | `1` |
-| 2 | 降格枠数 | 必須 | `0` |
-| 3 | チームリスト (前年度成績順 = 同順位時の優先順位) | 必須 | `["鹿島", "柏", ...]` |
-| 4 | SeasonEntryOptions | 省略可 | `{"group_display": "EAST"}` |
+必須キーとオプショナルキーがフラットに同居するオブジェクト。
+
+| キー | 内容 | 必須 | 例 |
+| ---- | ---- | ---- | -- |
+| `team_count` | チーム数 | 必須 | `10` |
+| `promotion_count` | 昇格枠数 | 必須 | `1` |
+| `relegation_count` | 降格枠数 | 必須 | `0` |
+| `teams` | チームリスト (前年度成績順 = 同順位時の優先順位) | 必須 | `["鹿島", "柏", ...]` |
+| (その他) | カスケード対象のオプショナルキー (下記参照) | 省略可 | `"group_display": "EAST"` |
 
 ### プロパティカスケード
 
 `resolveSeasonInfo()` が Group → Competition → Season Entry の3階層をマージ。スカラ値は下位が上書き、配列 (`css_files`, `note`) は和集合、オブジェクト (`team_rename_map`) はマージ。
 
-### SeasonEntryOptions の主要キー
+### オプショナルキー (カスケード対象)
 
 - `group_display`: HTML上の表示グループ名。スクレイピング結果の `group` 列でCSVに振り分ける
 - `url_category`: スクレイピングURL のカテゴリ部分を上書き (デフォルト: competition key の小文字化)
@@ -178,7 +180,7 @@ Python と TypeScript で共有する型定義のドリフトを CI で検出す
 | 共有型 | Python (src/match_utils.py) | TypeScript (frontend/src/types/) |
 | ------ | --------------------------- | -------------------------------- |
 | CSV カラム定義 | `CSV_COLUMN_SCHEMA` | `RawMatchRow` (match.ts) |
-| SeasonEntry オプション | `SeasonEntry.KNOWN_OPTION_KEYS` | `SeasonEntryOptions` (season.ts) |
+| SeasonEntry オプション | `SeasonEntry.OPTIONAL_KEYS` | `SeasonEntryOptions` (season.ts) |
 | PointSystem 値 | `POINT_SYSTEM_VALUES` | `POINT_MAPS` keys (config.ts) |
 
 ### ローカル検証
@@ -204,7 +206,7 @@ uv run python scripts/check_type_sync.py
   - `'graduated-win'` (1997–98): 90分勝3/延長勝2/PK勝1/負0
   - `'ex-win-2'` (1999–2002): 90分勝3/延長勝2/分1/負0
   - `'pk-win2-loss1'` (2026特別大会): 勝3/PK勝2/PK負1/負0
-- **SeasonEntry バリデーション**: index 0〜3 の型不正は即エラー。index 4 の未知キーは Warning で無視
+- **SeasonEntry バリデーション**: 必須キー (`team_count`, `promotion_count`, `relegation_count`, `teams`) の欠落・型不正は即エラー。未知のオプショナルキーは Warning で無視
 - **ルール説明ノート自動生成** (`config/rule-notes.ts`): `pointSystem` が `'standard'` 以外、または `tiebreakOrder` がデフォルト (`['goal_diff', 'goal_get']`) と異なる場合、`resolveSeasonInfo()` が note 配列末尾にルール説明を自動追加。メッセージは辞書オブジェクトで管理し、将来の多言語化に備える (locale 引数 + `Record<Locale, ...>` への拡張で対応可能)
 - **スコアアノテーション規則 (リーグ・トーナメント共通)**: メインスコア (`homeGoal`/`awayGoal`) は常に ET 込みの最終結果。`formatScore` が `(PKn)` / `(ETn)` アノテーションを付加。PK がある場合は PK のみ表示 (ET 後も同点なので ET スコアに情報価値なし)。単試合・H&A aggregate 共通ロジック
   - **単試合**: CSV の `home_pk_score`/`away_pk_score`/`home_score_ex`/`away_score_ex` をそのままマッピング
