@@ -125,15 +125,15 @@ def check_all() -> list[str]:
     except Exception as e:
         return [f"Failed to load season_map.yaml: {e}"]
 
-    # 3. Iterate all groups -> competitions -> seasons
-    for group_key, group_data in season_map.items():
-        competitions = group_data.get('competitions', {})
+    # 3. Iterate all families -> competitions -> seasons
+    for family_key, family_data in season_map.items():
+        competitions = family_data.get('competitions', {})
         for comp_key, comp_data in competitions.items():
             seasons = comp_data.get('seasons', {})
             for season_key, season_entry in seasons.items():
                 # Skip bracket-only seasons (no league view = no point calculation)
                 view_types = resolve_view_types(
-                    group_data, comp_data, season_entry)
+                    family_data, comp_data, season_entry)
                 if 'league' not in view_types:
                     continue
 

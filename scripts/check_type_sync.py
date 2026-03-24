@@ -143,14 +143,14 @@ def check_view_type_consistency() -> list[str]:
     with open(season_map_path, 'r', encoding='utf-8') as f:
         season_map = yaml.safe_load(f)
 
-    for group_key, group in season_map.items():
-        if not isinstance(group, dict) or 'competitions' not in group:
+    for family_key, family in season_map.items():
+        if not isinstance(family, dict) or 'competitions' not in family:
             continue
-        group_vt = set(group.get('view_type', []))
-        for comp_key, comp in group.get('competitions', {}).items():
+        family_vt = set(family.get('view_type', []))
+        for comp_key, comp in family.get('competitions', {}).items():
             if not isinstance(comp, dict):
                 continue
-            comp_vt = group_vt | set(comp.get('view_type', []))
+            comp_vt = family_vt | set(comp.get('view_type', []))
             for season_key, entry in comp.get('seasons', {}).items():
                 if not isinstance(entry, dict):
                     continue
@@ -160,7 +160,7 @@ def check_view_type_consistency() -> list[str]:
                 has_bracket = entry.get('bracket_order') or entry.get('bracket_blocks')
                 if has_bracket and 'bracket' not in resolved_vt:
                     errors.append(
-                        f"{group_key}/{comp_key}/{season_key}: "
+                        f"{family_key}/{comp_key}/{season_key}: "
                         f"bracket_order exists but view_type {sorted(resolved_vt)} "
                         f"does not include 'bracket'")
     return errors

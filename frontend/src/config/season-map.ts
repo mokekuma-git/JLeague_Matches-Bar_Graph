@@ -3,7 +3,7 @@
 import yaml from 'js-yaml';
 import type { PointSystem } from '../types/config';
 import type {
-  SeasonMap, GroupEntry, CompetitionEntry, RawSeasonEntry, SeasonInfo,
+  SeasonMap, CompetitionFamilyEntry, CompetitionEntry, RawSeasonEntry, SeasonInfo,
   CrossGroupStanding, DataSource, ViewType,
 } from '../types/season';
 import { generateRuleNotes } from './rule-notes';
@@ -32,34 +32,34 @@ export async function loadSeasonMap(url: string = './yaml/season_map.yaml'): Pro
 
 /** Result type for findCompetition(). */
 export interface CompetitionLookup {
-  groupKey: string;
-  group: GroupEntry;
+  familyKey: string;
+  family: CompetitionFamilyEntry;
   competition: CompetitionEntry;
 }
 
 /**
- * Finds a competition by key across all groups.
- * Returns the group and competition entry, or undefined if not found.
+ * Finds a competition by key across all families.
+ * Returns the family and competition entry, or undefined if not found.
  */
 export function findCompetition(
   seasonMap: SeasonMap, competitionKey: string,
 ): CompetitionLookup | undefined {
-  for (const [groupKey, group] of Object.entries(seasonMap)) {
-    const comp = group.competitions[competitionKey];
+  for (const [familyKey, family] of Object.entries(seasonMap)) {
+    const comp = family.competitions[competitionKey];
     if (comp) {
-      return { groupKey, group, competition: comp };
+      return { familyKey, family, competition: comp };
     }
   }
   return undefined;
 }
 
 /**
- * Resolve view_type at the group → competition level (ignoring per-season).
+ * Resolve view_type at the family → competition level (ignoring per-season).
  * Used for dropdown filtering without resolving every season entry.
  * Returns ['league'] as the default when no level specifies view_type.
  */
-export function getCompetitionViewTypes(group: GroupEntry, comp: CompetitionEntry): ViewType[] {
-  const viewTypes = mergeUniqueArrays(group.view_type, comp.view_type);
+export function getCompetitionViewTypes(family: CompetitionFamilyEntry, comp: CompetitionEntry): ViewType[] {
+  const viewTypes = mergeUniqueArrays(family.view_type, comp.view_type);
   return viewTypes.length > 0 ? viewTypes : ['league'];
 }
 
@@ -99,7 +99,7 @@ function hasEntries(value: Record<string, unknown>): boolean {
 
 /**
  * Resolves a SeasonInfo by applying the property cascade:
- * group → competition → season entry options.
+ * family → competition → season entry options.
  *
  * Cascade rules:
  * - Scalar (string): lower level overrides upper
@@ -107,12 +107,12 @@ function hasEntries(value: Record<string, unknown>): boolean {
  * - Object (team_rename_map): merge (lower keys override)
  */
 export function resolveSeasonInfo(
-  group: GroupEntry,
+  family: CompetitionFamilyEntry,
   comp: CompetitionEntry,
   entry: RawSeasonEntry,
-  groupKey: string = '',
+  familyKey: string = '',
 ): SeasonInfo {
-  const cssFiles = mergeUniqueArrays(group.css_files, comp.css_files, entry.css_files);
+  const cssFiles = mergeUniqueArrays(family.css_files, comp.css_files, entry.css_files);
 
   // team_rename_map currently cascades only competition -> season.
   const teamRenameMap = mergeObjects<Record<string, string>>(
@@ -123,8 +123,8 @@ export function resolveSeasonInfo(
   const leagueDisplay = pickCascade(
     entry.league_display,
     comp.league_display,
-    group.display_name,
-    groupKey,
+    family.display_name,
+    familyKey,
   )!;
 
   const pointSystem: PointSystem = pickCascade(
@@ -142,14 +142,14 @@ export function resolveSeasonInfo(
   const aggregateTiebreakOrder = pickCascade(
     entry.aggregate_tiebreak_order,
     comp.aggregate_tiebreak_order,
-    group.aggregate_tiebreak_order,
+    family.aggregate_tiebreak_order,
     [],
   )!;
 
   const seasonStartMonth = pickCascade(
     entry.season_start_month,
     comp.season_start_month,
-    group.season_start_month,
+    family.season_start_month,
     7,
   )!;
 
@@ -173,24 +173,24 @@ export function resolveSeasonInfo(
   const dataSource: DataSource | undefined = pickCascade(
     entry.data_source,
     comp.data_source,
-    group.data_source,
+    family.data_source,
   );
 
   const promotionLabel = pickCascade(
     entry.promotion_label,
     comp.promotion_label,
-    group.promotion_label,
+    family.promotion_label,
     t('col.promotion'),
   )!;
 
   const notes = [
-    ...toArray(group.note),
+    ...toArray(family.note),
     ...toArray(comp.note),
     ...toArray(entry.note),
     ...generateRuleNotes(pointSystem, tiebreakOrder, aggregateTiebreakOrder),
   ];
 
-  const viewTypes = mergeUniqueArrays(group.view_type, comp.view_type, entry.view_type);
+  const viewTypes = mergeUniqueArrays(family.view_type, comp.view_type, entry.view_type);
 
   return {
     teamCount: entry.team_count,

@@ -2,7 +2,7 @@
 //
 // Shape of season_map.yaml:
 // {
-//   "jleague": {                            ← group
+//   "jleague": {                            ← family (CompetitionFamily)
 //     "display_name": "Jリーグ",
 //     "css_files": ["team_style.css"],
 //     "competitions": {
@@ -52,8 +52,8 @@ export interface BracketBlock {
   bracket_pairing_orders?: number[][]; // Per level reorder of child matches before pairing
 }
 
-// Optional properties that can appear at group, competition, or season level.
-// Used by cascade resolution (group → competition → season).
+// Optional properties that can appear at family, competition, or season level.
+// Used by cascade resolution (family → competition → season).
 export interface SeasonEntryOptions {
   rank_properties?: RankClassMap;
   group_display?: string;
@@ -89,21 +89,21 @@ export interface RawSeasonEntry extends SeasonEntryOptions {
   teams: string[];
 }
 
-// A single competition within a group (e.g., J1 within jleague).
+// A single competition within a family (e.g., J1 within jleague).
 // Extends SeasonEntryOptions because cascade allows any option at this level.
 export interface CompetitionEntry extends SeasonEntryOptions {
   seasons: Record<string, RawSeasonEntry>;
 }
 
-// A top-level group (e.g., jleague, international).
+// A top-level competition family (e.g., jleague, national).
 // Extends SeasonEntryOptions because cascade allows any option at this level.
-export interface GroupEntry extends SeasonEntryOptions {
-  display_name?: string;  // defaults to group key when omitted
+export interface CompetitionFamilyEntry extends SeasonEntryOptions {
+  display_name?: string;  // defaults to family key when omitted
   competitions: Record<string, CompetitionEntry>;
 }
 
-// The entire season_map.yaml: group key → GroupEntry.
-export type SeasonMap = Record<string, GroupEntry>;
+// The entire season_map.yaml: family key → CompetitionFamilyEntry.
+export type SeasonMap = Record<string, CompetitionFamilyEntry>;
 
 // Object form of a fully resolved season entry.
 // Use resolveSeasonInfo() (in season-map.ts) for cascade resolution.
