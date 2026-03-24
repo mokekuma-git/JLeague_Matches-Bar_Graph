@@ -102,7 +102,7 @@ npx playwright test --grep @full-render          # full-render のみ
 
 ## season_map.yaml 構造
 
-4階層構造: **Group → Competition → Seasons → Entry**。
+4階層構造: **CompetitionFamily → Competition → Seasons → Entry**。
 
 ```yaml
 jleague:
@@ -129,7 +129,7 @@ jleague:
 
 ### 階層別プロパティ
 
-- **Group** (`jleague` 等): `display_name`, `css_files?`, `season_start_month?`, `data_source?`, `note?`
+- **CompetitionFamily** (`jleague` 等): `display_name`, `css_files?`, `season_start_month?`, `data_source?`, `note?`
 - **Competition** (`J1` 等): `league_display?`, `css_files?`, `point_system?`, `team_rename_map?`, `tiebreak_order?`, `season_start_month?`, `data_source?`, `note?`, `seasons`
 
 ### Season Entry (オブジェクト)
@@ -146,7 +146,7 @@ jleague:
 
 ### プロパティカスケード
 
-`resolveSeasonInfo()` が Group → Competition → Season Entry の3階層をマージ。スカラ値は下位が上書き、配列 (`css_files`, `note`) は和集合、オブジェクト (`team_rename_map`) はマージ。
+`resolveSeasonInfo()` が CompetitionFamily → Competition → Season Entry の3階層をマージ。スカラ値は下位が上書き、配列 (`css_files`, `note`) は和集合、オブジェクト (`team_rename_map`) はマージ。
 
 ### オプショナルキー (カスケード対象)
 
@@ -155,7 +155,7 @@ jleague:
 - `rank_properties`: 順位→CSSクラスのマッピング (例: `{"3": "promoted_playoff"}`)
 - `season_start_month`: シーズン開始月。カスケード対象。コードデフォルト: `7` (秋春制)
 - `data_source`: データ参照元。`{label, url}` オブジェクト。カスケード対象 (スカラ: 下位が上書き)。フロントエンドで動的表示
-- `note`: 注記テキスト (`string | string[]`)。カスケード対象 (和集合: Group + Competition + Entry を結合)。フロントエンドで動的表示
+- `note`: 注記テキスト (`string | string[]`)。カスケード対象 (和集合: Family + Competition + Entry を結合)。フロントエンドで動的表示
 - `promotion_label`: 昇格枠のラベル文字列 (デフォルト: `'昇格'`)。カスケード対象 (スカラ: 下位が上書き)。HTML 許容 (例: `'昇格<br/>ACL'`)
 
 ### シーズン命名規則
