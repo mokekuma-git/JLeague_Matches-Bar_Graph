@@ -13,7 +13,7 @@ JLeague_Matches-Bar_Graph/
 │   ├── src/
 │   │   ├── app.ts                  #   エントリポイント
 │   │   ├── j_points.html           #   HTMLテンプレート (Vite input)
-│   │   ├── config/season-map.ts    #   season_map.json 読み込み・ユーティリティ
+│   │   ├── config/season-map.ts    #   season_map.yaml 読み込み・ユーティリティ
 │   │   ├── config/rule-notes.ts   #   ルール説明ノート自動生成 (i18n準備済)
 │   │   ├── core/                   #   CSV解析, 勝ち点計算, ソート, 日付ユーティリティ
 │   │   ├── graph/                  #   バーグラフ描画, ツールチップ, CSS操作
@@ -37,7 +37,7 @@ JLeague_Matches-Bar_Graph/
 │   ├── j_points.html, assets/      #   ★ ビルド生成物 (gitignore対象)
 │   ├── *.css                       #   スタイル (チームカラー定義含む)
 │   ├── csv/                        #   処理済みCSV
-│   └── json/                       #   season_map.json
+│   └── yaml/                       #   season_map.yaml
 ├── scripts/                         #   CI/CDスクリプト, 運用ユーティリティ
 │   ├── check_type_sync.py          #   Python ↔ TS 型同期チェック (CI)
 │   ├── check_point_system_csv.py   #   PointSystem ↔ CSV 整合検証 (CI)
@@ -80,7 +80,7 @@ npx playwright test --grep @full-render          # full-render のみ
 
 - **GitHub Pages は GitHub Actions 経由** (`deploy-pages.yaml`): main push 時に TS ビルド → `docs/` を artifact としてアップロード → デプロイ
 - **ビルド生成物 (`docs/j_points.html`, `docs/assets/`) は git 管理外** (`.gitignore` に記載)
-- `docs/` 内の CSV, JSON, CSS はそのまま git 管理 (Python 側が直接更新)
+- `docs/` 内の CSV, YAML, CSS はそのまま git 管理 (Python 側が直接更新)
 - `check-build-artifacts.yaml` が PR 時にビルド生成物の誤コミットを検出
 
 ## CSV形式
@@ -100,30 +100,31 @@ npx playwright test --grep @full-render          # full-render のみ
 - `match_number`: 公式の試合採番 (省略可能。data.j-league.jpやJFA JSONなどから取得可能な場合に付与)
 - その他付加情報 [`broadcast`, `attendance`]
 
-## season_map.json 構造
+## season_map.yaml 構造
 
 4階層構造: **Group → Competition → Seasons → Entry**。
 
-```json
-{
-  "jleague": {
-    "display_name": "Jリーグ",
-    "css_files": ["team_style.css"],
-    "season_start_month": 1,
-    "competitions": {
-      "J1": {
-        "league_display": "J1リーグ",
-        "seasons": {
-          "2026East": {"team_count": 10, "promotion_count": 1, "relegation_count": 0,
-            "teams": ["鹿島", "柏", ...],
-            "group_display": "EAST"},
-          "2025": {"team_count": 20, "promotion_count": 3, "relegation_count": 3,
-            "teams": ["神戸", "広島", ...]}
-        }
-      }
-    }
-  }
-}
+```yaml
+jleague:
+  display_name: Jリーグ
+  css_files:
+    - team_style.css
+  season_start_month: 1
+  competitions:
+    J1:
+      league_display: J1リーグ
+      seasons:
+        '2026East':
+          team_count: 10
+          promotion_count: 1
+          relegation_count: 0
+          teams: [鹿島, 柏, ...]
+          group_display: EAST
+        '2025':
+          team_count: 20
+          promotion_count: 3
+          relegation_count: 3
+          teams: [神戸, 広島, ...]
 ```
 
 ### 階層別プロパティ
@@ -169,7 +170,7 @@ npx playwright test --grep @full-render          # full-render のみ
 
 - **`plan/` と `local_data/` はローカル専用**: どちらも Git 管理しない。`git add` の対象に含めず、ignore 警告が出ても `git add -f` で突破しない。Issue plan や調査メモは作成・更新してよいが、commit / PR / GitHub Issue には載せない
 - **リファクタリング時のビルド確認**: テスト (`vitest`) だけでなく `npm run build` も確認する。CI は typecheck + vitest のみでビルドは PR 時に自動検証されない
-- **season_map.json 編集後**: `python scripts/format_season_map.py` でカスタム整形を実行
+- **season_map.yaml**: YAML 形式のためカスタムフォーマッタ不要。直接編集可能
 
 ## Python ↔ TypeScript 型同期
 
