@@ -339,6 +339,56 @@ describe('resolveSeasonInfo', () => {
     expect(info.groupTeamCount).toEqual({ B: 4, C: 3, D: 4 });
   });
 
+  test('group_team_count scalar form expands using shown_groups', () => {
+    const comp: CompetitionEntry = {
+      shown_groups: ['A', 'B'],
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = {
+      team_count: 16,
+      promotion_count: 0,
+      relegation_count: 0,
+      teams: [],
+      group_team_count: 4,
+    };
+    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+
+    expect(info.groupTeamCount).toEqual({ A: 4, B: 4 });
+  });
+
+  test('group_team_count scalar form can be overridden by season dict entries', () => {
+    const comp: CompetitionEntry = {
+      shown_groups: ['A', 'B'],
+      group_team_count: 4,
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = {
+      team_count: 16,
+      promotion_count: 0,
+      relegation_count: 0,
+      teams: [],
+      group_team_count: { B: 3 },
+    };
+    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+
+    expect(info.groupTeamCount).toEqual({ A: 4, B: 3 });
+  });
+
+  test('group_team_count scalar form throws without shown_groups', () => {
+    const comp: CompetitionEntry = { seasons: {} };
+    const entry: RawSeasonEntry = {
+      team_count: 16,
+      promotion_count: 0,
+      relegation_count: 0,
+      teams: [],
+      group_team_count: 4,
+    };
+
+    expect(() => resolveSeasonInfo(sampleFamily, comp, entry)).toThrow(
+      'group_team_count scalar form requires index keys to expand',
+    );
+  });
+
   test('cascade: notes append family, competition, season, and generated rule notes', () => {
     const family: CompetitionFamilyEntry = {
       display_name: 'Test',
@@ -404,5 +454,54 @@ describe('resolveSeasonInfo', () => {
     const info = resolveSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.promotionLabel).toBe('W杯本選');
+  });
+
+  test('required count fields can default from competition level', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'JLeagueCup',
+      team_count: 8,
+      promotion_count: 0,
+      relegation_count: 0,
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = { teams: ['A', 'B'] };
+    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+
+    expect(info.teamCount).toBe(8);
+    expect(info.promotionCount).toBe(0);
+    expect(info.relegationCount).toBe(0);
+  });
+
+  test('season count fields override competition defaults', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'J1リーグ',
+      team_count: 18,
+      promotion_count: 2,
+      relegation_count: 2,
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = {
+      team_count: 20,
+      promotion_count: 3,
+      relegation_count: 3,
+      teams: [],
+    };
+    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+
+    expect(info.teamCount).toBe(20);
+    expect(info.promotionCount).toBe(3);
+    expect(info.relegationCount).toBe(3);
+  });
+
+  test('throws when required count fields are missing at both season and competition level', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'Broken',
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = { teams: [] };
+
+    expect(() => resolveSeasonInfo(sampleFamily, comp, entry)).toThrow(
+      'Missing required season_map field: team_count',
+    );
   });
 });

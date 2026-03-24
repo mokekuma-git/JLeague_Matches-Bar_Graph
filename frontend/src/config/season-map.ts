@@ -67,6 +67,17 @@ function pickCascade<T>(...values: (T | undefined)[]): T | undefined {
   return values.find((value) => value !== undefined);
 }
 
+function requireCascade<T>(
+  label: string,
+  ...values: (T | undefined)[]
+): T {
+  const resolved = pickCascade(...values);
+  if (resolved === undefined) {
+    throw new Error(`Missing required season_map field: ${label}`);
+  }
+  return resolved;
+}
+
 function mergeObjects<T extends Record<string, unknown>>(...values: (T | undefined)[]): T {
   return Object.assign({}, ...values) as T;
 }
@@ -95,6 +106,28 @@ function toArray<T>(value: T | readonly T[] | undefined): T[] {
 
 function hasEntries(value: Record<string, unknown>): boolean {
   return Object.keys(value).length > 0;
+}
+
+/**
+ * Expands a scalar value into a Record using the given index keys.
+ * If the value is already a Record, returns it as-is.
+ * This enables YAML shorthand: `group_team_count: 4` instead of `{A: 4, B: 4, ...}`.
+ */
+function expandScalarDefault<T>(
+  value: T | Record<string, T> | undefined,
+  indexKeys: string[] | undefined,
+  fieldName: string,
+): Record<string, T> | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, T>;
+  }
+  if (!indexKeys || indexKeys.length === 0) {
+    throw new Error(
+      `${fieldName} scalar form requires index keys to expand`,
+    );
+  }
+  return Object.fromEntries(indexKeys.map((key) => [key, value as T]));
 }
 
 /**
@@ -164,9 +197,11 @@ export function resolveSeasonInfo(
   );
 
   // group_team_count currently cascades only competition -> season.
+  const compGroupTeamCount = expandScalarDefault(comp.group_team_count, shownGroups, 'group_team_count');
+  const entryGroupTeamCount = expandScalarDefault(entry.group_team_count, shownGroups, 'group_team_count');
   const groupTeamCountRaw = mergeObjects<Record<string, number>>(
-    comp.group_team_count,
-    entry.group_team_count,
+    compGroupTeamCount,
+    entryGroupTeamCount,
   );
   const groupTeamCount = hasEntries(groupTeamCountRaw) ? groupTeamCountRaw : undefined;
 
@@ -191,11 +226,22 @@ export function resolveSeasonInfo(
   ];
 
   const viewTypes = mergeUniqueArrays(family.view_type, comp.view_type, entry.view_type);
+  const teamCount = requireCascade('team_count', entry.team_count, comp.team_count);
+  const promotionCount = requireCascade(
+    'promotion_count',
+    entry.promotion_count,
+    comp.promotion_count,
+  );
+  const relegationCount = requireCascade(
+    'relegation_count',
+    entry.relegation_count,
+    comp.relegation_count,
+  );
 
   return {
-    teamCount: entry.team_count,
-    promotionCount: entry.promotion_count,
-    relegationCount: entry.relegation_count,
+    teamCount,
+    promotionCount,
+    relegationCount,
     teams: entry.teams,
     rankClass: entry.rank_properties ?? {},
     groupDisplay: entry.group_display,

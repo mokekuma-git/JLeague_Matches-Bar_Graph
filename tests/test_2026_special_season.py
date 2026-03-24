@@ -14,7 +14,7 @@ import pandas as pd
 import yaml
 from bs4 import BeautifulSoup
 
-from match_utils import mu, get_season_from_date
+from match_utils import SeasonEntry, mu, get_season_from_date
 from read_jleague_matches import (
     read_match_from_web,
     _team_count_to_section_range,
@@ -228,6 +228,71 @@ class TestGetSubSeasons(unittest.TestCase):
             self.assertEqual(s['url_category'], 'j2j3')
         displays = [s['group_display'] for s in subs]
         self.assertEqual(displays, ['EAST-A', 'EAST-B', 'WEST-A', 'WEST-B'])
+
+
+class TestSeasonEntryCompetitionDefaults(unittest.TestCase):
+    """Test SeasonEntry resolves required counts from competition defaults."""
+
+    def test_uses_competition_defaults_for_missing_counts(self):
+        entry = SeasonEntry(
+            '2025',
+            {'teams': ['A', 'B']},
+            {'team_count': 8, 'promotion_count': 0, 'relegation_count': 0},
+        )
+
+        self.assertEqual(entry.team_count, 8)
+        self.assertEqual(entry.promotion_count, 0)
+        self.assertEqual(entry.relegation_count, 0)
+        self.assertEqual(entry.teams, ['A', 'B'])
+
+    def test_season_values_override_competition_defaults(self):
+        entry = SeasonEntry(
+            '2025',
+            {
+                'team_count': 10,
+                'promotion_count': 1,
+                'relegation_count': 1,
+                'teams': ['A', 'B'],
+            },
+            {'team_count': 8, 'promotion_count': 0, 'relegation_count': 0},
+        )
+
+        self.assertEqual(entry.team_count, 10)
+        self.assertEqual(entry.promotion_count, 1)
+        self.assertEqual(entry.relegation_count, 1)
+
+    def test_errors_when_counts_missing_at_both_levels(self):
+        with self.assertRaisesRegex(
+                ValueError,
+                'missing required keys after competition fallback'):
+            SeasonEntry('2025', {'teams': ['A', 'B']})
+
+    def test_group_team_count_scalar_form_is_allowed(self):
+        entry = SeasonEntry(
+            '2025',
+            {
+                'team_count': 10,
+                'promotion_count': 1,
+                'relegation_count': 0,
+                'teams': ['A', 'B'],
+                'group_team_count': 4,
+            },
+        )
+
+        self.assertEqual(entry.options['group_team_count'], 4)
+
+    def test_group_team_count_dict_requires_int_values(self):
+        with self.assertRaisesRegex(TypeError, 'group_team_count dict must be str -> int'):
+            SeasonEntry(
+                '2025',
+                {
+                    'team_count': 10,
+                    'promotion_count': 1,
+                    'relegation_count': 0,
+                    'teams': ['A', 'B'],
+                    'group_team_count': {'A': '4'},
+                },
+            )
 
 
 class TestTeamCountToSectionRange(unittest.TestCase):

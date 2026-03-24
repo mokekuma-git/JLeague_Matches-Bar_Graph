@@ -117,6 +117,41 @@ def check_season_entry_options() -> list[str]:
     return errors
 
 
+def check_required_count_cascade_fields() -> list[str]:
+    """Check count field optionality/defaultability across Python and TS types."""
+    errors: list[str] = []
+    ts_content = SEASON_TS.read_text(encoding='utf-8')
+    raw_fields = _parse_interface_fields(ts_content, 'RawSeasonEntry')
+    comp_fields = _parse_interface_fields(ts_content, 'CompetitionEntry')
+
+    expected = SeasonEntry.COMPETITION_DEFAULTABLE_KEYS
+
+    missing_in_raw = expected - set(raw_fields.keys())
+    if missing_in_raw:
+        errors.append(
+            f"Competition-defaultable count fields missing in TS RawSeasonEntry: "
+            f"{sorted(missing_in_raw)}")
+
+    raw_required = sorted(key for key in expected if raw_fields.get(key) != 'optional')
+    if raw_required:
+        errors.append(
+            f"TS RawSeasonEntry fields should be optional for competition defaults: "
+            f"{raw_required}")
+
+    missing_in_comp = expected - set(comp_fields.keys())
+    if missing_in_comp:
+        errors.append(
+            f"Competition-defaultable count fields missing in TS CompetitionEntry: "
+            f"{sorted(missing_in_comp)}")
+
+    comp_required = sorted(key for key in expected if comp_fields.get(key) != 'optional')
+    if comp_required:
+        errors.append(
+            f"TS CompetitionEntry fields should be optional: {comp_required}")
+
+    return errors
+
+
 def check_point_system_values() -> list[str]:
     """Check POINT_SYSTEM_VALUES against POINT_MAPS keys."""
     errors: list[str] = []
@@ -172,6 +207,7 @@ def main() -> int:
     checks = [
         ('CSV columns', check_csv_columns),
         ('SeasonEntryOptions', check_season_entry_options),
+        ('count cascade fields', check_required_count_cascade_fields),
         ('PointSystem values', check_point_system_values),
         ('view_type consistency', check_view_type_consistency),
     ]

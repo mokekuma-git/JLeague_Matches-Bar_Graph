@@ -66,7 +66,7 @@ export interface SeasonEntryOptions {
   season_start_month?: number;
   shown_groups?: string[];
   cross_group_standing?: CrossGroupStanding;
-  group_team_count?: Record<string, number>;
+  group_team_count?: number | Record<string, number>;
   note?: string | string[];
   data_source?: DataSource;
   promotion_label?: string;
@@ -83,15 +83,18 @@ export interface SeasonEntryOptions {
 // Object format as loaded from season_map.yaml.
 // Required fields + optional cascade properties (flattened).
 export interface RawSeasonEntry extends SeasonEntryOptions {
-  team_count: number;
-  promotion_count: number;
-  relegation_count: number;
+  team_count?: number;
+  promotion_count?: number;
+  relegation_count?: number;
   teams: string[];
 }
 
 // A single competition within a family (e.g., J1 within jleague).
 // Extends SeasonEntryOptions because cascade allows any option at this level.
 export interface CompetitionEntry extends SeasonEntryOptions {
+  team_count?: number;
+  promotion_count?: number;
+  relegation_count?: number;
   seasons: Record<string, RawSeasonEntry>;
 }
 
