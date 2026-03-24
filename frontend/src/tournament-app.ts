@@ -1,6 +1,6 @@
 // Tournament bracket viewer entry point.
 //
-// Loads season_map.json, filters to bracket-enabled competitions,
+// Loads season_map.yaml, filters to bracket-enabled competitions,
 // and renders a CSS bracket for the selected season.
 // Provides date slider, opacity, zoom, and layout controls.
 

@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 export default defineConfig(({ command }) => ({
   root: 'src',           // Base directory for entry points
   base: './',            // Use relative asset paths so the build works on GitHub Pages subdirectory
-  // During dev: serve docs/ as static files so csv/ and json/ are accessible.
+  // During dev: serve docs/ as static files so csv/ and yaml/ are accessible.
   // Disabled during build to avoid copying docs/ back into itself.
   publicDir: command === 'serve' ? '../../docs' : false,
   build: {

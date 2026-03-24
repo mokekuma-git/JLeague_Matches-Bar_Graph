@@ -33,7 +33,7 @@ export const en: Record<MessageKey, string> = {
   'status.cached': '{league} {season} (cached)',
   'status.error': 'CSV load error: {detail}',
   'status.noSeason': 'No season info: {competition}/{season}',
-  'status.seasonMapError': 'Failed to load season_map.json',
+  'status.seasonMapError': 'Failed to load season_map.yaml',
   'status.dataSource': 'Data source: ',
 
   // Warnings

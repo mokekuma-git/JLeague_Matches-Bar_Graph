@@ -137,11 +137,11 @@ def check_point_system_values() -> list[str]:
 
 def check_view_type_consistency() -> list[str]:
     """Check that bracket_order entries have view_type including 'bracket'."""
-    import json
+    import yaml
     errors: list[str] = []
-    season_map_path = PROJECT_ROOT / 'docs' / 'json' / 'season_map.json'
+    season_map_path = PROJECT_ROOT / 'docs' / 'yaml' / 'season_map.yaml'
     with open(season_map_path, 'r', encoding='utf-8') as f:
-        season_map = json.load(f)
+        season_map = yaml.safe_load(f)
 
     for group_key, group in season_map.items():
         if not isinstance(group, dict) or 'competitions' not in group:

@@ -1,6 +1,6 @@
 // Unified viewer entry point.
 //
-// Navigates the 4-tier season_map.json hierarchy:
+// Navigates the 4-tier season_map.yaml hierarchy:
 //   group → competition → seasons → entry
 //
 // - Competition dropdown is populated dynamically with group separators.

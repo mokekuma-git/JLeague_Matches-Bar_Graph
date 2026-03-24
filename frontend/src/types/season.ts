@@ -1,6 +1,6 @@
-// Types for the structure of season_map.json (4-tier hierarchy).
+// Types for the structure of season_map.yaml (4-tier hierarchy).
 //
-// Shape of season_map.json:
+// Shape of season_map.yaml:
 // {
 //   "jleague": {                            ← group
 //     "display_name": "Jリーグ",
@@ -80,7 +80,7 @@ export interface SeasonEntryOptions {
   view_type?: ViewType[];
 }
 
-// Object format as loaded from season_map.json.
+// Object format as loaded from season_map.yaml.
 // Required fields + optional cascade properties (flattened).
 export interface RawSeasonEntry extends SeasonEntryOptions {
   team_count: number;
@@ -102,7 +102,7 @@ export interface GroupEntry extends SeasonEntryOptions {
   competitions: Record<string, CompetitionEntry>;
 }
 
-// The entire season_map.json: group key → GroupEntry.
+// The entire season_map.yaml: group key → GroupEntry.
 export type SeasonMap = Record<string, GroupEntry>;
 
 // Object form of a fully resolved season entry.
