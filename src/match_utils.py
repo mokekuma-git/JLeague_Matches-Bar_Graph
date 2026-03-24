@@ -114,8 +114,10 @@ class SeasonEntry:
         }
     """
 
-    REQUIRED_KEYS: set[str] = {
-        'team_count', 'promotion_count', 'relegation_count', 'teams',
+    REQUIRED_KEYS: set[str] = {'teams'}
+
+    COMPETITION_DEFAULTABLE_KEYS: set[str] = {
+        'team_count', 'promotion_count', 'relegation_count',
     }
 
     OPTIONAL_KEYS: set[str] = {
@@ -131,14 +133,20 @@ class SeasonEntry:
         'view_type',
     }
 
-    KNOWN_KEYS: set[str] = REQUIRED_KEYS | OPTIONAL_KEYS
+    KNOWN_KEYS: set[str] = REQUIRED_KEYS | COMPETITION_DEFAULTABLE_KEYS | OPTIONAL_KEYS
 
-    def __init__(self, season_key: str, raw: dict):
+    def __init__(
+            self,
+            season_key: str,
+            raw: dict,
+            competition_defaults: dict[str, Any] | None = None):
         """Parse and validate a raw season entry object.
 
         Args:
             season_key: Season name (for error messages, e.g. '2026East').
             raw: Raw object from season_map.yaml.
+            competition_defaults:
+                Optional competition-level fallback values for required counts.
 
         Raises:
             ValueError: If required keys are missing.
@@ -148,28 +156,60 @@ class SeasonEntry:
             raise TypeError(
                 f"Season '{season_key}': expected dict, got {type(raw).__name__}")
 
+        competition_defaults = competition_defaults or {}
+
         missing = self.REQUIRED_KEYS - set(raw.keys())
         if missing:
             raise ValueError(
                 f"Season '{season_key}': missing required keys: {missing}")
 
-        for key in ('team_count', 'promotion_count', 'relegation_count'):
-            if not isinstance(raw[key], int):
+        missing_counts = {
+            key for key in self.COMPETITION_DEFAULTABLE_KEYS
+            if key not in raw and key not in competition_defaults
+        }
+        if missing_counts:
+            raise ValueError(
+                f"Season '{season_key}': missing required keys after competition fallback: "
+                f"{missing_counts}")
+
+        resolved_counts = {}
+        for key in self.COMPETITION_DEFAULTABLE_KEYS:
+            value = raw.get(key, competition_defaults.get(key))
+            if not isinstance(value, int):
                 raise TypeError(
                     f"Season '{season_key}': {key} must be int, "
-                    f"got {type(raw[key]).__name__}")
+                    f"got {type(value).__name__}")
+            resolved_counts[key] = value
 
         if not isinstance(raw['teams'], list):
             raise TypeError(
                 f"Season '{season_key}': teams must be list, "
                 f"got {type(raw['teams']).__name__}")
 
-        self.team_count: int = raw['team_count']
-        self.promotion_count: int = raw['promotion_count']
-        self.relegation_count: int = raw['relegation_count']
+        group_team_count = raw.get('group_team_count')
+        if group_team_count is not None:
+            if isinstance(group_team_count, int):
+                pass
+            elif isinstance(group_team_count, dict):
+                invalid = [
+                    key for key, value in group_team_count.items()
+                    if not isinstance(key, str) or not isinstance(value, int)
+                ]
+                if invalid:
+                    raise TypeError(
+                        f"Season '{season_key}': group_team_count dict must be str -> int")
+            else:
+                raise TypeError(
+                    f"Season '{season_key}': group_team_count must be int or dict, "
+                    f"got {type(group_team_count).__name__}")
+
+        self.team_count: int = resolved_counts['team_count']
+        self.promotion_count: int = resolved_counts['promotion_count']
+        self.relegation_count: int = resolved_counts['relegation_count']
         self.teams: list[str] = raw['teams']
         self.options: dict[str, Any] = {
-            k: v for k, v in raw.items() if k not in self.REQUIRED_KEYS
+            k: v for k, v in raw.items()
+            if k not in self.REQUIRED_KEYS | self.COMPETITION_DEFAULTABLE_KEYS
         }
 
         unknown = set(self.options.keys()) - self.OPTIONAL_KEYS
@@ -238,10 +278,19 @@ class MatchUtils:
         family = raw.get(family_key, {}).get('competitions', {})
         return {
             comp_key: {
-                sk: SeasonEntry(sk, entry)
+                sk: SeasonEntry(sk, entry, self._get_competition_count_defaults(comp))
                 for sk, entry in comp.get('seasons', {}).items()
             }
             for comp_key, comp in family.items()
+        }
+
+    @staticmethod
+    def _get_competition_count_defaults(comp: dict[str, Any]) -> dict[str, Any]:
+        """Extract count defaults that may cascade from competition to season."""
+        return {
+            key: comp.get(key)
+            for key in SeasonEntry.COMPETITION_DEFAULTABLE_KEYS
+            if key in comp
         }
 
     def get_sub_seasons(self, competition: str, family_key: str = None) -> list[dict] | None:
@@ -351,9 +400,10 @@ class MatchUtils:
         season_str = str(self.config.season)
         for comp in family.get('competitions', {}).values():
             comp_val = comp.get('season_start_month', family_val)
+            comp_defaults = self._get_competition_count_defaults(comp)
             for sk, raw_entry in comp.get('seasons', {}).items():
                 if sk.startswith(season_str):
-                    entry = SeasonEntry(sk, raw_entry)
+                    entry = SeasonEntry(sk, raw_entry, comp_defaults)
                     return entry.options.get('season_start_month', comp_val)
         return family_val
 
