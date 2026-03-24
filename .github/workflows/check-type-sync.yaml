@@ -10,7 +10,7 @@ on:
       - 'src/match_utils.py'
       - 'frontend/src/types/**'
       - 'scripts/check_type_sync.py'
-      - 'docs/json/season_map.json'
+      - 'docs/yaml/season_map.yaml'
       - 'scripts/check_point_system_csv.py'
   push:
     branches:
@@ -19,7 +19,7 @@ on:
       - 'src/match_utils.py'
       - 'frontend/src/types/**'
       - 'scripts/check_type_sync.py'
-      - 'docs/json/season_map.json'
+      - 'docs/yaml/season_map.yaml'
       - 'scripts/check_point_system_csv.py'
 
 jobs:

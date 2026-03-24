@@ -6,12 +6,12 @@
   with URL path 'j2j3' instead of 'j2'
 """
 from datetime import date
-import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch, MagicMock
 
 import pandas as pd
+import yaml
 from bs4 import BeautifulSoup
 
 from match_utils import mu, get_season_from_date
@@ -24,7 +24,7 @@ from read_jleague_matches import (
 
 
 TEST_DATA_DIR = Path(__file__).parent / 'test_data'
-SEASON_MAP_PATH = Path(__file__).resolve().parent.parent / 'docs' / 'json' / 'season_map.json'
+SEASON_MAP_PATH = Path(__file__).resolve().parent.parent / 'docs' / 'yaml' / 'season_map.yaml'
 
 
 class TestJ1_2026(unittest.TestCase):
@@ -191,7 +191,7 @@ class TestGetSubSeasons(unittest.TestCase):
 
     def setUp(self):
         with open(SEASON_MAP_PATH, 'r', encoding='utf-8') as f:
-            self.raw_season_map = json.load(f)
+            self.raw_season_map = yaml.safe_load(f)
 
     def test_j1_sub_seasons(self):
         with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):

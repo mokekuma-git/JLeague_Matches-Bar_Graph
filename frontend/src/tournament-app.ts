@@ -1,6 +1,6 @@
 // Tournament bracket viewer entry point.
 //
-// Loads season_map.json, filters to bracket-enabled competitions,
+// Loads season_map.yaml, filters to bracket-enabled competitions,
 // and renders a CSS bracket for the selected season.
 // Provides date slider, opacity, zoom, and layout controls.
 
@@ -158,17 +158,17 @@ function resolveSeasonBracketOrder(entry: RawSeasonEntry): (string | null)[] | u
 function populateCompetitionPulldown(seasonMap: SeasonMap): void {
   const sel = document.getElementById('competition_key') as HTMLSelectElement;
   sel.innerHTML = '';
-  const groups = Object.entries(seasonMap);
-  const multiGroup = groups.length > 1;
-  for (const [groupKey, group] of groups) {
-    const bracketComps = Object.entries(group.competitions)
-      .filter(([, comp]) => getCompetitionViewTypes(group, comp).includes('bracket'));
+  const families = Object.entries(seasonMap);
+  const multiFamily = families.length > 1;
+  for (const [familyKey, family] of families) {
+    const bracketComps = Object.entries(family.competitions)
+      .filter(([, comp]) => getCompetitionViewTypes(family, comp).includes('bracket'));
     if (bracketComps.length === 0) continue;
 
-    if (multiGroup) {
+    if (multiFamily) {
       const sep = document.createElement('option');
       sep.disabled = true;
-      sep.textContent = `── ${group.display_name ?? groupKey} `;
+      sep.textContent = `── ${family.display_name ?? familyKey} `;
       sel.appendChild(sep);
     }
     for (const [compKey, comp] of bracketComps) {
@@ -682,7 +682,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
   }
 
   const seasonInfo = resolveSeasonInfo(
-    found.group, found.competition, found.competition.seasons[season], found.groupKey,
+    found.family, found.competition, found.competition.seasons[season], found.familyKey,
   );
   const entry = found.competition.seasons[season];
   const bracketOrder = resolveSeasonBracketOrder(entry);

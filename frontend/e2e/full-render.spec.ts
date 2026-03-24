@@ -2,6 +2,7 @@ import { test, expect } from './helpers/test-base';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import yaml from 'js-yaml';
 import { waitForRender, assertInvariants } from './helpers/invariants';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,7 +11,7 @@ const __dirname = dirname(__filename);
 /**
  * @full-render — Full season traversal test.
  *
- * Iterates all competition/season combinations from season_map.json,
+ * Iterates all competition/season combinations from season_map.yaml,
  * loads each via URL params, and asserts view invariants.
  *
  * Not intended for every CI run. Invoke with:
@@ -28,8 +29,8 @@ interface SeasonMap {
 }
 
 function loadSeasonEntries(): Array<{ competition: string; season: string }> {
-  const jsonPath = resolve(__dirname, '../../docs/json/season_map.json');
-  const data: SeasonMap = JSON.parse(readFileSync(jsonPath, 'utf-8'));
+  const yamlPath = resolve(__dirname, '../../docs/yaml/season_map.yaml');
+  const data: SeasonMap = yaml.load(readFileSync(yamlPath, 'utf-8')) as SeasonMap;
   const entries: Array<{ competition: string; season: string }> = [];
 
   for (const group of Object.values(data)) {

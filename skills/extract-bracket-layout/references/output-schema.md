@@ -95,7 +95,7 @@ Use multiple sections when:
 
 ## season_map handoff
 
-When converting a validated graph to `season_map.json`, use one of these strategies:
+When converting a validated graph to `season_map.yaml`, use one of these strategies:
 
 - flatten a simple section into `bracket_order`
 - keep the graph as a sidecar JSON file and reference it from a new season option such as `bracket_definition`

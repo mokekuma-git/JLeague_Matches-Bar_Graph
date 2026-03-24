@@ -1,6 +1,6 @@
 """Validate point_system settings against CSV data.
 
-Cross-checks season_map.json point_system configuration with CSV files
+Cross-checks season_map.yaml point_system configuration with CSV files
 in docs/csv/ to catch mismatches that cause runtime errors (e.g. a CSV
 with PK match data paired with a point_system where pk_win = 0).
 
@@ -10,16 +10,17 @@ Usage:
     uv run python scripts/check_point_system_csv.py
 """
 import csv
-import json
 import re
 import sys
+
+import yaml
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-SEASON_MAP_PATH = PROJECT_ROOT / 'docs' / 'json' / 'season_map.json'
+SEASON_MAP_PATH = PROJECT_ROOT / 'docs' / 'yaml' / 'season_map.yaml'
 CSV_DIR = PROJECT_ROOT / 'docs' / 'csv'
 CONFIG_TS = PROJECT_ROOT / 'frontend' / 'src' / 'types' / 'config.ts'
 
@@ -117,22 +118,22 @@ def check_all() -> list[str]:
     except Exception as e:
         return [f"Failed to parse POINT_MAPS from config.ts: {e}"]
 
-    # 2. Load season_map.json
+    # 2. Load season_map.yaml
     try:
         with open(SEASON_MAP_PATH, 'r', encoding='utf-8') as f:
-            season_map = json.load(f)
+            season_map = yaml.safe_load(f)
     except Exception as e:
-        return [f"Failed to load season_map.json: {e}"]
+        return [f"Failed to load season_map.yaml: {e}"]
 
-    # 3. Iterate all groups -> competitions -> seasons
-    for group_key, group_data in season_map.items():
-        competitions = group_data.get('competitions', {})
+    # 3. Iterate all families -> competitions -> seasons
+    for family_key, family_data in season_map.items():
+        competitions = family_data.get('competitions', {})
         for comp_key, comp_data in competitions.items():
             seasons = comp_data.get('seasons', {})
             for season_key, season_entry in seasons.items():
                 # Skip bracket-only seasons (no league view = no point calculation)
                 view_types = resolve_view_types(
-                    group_data, comp_data, season_entry)
+                    family_data, comp_data, season_entry)
                 if 'league' not in view_types:
                     continue
 

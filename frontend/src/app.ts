@@ -1,9 +1,9 @@
 // Unified viewer entry point.
 //
-// Navigates the 4-tier season_map.json hierarchy:
-//   group → competition → seasons → entry
+// Navigates the 4-tier season_map.yaml hierarchy:
+//   family → competition → seasons → entry
 //
-// - Competition dropdown is populated dynamically with group separators.
+// - Competition dropdown is populated dynamically with family separators.
 // - URL parameters (?competition=J1&season=2026East) are read on init and written on change.
 // - User preferences are persisted via localStorage and restored on reload.
 // - Data timestamp is loaded from csv/csv_timestamp.csv and displayed.
@@ -238,19 +238,19 @@ function isBottomFirst(uiValue: string): boolean {
 function populateCompetitionPulldown(seasonMap: SeasonMap): void {
   const sel = document.getElementById('competition_key') as HTMLSelectElement;
   sel.innerHTML = '';
-  const groups = Object.entries(seasonMap);
-  const multiGroup = groups.length > 1;
-  for (const [groupKey, group] of groups) {
-    if (multiGroup) {
-      // Disabled separator showing group name (only when multiple groups exist)
+  const families = Object.entries(seasonMap);
+  const multiFamily = families.length > 1;
+  for (const [familyKey, family] of families) {
+    if (multiFamily) {
+      // Disabled separator showing family name (only when multiple families exist)
       const sep = document.createElement('option');
       sep.disabled = true;
-      sep.textContent = `── ${group.display_name ?? groupKey} `;
+      sep.textContent = `── ${family.display_name ?? familyKey} `;
       sel.appendChild(sep);
     }
 
-    for (const [compKey, comp] of Object.entries(group.competitions)) {
-      if (!getCompetitionViewTypes(group, comp).includes('league')) continue;
+    for (const [compKey, comp] of Object.entries(family.competitions)) {
+      if (!getCompetitionViewTypes(family, comp).includes('league')) continue;
       const opt = document.createElement('option');
       opt.value = compKey;
       opt.textContent = comp.league_display ?? compKey;
@@ -305,7 +305,7 @@ function renderFromCache(
   if (!found) return;
   const entry = found.competition.seasons[season];
   if (!entry) return;
-  const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry, found.groupKey);
+  const seasonInfo = resolveSeasonInfo(found.family, found.competition, entry, found.familyKey);
   const { hasPk, hasEx } = cache;
 
   // Determine which groups to render and in what order.
@@ -458,7 +458,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     return;
   }
 
-  const leagueDisplay = resolveSeasonInfo(found.group, found.competition, found.competition.seasons[season], found.groupKey).leagueDisplay;
+  const leagueDisplay = resolveSeasonInfo(found.family, found.competition, found.competition.seasons[season], found.familyKey).leagueDisplay;
 
   writeUrlParams(competition, season);
   savePrefs({
@@ -486,7 +486,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     download: true,
     complete: (results) => {
       const entry = found.competition.seasons[season];
-      const seasonInfo = resolveSeasonInfo(found.group, found.competition, entry, found.groupKey);
+      const seasonInfo = resolveSeasonInfo(found.family, found.competition, entry, found.familyKey);
       const teamMap = parseCsvResults(
         results.data,
         results.meta.fields ?? [],
