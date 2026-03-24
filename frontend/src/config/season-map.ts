@@ -1,5 +1,6 @@
 // Season map loader and utilities for the 4-tier hierarchy.
 
+import yaml from 'js-yaml';
 import type { PointSystem } from '../types/config';
 import type {
   SeasonMap, GroupEntry, CompetitionEntry, RawSeasonEntry, SeasonInfo,
@@ -18,14 +19,15 @@ export function getCsvFilename(competition: string, season: string): string {
 }
 
 /**
- * Fetches and parses season_map.json.
+ * Fetches and parses season_map.yaml.
  */
-export async function loadSeasonMap(url: string = './json/season_map.json'): Promise<SeasonMap> {
+export async function loadSeasonMap(url: string = './yaml/season_map.yaml'): Promise<SeasonMap> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to load season map: ${response.status} ${response.statusText}`);
   }
-  return response.json() as Promise<SeasonMap>;
+  const text = await response.text();
+  return yaml.load(text) as SeasonMap;
 }
 
 /** Result type for findCompetition(). */

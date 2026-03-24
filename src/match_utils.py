@@ -15,11 +15,12 @@ Usage::
 from datetime import date
 from datetime import datetime
 from datetime import tzinfo
-import json
 import logging
 from os import PathLike
 from pathlib import Path
 import re
+
+import yaml
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -100,12 +101,12 @@ POINT_SYSTEM_VALUES: set[str] = {
 
 
 # ---------------------------------------------------------------------------
-# SeasonEntry: typed representation of a season_map.json entry
+# SeasonEntry: typed representation of a season_map.yaml entry
 # ---------------------------------------------------------------------------
 class SeasonEntry:
-    """Parsed season entry from season_map.json.
+    """Parsed season entry from season_map.yaml.
 
-    Corresponds to the raw JSON object::
+    Corresponds to the raw YAML object::
 
         {
             "team_count": 10, "promotion_count": 1, "relegation_count": 0,
@@ -137,7 +138,7 @@ class SeasonEntry:
 
         Args:
             season_key: Season name (for error messages, e.g. '2026East').
-            raw: Raw JSON object from season_map.json.
+            raw: Raw object from season_map.yaml.
 
         Raises:
             ValueError: If required keys are missing.
@@ -206,27 +207,27 @@ class MatchUtils:
     # Season-map loading
     # -------------------------------------------------------------------
     def load_season_map_raw(self) -> dict:
-        """Load season_map.json and return the full JSON dict.
+        """Load season_map.yaml and return the parsed dict.
 
         Returns:
-            dict: The entire season_map.json content.
+            dict: The entire season_map.yaml content.
         """
         season_map_path = self.config.get_path('paths.season_map_file')
         with open(season_map_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            return yaml.safe_load(f)
 
     def load_season_map(self, group_key: str = None) -> dict[str, dict[str, SeasonEntry]]:
-        """Load season_map.json and extract competitions for the given group.
+        """Load season_map.yaml and extract competitions for the given group.
 
-        The 4-tier JSON has the structure:
+        The 4-tier YAML has the structure:
             { group_key: { "competitions": { "J1": { "seasons": {...} }, ... } } }
 
         This function flattens and parses it to:
             { "J1": { "2026East": SeasonEntry(...), ... }, "J2": {...}, ... }
 
         Args:
-            group_key: Top-level group key in season_map.json.
-                       Defaults to the first group in the JSON.
+            group_key: Top-level group key in season_map.yaml.
+                       Defaults to the first group in the YAML.
 
         Returns:
             dict: Competition key -> {season_name: SeasonEntry}
@@ -244,7 +245,7 @@ class MatchUtils:
         }
 
     def get_sub_seasons(self, competition: str, group_key: str = None) -> list[dict] | None:
-        """Get sub-seasons for the given competition from season_map.json.
+        """Get sub-seasons for the given competition from season_map.yaml.
 
         For years with multiple sub-seasons (e.g. 2026East/2026West),
         returns a list of sub-season info dicts. For single-season years,
@@ -253,8 +254,8 @@ class MatchUtils:
 
         Args:
             competition: Competition key (e.g. 'J1', 'J2', 'J3')
-            group_key: Top-level group key in season_map.json.
-                       Defaults to the first group in the JSON.
+            group_key: Top-level group key in season_map.yaml.
+                       Defaults to the first group in the YAML.
 
         Returns:
             list[dict] | None:
@@ -330,13 +331,13 @@ class MatchUtils:
     def resolve_season_start_month(self, group_key: str = None) -> int:
         """Resolve season_start_month for config.season via cascade.
 
-        Looks up the matching season entry in season_map.json and resolves
+        Looks up the matching season entry in season_map.yaml and resolves
         the season_start_month by cascading Group -> Competition -> SeasonEntry.
         Code default is 7 (autumn-spring, world standard).
 
         Args:
-            group_key: Top-level group key in season_map.json.
-                       Defaults to the first group in the JSON.
+            group_key: Top-level group key in season_map.yaml.
+                       Defaults to the first group in the YAML.
 
         Returns:
             int: The effective season_start_month for the current config.season.
