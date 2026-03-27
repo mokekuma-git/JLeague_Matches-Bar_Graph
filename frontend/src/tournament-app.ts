@@ -735,7 +735,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const seasonInfo = resolveSeasonInfo(
         found.family, found.competition, resolvedEntry, found.familyKey,
       );
-      const bracketOrder = resolveSeasonBracketOrder(resolvedEntry, inferredOrder);
+      const bracketOrder = resolveSeasonBracketOrder(entry, inferredOrder);
       if (!bracketOrder || bracketOrder.length === 0) {
         setStatus('No bracket data for this season.');
         return;

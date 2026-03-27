@@ -19,7 +19,9 @@ test.describe('Bracket rendering — connectors and layout', () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  test('no SVG connectors when all matches masked as future', async ({ page }) => {
+  test('only bye connectors remain when all played matches are masked as future', async ({ page }) => {
+    const beforeCount = await page.locator('svg polyline').count();
+
     const slider = page.locator('#date_slider');
     await slider.fill('0');
     await slider.dispatchEvent('change');
@@ -27,7 +29,8 @@ test.describe('Bracket rendering — connectors and layout', () => {
 
     const polylines = page.locator('svg polyline');
     const count = await polylines.count();
-    expect(count).toBe(0);
+    expect(count).toBeGreaterThan(0);
+    expect(count).toBeLessThan(beforeCount);
   });
 
   test('layout toggle switches to vertical and back', async ({ page }) => {

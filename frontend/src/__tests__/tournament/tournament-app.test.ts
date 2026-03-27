@@ -89,6 +89,20 @@ describe('tournament-app helpers', () => {
 
       expect(order).toEqual(['A', null, 'B', 'C']);
     });
+
+    test('prefers inferred order over derived teams populated later in load flow', () => {
+      const inferredOrder = ['A', null, 'B', 'C'];
+      const originalEntry = {
+        team_count: 4, promotion_count: 0, relegation_count: 0,
+      };
+      const resolvedEntry = {
+        ...originalEntry,
+        teams: ['A', 'B', 'C'],
+      };
+
+      expect(__testables.resolveSeasonBracketOrder(originalEntry, inferredOrder)).toEqual(inferredOrder);
+      expect(__testables.resolveSeasonBracketOrder(resolvedEntry)).toEqual(['A', 'B', 'C']);
+    });
   });
 
   describe('resolveSectionBracketOrders', () => {

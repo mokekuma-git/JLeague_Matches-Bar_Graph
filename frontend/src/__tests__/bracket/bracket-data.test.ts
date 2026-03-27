@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { buildBracket } from '../../bracket/bracket-data';
 import type { RawMatchRow } from '../../types/match';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import yaml from 'js-yaml';
+import Papa from 'papaparse';
+import { inferBracketOrderFromRows } from '../../bracket/bracket-order-inference';
+import type { BracketNode } from '../../bracket/bracket-types';
 
 function makeRow(overrides: Partial<RawMatchRow>): RawMatchRow {
   return {
@@ -411,5 +417,59 @@ describe('buildBracket — H&A aggregate', () => {
     const root = buildBracket(rows, ['A', 'B']);
     expect(root.winner).toBeNull();
     expect(root.decidedBy).toBe('pending');
+  });
+});
+
+describe('buildBracket — real tournament fixtures', () => {
+  function assertNoUndefinedChildren(node: BracketNode | null): void {
+    if (!node) return;
+    expect(node.children[0]).not.toBe(undefined);
+    expect(node.children[1]).not.toBe(undefined);
+    assertNoUndefinedChildren(node.children[0]);
+    assertNoUndefinedChildren(node.children[1]);
+  }
+
+  it('builds the full EmperorsCup 2025 bracket from inferred order without throwing', () => {
+    const csvText = readFileSync(
+      resolve(__dirname, '../../../../docs/csv/2025_allmatch_result-EmperorsCup.csv'),
+      'utf-8',
+    );
+    const fixtureText = readFileSync(
+      resolve(__dirname, '../../../../tests/test_data/emperorscup_bracket_inference_expected.yaml'),
+      'utf-8',
+    );
+    const rows = Papa.parse<RawMatchRow>(csvText, {
+      header: true,
+      skipEmptyLines: 'greedy',
+    }).data;
+    const fixture = yaml.load(fixtureText) as {
+      EmperorsCup: Record<string, { bracket_order: (string | null)[] }>;
+    };
+    const order = fixture.EmperorsCup['2025'].bracket_order;
+
+    const root = buildBracket(rows, order);
+
+    expect(root).toBeTruthy();
+    expect(root.winner).toBeTruthy();
+    assertNoUndefinedChildren(root);
+  });
+
+  it('builds the full EmperorsCup 2025 bracket from TypeScript-inferred order', () => {
+    const csvText = readFileSync(
+      resolve(__dirname, '../../../../docs/csv/2025_allmatch_result-EmperorsCup.csv'),
+      'utf-8',
+    );
+    const rows = Papa.parse<RawMatchRow>(csvText, {
+      header: true,
+      skipEmptyLines: 'greedy',
+    }).data;
+    const inferredOrder = inferBracketOrderFromRows(rows);
+
+    expect(inferredOrder).toBeDefined();
+    const root = buildBracket(rows, inferredOrder!);
+
+    expect(root).toBeTruthy();
+    expect(root.winner).toBeTruthy();
+    assertNoUndefinedChildren(root);
   });
 });
