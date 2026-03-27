@@ -55,6 +55,7 @@ export interface BracketBlock {
 // Optional properties that can appear at family, competition, or season level.
 // Used by cascade resolution (family → competition → season).
 export interface SeasonEntryOptions {
+  teams?: string[];
   rank_properties?: RankClassMap;
   group_display?: string;
   url_category?: string;
