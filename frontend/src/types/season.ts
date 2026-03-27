@@ -45,7 +45,7 @@ export type AggregateTiebreakCriterion = 'wins' | 'away_goals' | 'penalties';
 // Each block is rendered as a separate bracket tree on the same page.
 export interface BracketBlock {
   label: string;                    // Section heading (e.g. "1st Round Group A")
-  bracket_order: (string | null)[];  // Bracket position order (null = bye slot)
+  bracket_order?: (string | null)[];  // Bracket position order (null = bye slot)
   round_filter?: string[];          // Filter CSV rows by round column
   bracket_round_start?: string;     // Override start round for this section
   matchup_pairs?: boolean;          // Render as independent matchup pairs (no elimination tree)
@@ -86,7 +86,7 @@ export interface RawSeasonEntry extends SeasonEntryOptions {
   team_count?: number;
   promotion_count?: number;
   relegation_count?: number;
-  teams: string[];
+  teams?: string[];
 }
 
 // A single competition within a family (e.g., J1 within jleague).

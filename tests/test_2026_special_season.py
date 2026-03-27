@@ -267,6 +267,18 @@ class TestSeasonEntryCompetitionDefaults(unittest.TestCase):
                 'missing required keys after competition fallback'):
             SeasonEntry('2025', {'teams': ['A', 'B']})
 
+    def test_bracket_view_can_omit_all_counts(self):
+        entry = SeasonEntry(
+            '2025',
+            {'bracket_round_start': '１回戦'},
+            competition_view_types=['bracket'],
+        )
+
+        self.assertEqual(entry.team_count, 0)
+        self.assertEqual(entry.promotion_count, 0)
+        self.assertEqual(entry.relegation_count, 0)
+        self.assertEqual(entry.teams, [])
+
     def test_group_team_count_scalar_form_is_allowed(self):
         entry = SeasonEntry(
             '2025',
