@@ -226,23 +226,27 @@ export function resolveSeasonInfo(
   ];
 
   const viewTypes = mergeUniqueArrays(family.view_type, comp.view_type, entry.view_type);
-  const teamCount = requireCascade('team_count', entry.team_count, comp.team_count);
+  const bracketDefaultCount = viewTypes.includes('bracket') ? 0 : undefined;
+  const inferredTeamCount = entry.teams && entry.teams.length > 0 ? entry.teams.length : undefined;
+  const teamCount = requireCascade('team_count', entry.team_count, comp.team_count, inferredTeamCount);
   const promotionCount = requireCascade(
     'promotion_count',
     entry.promotion_count,
     comp.promotion_count,
+    bracketDefaultCount,
   );
   const relegationCount = requireCascade(
     'relegation_count',
     entry.relegation_count,
     comp.relegation_count,
+    bracketDefaultCount,
   );
 
   return {
     teamCount,
     promotionCount,
     relegationCount,
-    teams: entry.teams,
+    teams: entry.teams ?? [],
     rankClass: entry.rank_properties ?? {},
     groupDisplay: entry.group_display,
     urlCategory: entry.url_category,

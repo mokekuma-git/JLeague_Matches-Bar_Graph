@@ -115,6 +115,19 @@ describe('resolveSeasonInfo', () => {
     expect(info.seasonStartMonth).toBe(7);
   });
 
+  test('team_count falls back to teams.length when omitted at season and competition levels', () => {
+    const family: CompetitionFamilyEntry = { display_name: 'Test', competitions: {} };
+    const comp: CompetitionEntry = { seasons: {} };
+    const entry: RawSeasonEntry = {
+      promotion_count: 0,
+      relegation_count: 0,
+      teams: ['A', 'B', 'C', 'D'],
+    };
+    const info = resolveSeasonInfo(family, comp, entry);
+
+    expect(info.teamCount).toBe(4);
+  });
+
   test('season with rank_properties', () => {
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: [], rank_properties: { '3': 'promoted_playoff' } };
     const info = resolveSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
@@ -468,6 +481,22 @@ describe('resolveSeasonInfo', () => {
     const info = resolveSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.teamCount).toBe(8);
+    expect(info.promotionCount).toBe(0);
+    expect(info.relegationCount).toBe(0);
+  });
+
+  test('bracket view seasons can omit promotion and relegation counts', () => {
+    const comp: CompetitionEntry = {
+      league_display: 'JLeagueCup',
+      view_type: ['bracket'],
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = {
+      teams: ['A', 'B', 'C', 'D'],
+    };
+    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+
+    expect(info.teamCount).toBe(4);
     expect(info.promotionCount).toBe(0);
     expect(info.relegationCount).toBe(0);
   });

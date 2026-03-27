@@ -114,13 +114,14 @@ class SeasonEntry:
         }
     """
 
-    REQUIRED_KEYS: set[str] = {'teams'}
+    REQUIRED_KEYS: set[str] = set()
 
     COMPETITION_DEFAULTABLE_KEYS: set[str] = {
         'team_count', 'promotion_count', 'relegation_count',
     }
 
     OPTIONAL_KEYS: set[str] = {
+        'teams',
         'rank_properties', 'group_display', 'url_category',
         'league_display', 'point_system', 'css_files',
         'team_rename_map', 'tiebreak_order', 'season_start_month',
@@ -139,7 +140,8 @@ class SeasonEntry:
             self,
             season_key: str,
             raw: dict,
-            competition_defaults: dict[str, Any] | None = None):
+            competition_defaults: dict[str, Any] | None = None,
+            competition_view_types: list[str] | None = None):
         """Parse and validate a raw season entry object.
 
         Args:
@@ -157,15 +159,38 @@ class SeasonEntry:
                 f"Season '{season_key}': expected dict, got {type(raw).__name__}")
 
         competition_defaults = competition_defaults or {}
+        competition_view_types = competition_view_types or []
 
         missing = self.REQUIRED_KEYS - set(raw.keys())
         if missing:
             raise ValueError(
                 f"Season '{season_key}': missing required keys: {missing}")
 
+        teams = raw.get('teams', [])
+        if teams is not None and not isinstance(teams, list):
+            raise TypeError(
+                f"Season '{season_key}': teams must be list, "
+                f"got {type(teams).__name__}")
+
+        raw_view_types = raw.get('view_type')
+        if raw_view_types is None:
+            view_types = competition_view_types
+        elif isinstance(raw_view_types, list):
+            view_types = raw_view_types
+        else:
+            view_types = [raw_view_types]
+        bracket_default_count = 0 if 'bracket' in view_types else None
+
+        inferred_team_count = len(teams) if teams else None
         missing_counts = {
             key for key in self.COMPETITION_DEFAULTABLE_KEYS
-            if key not in raw and key not in competition_defaults
+            if key not in raw
+            and key not in competition_defaults
+            and not (
+                key in {'team_count', 'promotion_count', 'relegation_count'}
+                and bracket_default_count is not None
+            )
+            and not (key == 'team_count' and inferred_team_count is not None)
         }
         if missing_counts:
             raise ValueError(
@@ -175,16 +200,15 @@ class SeasonEntry:
         resolved_counts = {}
         for key in self.COMPETITION_DEFAULTABLE_KEYS:
             value = raw.get(key, competition_defaults.get(key))
+            if key == 'team_count' and value is None:
+                value = inferred_team_count if inferred_team_count is not None else bracket_default_count
+            if key in {'promotion_count', 'relegation_count'} and value is None:
+                value = bracket_default_count
             if not isinstance(value, int):
                 raise TypeError(
                     f"Season '{season_key}': {key} must be int, "
                     f"got {type(value).__name__}")
             resolved_counts[key] = value
-
-        if not isinstance(raw['teams'], list):
-            raise TypeError(
-                f"Season '{season_key}': teams must be list, "
-                f"got {type(raw['teams']).__name__}")
 
         group_team_count = raw.get('group_team_count')
         if group_team_count is not None:
@@ -206,7 +230,7 @@ class SeasonEntry:
         self.team_count: int = resolved_counts['team_count']
         self.promotion_count: int = resolved_counts['promotion_count']
         self.relegation_count: int = resolved_counts['relegation_count']
-        self.teams: list[str] = raw['teams']
+        self.teams: list[str] = teams or []
         self.options: dict[str, Any] = {
             k: v for k, v in raw.items()
             if k not in self.REQUIRED_KEYS | self.COMPETITION_DEFAULTABLE_KEYS
@@ -278,7 +302,12 @@ class MatchUtils:
         family = raw.get(family_key, {}).get('competitions', {})
         return {
             comp_key: {
-                sk: SeasonEntry(sk, entry, self._get_competition_count_defaults(comp))
+                sk: SeasonEntry(
+                    sk,
+                    entry,
+                    self._get_competition_count_defaults(comp),
+                    self._get_competition_view_types(comp),
+                )
                 for sk, entry in comp.get('seasons', {}).items()
             }
             for comp_key, comp in family.items()
@@ -292,6 +321,16 @@ class MatchUtils:
             for key in SeasonEntry.COMPETITION_DEFAULTABLE_KEYS
             if key in comp
         }
+
+    @staticmethod
+    def _get_competition_view_types(comp: dict[str, Any]) -> list[str]:
+        """Extract competition-level view types as a normalized list."""
+        view_types = comp.get('view_type')
+        if view_types is None:
+            return []
+        if isinstance(view_types, list):
+            return view_types
+        return [view_types]
 
     def get_sub_seasons(self, competition: str, family_key: str = None) -> list[dict] | None:
         """Get sub-seasons for the given competition from season_map.yaml.
@@ -401,9 +440,10 @@ class MatchUtils:
         for comp in family.get('competitions', {}).values():
             comp_val = comp.get('season_start_month', family_val)
             comp_defaults = self._get_competition_count_defaults(comp)
+            comp_view_types = self._get_competition_view_types(comp)
             for sk, raw_entry in comp.get('seasons', {}).items():
                 if sk.startswith(season_str):
-                    entry = SeasonEntry(sk, raw_entry, comp_defaults)
+                    entry = SeasonEntry(sk, raw_entry, comp_defaults, comp_view_types)
                     return entry.options.get('season_start_month', comp_val)
         return family_val
 

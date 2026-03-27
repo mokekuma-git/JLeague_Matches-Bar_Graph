@@ -25,6 +25,7 @@ import {
   syncSliderToTargetDate,
 } from './core/date-slider';
 import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
+import { extractTeamsFromBracketOrder, inferBracketOrderFromRows } from './bracket/bracket-order-inference';
 import { normalizeBracketRoundLabel } from './bracket/round-label';
 import { inferRoundFilter } from './bracket/round-filter-inference';
 import { renderBracketInto, unpinTooltip } from './bracket/bracket-renderer';
@@ -134,23 +135,44 @@ function collectMatchDates(rows: RawMatchRow[]): string[] {
   return sorted;
 }
 
-function resolveSeasonBracketOrder(entry: RawSeasonEntry): (string | null)[] | undefined {
+function resolveSeasonBracketOrder(
+  entry: RawSeasonEntry,
+  inferredOrder?: (string | null)[],
+): (string | null)[] | undefined {
   const explicitOrder = entry.bracket_order;
   if (explicitOrder != null && explicitOrder.length > 0) {
     return explicitOrder;
   }
 
   const legacyOrder = entry.teams;
-  if (legacyOrder.length > 0) {
+  if (legacyOrder != null && legacyOrder.length > 0) {
     return legacyOrder;
   }
 
-  const sectionOrder = entry.bracket_blocks?.flatMap((section) => section.bracket_order);
+  const sectionOrder = entry.bracket_blocks?.flatMap((section) => section.bracket_order ?? []);
   if (sectionOrder != null && sectionOrder.length > 0) {
     return sectionOrder;
   }
 
-  return undefined;
+  return inferredOrder;
+}
+
+function resolveSectionBracketOrders(
+  sections: BracketBlock[],
+  seasonTeams: string[],
+): BracketBlock[] {
+  return sections.map((section) => (
+    section.bracket_order && section.bracket_order.length > 0
+      ? section
+      : { ...section, bracket_order: seasonTeams }
+  ));
+}
+
+function hasBracketMetadata(entry: RawSeasonEntry): boolean {
+  return entry.bracket_order != null
+    || entry.bracket_blocks != null
+    || (entry.teams?.length ?? 0) > 0
+    || entry.bracket_round_start != null;
 }
 
 // ---- Dropdown population ---------------------------------------------------
@@ -188,7 +210,7 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
   const seasons = Object.keys(found.competition.seasons)
     .filter(s => {
       const e = found.competition.seasons[s];
-      return e.bracket_order != null || e.bracket_blocks != null || e.teams?.length > 0;
+      return hasBracketMetadata(e);
     })
     .sort().reverse();
   for (const s of seasons) {
@@ -269,7 +291,7 @@ function inferMissingSectionRoundFilters(
 ): BracketBlock[] {
   return sections.map(s => {
     if (s.round_filter) return s;
-    const inferred = inferRoundFilter(rows, s.bracket_order, s.matchup_pairs);
+    const inferred = inferRoundFilter(rows, s.bracket_order ?? [], s.matchup_pairs);
     return inferred ? { ...s, round_filter: inferred } : s;
   });
 }
@@ -320,6 +342,7 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
 export const __testables = {
   createControlStateFromPrefs,
   resolveSeasonBracketOrder,
+  resolveSectionBracketOrders,
   filterRowsByRounds,
   resolveSectionRoundFilters,
   inferMissingSectionRoundFilters,
@@ -528,7 +551,8 @@ function renderMultiSections(): void {
   container.appendChild(toggleBtn);
 
   for (const section of currentState.bracketBlocks) {
-    if (section.bracket_order.length < 2) continue;
+    const sectionOrder = section.bracket_order ?? [];
+    if (sectionOrder.length < 2) continue;
 
     // Pre-filter CSV rows by round_filter if specified
     const rows = section.round_filter
@@ -558,7 +582,7 @@ function renderMultiSections(): void {
 
     if (section.matchup_pairs) {
       // Matchup pairs: split bracket_order into pairs and render each independently
-      const order = section.bracket_order;
+      const order = sectionOrder;
       for (let i = 0; i < order.length; i += 2) {
         const pair = order.slice(i, i + 2);
         if (pair.every(t => t == null)) continue;
@@ -571,7 +595,7 @@ function renderMultiSections(): void {
     } else {
       const input = createSingleBracketRenderInput(
         { ...currentState, csvRows: rows },
-        section.bracket_order,
+        sectionOrder,
       );
       if (input) buildAndRenderBracket(sectionWrapper, input);
     }
@@ -681,15 +705,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     return;
   }
 
-  const seasonInfo = resolveSeasonInfo(
-    found.family, found.competition, found.competition.seasons[season], found.familyKey,
-  );
   const entry = found.competition.seasons[season];
-  const bracketOrder = resolveSeasonBracketOrder(entry);
-  if (!bracketOrder || bracketOrder.length === 0) {
-    setStatus('No bracket data for this season.');
-    return;
-  }
 
   writeUrlParams(competition, season);
   savePrefs({ competition, season });
@@ -703,6 +719,27 @@ function loadAndRender(seasonMap: SeasonMap): void {
     skipEmptyLines: 'greedy',
     download: true,
     complete: (results) => {
+      const inferredOrder = inferBracketOrderFromRows(results.data);
+      const seasonTeams = entry.teams && entry.teams.length > 0
+        ? entry.teams
+        : (inferredOrder ? extractTeamsFromBracketOrder(inferredOrder) : []);
+      const rawSections = entry.bracket_blocks
+        ? resolveSectionBracketOrders(entry.bracket_blocks, seasonTeams)
+        : undefined;
+      const resolvedEntry: RawSeasonEntry = {
+        ...entry,
+        teams: seasonTeams,
+        team_count: entry.team_count ?? (seasonTeams.length > 0 ? seasonTeams.length : undefined),
+        bracket_blocks: rawSections,
+      };
+      const seasonInfo = resolveSeasonInfo(
+        found.family, found.competition, resolvedEntry, found.familyKey,
+      );
+      const bracketOrder = resolveSeasonBracketOrder(entry, inferredOrder);
+      if (!bracketOrder || bracketOrder.length === 0) {
+        setStatus('No bracket data for this season.');
+        return;
+      }
       const defaultRoundStart = entry.bracket_round_start
         ? normalizeBracketRoundLabel(entry.bracket_round_start)
         : undefined;
@@ -710,7 +747,6 @@ function loadAndRender(seasonMap: SeasonMap): void {
         option === MULTI_SECTION_VALUE ? option : normalizeBracketRoundLabel(option)
       ));
       const aggregateTiebreakOrder = entry.aggregate_tiebreak_order ?? ['penalties'];
-      const rawSections = entry.bracket_blocks;
       const resolved = rawSections
         ? resolveSectionRoundFilters(rawSections, entry.default_round_filter)
         : undefined;

@@ -77,6 +77,66 @@ describe('tournament-app helpers', () => {
 
       expect(order).toBeUndefined();
     });
+
+    test('uses inferred order when explicit metadata is absent', () => {
+      const order = __testables.resolveSeasonBracketOrder(
+        {
+          team_count: 4, promotion_count: 0, relegation_count: 0,
+          teams: [],
+        },
+        ['A', null, 'B', 'C'],
+      );
+
+      expect(order).toEqual(['A', null, 'B', 'C']);
+    });
+
+    test('prefers inferred order over derived teams populated later in load flow', () => {
+      const inferredOrder = ['A', null, 'B', 'C'];
+      const originalEntry = {
+        team_count: 4, promotion_count: 0, relegation_count: 0,
+      };
+      const resolvedEntry = {
+        ...originalEntry,
+        teams: ['A', 'B', 'C'],
+      };
+
+      expect(__testables.resolveSeasonBracketOrder(originalEntry, inferredOrder)).toEqual(inferredOrder);
+      expect(__testables.resolveSeasonBracketOrder(resolvedEntry)).toEqual(['A', 'B', 'C']);
+    });
+  });
+
+  describe('resolveSectionBracketOrders', () => {
+    test('fills missing section bracket_order from season teams', () => {
+      const resolved = __testables.resolveSectionBracketOrders(
+        [{ label: '決勝トーナメント' }],
+        ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
+      );
+
+      expect(resolved[0].bracket_order).toEqual(['TeamA', 'TeamB', 'TeamC', 'TeamD']);
+    });
+
+    test('preserves explicit section bracket_order', () => {
+      const resolved = __testables.resolveSectionBracketOrders(
+        [{ label: '決勝トーナメント', bracket_order: ['X', 'Y'] }],
+        ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
+      );
+
+      expect(resolved[0].bracket_order).toEqual(['X', 'Y']);
+    });
+
+    test('fills only sections missing bracket_order and preserves explicit multi-block sections', () => {
+      const resolved = __testables.resolveSectionBracketOrders(
+        [
+          { label: 'プレーオフステージ', bracket_order: ['P1', 'P2'], matchup_pairs: true },
+          { label: 'プライムステージ', bracket_round_start: '準々決勝' },
+        ],
+        ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
+      );
+
+      expect(resolved[0].bracket_order).toEqual(['P1', 'P2']);
+      expect(resolved[1].bracket_order).toEqual(['TeamA', 'TeamB', 'TeamC', 'TeamD']);
+      expect(resolved[1].bracket_round_start).toBe('準々決勝');
+    });
   });
 
   describe('createControlStateFromPrefs', () => {
