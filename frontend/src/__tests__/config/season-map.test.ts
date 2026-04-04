@@ -6,6 +6,7 @@ import {
   getCsvFilename,
   findCompetition,
   resolveSeasonInfo,
+  resolveTournamentSeasonInfo,
 } from '../../config/season-map';
 
 // ---- Test fixtures --------------------------------------------------------
@@ -532,5 +533,54 @@ describe('resolveSeasonInfo', () => {
     expect(() => resolveSeasonInfo(sampleFamily, comp, entry)).toThrow(
       'Missing required season_map field: team_count',
     );
+  });
+});
+
+describe('resolveTournamentSeasonInfo', () => {
+  test('aggregateTiebreakOrder defaults to ["penalties"] when not set anywhere', () => {
+    const family: CompetitionFamilyEntry = { display_name: 'Test', competitions: {} };
+    const comp: CompetitionEntry = { seasons: {} };
+    const entry: RawSeasonEntry = {};
+
+    const info = resolveTournamentSeasonInfo(family, comp, entry);
+
+    expect(info.aggregateTiebreakOrder).toEqual(['penalties']);
+  });
+
+  test('aggregateTiebreakOrder cascades from competition level', () => {
+    const family: CompetitionFamilyEntry = { display_name: 'Test', competitions: {} };
+    const comp: CompetitionEntry = {
+      aggregate_tiebreak_order: ['away_goals', 'penalties'],
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = {};
+
+    const info = resolveTournamentSeasonInfo(family, comp, entry);
+
+    expect(info.aggregateTiebreakOrder).toEqual(['away_goals', 'penalties']);
+  });
+
+  test('defaultRoundStart is normalized', () => {
+    const entry: RawSeasonEntry = { bracket_round_start: '準決勝 第1戦' };
+
+    const info = resolveTournamentSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+
+    expect(info.defaultRoundStart).toBe('準決勝');
+  });
+
+  test('roundStartOptions are normalized while preserving multi section sentinel', () => {
+    const entry: RawSeasonEntry = {
+      round_start_options: ['準決勝 第1戦', '__multi_section__'],
+    };
+
+    const info = resolveTournamentSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+
+    expect(info.roundStartOptions).toEqual(['準決勝', '__multi_section__']);
+  });
+
+  test('defaultRoundStart stays undefined when bracket_round_start is absent', () => {
+    const info = resolveTournamentSeasonInfo(sampleFamily, sampleFamily.competitions.J1, {});
+
+    expect(info.defaultRoundStart).toBeUndefined();
   });
 });

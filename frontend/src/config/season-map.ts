@@ -4,10 +4,11 @@ import yaml from 'js-yaml';
 import type { PointSystem } from '../types/config';
 import type {
   SeasonMap, CompetitionFamilyEntry, CompetitionEntry, RawSeasonEntry, SeasonInfo,
-  CrossGroupStanding, DataSource, ViewType,
+  CrossGroupStanding, DataSource, ViewType, AggregateTiebreakCriterion,
 } from '../types/season';
 import { generateRuleNotes } from './rule-notes';
 import { t } from '../i18n';
+import { normalizeBracketRoundLabel } from '../bracket/round-label';
 
 /**
  * Returns the CSV filename for a given competition and season.
@@ -108,6 +109,30 @@ function hasEntries(value: Record<string, unknown>): boolean {
   return Object.keys(value).length > 0;
 }
 
+const MULTI_SECTION_VALUE = '__multi_section__';
+
+interface ResolvedBaseFields {
+  cssFiles: string[];
+  leagueDisplay: string;
+  pointSystem: PointSystem;
+  tiebreakOrder: string[];
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[];
+  dataSource?: DataSource;
+  rawNotes: string[];
+  viewTypes: ViewType[];
+}
+
+export interface TournamentSeasonInfo {
+  cssFiles: string[];
+  leagueDisplay: string;
+  notes: string[];
+  viewTypes: ViewType[];
+  dataSource?: DataSource;
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[];
+  defaultRoundStart?: string;
+  roundStartOptions?: string[];
+}
+
 /**
  * Expands a scalar value into a Record using the given index keys.
  * If the value is already a Record, returns it as-is.
@@ -130,28 +155,13 @@ function expandScalarDefault<T>(
   return Object.fromEntries(indexKeys.map((key) => [key, value as T]));
 }
 
-/**
- * Resolves a SeasonInfo by applying the property cascade:
- * family → competition → season entry options.
- *
- * Cascade rules:
- * - Scalar (string): lower level overrides upper
- * - Array (css_files): union (deduplicated)
- * - Object (team_rename_map): merge (lower keys override)
- */
-export function resolveSeasonInfo(
+function resolveBaseFields(
   family: CompetitionFamilyEntry,
   comp: CompetitionEntry,
   entry: RawSeasonEntry,
   familyKey: string = '',
-): SeasonInfo {
+): ResolvedBaseFields {
   const cssFiles = mergeUniqueArrays(family.css_files, comp.css_files, entry.css_files);
-
-  // team_rename_map currently cascades only competition -> season.
-  const teamRenameMap = mergeObjects<Record<string, string>>(
-    comp.team_rename_map,
-    entry.team_rename_map,
-  );
 
   const leagueDisplay = pickCascade(
     entry.league_display,
@@ -176,8 +186,57 @@ export function resolveSeasonInfo(
     entry.aggregate_tiebreak_order,
     comp.aggregate_tiebreak_order,
     family.aggregate_tiebreak_order,
-    [],
+    ['penalties'] as AggregateTiebreakCriterion[],
   )!;
+
+  const dataSource: DataSource | undefined = pickCascade(
+    entry.data_source,
+    comp.data_source,
+    family.data_source,
+  );
+
+  const rawNotes = [
+    ...toArray(family.note),
+    ...toArray(comp.note),
+    ...toArray(entry.note),
+  ];
+
+  const viewTypes = mergeUniqueArrays(family.view_type, comp.view_type, entry.view_type);
+
+  return {
+    cssFiles,
+    leagueDisplay,
+    pointSystem,
+    tiebreakOrder,
+    aggregateTiebreakOrder,
+    dataSource,
+    rawNotes,
+    viewTypes: viewTypes.length > 0 ? viewTypes : ['league'],
+  };
+}
+
+/**
+ * Resolves a SeasonInfo by applying the property cascade:
+ * family → competition → season entry options.
+ *
+ * Cascade rules:
+ * - Scalar (string): lower level overrides upper
+ * - Array (css_files): union (deduplicated)
+ * - Object (team_rename_map): merge (lower keys override)
+ */
+export function resolveSeasonInfo(
+  family: CompetitionFamilyEntry,
+  comp: CompetitionEntry,
+  entry: RawSeasonEntry,
+  familyKey: string = '',
+): SeasonInfo {
+  const base = resolveBaseFields(family, comp, entry, familyKey);
+
+  // team_rename_map currently cascades only competition -> season.
+  const teamRenameMap = mergeObjects<Record<string, string>>(
+    comp.team_rename_map,
+    entry.team_rename_map,
+  );
 
   const seasonStartMonth = pickCascade(
     entry.season_start_month,
@@ -205,12 +264,6 @@ export function resolveSeasonInfo(
   );
   const groupTeamCount = hasEntries(groupTeamCountRaw) ? groupTeamCountRaw : undefined;
 
-  const dataSource: DataSource | undefined = pickCascade(
-    entry.data_source,
-    comp.data_source,
-    family.data_source,
-  );
-
   const promotionLabel = pickCascade(
     entry.promotion_label,
     comp.promotion_label,
@@ -219,14 +272,11 @@ export function resolveSeasonInfo(
   )!;
 
   const notes = [
-    ...toArray(family.note),
-    ...toArray(comp.note),
-    ...toArray(entry.note),
-    ...generateRuleNotes(pointSystem, tiebreakOrder, aggregateTiebreakOrder),
+    ...base.rawNotes,
+    ...generateRuleNotes(base.pointSystem, base.tiebreakOrder, base.aggregateTiebreakOrder),
   ];
 
-  const viewTypes = mergeUniqueArrays(family.view_type, comp.view_type, entry.view_type);
-  const bracketDefaultCount = viewTypes.includes('bracket') ? 0 : undefined;
+  const bracketDefaultCount = base.viewTypes.includes('bracket') ? 0 : undefined;
   const inferredTeamCount = entry.teams && entry.teams.length > 0 ? entry.teams.length : undefined;
   const teamCount = requireCascade('team_count', entry.team_count, comp.team_count, inferredTeamCount);
   const promotionCount = requireCascade(
@@ -250,18 +300,42 @@ export function resolveSeasonInfo(
     rankClass: entry.rank_properties ?? {},
     groupDisplay: entry.group_display,
     urlCategory: entry.url_category,
-    leagueDisplay,
-    pointSystem,
-    cssFiles,
+    leagueDisplay: base.leagueDisplay,
+    pointSystem: base.pointSystem,
+    cssFiles: base.cssFiles,
     teamRenameMap,
-    tiebreakOrder,
+    tiebreakOrder: base.tiebreakOrder,
     seasonStartMonth,
     shownGroups,
     crossGroupStanding,
     groupTeamCount,
-    dataSource,
+    dataSource: base.dataSource,
     notes,
     promotionLabel,
-    viewTypes: viewTypes.length > 0 ? viewTypes : ['league'],
+    viewTypes: base.viewTypes,
+  };
+}
+
+export function resolveTournamentSeasonInfo(
+  family: CompetitionFamilyEntry,
+  comp: CompetitionEntry,
+  entry: RawSeasonEntry,
+  familyKey: string = '',
+): TournamentSeasonInfo {
+  const base = resolveBaseFields(family, comp, entry, familyKey);
+
+  return {
+    cssFiles: base.cssFiles,
+    leagueDisplay: base.leagueDisplay,
+    notes: base.rawNotes,
+    viewTypes: base.viewTypes,
+    dataSource: base.dataSource,
+    aggregateTiebreakOrder: base.aggregateTiebreakOrder,
+    defaultRoundStart: entry.bracket_round_start
+      ? normalizeBracketRoundLabel(entry.bracket_round_start)
+      : undefined,
+    roundStartOptions: entry.round_start_options?.map((option) => (
+      option === MULTI_SECTION_VALUE ? option : normalizeBracketRoundLabel(option)
+    )),
   };
 }

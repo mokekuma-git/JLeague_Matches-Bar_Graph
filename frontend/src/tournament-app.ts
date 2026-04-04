@@ -13,7 +13,7 @@ import type {
   RawSeasonEntry,
 } from './types/season';
 import {
-  loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
+  loadSeasonMap, getCsvFilename, findCompetition, resolveTournamentSeasonInfo,
   getCompetitionViewTypes,
 } from './config/season-map';
 import {
@@ -726,13 +726,13 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const rawSections = entry.bracket_blocks
         ? resolveSectionBracketOrders(entry.bracket_blocks, seasonTeams)
         : undefined;
-      const resolvedEntry: RawSeasonEntry = {
+      const resolvedEntry = {
         ...entry,
         teams: seasonTeams,
         team_count: entry.team_count ?? (seasonTeams.length > 0 ? seasonTeams.length : undefined),
         bracket_blocks: rawSections,
       };
-      const seasonInfo = resolveSeasonInfo(
+      const tournamentSeasonInfo = resolveTournamentSeasonInfo(
         found.family, found.competition, resolvedEntry, found.familyKey,
       );
       const bracketOrder = resolveSeasonBracketOrder(entry, inferredOrder);
@@ -740,13 +740,6 @@ function loadAndRender(seasonMap: SeasonMap): void {
         setStatus('No bracket data for this season.');
         return;
       }
-      const defaultRoundStart = entry.bracket_round_start
-        ? normalizeBracketRoundLabel(entry.bracket_round_start)
-        : undefined;
-      const roundStartOptions = entry.round_start_options?.map((option) => (
-        option === MULTI_SECTION_VALUE ? option : normalizeBracketRoundLabel(option)
-      ));
-      const aggregateTiebreakOrder = entry.aggregate_tiebreak_order ?? ['penalties'];
       const resolved = rawSections
         ? resolveSectionRoundFilters(rawSections, entry.default_round_filter)
         : undefined;
@@ -757,7 +750,11 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const matchDates = collectMatchDates(bracketRows);
 
       // Build full tree to extract round structure and pre-populate cache
-      const fullRoot = buildBracket(bracketRows, bracketOrder, aggregateTiebreakOrder);
+      const fullRoot = buildBracket(
+        bracketRows,
+        bracketOrder,
+        tournamentSeasonInfo.aggregateTiebreakOrder,
+      );
       bracketCache = new Map();
       bracketCache.set(JSON.stringify(bracketOrder), fullRoot);
       const roundsByDepth = collectRoundsByDepth(fullRoot);
@@ -769,25 +766,25 @@ function loadAndRender(seasonMap: SeasonMap): void {
       currentState = {
         csvRows: bracketRows,
         bracketOrder,
-        aggregateTiebreakOrder,
+        aggregateTiebreakOrder: tournamentSeasonInfo.aggregateTiebreakOrder,
         fullRoot,
         roundsByDepth,
         allRounds,
-        defaultRoundStart,
-        roundStartOptions,
+        defaultRoundStart: tournamentSeasonInfo.defaultRoundStart,
+        roundStartOptions: tournamentSeasonInfo.roundStartOptions,
         bracketBlocks,
         matchDates,
-        cssFiles: seasonInfo.cssFiles,
-        leagueDisplay: seasonInfo.leagueDisplay,
+        cssFiles: tournamentSeasonInfo.cssFiles,
+        leagueDisplay: tournamentSeasonInfo.leagueDisplay,
         season,
       };
 
       // Populate round start dropdown (with multi-section option if sections exist)
       populateRoundStartPulldown(
         allRounds,
-        defaultRoundStart,
+        tournamentSeasonInfo.defaultRoundStart,
         bracketBlocks != null,
-        roundStartOptions,
+        tournamentSeasonInfo.roundStartOptions,
       );
 
       // Sync round start: restore from controlState or pick up dropdown default
@@ -829,7 +826,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
           t('bracketNote.etIncluded'),
           t('bracketNote.pkAnnotation'),
         ];
-        for (const text of [...seasonInfo.notes, ...bracketNotes]) {
+        for (const text of [...tournamentSeasonInfo.notes, ...bracketNotes]) {
           const li = document.createElement('li');
           li.textContent = text;
           notesEl.appendChild(li);
@@ -837,7 +834,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
       }
 
       setStatus(t('status.loaded', {
-        league: seasonInfo.leagueDisplay, season, rows: bracketRows.length,
+        league: tournamentSeasonInfo.leagueDisplay, season, rows: bracketRows.length,
       }));
     },
     error: (err: unknown) => {
