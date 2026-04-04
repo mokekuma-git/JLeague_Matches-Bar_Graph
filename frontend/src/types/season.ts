@@ -109,9 +109,18 @@ export interface CompetitionFamilyEntry extends SeasonEntryOptions {
 // The entire season_map.yaml: family key → CompetitionFamilyEntry.
 export type SeasonMap = Record<string, CompetitionFamilyEntry>;
 
-// Object form of a fully resolved season entry.
-// Use resolveSeasonInfo() (in season-map.ts) for cascade resolution.
-export interface SeasonInfo {
+// Fields shared by league and tournament season resolution.
+export interface BaseSeasonInfo {
+  leagueDisplay: string;
+  cssFiles: string[];
+  dataSource?: DataSource;
+  notes: string[];
+  viewTypes: ViewType[];
+}
+
+// Object form of a fully resolved league season entry.
+// Use resolveLeagueSeasonInfo() (in season-map.ts) for cascade resolution.
+export interface LeagueSeasonInfo extends BaseSeasonInfo {
   teamCount: number;
   promotionCount: number;
   relegationCount: number;
@@ -119,17 +128,20 @@ export interface SeasonInfo {
   rankClass: RankClassMap;
   groupDisplay?: string;
   urlCategory?: string;
-  leagueDisplay: string;
   pointSystem: PointSystem;
-  cssFiles: string[];
   teamRenameMap: Record<string, string>;
   tiebreakOrder: string[];
   seasonStartMonth: number;
   shownGroups?: string[];
   crossGroupStanding?: CrossGroupStanding;
   groupTeamCount?: Record<string, number>;
-  dataSource?: DataSource;
-  notes: string[];
   promotionLabel: string;
-  viewTypes: ViewType[];
+}
+
+// Object form of a fully resolved tournament season entry.
+// Use resolveTournamentSeasonInfo() (in season-map.ts) for cascade resolution.
+export interface TournamentSeasonInfo extends BaseSeasonInfo {
+  aggregateTiebreakOrder: AggregateTiebreakCriterion[];
+  defaultRoundStart?: string;
+  roundStartOptions?: string[];
 }

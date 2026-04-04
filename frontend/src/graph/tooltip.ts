@@ -2,7 +2,7 @@
 // None of these functions access the DOM or global state.
 
 import type { TeamMatch, TeamStats } from '../types/match';
-import type { SeasonInfo } from '../types/season';
+import type { LeagueSeasonInfo } from '../types/season';
 import { dateOnly, timeFormat } from '../core/date-utils';
 import { t } from '../i18n';
 
@@ -81,7 +81,7 @@ export function joinLossBox(lossBox: string[]): string {
  * Returns the CSS class name for a given rank within a season.
  * Priority: custom rankClass entry → 'promoted' → 'relegated' → '' (no class).
  */
-export function getRankClass(rank: number, seasonInfo: SeasonInfo): string {
+export function getRankClass(rank: number, seasonInfo: LeagueSeasonInfo): string {
   const custom = seasonInfo.rankClass[String(rank)];
   if (custom) return custom;
   if (rank <= seasonInfo.promotionCount) return 'promoted';

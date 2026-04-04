@@ -10,9 +10,9 @@
 
 import Papa from 'papaparse';
 import type { RawMatchRow, TeamMap } from './types/match';
-import type { SeasonMap, SeasonInfo } from './types/season';
+import type { SeasonMap, LeagueSeasonInfo } from './types/season';
 import {
-  loadSeasonMap, getCsvFilename, findCompetition, resolveSeasonInfo,
+  loadSeasonMap, getCsvFilename, findCompetition, resolveLeagueSeasonInfo,
   getCompetitionViewTypes,
 } from './config/season-map';
 import { parseCsvResults } from './core/csv-parser';
@@ -305,7 +305,7 @@ function renderFromCache(
   if (!found) return;
   const entry = found.competition.seasons[season];
   if (!entry) return;
-  const seasonInfo = resolveSeasonInfo(found.family, found.competition, entry, found.familyKey);
+  const seasonInfo = resolveLeagueSeasonInfo(found.family, found.competition, entry, found.familyKey);
   const { hasPk, hasEx } = cache;
 
   // Determine which groups to render and in what order.
@@ -335,7 +335,7 @@ function renderFromCache(
     // promotionCount is kept as-is (group-stage competitions advance a fixed number per group).
     // relegationCount is zeroed because relegation is never decided per-group.
     const groupTeamCount = seasonInfo.groupTeamCount?.[groupKey] ?? seasonInfo.teamCount;
-    const perGroupInfo: SeasonInfo = isMultiGroup
+    const perGroupInfo: LeagueSeasonInfo = isMultiGroup
       ? { ...seasonInfo, teamCount: groupTeamCount, relegationCount: 0 }
       : seasonInfo;
 
@@ -458,7 +458,12 @@ function loadAndRender(seasonMap: SeasonMap): void {
     return;
   }
 
-  const leagueDisplay = resolveSeasonInfo(found.family, found.competition, found.competition.seasons[season], found.familyKey).leagueDisplay;
+  const leagueDisplay = resolveLeagueSeasonInfo(
+    found.family,
+    found.competition,
+    found.competition.seasons[season],
+    found.familyKey,
+  ).leagueDisplay;
 
   writeUrlParams(competition, season);
   savePrefs({
@@ -486,7 +491,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     download: true,
     complete: (results) => {
       const entry = found.competition.seasons[season];
-      const seasonInfo = resolveSeasonInfo(found.family, found.competition, entry, found.familyKey);
+      const seasonInfo = resolveLeagueSeasonInfo(found.family, found.competition, entry, found.familyKey);
       const teamMap = parseCsvResults(
         results.data,
         results.meta.fields ?? [],

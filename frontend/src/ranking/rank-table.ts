@@ -1,7 +1,7 @@
 // Ranking table data builder and renderer: port of make_rankdata / make_ranktable.
 
 import type { TeamData, TeamMatch } from '../types/match';
-import type { SeasonInfo, CrossGroupStanding } from '../types/season';
+import type { LeagueSeasonInfo, CrossGroupStanding } from '../types/season';
 import {
   getStats,
   getSafetyLine,
@@ -108,7 +108,7 @@ function getAllRestGame(teams: Record<string, TeamData>): number {
 export function makeRankData(
   groupData: Record<string, TeamData>,
   teamList: string[],
-  seasonInfo: SeasonInfo,
+  seasonInfo: LeagueSeasonInfo,
   disp: boolean,
   hasPk: boolean = false,
   hasEx: boolean = false,

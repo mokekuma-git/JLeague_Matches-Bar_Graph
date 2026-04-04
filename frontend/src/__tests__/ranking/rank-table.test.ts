@@ -3,7 +3,7 @@ import { describe, test, expect, beforeAll, vi } from 'vitest';
 import { makeRankData, makeRankTable } from '../../ranking/rank-table';
 import type { TeamData } from '../../types/match';
 import { TeamStats } from '../../types/match';
-import { makeSeasonInfo } from '../fixtures/match-data';
+import { makeLeagueSeasonInfo } from '../fixtures/match-data';
 
 // Mock the CDN-loaded SortableTable global required by makeRankTable.
 beforeAll(() => {
@@ -105,7 +105,7 @@ function makeStatsTeam(opts: {
 // ─── Scenario 1: season finished ──────────────────────────────────────────────
 // All teams have rest_games={}, so getAllRestGame()===0 → allGameFinished branch.
 describe('makeRankData – season finished', () => {
-  const seasonInfo = makeSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
+  const seasonInfo = makeLeagueSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
   // relegationRank = 4 - 1 = 3
 
   const groupData: Record<string, TeamData> = {
@@ -178,7 +178,7 @@ describe('makeRankData – confirmed champion, others eliminated', () => {
   // TeamB: avlbl_pt=21 < silverLine=25 → 'なし'
   // TeamC: avlbl_pt=18 < 25 → 'なし'
   // TeamD: avlbl_pt=8  < 25 → 'なし'
-  const seasonInfo = makeSeasonInfo({ teamCount: 4, promotionCount: 0, relegationCount: 0 });
+  const seasonInfo = makeLeagueSeasonInfo({ teamCount: 4, promotionCount: 0, relegationCount: 0 });
 
   const groupData: Record<string, TeamData> = {
     TeamA: makeStatsTeam({ point: 25, avlbl_pt: 25, all_game: 10, rest_games: {} }),
@@ -239,7 +239,7 @@ describe('makeRankData – confirmed champion, others eliminated', () => {
 //   TeamC: silver = 8 - 18 = -10 < 0 → 'なし'
 //   TeamD: silver = 9 - 18 = -9  < 0 → 'なし'
 describe('makeRankData – all four champion states in one table', () => {
-  const seasonInfo = makeSeasonInfo({ teamCount: 4, promotionCount: 0, relegationCount: 0 });
+  const seasonInfo = makeLeagueSeasonInfo({ teamCount: 4, promotionCount: 0, relegationCount: 0 });
 
   const groupData: Record<string, TeamData> = {
     TeamA: makeStatsTeam({ point: 18, avlbl_pt: 21, all_game: 8, rest_games: { TeamC: 1 } }),
@@ -274,7 +274,7 @@ describe('makeRankData – all four champion states in one table', () => {
 // ─── Scenario 4: disp=true uses displayStats ──────────────────────────────────
 // Verify that when disp=true, the row fields reflect displayStats values, not latest values.
 describe('makeRankData – disp=true uses display-time stats', () => {
-  const seasonInfo = makeSeasonInfo({ teamCount: 2, promotionCount: 0, relegationCount: 0 });
+  const seasonInfo = makeLeagueSeasonInfo({ teamCount: 2, promotionCount: 0, relegationCount: 0 });
 
   const groupData: Record<string, TeamData> = {
     TeamA: makeStatsTeam({
@@ -319,7 +319,7 @@ describe('makeRankData – disp=true uses display-time stats', () => {
 
 // ─── Scenario 5: no promotion/relegation ──────────────────────────────────────
 describe('makeRankData – no promotion or relegation counts', () => {
-  const seasonInfo = makeSeasonInfo({ teamCount: 4, promotionCount: 0, relegationCount: 0 });
+  const seasonInfo = makeLeagueSeasonInfo({ teamCount: 4, promotionCount: 0, relegationCount: 0 });
 
   const groupData: Record<string, TeamData> = {
     TeamA: makeStatsTeam({ point: 9, avlbl_pt: 9, all_game: 3, rest_games: {} }),
@@ -382,7 +382,7 @@ describe('makeRankData – no promotion or relegation counts', () => {
 //
 // TeamD/E/F: remaining = avlbl_pt - 18 < 0 → 'なし'
 describe('makeRankData – all four promotion states in one table', () => {
-  const seasonInfo = makeSeasonInfo({ teamCount: 6, promotionCount: 2, relegationCount: 0 });
+  const seasonInfo = makeLeagueSeasonInfo({ teamCount: 6, promotionCount: 2, relegationCount: 0 });
 
   const groupData: Record<string, ReturnType<typeof makeStatsTeam>> = {
     TeamA: makeStatsTeam({ point: 22, avlbl_pt: 22, all_game: 10, rest_games: { TeamB: 1 } }),
@@ -476,7 +476,7 @@ describe('makeRankData – all four promotion states in one table', () => {
 // TeamF: keepLeague = 4-21 = -17 < 0
 //        relegation = 7-14 = -7 < 0 → '降格'
 describe('makeRankData – all four relegation states in one table', () => {
-  const seasonInfo = makeSeasonInfo({ teamCount: 6, promotionCount: 0, relegationCount: 3 });
+  const seasonInfo = makeLeagueSeasonInfo({ teamCount: 6, promotionCount: 0, relegationCount: 3 });
 
   const groupData: Record<string, ReturnType<typeof makeStatsTeam>> = {
     TeamA: makeStatsTeam({ point: 25, avlbl_pt: 25, all_game: 10, rest_games: {} }),
@@ -521,7 +521,7 @@ describe('makeRankData – all four relegation states in one table', () => {
 
 // ─── Scenario 6: row shape ─────────────────────────────────────────────────────
 describe('makeRankData – row shape', () => {
-  const seasonInfo = makeSeasonInfo({ teamCount: 2, promotionCount: 0, relegationCount: 0 });
+  const seasonInfo = makeLeagueSeasonInfo({ teamCount: 2, promotionCount: 0, relegationCount: 0 });
 
   const groupData: Record<string, TeamData> = {
     TeamA: makeStatsTeam({

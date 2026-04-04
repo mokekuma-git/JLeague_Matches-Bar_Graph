@@ -9,39 +9,39 @@ import {
 } from '../../graph/renderer';
 import { buildTeamColumn } from '../../graph/bar-column';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
-import { makeMatch, makeTeamData, makeSeasonInfo } from '../fixtures/match-data';
+import { makeMatch, makeTeamData, makeLeagueSeasonInfo } from '../fixtures/match-data';
 import type { ColumnResult } from '../../graph/bar-column';
 
 // ─── getScaleColumnPositions ──────────────────────────────────────────────────────
 
 describe('getScaleColumnPositions', () => {
   test('promotion=0, relegation=0 → mid only', () => {
-    const info = makeSeasonInfo({ teamCount: 10, promotionCount: 0, relegationCount: 0 });
+    const info = makeLeagueSeasonInfo({ teamCount: 10, promotionCount: 0, relegationCount: 0 });
     expect(getScaleColumnPositions(info)).toEqual([5]);
   });
 
   test('teamCount=4 with promotion=1, relegation=1 → [1, 2, 3]', () => {
-    const info = makeSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
+    const info = makeLeagueSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
     expect(getScaleColumnPositions(info)).toEqual([1, 2, 3]);
   });
 
   test('teamCount=20, promotion=3, relegation=4 → [3, 10, 16]', () => {
-    const info = makeSeasonInfo({ teamCount: 20, promotionCount: 3, relegationCount: 4 });
+    const info = makeLeagueSeasonInfo({ teamCount: 20, promotionCount: 3, relegationCount: 4 });
     expect(getScaleColumnPositions(info)).toEqual([3, 10, 16]);
   });
 
   test('promotion only (relegation=0) → [promotionCount, mid]', () => {
-    const info = makeSeasonInfo({ teamCount: 10, promotionCount: 3, relegationCount: 0 });
+    const info = makeLeagueSeasonInfo({ teamCount: 10, promotionCount: 3, relegationCount: 0 });
     expect(getScaleColumnPositions(info)).toEqual([3, 5]);
   });
 
   test('relegation only (promotion=0) → [mid, relegationCutoff]', () => {
-    const info = makeSeasonInfo({ teamCount: 10, promotionCount: 0, relegationCount: 2 });
+    const info = makeLeagueSeasonInfo({ teamCount: 10, promotionCount: 0, relegationCount: 2 });
     expect(getScaleColumnPositions(info)).toEqual([5, 8]);
   });
 
   test('odd teamCount uses floor: teamCount=11 → mid=5', () => {
-    const info = makeSeasonInfo({ teamCount: 11, promotionCount: 0, relegationCount: 0 });
+    const info = makeLeagueSeasonInfo({ teamCount: 11, promotionCount: 0, relegationCount: 0 });
     expect(getScaleColumnPositions(info)).toEqual([5]);
   });
 });
@@ -116,7 +116,7 @@ function buildCol(
 }
 
 describe('assembleTeamColumn', () => {
-  const info = makeSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
+  const info = makeLeagueSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
 
   test('space box added when avlbl_pt < maxAvblPt', () => {
     const col = buildCol('TeamA', [makeMatch({ point: 3, has_result: true })]);
@@ -180,7 +180,7 @@ describe('assembleTeamColumn', () => {
 
 describe('renderBarGraph', () => {
   const TARGET = '2025/12/31';
-  const info = makeSeasonInfo({ teamCount: 3, promotionCount: 1, relegationCount: 1 });
+  const info = makeLeagueSeasonInfo({ teamCount: 3, promotionCount: 1, relegationCount: 1 });
 
   function buildGroupData(): Record<string, ReturnType<typeof makeTeamData>> {
     const teams = {
