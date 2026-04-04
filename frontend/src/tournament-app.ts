@@ -11,6 +11,7 @@ import type {
   BracketBlock,
   AggregateTiebreakCriterion,
   RawSeasonEntry,
+  TournamentSeasonInfo,
 } from './types/season';
 import {
   loadSeasonMap, getCsvFilename, findCompetition, resolveTournamentSeasonInfo,
@@ -40,16 +41,12 @@ import type { BracketNode } from './bracket/bracket-types';
 interface BracketState {
   csvRows: RawMatchRow[];
   bracketOrder: (string | null)[];
-  aggregateTiebreakOrder: AggregateTiebreakCriterion[];
+  seasonInfo: TournamentSeasonInfo;
   fullRoot: BracketNode;        // full tree built from bracketOrder
   roundsByDepth: string[];      // round labels root-to-leaf (e.g. ['決勝戦','準決勝','準々決勝','ラウンド16'])
   allRounds: string[];          // all CSV rounds in chronological order
-  defaultRoundStart?: string;   // from season_map bracket_round_start
-  roundStartOptions?: string[];
   bracketBlocks?: BracketBlock[];  // multi-section definitions from season_map
   matchDates: string[];         // sorted unique dates from CSV
-  cssFiles: string[];
-  leagueDisplay: string;
   season: string;
 }
 
@@ -494,24 +491,24 @@ function buildAndRenderBracket(
 }
 
 function createSingleBracketRenderInput(
-  state: Pick<BracketState, 'csvRows' | 'aggregateTiebreakOrder' | 'matchDates' | 'cssFiles'>,
+  state: Pick<BracketState, 'csvRows' | 'seasonInfo' | 'matchDates'>,
   order: (string | null)[],
 ): SingleBracketRenderInput | null {
   if (order.length < 2 || state.matchDates.length === 0) return null;
   return {
     rows: state.csvRows,
     order,
-    aggregateTiebreakOrder: state.aggregateTiebreakOrder,
+    aggregateTiebreakOrder: state.seasonInfo.aggregateTiebreakOrder,
     targetDate: getTargetDate(),
     lastDate: state.matchDates[state.matchDates.length - 1],
-    cssFiles: state.cssFiles,
+    cssFiles: state.seasonInfo.cssFiles,
   };
 }
 
 function createInclusiveBracketRenderInput(
   state: Pick<
   BracketState,
-  'csvRows' | 'aggregateTiebreakOrder' | 'matchDates' | 'cssFiles' |
+  'csvRows' | 'seasonInfo' | 'matchDates' |
   'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds'
   >,
 ): SingleBracketRenderInput | null {
@@ -766,16 +763,12 @@ function loadAndRender(seasonMap: SeasonMap): void {
       currentState = {
         csvRows: bracketRows,
         bracketOrder,
-        aggregateTiebreakOrder: tournamentSeasonInfo.aggregateTiebreakOrder,
+        seasonInfo: tournamentSeasonInfo,
         fullRoot,
         roundsByDepth,
         allRounds,
-        defaultRoundStart: tournamentSeasonInfo.defaultRoundStart,
-        roundStartOptions: tournamentSeasonInfo.roundStartOptions,
         bracketBlocks,
         matchDates,
-        cssFiles: tournamentSeasonInfo.cssFiles,
-        leagueDisplay: tournamentSeasonInfo.leagueDisplay,
         season,
       };
 
