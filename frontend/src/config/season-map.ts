@@ -3,8 +3,8 @@
 import yaml from 'js-yaml';
 import type { PointSystem } from '../types/config';
 import type {
-  SeasonMap, CompetitionFamilyEntry, CompetitionEntry, RawSeasonEntry, SeasonInfo,
-  CrossGroupStanding, DataSource, ViewType, AggregateTiebreakCriterion,
+  SeasonMap, CompetitionFamilyEntry, CompetitionEntry, RawSeasonEntry, LeagueSeasonInfo,
+  TournamentSeasonInfo, CrossGroupStanding, DataSource, ViewType, AggregateTiebreakCriterion,
 } from '../types/season';
 import { generateRuleNotes } from './rule-notes';
 import { t } from '../i18n';
@@ -122,17 +122,6 @@ interface ResolvedBaseFields {
   viewTypes: ViewType[];
 }
 
-export interface TournamentSeasonInfo {
-  cssFiles: string[];
-  leagueDisplay: string;
-  notes: string[];
-  viewTypes: ViewType[];
-  dataSource?: DataSource;
-  aggregateTiebreakOrder: AggregateTiebreakCriterion[];
-  defaultRoundStart?: string;
-  roundStartOptions?: string[];
-}
-
 /**
  * Expands a scalar value into a Record using the given index keys.
  * If the value is already a Record, returns it as-is.
@@ -216,7 +205,7 @@ function resolveBaseFields(
 }
 
 /**
- * Resolves a SeasonInfo by applying the property cascade:
+ * Resolves league season info by applying the property cascade:
  * family → competition → season entry options.
  *
  * Cascade rules:
@@ -224,12 +213,12 @@ function resolveBaseFields(
  * - Array (css_files): union (deduplicated)
  * - Object (team_rename_map): merge (lower keys override)
  */
-export function resolveSeasonInfo(
+export function resolveLeagueSeasonInfo(
   family: CompetitionFamilyEntry,
   comp: CompetitionEntry,
   entry: RawSeasonEntry,
   familyKey: string = '',
-): SeasonInfo {
+): LeagueSeasonInfo {
   const base = resolveBaseFields(family, comp, entry, familyKey);
 
   // team_rename_map currently cascades only competition -> season.
@@ -276,20 +265,17 @@ export function resolveSeasonInfo(
     ...generateRuleNotes(base.pointSystem, base.tiebreakOrder, base.aggregateTiebreakOrder),
   ];
 
-  const bracketDefaultCount = base.viewTypes.includes('bracket') ? 0 : undefined;
   const inferredTeamCount = entry.teams && entry.teams.length > 0 ? entry.teams.length : undefined;
   const teamCount = requireCascade('team_count', entry.team_count, comp.team_count, inferredTeamCount);
   const promotionCount = requireCascade(
     'promotion_count',
     entry.promotion_count,
     comp.promotion_count,
-    bracketDefaultCount,
   );
   const relegationCount = requireCascade(
     'relegation_count',
     entry.relegation_count,
     comp.relegation_count,
-    bracketDefaultCount,
   );
 
   return {

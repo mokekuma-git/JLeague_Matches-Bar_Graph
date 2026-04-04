@@ -4,7 +4,7 @@
 // making it testable without any DOM dependency.
 
 import type { TeamData } from '../types/match';
-import type { SeasonInfo } from '../types/season';
+import type { LeagueSeasonInfo } from '../types/season';
 import { calculateTeamStats } from '../ranking/stats-calculator';
 import type { MatchSortKey } from '../ranking/stats-calculator';
 import { getSortedTeamList } from './sorter';
@@ -13,8 +13,8 @@ import { getSortedTeamList } from './sorter';
 export interface PrepareRenderInput {
   /** Raw group data from the CSV cache (will be deep-copied, not mutated). */
   groupData: Record<string, TeamData>;
-  /** Fully resolved season info (from resolveSeasonInfo). */
-  seasonInfo: SeasonInfo;
+  /** Fully resolved season info (from resolveLeagueSeasonInfo). */
+  seasonInfo: LeagueSeasonInfo;
   /** Display cutoff date in 'YYYY/MM/DD' format. */
   targetDate: string;
   /** Team sort key (e.g. 'point', 'disp_avlbl_pt'). */

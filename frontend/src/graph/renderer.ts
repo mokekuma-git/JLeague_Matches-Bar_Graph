@@ -4,7 +4,7 @@
 // is responsible for inserting the returned fragment into the DOM.
 
 import type { TeamData } from '../types/match';
-import type { SeasonInfo } from '../types/season';
+import type { LeagueSeasonInfo } from '../types/season';
 import { PRESEASON_SENTINEL } from '../core/date-slider';
 import { getPointHeightScale } from '../core/point-calculator';
 import { buildTeamColumn } from './bar-column';
@@ -29,7 +29,7 @@ export interface RenderResult {
  *
  * Example: teamCount=20, promotion=3, relegation=4 → [3, 10, 16]
  */
-export function getScaleColumnPositions(seasonInfo: SeasonInfo): number[] {
+export function getScaleColumnPositions(seasonInfo: LeagueSeasonInfo): number[] {
   const columns: number[] = [Math.floor(seasonInfo.teamCount / 2)];
   if (seasonInfo.promotionCount !== 0) columns.unshift(seasonInfo.promotionCount);
   if (seasonInfo.relegationCount !== 0) columns.push(seasonInfo.teamCount - seasonInfo.relegationCount);
@@ -88,7 +88,7 @@ export function assembleTeamColumn(
   maxAvblPt: number,
   heightUnit: number,
   bottomFirst: boolean,
-  seasonInfo: SeasonInfo,
+  seasonInfo: LeagueSeasonInfo,
 ): HTMLDivElement {
   // Clone arrays so we don't mutate the original ColumnResult.
   const graph = [...col.graph];
@@ -166,7 +166,7 @@ export function assembleTeamColumn(
 export function renderBarGraph(
   groupData: Record<string, TeamData>,
   sortedTeams: string[],
-  seasonInfo: SeasonInfo,
+  seasonInfo: LeagueSeasonInfo,
   targetDate: string,
   disp: boolean,
   bottomFirst: boolean,

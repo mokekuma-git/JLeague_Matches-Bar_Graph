@@ -5,7 +5,7 @@ import {
 } from '../../graph/tooltip';
 import { getBright } from '../../graph/css-utils';
 import { calculateTeamStats } from '../../ranking/stats-calculator';
-import { makeMatch, makeTeamData, makeSeasonInfo } from '../fixtures/match-data';
+import { makeMatch, makeTeamData, makeLeagueSeasonInfo } from '../fixtures/match-data';
 
 // ─── makeBoxBody (height-based box content) ─────────────────────────────────
 
@@ -246,7 +246,7 @@ describe('joinLossBox', () => {
 
 describe('getRankClass', () => {
   // 4 teams, promotion 1, relegation 1 → relegationRank = 3 (rank 4 relegated)
-  const info = makeSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
+  const info = makeLeagueSeasonInfo({ teamCount: 4, promotionCount: 1, relegationCount: 1 });
 
   test('rank within promotion zone → "promoted"', () => {
     expect(getRankClass(1, info)).toBe('promoted');
@@ -262,7 +262,7 @@ describe('getRankClass', () => {
   });
 
   test('custom rankClass takes priority over promotion/relegation', () => {
-    const custom = makeSeasonInfo({
+    const custom = makeLeagueSeasonInfo({
       teamCount: 4, promotionCount: 1, relegationCount: 1,
       rankClass: { '1': 'champion', '3': 'promoted_playoff' },
     });
