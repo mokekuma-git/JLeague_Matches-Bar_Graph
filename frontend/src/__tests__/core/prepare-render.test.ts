@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { prepareRenderData } from '../../core/prepare-render';
 import type { PrepareRenderInput } from '../../core/prepare-render';
-import { makeMatch, makeTeamData, makeSeasonInfo } from '../fixtures/match-data';
+import { makeMatch, makeTeamData, makeLeagueSeasonInfo } from '../fixtures/match-data';
 
 function makeTestInput(overrides: Partial<PrepareRenderInput> = {}): PrepareRenderInput {
   return {
@@ -19,7 +19,7 @@ function makeTestInput(overrides: Partial<PrepareRenderInput> = {}): PrepareRend
         makeMatch({ opponent: 'TeamB', point: 1, match_date: '2025/03/08', section_no: 2, goal_get: 1, goal_lose: 1, is_home: false }),
       ]),
     },
-    seasonInfo: makeSeasonInfo({ teamCount: 3, teams: ['TeamA', 'TeamB', 'TeamC'] }),
+    seasonInfo: makeLeagueSeasonInfo({ teamCount: 3, teams: ['TeamA', 'TeamB', 'TeamC'] }),
     targetDate: '2025/12/31',
     sortKey: 'point',
     matchSortKey: 'section_no',
@@ -79,7 +79,7 @@ describe('prepareRenderData', () => {
   test('works with empty team list', () => {
     const input = makeTestInput({
       groupData: {},
-      seasonInfo: makeSeasonInfo({ teamCount: 0, teams: [] }),
+      seasonInfo: makeLeagueSeasonInfo({ teamCount: 0, teams: [] }),
     });
     const result = prepareRenderData(input);
     expect(result.groupData).toEqual({});
@@ -113,7 +113,7 @@ describe('prepareRenderData with tiebreakOrder', () => {
           makeMatch({ opponent: 'TeamB', point: 0, goal_get: 0, goal_lose: 3, match_date: '2025/03/08', section_no: 2, is_home: false }),
         ]),
       },
-      seasonInfo: makeSeasonInfo({
+      seasonInfo: makeLeagueSeasonInfo({
         teamCount: 3,
         teams: ['TeamA', 'TeamB', 'TeamC'],
         tiebreakOrder,
@@ -177,7 +177,7 @@ describe('prepareRenderData with tiebreakOrder', () => {
           makeMatch({ opponent: 'TeamY', point: 0, goal_get: 0, goal_lose: 3, match_date: '2025/03/08', section_no: 2, is_home: false }),
         ]),
       },
-      seasonInfo: makeSeasonInfo({
+      seasonInfo: makeLeagueSeasonInfo({
         teamCount: 3, teams: ['TeamX', 'TeamY', 'TeamZ'],
         tiebreakOrder: ['head_to_head', 'goal_diff'],
       }),
@@ -219,7 +219,7 @@ describe('prepareRenderData with disp sort keys and targetDate', () => {
           makeMatch({ opponent: 'TeamB', point: 3, goal_get: 2, goal_lose: 0, match_date: '2025/04/01', section_no: 2 }),
         ]),
       },
-      seasonInfo: makeSeasonInfo({ teamCount: 3, teams: ['TeamA', 'TeamB', 'TeamC'] }),
+      seasonInfo: makeLeagueSeasonInfo({ teamCount: 3, teams: ['TeamA', 'TeamB', 'TeamC'] }),
       targetDate,
       sortKey,
       matchSortKey: 'section_no',
@@ -310,7 +310,7 @@ describe('prepareRenderData sort stability with many teams', () => {
 
     const input: PrepareRenderInput = {
       groupData,
-      seasonInfo: makeSeasonInfo({ teamCount: 20, teams: teamNames }),
+      seasonInfo: makeLeagueSeasonInfo({ teamCount: 20, teams: teamNames }),
       targetDate: '2025/12/31',
       sortKey: 'point',
       matchSortKey: 'section_no',
@@ -356,7 +356,7 @@ describe('prepareRenderData sort stability with many teams', () => {
 
     const input: PrepareRenderInput = {
       groupData,
-      seasonInfo: makeSeasonInfo({ teamCount: 20, teams: teamNames }),
+      seasonInfo: makeLeagueSeasonInfo({ teamCount: 20, teams: teamNames }),
       targetDate: '2025/12/31',
       sortKey: 'point',
       matchSortKey: 'section_no',

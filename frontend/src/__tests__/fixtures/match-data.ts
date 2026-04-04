@@ -2,7 +2,7 @@
 
 import type { TeamData, TeamMatch } from '../../types/match';
 import { TeamStats } from '../../types/match';
-import type { SeasonInfo } from '../../types/season';
+import type { LeagueSeasonInfo } from '../../types/season';
 
 /** Creates a TeamMatch with sensible defaults; override any field as needed. */
 export function makeMatch(overrides: Partial<TeamMatch> = {}): TeamMatch {
@@ -32,8 +32,10 @@ export function makeTeamData(matches: TeamMatch[] = []): TeamData {
   return { df: matches, latestStats: new TeamStats(), displayStats: new TeamStats() };
 }
 
-/** Creates a SeasonInfo for a 4-team season with 1 promotion and 1 relegation slot. */
-export function makeSeasonInfo(overrides: Partial<SeasonInfo> = {}): SeasonInfo {
+/** Creates a LeagueSeasonInfo for a 4-team season with 1 promotion and 1 relegation slot. */
+export function makeLeagueSeasonInfo(
+  overrides: Partial<LeagueSeasonInfo> = {},
+): LeagueSeasonInfo {
   return {
     teamCount: 4,
     promotionCount: 1,

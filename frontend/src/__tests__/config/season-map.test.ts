@@ -5,7 +5,8 @@ import type {
 import {
   getCsvFilename,
   findCompetition,
-  resolveSeasonInfo,
+  resolveLeagueSeasonInfo,
+  resolveTournamentSeasonInfo,
 } from '../../config/season-map';
 
 // ---- Test fixtures --------------------------------------------------------
@@ -95,12 +96,12 @@ describe('findCompetition', () => {
   });
 });
 
-// ---- resolveSeasonInfo ----------------------------------------------------
+// ---- resolveLeagueSeasonInfo ----------------------------------------------
 
-describe('resolveSeasonInfo', () => {
+describe('resolveLeagueSeasonInfo', () => {
   test('basic J1 season without extra options', () => {
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: ['神戸', '広島'] };
-    const info = resolveSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
 
     expect(info.teamCount).toBe(20);
     expect(info.promotionCount).toBe(3);
@@ -123,21 +124,21 @@ describe('resolveSeasonInfo', () => {
       relegation_count: 0,
       teams: ['A', 'B', 'C', 'D'],
     };
-    const info = resolveSeasonInfo(family, comp, entry);
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
 
     expect(info.teamCount).toBe(4);
   });
 
   test('season with rank_properties', () => {
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: [], rank_properties: { '3': 'promoted_playoff' } };
-    const info = resolveSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
 
     expect(info.rankClass).toEqual({ '3': 'promoted_playoff' });
   });
 
   test('season with group_display and url_category', () => {
     const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [], group_display: 'EAST-A', url_category: 'j2j3' };
-    const info = resolveSeasonInfo(sampleFamily, sampleFamily.competitions.J2, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J2, entry);
 
     expect(info.groupDisplay).toBe('EAST-A');
     expect(info.urlCategory).toBe('j2j3');
@@ -146,14 +147,14 @@ describe('resolveSeasonInfo', () => {
 
   test('cascade: league_display in season overrides competition', () => {
     const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [], league_display: 'Jリーグ 1993' };
-    const info = resolveSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
 
     expect(info.leagueDisplay).toBe('Jリーグ 1993');
   });
 
   test('cascade: point_system from season overrides default', () => {
     const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [], point_system: 'victory-count' };
-    const info = resolveSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
 
     expect(info.pointSystem).toBe('victory-count');
   });
@@ -170,7 +171,7 @@ describe('resolveSeasonInfo', () => {
       competitions: {},
     };
     const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [], css_files: ['season.css'] };
-    const info = resolveSeasonInfo(familyWithCss, compWithCss, entry);
+    const info = resolveLeagueSeasonInfo(familyWithCss, compWithCss, entry);
 
     expect(info.cssFiles).toEqual(['team_style.css', 'extra.css', 'season.css']);
   });
@@ -182,7 +183,7 @@ describe('resolveSeasonInfo', () => {
       seasons: {},
     };
     const entry: RawSeasonEntry = { team_count: 32, promotion_count: 0, relegation_count: 0, teams: [], team_rename_map: { 'アメリカ': 'USA' } };
-    const info = resolveSeasonInfo(nationalFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(nationalFamily, comp, entry);
 
     expect(info.teamRenameMap).toEqual({ 'オーストラリア': '豪州', 'アメリカ': 'USA' });
   });
@@ -199,14 +200,14 @@ describe('resolveSeasonInfo', () => {
       seasons: {},
     };
     const entry: RawSeasonEntry = { team_count: 32, promotion_count: 0, relegation_count: 0, teams: [] };
-    const info = resolveSeasonInfo(family, comp, entry);
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
 
     expect(info.teamRenameMap).toEqual({ 'オーストラリア': '豪州' });
   });
 
   test('national family inherits national CSS', () => {
     const entry: RawSeasonEntry = { team_count: 32, promotion_count: 0, relegation_count: 0, teams: [] };
-    const info = resolveSeasonInfo(nationalFamily, nationalFamily.competitions.WC_GS, entry);
+    const info = resolveLeagueSeasonInfo(nationalFamily, nationalFamily.competitions.WC_GS, entry);
 
     expect(info.cssFiles).toEqual(['national_team_style.css']);
     expect(info.leagueDisplay).toBe('FIFAワールドカップ グループステージ');
@@ -217,7 +218,7 @@ describe('resolveSeasonInfo', () => {
     const comp: CompetitionEntry = { seasons: {} };
     const family: CompetitionFamilyEntry = { display_name: 'Test Group', competitions: {} };
     const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [] };
-    const info = resolveSeasonInfo(family, comp, entry);
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
 
     expect(info.leagueDisplay).toBe('Test Group');
   });
@@ -226,14 +227,14 @@ describe('resolveSeasonInfo', () => {
     const comp: CompetitionEntry = { seasons: {} };
     const family: CompetitionFamilyEntry = { competitions: {} };
     const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [] };
-    const info = resolveSeasonInfo(family, comp, entry, 'my_family');
+    const info = resolveLeagueSeasonInfo(family, comp, entry, 'my_family');
 
     expect(info.leagueDisplay).toBe('my_family');
   });
 
   test('tiebreakOrder defaults to ["goal_diff", "goal_get"]', () => {
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: [] };
-    const info = resolveSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
 
     expect(info.tiebreakOrder).toEqual(['goal_diff', 'goal_get']);
   });
@@ -245,7 +246,7 @@ describe('resolveSeasonInfo', () => {
       seasons: {},
     };
     const entry: RawSeasonEntry = { team_count: 8, promotion_count: 0, relegation_count: 0, teams: [] };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.tiebreakOrder).toEqual(['head_to_head', 'goal_diff', 'goal_get']);
   });
@@ -257,7 +258,7 @@ describe('resolveSeasonInfo', () => {
       seasons: {},
     };
     const entry: RawSeasonEntry = { team_count: 8, promotion_count: 0, relegation_count: 0, teams: [], tiebreak_order: ['goal_diff', 'wins'] };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.tiebreakOrder).toEqual(['goal_diff', 'wins']);
   });
@@ -266,7 +267,7 @@ describe('resolveSeasonInfo', () => {
     const family: CompetitionFamilyEntry = { display_name: 'Test', competitions: {} };
     const comp: CompetitionEntry = { seasons: {} };
     const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [] };
-    const info = resolveSeasonInfo(family, comp, entry);
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
 
     expect(info.seasonStartMonth).toBe(7);
   });
@@ -279,7 +280,7 @@ describe('resolveSeasonInfo', () => {
     };
     const comp: CompetitionEntry = { seasons: {} };
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: [] };
-    const info = resolveSeasonInfo(family, comp, entry);
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
 
     expect(info.seasonStartMonth).toBe(1);
   });
@@ -292,7 +293,7 @@ describe('resolveSeasonInfo', () => {
     };
     const comp: CompetitionEntry = { season_start_month: 8, seasons: {} };
     const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [] };
-    const info = resolveSeasonInfo(family, comp, entry);
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
 
     expect(info.seasonStartMonth).toBe(8);
   });
@@ -300,14 +301,14 @@ describe('resolveSeasonInfo', () => {
   test('cascade: season_start_month from season overrides competition', () => {
     const comp: CompetitionEntry = { season_start_month: 1, seasons: {} };
     const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [], season_start_month: 7 };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.seasonStartMonth).toBe(7);
   });
 
   test('shownGroups undefined when not set at any level', () => {
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: [] };
-    const info = resolveSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
 
     expect(info.shownGroups).toBeUndefined();
   });
@@ -319,7 +320,7 @@ describe('resolveSeasonInfo', () => {
       seasons: {},
     };
     const entry: RawSeasonEntry = { team_count: 16, promotion_count: 0, relegation_count: 0, teams: [] };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.shownGroups).toEqual(['A', 'B']);
   });
@@ -331,7 +332,7 @@ describe('resolveSeasonInfo', () => {
       seasons: {},
     };
     const entry: RawSeasonEntry = { team_count: 6, promotion_count: 0, relegation_count: 0, teams: [], shown_groups: ['C'] };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.shownGroups).toEqual(['C']);
   });
@@ -347,7 +348,7 @@ describe('resolveSeasonInfo', () => {
       group_team_count: { B: 4, C: 4 },
     };
     const entry: RawSeasonEntry = { team_count: 16, promotion_count: 0, relegation_count: 0, teams: [], group_team_count: { C: 3, D: 4 } };
-    const info = resolveSeasonInfo(family, comp, entry);
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
 
     expect(info.groupTeamCount).toEqual({ B: 4, C: 3, D: 4 });
   });
@@ -364,7 +365,7 @@ describe('resolveSeasonInfo', () => {
       teams: [],
       group_team_count: 4,
     };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.groupTeamCount).toEqual({ A: 4, B: 4 });
   });
@@ -382,7 +383,7 @@ describe('resolveSeasonInfo', () => {
       teams: [],
       group_team_count: { B: 3 },
     };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.groupTeamCount).toEqual({ A: 4, B: 3 });
   });
@@ -397,7 +398,7 @@ describe('resolveSeasonInfo', () => {
       group_team_count: 4,
     };
 
-    expect(() => resolveSeasonInfo(sampleFamily, comp, entry)).toThrow(
+    expect(() => resolveLeagueSeasonInfo(sampleFamily, comp, entry)).toThrow(
       'group_team_count scalar form requires index keys to expand',
     );
   });
@@ -415,7 +416,7 @@ describe('resolveSeasonInfo', () => {
       point_system: 'victory-count',
     };
     const entry: RawSeasonEntry = { team_count: 4, promotion_count: 0, relegation_count: 0, teams: [], note: 'season note' };
-    const info = resolveSeasonInfo(family, comp, entry);
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
 
     expect(info.notes.slice(0, 3)).toEqual(['family note', 'competition note', 'season note']);
     expect(info.notes.some((note) => note.includes('勝敗数のみカウント'))).toBe(true);
@@ -433,14 +434,14 @@ describe('resolveSeasonInfo', () => {
       view_type: ['bracket'],
     };
     const entry: RawSeasonEntry = { team_count: 8, promotion_count: 0, relegation_count: 0, teams: [], view_type: ['league', 'bracket'] };
-    const info = resolveSeasonInfo(family, comp, entry);
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
 
     expect(info.viewTypes).toEqual(['league', 'bracket']);
   });
 
   test('promotionLabel defaults to "昇格" when not set', () => {
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: [] };
-    const info = resolveSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
 
     expect(info.promotionLabel).toBe('昇格');
   });
@@ -452,7 +453,7 @@ describe('resolveSeasonInfo', () => {
       seasons: {},
     };
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: [] };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.promotionLabel).toBe('昇格<br/>ACL');
   });
@@ -464,7 +465,7 @@ describe('resolveSeasonInfo', () => {
       seasons: {},
     };
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: [], promotion_label: 'W杯本選' };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.promotionLabel).toBe('W杯本選');
   });
@@ -478,14 +479,14 @@ describe('resolveSeasonInfo', () => {
       seasons: {},
     };
     const entry: RawSeasonEntry = { teams: ['A', 'B'] };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.teamCount).toBe(8);
     expect(info.promotionCount).toBe(0);
     expect(info.relegationCount).toBe(0);
   });
 
-  test('bracket view seasons can omit promotion and relegation counts', () => {
+  test('league resolver throws when promotion and relegation counts are missing', () => {
     const comp: CompetitionEntry = {
       league_display: 'JLeagueCup',
       view_type: ['bracket'],
@@ -494,11 +495,10 @@ describe('resolveSeasonInfo', () => {
     const entry: RawSeasonEntry = {
       teams: ['A', 'B', 'C', 'D'],
     };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
 
-    expect(info.teamCount).toBe(4);
-    expect(info.promotionCount).toBe(0);
-    expect(info.relegationCount).toBe(0);
+    expect(() => resolveLeagueSeasonInfo(sampleFamily, comp, entry)).toThrow(
+      'Missing required season_map field: promotion_count',
+    );
   });
 
   test('season count fields override competition defaults', () => {
@@ -515,7 +515,7 @@ describe('resolveSeasonInfo', () => {
       relegation_count: 3,
       teams: [],
     };
-    const info = resolveSeasonInfo(sampleFamily, comp, entry);
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
 
     expect(info.teamCount).toBe(20);
     expect(info.promotionCount).toBe(3);
@@ -529,8 +529,57 @@ describe('resolveSeasonInfo', () => {
     };
     const entry: RawSeasonEntry = { teams: [] };
 
-    expect(() => resolveSeasonInfo(sampleFamily, comp, entry)).toThrow(
+    expect(() => resolveLeagueSeasonInfo(sampleFamily, comp, entry)).toThrow(
       'Missing required season_map field: team_count',
     );
+  });
+});
+
+describe('resolveTournamentSeasonInfo', () => {
+  test('aggregateTiebreakOrder defaults to ["penalties"] when not set anywhere', () => {
+    const family: CompetitionFamilyEntry = { display_name: 'Test', competitions: {} };
+    const comp: CompetitionEntry = { seasons: {} };
+    const entry: RawSeasonEntry = {};
+
+    const info = resolveTournamentSeasonInfo(family, comp, entry);
+
+    expect(info.aggregateTiebreakOrder).toEqual(['penalties']);
+  });
+
+  test('aggregateTiebreakOrder cascades from competition level', () => {
+    const family: CompetitionFamilyEntry = { display_name: 'Test', competitions: {} };
+    const comp: CompetitionEntry = {
+      aggregate_tiebreak_order: ['away_goals', 'penalties'],
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = {};
+
+    const info = resolveTournamentSeasonInfo(family, comp, entry);
+
+    expect(info.aggregateTiebreakOrder).toEqual(['away_goals', 'penalties']);
+  });
+
+  test('defaultRoundStart is normalized', () => {
+    const entry: RawSeasonEntry = { bracket_round_start: '準決勝 第1戦' };
+
+    const info = resolveTournamentSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+
+    expect(info.defaultRoundStart).toBe('準決勝');
+  });
+
+  test('roundStartOptions are normalized while preserving multi section sentinel', () => {
+    const entry: RawSeasonEntry = {
+      round_start_options: ['準決勝 第1戦', '__multi_section__'],
+    };
+
+    const info = resolveTournamentSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+
+    expect(info.roundStartOptions).toEqual(['準決勝', '__multi_section__']);
+  });
+
+  test('defaultRoundStart stays undefined when bracket_round_start is absent', () => {
+    const info = resolveTournamentSeasonInfo(sampleFamily, sampleFamily.competitions.J1, {});
+
+    expect(info.defaultRoundStart).toBeUndefined();
   });
 });
