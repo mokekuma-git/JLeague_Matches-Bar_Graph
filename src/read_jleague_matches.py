@@ -265,7 +265,7 @@ def make_kickoff_time(_subset: pd.DataFrame) -> list[pd.Timestamp]:
 
     Create kickoff times from the given match data and return a list of times 2 hours later (assumed match end time).
     The given match data is assumed to be from the same section.
-    If the start_time is '未定', it is replaced with '00:00' (midnight).
+    Any start_time not matching HH:MM format (e.g. '未定', '-', '中止') is treated as '00:00' (midnight).
     The resulting list is sorted and duplicates are removed.
 
     Args:
@@ -275,12 +275,13 @@ def make_kickoff_time(_subset: pd.DataFrame) -> list[pd.Timestamp]:
 
     Raises:
         AttributeError: If the start_time column contains non-string values
-        ParserError: If the date data is not in the correct format (date, or strings other than '未定')
-        ValueError: If the date data is not in the correct format (date, or strings other than '未定')
+        ParserError: If the date data is not in the correct format
+        ValueError: If the date data is not in the correct format
         TypeError: If the timestamp already has a timezone
         KeyError: If the DataFrame does not contain 'start_time' or 'match_date' columns
     """
-    start_time = _subset['start_time'].str.replace('未定', '00:00')
+    is_valid_time = _subset['start_time'].str.match(r'^\d{1,2}:\d{2}$')
+    start_time = _subset['start_time'].where(is_valid_time, '00:00')
     result = pd.to_datetime(_subset['match_date'] + ' ' + start_time)
     result = result.dt.tz_localize(config.timezone).sort_values().drop_duplicates()
     return list(result)
