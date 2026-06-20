@@ -33,6 +33,11 @@ competitions:
     groups: A, B, C, D, E, F, G, H
     match_in_section: 3
     timezone_diff: 06:00
+  WC2026:
+    schedule_url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/group{group}/match/schedule.json
+    csv_path: ../docs/csv/2026_allmatch_result-WC_GS.csv
+    groups: A, B, C, D, E, F, G, H, I, J, K, L
+    match_in_section: 3
   EmperorsCup:
     schedule_url: https://www.jfa.jp/match/emperorscup_{year}/match/schedule.json
     csv_path: ../docs/csv/{year}_allmatch_result-EmperorsCup.csv
