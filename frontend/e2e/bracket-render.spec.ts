@@ -110,4 +110,18 @@ test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-
       expect(bracketCount).toBeGreaterThan(1);
     }
   });
+
+  test('WC2026 knockout renders main draw and third-place blocks', async ({ page }) => {
+    // WC_KO 2026 defaults to multi-section (bracket_blocks present).
+    await page.goto('/tournament.html?competition=WC_KO&season=2026');
+    await waitForBracketRender(page);
+
+    const summaries = await page.locator('.bracket-section-summary').allTextContents();
+    expect(summaries).toContain('決勝トーナメント');
+    expect(summaries).toContain('３位決定戦');
+
+    // Main draw seeds 32 entrants → 16 Round-of-32 match cards at minimum.
+    const matchCount = await page.locator('.bracket-match').count();
+    expect(matchCount).toBeGreaterThanOrEqual(16);
+  });
 });

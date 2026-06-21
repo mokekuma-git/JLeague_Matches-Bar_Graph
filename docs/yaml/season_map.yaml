@@ -1028,10 +1028,13 @@ national:
         url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/
       seasons:
         '2026':
+          # Anchor shared with the main block so the inclusive full tree (built
+          # from this top-level order) stays a clean 32-team / power-of-two tree.
+          bracket_order: &wc_ko_main [ドイツ, A/B/C/D/F3位, グループI1位, C/D/F/G/H3位, グループA2位, グループB2位, グループF1位, グループC2位, グループK2位, グループL2位, グループH1位, グループJ2位, アメリカ, B/E/F/I/J3位, グループG1位, A/E/H/I/J3位, グループC1位, グループF2位, グループE2位, グループI2位, メキシコ, C/E/F/H/I3位, グループL1位, E/H/I/J/K3位, グループJ1位, グループH2位, グループD2位, グループG2位, グループB1位, E/F/G/I/J3位, グループK1位, D/E/I/J/L3位]
           bracket_blocks:
           - label: 決勝トーナメント
             round_filter: [ラウンド32, ラウンド16, 準々決勝, 準決勝, 決勝戦]
-            bracket_order: [ドイツ, A/B/C/D/F3位, グループI1位, C/D/F/G/H3位, グループA2位, グループB2位, グループF1位, グループC2位, グループK2位, グループL2位, グループH1位, グループJ2位, アメリカ, B/E/F/I/J3位, グループG1位, A/E/H/I/J3位, グループC1位, グループF2位, グループE2位, グループI2位, メキシコ, C/E/F/H/I3位, グループL1位, E/H/I/J/K3位, グループJ1位, グループH2位, グループD2位, グループG2位, グループB1位, E/F/G/I/J3位, グループK1位, D/E/I/J/L3位]
+            bracket_order: *wc_ko_main
           - label: ３位決定戦
             round_filter: [３位決定戦]
             bracket_order: [No.101の敗者, No.102の敗者]
