@@ -94,19 +94,39 @@ export function setSpace(value: string, updateColorPicker = true): void {
   }
 }
 
+// Vertical gap below each block row; keep in sync with the
+// `.group_block_row` margin-bottom in docs/j_points.css.
+const BLOCK_ROW_GAP = 35;
+
+/** Largest .point_column clientHeight within a root element (0 if none). */
+function maxPointColumnHeight(root: ParentNode): number {
+  let maxHeight = 0;
+  for (const pCol of Array.from(root.querySelectorAll('.point_column'))) {
+    maxHeight = Math.max(maxHeight, (pCol as HTMLElement).clientHeight);
+  }
+  return maxHeight;
+}
+
 /**
  * Applies CSS transform scale to boxCon and adjusts its height.
- * Height is set to .point_column clientHeight × scale to prevent overflow.
+ * Height is set to the unscaled content height × scale to prevent overflow.
+ * Single row → max .point_column height. Multi-group block rows (.group_block_row)
+ * → sum of each row's max height plus the inter-row gaps.
  * updateSlider=true (default) → also updates #scale_slider value and #current_scale display.
  */
 export function setScale(boxCon: HTMLElement, value: string, updateSlider = true): void {
   boxCon.style.transform = `scale(${value})`;
-  let maxHeight = 0;
-  for (const pCol of Array.from(boxCon.querySelectorAll('.point_column'))) {
-    maxHeight = Math.max(maxHeight, (pCol as HTMLElement).clientHeight);
+  const blockRows = Array.from(boxCon.querySelectorAll('.group_block_row'));
+  let contentHeight = 0;
+  if (blockRows.length > 0) {
+    for (const row of blockRows) {
+      contentHeight += maxPointColumnHeight(row) + BLOCK_ROW_GAP;
+    }
+  } else {
+    contentHeight = maxPointColumnHeight(boxCon);
   }
-  if (maxHeight > 0) {
-    boxCon.style.height = `${maxHeight * parseFloat(value)}px`;
+  if (contentHeight > 0) {
+    boxCon.style.height = `${contentHeight * parseFloat(value)}px`;
   }
   if (updateSlider) {
     const slider = document.getElementById('scale_slider') as HTMLInputElement | null;

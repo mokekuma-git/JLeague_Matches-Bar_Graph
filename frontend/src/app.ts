@@ -318,7 +318,17 @@ function renderFromCache(
   const globalMatchDateSet = new Set<string>();
   const allTeamCssClasses: string[] = [];
   const boxCon = document.getElementById('box_container') as HTMLElement | null;
-  if (boxCon) boxCon.replaceChildren();
+  if (boxCon) {
+    boxCon.replaceChildren();
+    // Multi-group graphs are laid out as stacked block rows (column); single-group
+    // keeps the original single horizontal row.
+    boxCon.classList.toggle('blockrows', isMultiGroup);
+  }
+
+  // Block-row wrapping state (multi-group only): accumulate team counts and wrap to
+  // a new .group_block_row once the next group would exceed maxRowTeams.
+  let currentBlockRow: HTMLElement | null = null;
+  let currentRowTeams = 0;
 
   // Prepare ranking table container.
   const sortableDiv = document.querySelector('#ranktable_section .sortable-table') as HTMLElement | null;
@@ -361,7 +371,20 @@ function renderFromCache(
         label.textContent = t('graph.group', { key: groupKey });
         wrapper.appendChild(label);
         wrapper.appendChild(fragment);
-        boxCon.appendChild(wrapper);
+
+        // Start a new block row when the current one would overflow maxRowTeams.
+        // Use the actual rendered column count (sortedTeams.length), not the config
+        // team count. Wrapping happens only at group boundaries (a group is never split).
+        const rowTeams = sortedTeams.length;
+        if (currentBlockRow === null
+            || (currentRowTeams > 0 && currentRowTeams + rowTeams > seasonInfo.maxRowTeams)) {
+          currentBlockRow = document.createElement('div');
+          currentBlockRow.classList.add('group_block_row');
+          boxCon.appendChild(currentBlockRow);
+          currentRowTeams = 0;
+        }
+        currentBlockRow.appendChild(wrapper);
+        currentRowTeams += rowTeams;
       } else {
         boxCon.appendChild(fragment);
       }
