@@ -43,4 +43,28 @@ test.describe('T6: Multi-Group Rendering', () => {
 
     await assertInvariants(page);
   });
+
+  test('WC_GS 2026 renders 12 groups with no interior point column', async ({ page }) => {
+    await page.goto('/j_points.html?competition=WC_GS&season=2026');
+    await waitForRender(page);
+
+    // 12 groups (A..L).
+    const groups = page.locator('#box_container .group_wrapper');
+    expect(await groups.count()).toBe(12);
+
+    // interior_point_columns: false → each group keeps only the two edge
+    // point columns, no mid-table axis splitting the 4 teams.
+    for (let i = 0; i < 12; i++) {
+      expect(await groups.nth(i).locator('.point_column').count()).toBe(2);
+    }
+
+    // Cross-group standing table for 3rd-place comparison is rendered.
+    const captions = page.locator('table.ranktable caption');
+    const captionTexts = await captions.evaluateAll(
+      (els) => els.map((el) => el.textContent ?? ''),
+    );
+    expect(captionTexts.some((t) => t.includes('3'))).toBe(true);
+
+    await assertInvariants(page);
+  });
 });

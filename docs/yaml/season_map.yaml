@@ -1008,11 +1008,18 @@ national:
           teams: []
         '2026':
           team_count: 48
-          promotion_count: 0
+          promotion_count: 2
           relegation_count: 0
           teams: []
           shown_groups: [A, B, C, D, E, F, G, H, I, J, K, L]
-          note: 各グループ上位2チームと成績上位の3位8チームが決勝トーナメント進出。会場は米国・カナダ・メキシコの複数タイムゾーンにまたがり、表示する日時は現地時刻 (JST変換なし)。
+          interior_point_columns: false
+          rank_properties:
+            '3': promoted_playoff
+          cross_group_standing:
+            position: 3
+            advance_count: 8
+          promotion_label: 決勝T
+          note: 各グループ上位2チームが決勝トーナメント進出。3位は12グループ中の成績上位8チームが進出 (下のグループ間比較表)。会場は米国・カナダ・メキシコの複数タイムゾーンにまたがり、表示する日時は現地時刻 (JST変換なし)。
     WC_AFC:
       league_display: W杯アジア最終予選
       promotion_label: 本選出場
