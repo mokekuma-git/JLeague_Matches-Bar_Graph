@@ -157,6 +157,7 @@ jleague:
 - `data_source`: データ参照元。`{label, url}` オブジェクト。カスケード対象 (スカラ: 下位が上書き)。フロントエンドで動的表示
 - `note`: 注記テキスト (`string | string[]`)。カスケード対象 (和集合: Family + Competition + Entry を結合)。フロントエンドで動的表示
 - `promotion_label`: 昇格枠のラベル文字列 (デフォルト: `'昇格'`)。カスケード対象 (スカラ: 下位が上書き)。HTML 許容 (例: `'昇格<br/>ACL'`)
+- `interior_point_columns`: 中間得点列 (順位/勝ち点軸) を挿入するか (デフォルト: `true`)。カスケード対象 (スカラ: 下位が上書き)。両端の得点列は常に表示され、`false` は中間挿入のみ抑制する。小規模グループ (例: W杯4チームグループ) で `promotion_count > 0` の勝ち抜けハイライトを出しつつ中間列の煩雑さを避ける用途。`getScaleColumnPositions()` が `[]` を返す
 
 ### シーズン命名規則
 
