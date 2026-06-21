@@ -172,6 +172,7 @@ jleague:
 - **`plan/` と `local_data/` はローカル専用**: どちらも Git 管理しない。`git add` の対象に含めず、ignore 警告が出ても `git add -f` で突破しない。Issue plan や調査メモは作成・更新してよいが、commit / PR / GitHub Issue には載せない
 - **リファクタリング時のビルド確認**: テスト (`vitest`) だけでなく `npm run build` も確認する。CI は typecheck + vitest のみでビルドは PR 時に自動検証されない
 - **season_map.yaml**: YAML 形式のためカスタムフォーマッタ不要。直接編集可能
+- **バージョニング**: semver (`vMAJOR.MINOR.PATCH`) を v1.0.0 以降で使用。v1.0.0 より前のタグは日付式 `vYYMM.N` 形式 (例: `v2602.2`)。タグは注釈付き+署名必須 (`git tag -s`、軽量タグ不可)。最新 semver タグは `git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -1` で確認 (lexical sort では日付式タグが後ろに来るため注意)
 
 ## Python ↔ TypeScript 型同期
 
