@@ -472,4 +472,42 @@ describe('buildBracket — real tournament fixtures', () => {
     expect(root.winner).toBeTruthy();
     assertNoUndefinedChildren(root);
   });
+
+  it('builds the WC2026 knockout blocks from season_map placeholder order', () => {
+    const csvText = readFileSync(
+      resolve(__dirname, '../../../../docs/csv/2026_allmatch_result-WC_KO.csv'),
+      'utf-8',
+    );
+    const seasonMapText = readFileSync(
+      resolve(__dirname, '../../../../docs/yaml/season_map.yaml'),
+      'utf-8',
+    );
+    const rows = Papa.parse<RawMatchRow>(csvText, {
+      header: true,
+      skipEmptyLines: 'greedy',
+    }).data;
+    const seasonMap = yaml.load(seasonMapText) as {
+      national: { competitions: { WC_KO: { seasons: { '2026': {
+        bracket_blocks: { label: string; round_filter?: string[]; bracket_order: (string | null)[] }[];
+      } } } } };
+    };
+    const blocks = seasonMap.national.competitions.WC_KO.seasons['2026'].bracket_blocks;
+    const main = blocks.find(b => b.label === '決勝トーナメント')!;
+    const third = blocks.find(b => b.label === '３位決定戦')!;
+
+    // Main draw: 32 placeholder entrants resolve into a 5-deep single-elim tree.
+    expect(main.bracket_order).toHaveLength(32);
+    const mainRoot = buildBracket(rows, main.bracket_order);
+    assertNoUndefinedChildren(mainRoot);
+    // Round of 32 leaf matchups resolve to real (placeholder-named) CSV rows.
+    expect(mainRoot.children[0]?.children[0]?.children[0]?.children[0]?.matchDate)
+      .toBeTruthy();
+
+    // Third-place match is a standalone 2-team block.
+    const thirdRoot = buildBracket(rows, third.bracket_order);
+    expect(thirdRoot.round).toBe('３位決定戦');
+    expect(thirdRoot.homeTeam).toBe('No.101の敗者');
+    expect(thirdRoot.awayTeam).toBe('No.102の敗者');
+    expect(thirdRoot.children).toEqual([null, null]);
+  });
 });
