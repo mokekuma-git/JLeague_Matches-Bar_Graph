@@ -49,6 +49,7 @@ export function makeLeagueSeasonInfo(
     tiebreakOrder: ['goal_diff', 'goal_get'],
     seasonStartMonth: 7,
     interiorPointColumns: true,
+    maxRowTeams: 16,
     notes: [],
     promotionLabel: '昇格',
     viewTypes: ['league'],

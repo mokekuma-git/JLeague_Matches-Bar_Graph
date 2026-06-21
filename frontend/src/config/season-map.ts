@@ -251,6 +251,13 @@ export function resolveLeagueSeasonInfo(
     true,
   )!;
 
+  const maxRowTeams = pickCascade(
+    entry.max_row_teams,
+    comp.max_row_teams,
+    family.max_row_teams,
+    16,
+  )!;
+
   // group_team_count currently cascades only competition -> season.
   const compGroupTeamCount = expandScalarDefault(comp.group_team_count, shownGroups, 'group_team_count');
   const entryGroupTeamCount = expandScalarDefault(entry.group_team_count, shownGroups, 'group_team_count');
@@ -302,6 +309,7 @@ export function resolveLeagueSeasonInfo(
     shownGroups,
     crossGroupStanding,
     interiorPointColumns,
+    maxRowTeams,
     groupTeamCount,
     dataSource: base.dataSource,
     notes,

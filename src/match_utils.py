@@ -126,7 +126,7 @@ class SeasonEntry:
         'league_display', 'point_system', 'css_files',
         'team_rename_map', 'tiebreak_order', 'season_start_month',
         'shown_groups', 'cross_group_standing', 'interior_point_columns',
-        'group_team_count',
+        'group_team_count', 'max_row_teams',
         'note', 'data_source', 'promotion_label',
         'aggregate_tiebreak_order',
         'bracket_order', 'bracket_round_start', 'round_start_options',
