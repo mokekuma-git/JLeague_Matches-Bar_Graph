@@ -1020,6 +1020,22 @@ national:
             advance_count: 8
           promotion_label: 決勝T
           note: 各グループ上位2チームが決勝トーナメント進出。3位は12グループ中の成績上位8チームが進出 (下のグループ間比較表)。会場は米国・カナダ・メキシコの複数タイムゾーンにまたがり、表示する日時は現地時刻 (JST変換なし)。
+    WC_KO:
+      league_display: FIFAワールドカップ KO
+      view_type: [bracket]
+      data_source:
+        label: 'JFA公式: FIFAワールドカップ26'
+        url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/
+      seasons:
+        '2026':
+          bracket_blocks:
+          - label: 決勝トーナメント
+            round_filter: [ラウンド32, ラウンド16, 準々決勝, 準決勝, 決勝戦]
+            bracket_order: [ドイツ, A/B/C/D/F3位, グループI1位, C/D/F/G/H3位, グループA2位, グループB2位, グループF1位, グループC2位, グループK2位, グループL2位, グループH1位, グループJ2位, アメリカ, B/E/F/I/J3位, グループG1位, A/E/H/I/J3位, グループC1位, グループF2位, グループE2位, グループI2位, メキシコ, C/E/F/H/I3位, グループL1位, E/H/I/J/K3位, グループJ1位, グループH2位, グループD2位, グループG2位, グループB1位, E/F/G/I/J3位, グループK1位, D/E/I/J/L3位]
+          - label: ３位決定戦
+            round_filter: [３位決定戦]
+            bracket_order: [No.101の敗者, No.102の敗者]
+          note: FIFA公式の順位プレースホルダー (グループ順位・3位通過候補グループ) で初期表示し、グループステージ確定後に出場国へ自動反映。3位決定戦は準決勝敗者同士の試合のため別ブロック (山) として表示。会場は米国・カナダ・メキシコの複数タイムゾーンにまたがり、表示する日時は現地時刻 (JST変換なし)。
     WC_AFC:
       league_display: W杯アジア最終予選
       promotion_label: 本選出場
