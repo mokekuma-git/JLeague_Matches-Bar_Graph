@@ -38,6 +38,10 @@ competitions:
     csv_path: ../docs/csv/2026_allmatch_result-WC_GS.csv
     groups: A, B, C, D, E, F, G, H, I, J, K, L
     match_in_section: 3
+  WC2026KO:
+    schedule_url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/final/match/schedule.json
+    csv_path: ../docs/csv/2026_allmatch_result-WC_KO.csv
+    tournament: true
   EmperorsCup:
     schedule_url: https://www.jfa.jp/match/emperorscup_{year}/match/schedule.json
     csv_path: ../docs/csv/{year}_allmatch_result-EmperorsCup.csv
