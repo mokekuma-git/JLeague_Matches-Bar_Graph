@@ -10,6 +10,9 @@ test.describe('T6: Multi-Group Rendering', () => {
     const groups = page.locator('#box_container .group_wrapper');
     expect(await groups.count()).toBe(3);
 
+    // 3 small groups stay within the default 16-team row threshold → single block row.
+    expect(await page.locator('#box_container .group_block_row').count()).toBe(1);
+
     // Group labels present with prefix
     const labels = page.locator('#box_container .group_label');
     expect(await labels.count()).toBe(3);
@@ -41,6 +44,10 @@ test.describe('T6: Multi-Group Rendering', () => {
     const groups = page.locator('#box_container .group_wrapper');
     expect(await groups.count()).toBe(0);
 
+    // Single-group never wraps into block rows.
+    expect(await page.locator('#box_container .group_block_row').count()).toBe(0);
+    expect(await page.locator('#box_container.blockrows').count()).toBe(0);
+
     await assertInvariants(page);
   });
 
@@ -51,6 +58,13 @@ test.describe('T6: Multi-Group Rendering', () => {
     // 12 groups (A..L).
     const groups = page.locator('#box_container .group_wrapper');
     expect(await groups.count()).toBe(12);
+
+    // 12 groups × 4 teams wrap at the default 16-team threshold → 3 block rows of 4.
+    const blockRows = page.locator('#box_container .group_block_row');
+    expect(await blockRows.count()).toBe(3);
+    for (let i = 0; i < 3; i++) {
+      expect(await blockRows.nth(i).locator('.group_wrapper').count()).toBe(4);
+    }
 
     // interior_point_columns: false → each group keeps only the two edge
     // point columns, no mid-table axis splitting the 4 teams.

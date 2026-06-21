@@ -71,6 +71,10 @@ export interface SeasonEntryOptions {
   // columns. Edge point columns are always shown. Default true. Set false for
   // small grouped competitions (e.g. World Cup 4-team groups) to avoid clutter.
   interior_point_columns?: boolean;
+  // Max team count placed in one horizontal block row before wrapping multi-group
+  // bar graphs to the next row. Wrapping happens only at group boundaries (a group
+  // is never split). Default 16. Single-group leagues never wrap.
+  max_row_teams?: number;
   group_team_count?: number | Record<string, number>;
   note?: string | string[];
   data_source?: DataSource;
@@ -139,6 +143,7 @@ export interface LeagueSeasonInfo extends BaseSeasonInfo {
   shownGroups?: string[];
   crossGroupStanding?: CrossGroupStanding;
   interiorPointColumns: boolean;
+  maxRowTeams: number;
   groupTeamCount?: Record<string, number>;
   promotionLabel: string;
 }

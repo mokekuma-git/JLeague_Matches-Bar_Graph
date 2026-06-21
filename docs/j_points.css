@@ -89,6 +89,26 @@ p {
   align-self: flex-start;
 }
 
+/* Multi-group: stack block rows vertically; each row is a horizontal flex row.
+   Single-group keeps the default #box_container row layout above. */
+#box_container.blockrows {
+  flex-direction: column;
+  align-items: flex-start;
+  /* Stacked block rows scale from the top: the overridden box height matches the
+     scaled content top-down, so bottom-origin (used for the single-row layout)
+     would push content below the box and leave a gap above. */
+  transform-origin: left top;
+}
+.group_block_row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+}
+/* Leave room below each row for the group labels (positioned at bottom: -25px). */
+#box_container.blockrows .group_block_row {
+  margin-bottom: 35px;
+}
+
 .group_wrapper {
   display: flex;
   flex-direction: row;

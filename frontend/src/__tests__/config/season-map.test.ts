@@ -403,6 +403,29 @@ describe('resolveLeagueSeasonInfo', () => {
     );
   });
 
+  test('maxRowTeams defaults to 16 when not set at any level', () => {
+    const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: [] };
+    const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);
+
+    expect(info.maxRowTeams).toBe(16);
+  });
+
+  test('cascade: max_row_teams from competition level', () => {
+    const comp: CompetitionEntry = { max_row_teams: 20, seasons: {} };
+    const entry: RawSeasonEntry = { team_count: 4, promotion_count: 0, relegation_count: 0, teams: [] };
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
+
+    expect(info.maxRowTeams).toBe(20);
+  });
+
+  test('cascade: max_row_teams from season overrides competition', () => {
+    const comp: CompetitionEntry = { max_row_teams: 20, seasons: {} };
+    const entry: RawSeasonEntry = { team_count: 4, promotion_count: 0, relegation_count: 0, teams: [], max_row_teams: 12 };
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
+
+    expect(info.maxRowTeams).toBe(12);
+  });
+
   test('cascade: notes append family, competition, season, and generated rule notes', () => {
     const family: CompetitionFamilyEntry = {
       display_name: 'Test',
