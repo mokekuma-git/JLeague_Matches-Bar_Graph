@@ -256,3 +256,61 @@
   background: -webkit-linear-gradient(left, #14B53A 33%, #FCD116 33%, #FCD116 66%, #CE1126 66%);
   background: linear-gradient(to right, #14B53A 33%, #FCD116 33%, #FCD116 66%, #CE1126 66%);
 }
+
+/**************************************************************** WC2026 additions */
+.アルジェリア {
+  color: white;
+  background-color: #006233;
+}
+.オーストリア {
+  color: white;
+  background-color: #ed2939;
+}
+.カーボベルデ {
+  color: white;
+  background-color: #003893;
+}
+.キュラソー {
+  color: #f9d616;
+  background-color: #002b7f;
+}
+.コロンビア {
+  color: #003893;
+  background-color: #fcd116;
+}
+.コンゴ {
+  color: #f7d518;
+  background-color: #007fff;
+}
+.スウェーデン {
+  color: #fecb00;
+  background-color: #006aa7;
+}
+.スコットランド {
+  color: white;
+  background-color: #005eb8;
+}
+.チェコ {
+  color: white;
+  background-color: #11457e;
+}
+.トルコ {
+  color: white;
+  background-color: #e30a17;
+}
+.ノルウェー {
+  color: white;
+  background-color: #ba0c2f;
+}
+.ハイチ {
+  color: white;
+  background-color: #00209f;
+}
+.パナマ {
+  color: white;
+  background-color: #d21034;
+}
+.ボスニア・ヘルツェゴビナ {
+  color: #fecb00;
+  background-color: #002395;
+}
