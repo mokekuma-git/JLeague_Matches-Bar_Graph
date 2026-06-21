@@ -533,9 +533,10 @@ export function drawBracketConnectors(container: HTMLElement): void {
   // The bend coordinate is the midpoint between the nearest child card edge and
   // the parent card edge — this prevents bye pass-through lines from overlapping
   // with intermediate match cards.
+  // Connections without a decided winner are kept too: they render as neutral
+  // structural lines so the bracket skeleton is visible before matches are played.
   const groups = new Map<number, BracketConnection[]>();
   for (const conn of _connections) {
-    if (!conn.team) continue;
     const list = groups.get(conn.parentId) ?? [];
     list.push(conn);
     groups.set(conn.parentId, list);
@@ -580,26 +581,30 @@ export function drawBracketConnectors(container: HTMLElement): void {
     }
 
     for (const conn of conns) {
-      if (!conn.team) continue;
-      const teamEsc = cssAttrEscape(conn.team);
-
-      // Find child output element: the winner's team row or the bye element
       const childCard = bracket.querySelector(`[data-bracket-id="${conn.childId}"]`);
       if (!childCard) continue;
 
+      // Decided match: anchor the line to the winner's team row in both the
+      // child and parent cards. Undecided (no winner yet): fall back to a neutral
+      // card-to-card structural line so the skeleton is visible before play.
       let childOutput: Element | null;
-      if (childCard.classList.contains('bracket-bye-team')) {
-        childOutput = childCard;
+      let parentInput: Element | null;
+      const decided = conn.team != null;
+      if (decided) {
+        const teamEsc = cssAttrEscape(conn.team!);
+        childOutput = childCard.classList.contains('bracket-bye-team')
+          ? childCard
+          : childCard.querySelector(`.bracket-team[data-team="${teamEsc}"]`);
+        parentInput = bracket.querySelector(
+          `.bracket-match[data-bracket-id="${parentId}"] .bracket-team[data-team="${teamEsc}"]`,
+        );
       } else {
-        childOutput = childCard.querySelector(`.bracket-team[data-team="${teamEsc}"]`);
+        childOutput = childCard;
+        parentInput = bracket.querySelector(
+          `.bracket-match[data-bracket-id="${parentId}"]`,
+        );
       }
-      if (!childOutput) continue;
-
-      // Find parent input element: the team row in the parent match
-      const parentInput = bracket.querySelector(
-        `.bracket-match[data-bracket-id="${parentId}"] .bracket-team[data-team="${teamEsc}"]`,
-      );
-      if (!parentInput) continue;
+      if (!childOutput || !parentInput) continue;
 
       const from = relPos(childOutput);
       const to = relPos(parentInput);
@@ -623,9 +628,13 @@ export function drawBracketConnectors(container: HTMLElement): void {
         ].join(' ');
       }
       poly.setAttribute('points', points);
-      poly.setAttribute('stroke', '#888');
+      poly.setAttribute('stroke', decided ? '#888' : '#ccc');
       poly.setAttribute('stroke-width', '2');
       poly.setAttribute('fill', 'none');
+      if (!decided) {
+        poly.classList.add('bracket-connector-tbd');
+        poly.setAttribute('stroke-dasharray', '4 3');
+      }
       svg.appendChild(poly);
     }
   }

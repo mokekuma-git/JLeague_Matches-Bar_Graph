@@ -19,18 +19,21 @@ test.describe('Bracket rendering — connectors and layout', () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  test('only bye connectors remain when all played matches are masked as future', async ({ page }) => {
-    const beforeCount = await page.locator('svg polyline').count();
+  test('decided-path connectors disappear when all matches are masked as future', async ({ page }) => {
+    // Solid connectors trace a decided winner's path; dashed ones (.bracket-connector-tbd)
+    // are the structural skeleton shown for undecided matches.
+    const solid = page.locator('svg polyline:not(.bracket-connector-tbd)');
+    const beforeSolid = await solid.count();
+    expect(beforeSolid).toBeGreaterThan(0);
 
     const slider = page.locator('#date_slider');
     await slider.fill('0');
     await slider.dispatchEvent('change');
     await page.locator('.bracket-match').first().waitFor({ timeout: 5000 });
 
-    const polylines = page.locator('svg polyline');
-    const count = await polylines.count();
-    expect(count).toBeGreaterThan(0);
-    expect(count).toBeLessThan(beforeCount);
+    // No match is played → no decided-path lines, but the structural skeleton remains.
+    expect(await solid.count()).toBeLessThan(beforeSolid);
+    expect(await page.locator('svg polyline').count()).toBeGreaterThan(0);
   });
 
   test('layout toggle switches to vertical and back', async ({ page }) => {
@@ -109,5 +112,24 @@ test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-
       const bracketCount = await brackets.count();
       expect(bracketCount).toBeGreaterThan(1);
     }
+  });
+
+  test('WC2026 knockout renders main draw and third-place blocks', async ({ page }) => {
+    // WC_KO 2026 defaults to multi-section (bracket_blocks present).
+    await page.goto('/tournament.html?competition=WC_KO&season=2026');
+    await waitForBracketRender(page);
+
+    const summaries = await page.locator('.bracket-section-summary').allTextContents();
+    expect(summaries).toContain('決勝トーナメント');
+    expect(summaries).toContain('３位決定戦');
+
+    // Main draw seeds 32 entrants → 16 Round-of-32 match cards at minimum.
+    const matchCount = await page.locator('.bracket-match').count();
+    expect(matchCount).toBeGreaterThanOrEqual(16);
+
+    // No match is played yet, so the whole main tree shows as the structural
+    // (dashed) skeleton rather than decided-path connectors.
+    const tbdConnectors = await page.locator('svg polyline.bracket-connector-tbd').count();
+    expect(tbdConnectors).toBeGreaterThan(0);
   });
 });
