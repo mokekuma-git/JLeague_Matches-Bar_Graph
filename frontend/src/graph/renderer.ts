@@ -23,13 +23,19 @@ export interface RenderResult {
 /**
  * Returns the team-column indices at which an extra point scale column is inserted.
  *
- * Always includes: Math.floor(teamCount / 2)  ← mid-table
+ * Returns [] when interiorPointColumns is false (only edge columns remain),
+ * decoupling the advance highlight (promotionCount) from interior column
+ * insertion — small grouped competitions can highlight advancement without
+ * cluttering 4-team groups with a mid-table axis.
+ *
+ * Otherwise always includes: Math.floor(teamCount / 2)  ← mid-table
  * If promotionCount > 0: unshift(promotionCount) before mid
  * If relegationCount > 0: push(teamCount - relegationCount) after mid
  *
  * Example: teamCount=20, promotion=3, relegation=4 → [3, 10, 16]
  */
 export function getScaleColumnPositions(seasonInfo: LeagueSeasonInfo): number[] {
+  if (!seasonInfo.interiorPointColumns) return [];
   const columns: number[] = [Math.floor(seasonInfo.teamCount / 2)];
   if (seasonInfo.promotionCount !== 0) columns.unshift(seasonInfo.promotionCount);
   if (seasonInfo.relegationCount !== 0) columns.push(seasonInfo.teamCount - seasonInfo.relegationCount);

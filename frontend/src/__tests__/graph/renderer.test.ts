@@ -44,6 +44,13 @@ describe('getScaleColumnPositions', () => {
     const info = makeLeagueSeasonInfo({ teamCount: 11, promotionCount: 0, relegationCount: 0 });
     expect(getScaleColumnPositions(info)).toEqual([5]);
   });
+
+  test('interiorPointColumns=false → no interior columns regardless of promotion', () => {
+    const info = makeLeagueSeasonInfo({
+      teamCount: 4, promotionCount: 2, relegationCount: 0, interiorPointColumns: false,
+    });
+    expect(getScaleColumnPositions(info)).toEqual([]);
+  });
 });
 
 // ─── makePointColumn ────────────────────────────────────────────────────────
