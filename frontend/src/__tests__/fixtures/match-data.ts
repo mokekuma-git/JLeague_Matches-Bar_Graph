@@ -48,6 +48,7 @@ export function makeLeagueSeasonInfo(
     teamRenameMap: {},
     tiebreakOrder: ['goal_diff', 'goal_get'],
     seasonStartMonth: 7,
+    interiorPointColumns: true,
     notes: [],
     promotionLabel: '昇格',
     viewTypes: ['league'],

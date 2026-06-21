@@ -244,6 +244,13 @@ export function resolveLeagueSeasonInfo(
     comp.cross_group_standing,
   );
 
+  const interiorPointColumns = pickCascade(
+    entry.interior_point_columns,
+    comp.interior_point_columns,
+    family.interior_point_columns,
+    true,
+  )!;
+
   // group_team_count currently cascades only competition -> season.
   const compGroupTeamCount = expandScalarDefault(comp.group_team_count, shownGroups, 'group_team_count');
   const entryGroupTeamCount = expandScalarDefault(entry.group_team_count, shownGroups, 'group_team_count');
@@ -294,6 +301,7 @@ export function resolveLeagueSeasonInfo(
     seasonStartMonth,
     shownGroups,
     crossGroupStanding,
+    interiorPointColumns,
     groupTeamCount,
     dataSource: base.dataSource,
     notes,

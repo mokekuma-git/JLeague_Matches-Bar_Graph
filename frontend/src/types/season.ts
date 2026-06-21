@@ -67,6 +67,10 @@ export interface SeasonEntryOptions {
   season_start_month?: number;
   shown_groups?: string[];
   cross_group_standing?: CrossGroupStanding;
+  // Whether to insert interior point columns (rank/point axis) between team
+  // columns. Edge point columns are always shown. Default true. Set false for
+  // small grouped competitions (e.g. World Cup 4-team groups) to avoid clutter.
+  interior_point_columns?: boolean;
   group_team_count?: number | Record<string, number>;
   note?: string | string[];
   data_source?: DataSource;
@@ -134,6 +138,7 @@ export interface LeagueSeasonInfo extends BaseSeasonInfo {
   seasonStartMonth: number;
   shownGroups?: string[];
   crossGroupStanding?: CrossGroupStanding;
+  interiorPointColumns: boolean;
   groupTeamCount?: Record<string, number>;
   promotionLabel: string;
 }
