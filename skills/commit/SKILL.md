@@ -102,10 +102,21 @@ Issue conventions:
    - Pattern: `{Verb} {what was done}` — focus on intent, not files
 3. **Body** (optional, separated by blank line): 1-3 lines explaining **why** or **how**, not listing files
 4. **Issue reference**: Include `Fixes #{N}` or `Refs #{N}` in the body when this commit resolves or relates to an Issue. Only use `Fixes` on the commit that actually completes the work.
-5. **Co-Authored-By**: Always append as the last line:
-   ```
-   Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
-   ```
+5. **Agent attribution**: If the current coding agent has a reliable identity in the active system/developer instructions, use that identity for generated attribution. Do not hard-code or reuse a stale agent name from examples. If no reliable identity is available, omit agent attribution.
+   - Commit footer format, when used:
+     ```
+     Co-Authored-By: {Agent Name} <{agent-email-or-noreply}>
+     ```
+   - For Codex, use:
+     ```
+     Co-Authored-By: Codex <noreply@openai.com>
+     ```
+   - Other examples:
+     ```
+     Co-Authored-By: Claude Code <noreply@anthropic.com>
+     Generated with Codex
+     Generated with Claude Code
+     ```
 6. **Never** enumerate individual files or list "Changed X, Y, Z" — those belong in PR descriptions
 
 ### Commit message examples
@@ -123,7 +134,7 @@ Unify output control using the logging module instead of bare print()
 and config.debug flags. Each module gets its own logger; --debug flag
 now controls log level (DEBUG vs INFO) via basicConfig.
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Co-Authored-By: {Agent Name} <{agent-email-or-noreply}>
 ```
 
 With issue reference:
@@ -136,7 +147,7 @@ instead of cross-script config imports.
 
 Fixes #89
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Co-Authored-By: {Agent Name} <{agent-email-or-noreply}>
 ```
 
 ## Step 6 — Stage and Commit
@@ -147,7 +158,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
    git commit -m "$(cat <<'EOF'
    Commit message here
 
-   Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+   Co-Authored-By: {Agent Name} <{agent-email-or-noreply}>
    EOF
    )"
    ```
@@ -183,7 +194,7 @@ Fixes #{N}
 - [ ] `npx vitest run` passed (frontend/)
 - [ ] `npm run build` succeeded (frontend/)
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with {Agent Name}
 EOF
 )"
 ```
@@ -208,7 +219,7 @@ Refs #{sub-issue-N}
 - [ ] `npx vitest run` passed (frontend/)
 - [ ] `npm run build` succeeded (frontend/)
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with {Agent Name}
 EOF
 )"
 ```
@@ -220,7 +231,7 @@ PR conventions:
 - **Summary**: Japanese bullet points (日本語)
 - **Changes**: Commit table or category breakdown
 - **Test plan**: Checklist with `- [x]` for passed, `- [ ]` for pending
-- **Footer**: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
+- **Footer**: Use the current coding agent's reliable identity, for example `Generated with Codex`. Omit the footer if no reliable identity is available.
 
 Only suggest PR creation — do NOT create it without user confirmation.
 
