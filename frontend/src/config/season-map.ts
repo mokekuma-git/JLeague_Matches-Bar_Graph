@@ -120,6 +120,7 @@ interface ResolvedBaseFields {
   dataSource?: DataSource;
   rawNotes: string[];
   viewTypes: ViewType[];
+  timezone?: string;
 }
 
 /**
@@ -184,6 +185,12 @@ function resolveBaseFields(
     family.data_source,
   );
 
+  const timezone: string | undefined = pickCascade(
+    entry.timezone,
+    comp.timezone,
+    family.timezone,
+  );
+
   const rawNotes = [
     ...toArray(family.note),
     ...toArray(comp.note),
@@ -201,6 +208,7 @@ function resolveBaseFields(
     dataSource,
     rawNotes,
     viewTypes: viewTypes.length > 0 ? viewTypes : ['league'],
+    timezone,
   };
 }
 
@@ -315,6 +323,7 @@ export function resolveLeagueSeasonInfo(
     notes,
     promotionLabel,
     viewTypes: base.viewTypes,
+    timezone: base.timezone,
   };
 }
 
@@ -332,6 +341,7 @@ export function resolveTournamentSeasonInfo(
     notes: base.rawNotes,
     viewTypes: base.viewTypes,
     dataSource: base.dataSource,
+    timezone: base.timezone,
     aggregateTiebreakOrder: base.aggregateTiebreakOrder,
     defaultRoundStart: entry.bracket_round_start
       ? normalizeBracketRoundLabel(entry.bracket_round_start)

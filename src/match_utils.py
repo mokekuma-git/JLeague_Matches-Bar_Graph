@@ -88,6 +88,7 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
     'round': 'str',                   # Tournament round name (column may be absent)
     'match_number': 'nullable_int',   # Tournament match number (column may be absent)
     'leg': 'nullable_int',             # H&A leg number: 1 or 2 (column may be absent)
+    'timezone': 'str',                # Source IANA TZ of start_time (column may be absent)
 }
 
 
@@ -133,6 +134,7 @@ class SeasonEntry:
         'default_round_filter', 'bracket_blocks',
         'bracket_pairing_orders',
         'view_type',
+        'timezone',
     }
 
     KNOWN_KEYS: set[str] = REQUIRED_KEYS | COMPETITION_DEFAULTABLE_KEYS | OPTIONAL_KEYS

@@ -87,6 +87,9 @@ export interface SeasonEntryOptions {
   bracket_blocks?: BracketBlock[];
   bracket_pairing_orders?: number[][];
   view_type?: ViewType[];
+  // Source IANA TZ name (e.g. "Asia/Tokyo") for interpreting start_time.
+  // Cascading scalar (lower level overrides). Per-row CSV `timezone` overrides this.
+  timezone?: string;
 }
 
 // Object format as loaded from season_map.yaml.
@@ -124,6 +127,7 @@ export interface BaseSeasonInfo {
   dataSource?: DataSource;
   notes: string[];
   viewTypes: ViewType[];
+  timezone?: string;  // Resolved source IANA TZ (undefined = display start_time as-is)
 }
 
 // Object form of a fully resolved league season entry.
