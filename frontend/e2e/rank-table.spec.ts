@@ -19,6 +19,15 @@ test.describe('T5: Rank Table', () => {
     expect(headers).toContain('loss');
   });
 
+  test('team names do not wrap', async ({ page }) => {
+    await page.goto('/j_points.html?competition=J1&season=2024');
+    await waitForRender(page);
+
+    const teamNames = page.locator('table.ranktable [data-rank-team-name]');
+    await expect(teamNames.first()).toBeVisible();
+    await expect(teamNames.first()).toHaveCSS('white-space', 'nowrap');
+  });
+
   test('sortable header click changes row order', async ({ page }) => {
     await page.goto('/j_points.html?competition=J1&season=2024');
     await waitForRender(page);

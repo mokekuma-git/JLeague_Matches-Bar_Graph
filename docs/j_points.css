@@ -219,6 +219,9 @@ table.ranktable td {
 table.ranktable td div {
   text-align: center;
 }
+table.ranktable [data-rank-team-name] {
+  white-space: nowrap;
+}
 table.ranktable th {
   border-bottom: solid 2px #222;
 }

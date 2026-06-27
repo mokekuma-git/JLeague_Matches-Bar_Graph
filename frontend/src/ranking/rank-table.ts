@@ -141,7 +141,7 @@ export function makeRankData(
 
     const row: RankRow = {
       rank,
-      name: `<div class="${teamCssClass(teamName)}">${teamName}</div>`,
+      name: `<div class="${teamCssClass(teamName)}" data-rank-team-name>${teamName}</div>`,
       win:         rc.win,
       ...(hasPk ? {
         pk_win:    rc.pk_win,
@@ -379,7 +379,7 @@ export function buildCrossGroupRows(
 
     rows.push({
       rank: groupKey,
-      name: `<div class="${teamCssClass(teamName)}">${teamName}</div>`,
+      name: `<div class="${teamCssClass(teamName)}" data-rank-team-name>${teamName}</div>`,
       all_game: stats.all_game,
       point: stats.point,
       avrg_pt: stats.avrg_pt.toFixed(2),
