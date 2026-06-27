@@ -1006,11 +1006,17 @@ national:
           promotion_count: 0
           relegation_count: 0
           teams: []
+          data_source:
+            label: 'JFA公式: FIFAワールドカップ22'
+            url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2022/
         '2026':
           team_count: 48
           promotion_count: 2
           relegation_count: 0
           teams: []
+          data_source:
+            label: 'JFA公式: FIFAワールドカップ26'
+            url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/
           shown_groups: [A, B, C, D, E, F, G, H, I, J, K, L]
           interior_point_columns: false
           rank_properties:
@@ -1059,6 +1065,9 @@ national:
           promotion_count: 2
           relegation_count: 0
           teams: []
+          data_source:
+            label: 'JFA公式: W杯アジア最終予選26'
+            url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/final_q_2026/
           shown_groups: [A, B, C]
     Olympic_GS:
       league_display: オリンピック GS
@@ -1079,11 +1088,17 @@ national:
           promotion_count: 2
           relegation_count: 0
           teams: []
+          data_source:
+            label: 'JFA公式: 東京オリンピック'
+            url: https://www.jfa.jp/national_team/u24_2021/tokyo_olympic_2020/
         '2024':
           team_count: 4
           promotion_count: 2
           relegation_count: 0
           teams: []
+          data_source:
+            label: 'JFA公式: パリオリンピック'
+            url: https://www.jfa.jp/national_team/u23_2024/paris_olympic_2024_men/
 acl:
   display_name: ACL
   css_files: [team_style.css]
@@ -1194,6 +1209,9 @@ prince:
           promotion_count: 0
           relegation_count: 0
           teams: []
+          data_source:
+            label: 'JFA公式: 高円宮杯U-18プレミアEAST'
+            url: https://www.jfa.jp/match/takamado_jfa_u18_premier2026/east/
     PrincePremierW:
       league_display: プレミアリーグWEST
       seasons:
@@ -1227,6 +1245,9 @@ prince:
           promotion_count: 0
           relegation_count: 0
           teams: []
+          data_source:
+            label: 'JFA公式: 高円宮杯U-18プレミアWEST'
+            url: https://www.jfa.jp/match/takamado_jfa_u18_premier2026/west/
     PrinceKanto:
       league_display: プリンスリーグ関東
       team_rename_map:
@@ -1263,6 +1284,9 @@ prince:
           promotion_count: 0
           relegation_count: 0
           teams: []
+          data_source:
+            label: 'JFA公式: 高円宮杯U-18プリンス関東'
+            url: https://jfa.jp/match_47fa/103_kanto/takamado_jfa_u18_prince2026/
 we:
   display_name: WEリーグ
   css_files: [team_style.css]
