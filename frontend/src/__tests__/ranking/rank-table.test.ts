@@ -534,9 +534,9 @@ describe('makeRankData – row shape', () => {
     }),
   };
 
-  test('name is wrapped in a div with the team name as class and text', () => {
+  test('name is wrapped in a non-wrapping target div with the team name as class and text', () => {
     const rows = makeRankData(groupData, ['TeamA', 'TeamB'], seasonInfo, false);
-    expect(rows[0].name).toBe('<div class="TeamA">TeamA</div>');
+    expect(rows[0].name).toBe('<div class="TeamA" data-rank-team-name>TeamA</div>');
   });
 
   test('avrg_pt is formatted to 2 decimal places', () => {
