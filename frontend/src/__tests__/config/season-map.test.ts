@@ -263,6 +263,54 @@ describe('resolveLeagueSeasonInfo', () => {
     expect(info.tiebreakOrder).toEqual(['goal_diff', 'wins']);
   });
 
+  test('cascade: data_source from family level (inherited)', () => {
+    const family: CompetitionFamilyEntry = {
+      display_name: 'Test',
+      data_source: { label: 'Family Src', url: 'https://family.example/' },
+      competitions: {},
+    };
+    const comp: CompetitionEntry = { seasons: {} };
+    const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [] };
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
+
+    expect(info.dataSource).toEqual({ label: 'Family Src', url: 'https://family.example/' });
+  });
+
+  test('cascade: data_source from competition overrides family', () => {
+    const family: CompetitionFamilyEntry = {
+      display_name: 'Test',
+      data_source: { label: 'Family Src', url: 'https://family.example/' },
+      competitions: {},
+    };
+    const comp: CompetitionEntry = {
+      data_source: { label: 'Comp Src', url: 'https://comp.example/' },
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = { team_count: 10, promotion_count: 0, relegation_count: 0, teams: [] };
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
+
+    expect(info.dataSource).toEqual({ label: 'Comp Src', url: 'https://comp.example/' });
+  });
+
+  test('cascade: data_source from season overrides competition and family', () => {
+    const family: CompetitionFamilyEntry = {
+      display_name: 'Test',
+      data_source: { label: 'Family Src', url: 'https://family.example/' },
+      competitions: {},
+    };
+    const comp: CompetitionEntry = {
+      data_source: { label: 'Comp Src', url: 'https://comp.example/' },
+      seasons: {},
+    };
+    const entry: RawSeasonEntry = {
+      team_count: 10, promotion_count: 0, relegation_count: 0, teams: [],
+      data_source: { label: 'Season Src', url: 'https://season.example/' },
+    };
+    const info = resolveLeagueSeasonInfo(family, comp, entry);
+
+    expect(info.dataSource).toEqual({ label: 'Season Src', url: 'https://season.example/' });
+  });
+
   test('seasonStartMonth defaults to 7 when not set anywhere', () => {
     const family: CompetitionFamilyEntry = { display_name: 'Test', competitions: {} };
     const comp: CompetitionEntry = { seasons: {} };
