@@ -7,6 +7,7 @@ from read_jfamatch import (
     _parse_years,
     _resolve_schedule_url,
     _select_target_years,
+    _venue_to_timezone,
     read_jfa_match,
     read_group,
 )
@@ -323,3 +324,20 @@ def test_finalize_match_df_sorts_by_match_number_when_available() -> None:
 
     assert actual['match_number'].tolist() == ['73', '81', '82']
     assert actual['round'].tolist() == ['ラウンド16', '準々決勝', '準々決勝']
+
+
+def test_venue_to_timezone_resolves_city_token() -> None:
+    assert _venue_to_timezone('メキシコシティ(メキシコ)／メキシコシティスタジアム') == 'America/Mexico_City'
+    assert _venue_to_timezone('ロサンゼルス(アメリカ)／ロサンゼルススタジアム') == 'America/Los_Angeles'
+    # City token containing a separator character is matched in full.
+    assert _venue_to_timezone('サンフランシスコ・ベイエリア(アメリカ)／スタジアム') == 'America/Los_Angeles'
+
+
+def test_venue_to_timezone_unknown_city_returns_empty(caplog) -> None:
+    import logging
+    with caplog.at_level(logging.WARNING):
+        assert _venue_to_timezone('東京(日本)／国立競技場') == ''
+    assert any('Unknown venue city' in record.message for record in caplog.records)
+    # Non-string / empty inputs fall back to '' without raising.
+    assert _venue_to_timezone('') == ''
+    assert _venue_to_timezone(None) == ''

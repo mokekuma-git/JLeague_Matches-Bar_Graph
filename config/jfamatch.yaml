@@ -38,10 +38,12 @@ competitions:
     csv_path: ../docs/csv/2026_allmatch_result-WC_GS.csv
     groups: A, B, C, D, E, F, G, H, I, J, K, L
     match_in_section: 3
+    use_venue_timezone: true
   WC2026KO:
     schedule_url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/final/match/schedule.json
     csv_path: ../docs/csv/2026_allmatch_result-WC_KO.csv
     tournament: true
+    use_venue_timezone: true
   EmperorsCup:
     schedule_url: https://www.jfa.jp/match/emperorscup_{year}/match/schedule.json
     csv_path: ../docs/csv/{year}_allmatch_result-EmperorsCup.csv
@@ -137,3 +139,25 @@ score_data_key:
   away_goal: awayScore
   home_pk_score: homePKScore
   away_pk_score: awayPKScore
+
+# Venue city token -> IANA timezone, used when a competition sets
+# `use_venue_timezone: true` (e.g. WC2026 spanning multiple timezones).
+# The city token is the part of the `stadium` string before the first '('.
+# Source: plan/archive/research/wc2026_timezone.md (16 WC2026 host cities).
+venue_timezone:
+  メキシコシティ: America/Mexico_City
+  グアダラハラ: America/Mexico_City
+  モンテレイ: America/Monterrey
+  アトランタ: America/New_York
+  ニューヨーク: America/New_York
+  フィラデルフィア: America/New_York
+  ボストン: America/New_York
+  マイアミ: America/New_York
+  トロント: America/Toronto
+  カンザスシティ: America/Chicago
+  ダラス: America/Chicago
+  ヒューストン: America/Chicago
+  シアトル: America/Los_Angeles
+  サンフランシスコ・ベイエリア: America/Los_Angeles
+  ロサンゼルス: America/Los_Angeles
+  バンクーバー: America/Vancouver
