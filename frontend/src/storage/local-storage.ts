@@ -17,6 +17,7 @@ export interface ViewerPrefs {
   locale?: string;
   displayTimezone?: string;  // display IANA TZ name ('' or absent = browser default)
   roundStart?: string;   // bracket round start selection (or '__multi_section__')
+  hiddenColumns?: string[];  // rank table column data-ids hidden by the user (default: none hidden)
 }
 
 export function loadPrefs(): ViewerPrefs {
