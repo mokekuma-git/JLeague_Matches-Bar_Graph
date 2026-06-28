@@ -11,6 +11,8 @@ export const ja = {
   'label.spaceColor': '余白色',
   'label.dataTimestamp': 'データ取得時刻:',
   'label.language': '言語',
+  'label.displayTz': '表示タイムゾーン',
+  'tz.browserDefault': 'ブラウザの標準',
   'label.roundStart': '表示開始ラウンド',
   'label.multiSection': 'マルチセクション',
   'label.bracketLayout': '表示方向',

@@ -15,6 +15,7 @@ export interface ViewerPrefs {
   spaceColor?: string;
   scale?: string;
   locale?: string;
+  displayTimezone?: string;  // display IANA TZ name ('' or absent = browser default)
   roundStart?: string;   // bracket round start selection (or '__multi_section__')
 }
 

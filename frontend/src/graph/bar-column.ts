@@ -92,6 +92,7 @@ export interface ColumnResult {
  * @param hasPk      true → PK columns exist in the CSV.
  * @param hasEx      true → extra-time columns exist in the CSV.
  * @param pointSystem Scoring system.
+ * @param targetTz   Display IANA timezone, or undefined for the runtime default.
  */
 export function buildTeamColumn(
   teamName: string,
@@ -101,6 +102,7 @@ export function buildTeamColumn(
   hasPk = false,
   hasEx = false,
   pointSystem: PointSystem = 'standard',
+  targetTz?: string,
 ): ColumnResult {
   const graph: HTMLDivElement[] = [];
   const lossBox: string[] = [];
@@ -120,8 +122,8 @@ export function buildTeamColumn(
     if (matchDate !== undecided) matchDateSet.add(matchDate);
 
     // Display-time values: TZ-converted when row.timezone is set, else local.
-    // targetTz omitted → runtime default zone (display-TZ selector arrives in a later step).
-    const display = resolveDisplayDateTime(matchDate, row.start_time, row.timezone);
+    // targetTz undefined → runtime default zone.
+    const display = resolveDisplayDateTime(matchDate, row.start_time, row.timezone, targetTz);
 
     if (row.status === CSV_STATUS_CANCELLED) {
       lossBox.push(makeCancelledContent(row, display.date));
