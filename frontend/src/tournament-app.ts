@@ -32,8 +32,11 @@ import { inferRoundFilter } from './bracket/round-filter-inference';
 import { renderBracketInto, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import type { ViewerPrefs } from './storage/local-storage';
-import { t, applyI18nAttributes, setLocale } from './i18n';
-import type { Locale } from './i18n';
+import { t } from './i18n';
+import {
+  readUrlParams, writeUrlParams, restoreLocaleAndApplyI18n, createSharedViewerControlState,
+} from './view-bootstrap';
+import type { SharedViewerControlState } from './view-bootstrap';
 import type { BracketNode } from './bracket/bracket-types';
 
 // ---- State ------------------------------------------------------------------
@@ -50,11 +53,7 @@ interface BracketState {
   season: string;
 }
 
-interface ViewerControlState {
-  scale: number;
-  futureOpacity: number;
-  targetDate: string | null;
-}
+type ViewerControlState = SharedViewerControlState;
 
 interface BracketControlState {
   layout: 'horizontal' | 'vertical';
@@ -96,11 +95,7 @@ let controlState: ControlState = {
 
 function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
   return {
-    viewer: {
-      scale: prefs.scale ? parseFloat(prefs.scale) : 1,
-      futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.2,
-      targetDate: prefs.targetDate ?? null,
-    },
+    viewer: createSharedViewerControlState(prefs, { futureOpacity: 0.2 }),
     bracket: {
       layout: 'horizontal',
       roundStart: prefs.roundStart ?? null,
@@ -216,23 +211,6 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
     opt.textContent = s;
     sel.appendChild(opt);
   }
-}
-
-// ---- URL params ------------------------------------------------------------
-
-function readUrlParams(): { competition: string; season?: string } {
-  const params = new URLSearchParams(location.search);
-  return {
-    competition: params.get('competition') ?? '',
-    season: params.get('season') ?? undefined,
-  };
-}
-
-function writeUrlParams(competition: string, season: string): void {
-  const url = new URL(location.href);
-  url.searchParams.set('competition', competition);
-  url.searchParams.set('season', season);
-  history.replaceState(null, '', url.toString());
 }
 
 // ---- Round start helpers ---------------------------------------------------
@@ -839,9 +817,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
 // ---- Initialization --------------------------------------------------------
 
 async function main(): Promise<void> {
-  const savedLocale = loadPrefs().locale;
-  if (savedLocale === 'ja' || savedLocale === 'en') setLocale(savedLocale as Locale);
-  applyI18nAttributes();
+  const savedLocale = restoreLocaleAndApplyI18n(loadPrefs().locale);
 
   let seasonMap: SeasonMap;
   try {

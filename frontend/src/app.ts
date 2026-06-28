@@ -34,8 +34,10 @@ import { findTeamsWithoutColor } from './graph/css-validator';
 import { teamCssClass } from './core/team-utils';
 import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
 import type { ViewerPrefs } from './storage/local-storage';
-import { t, applyI18nAttributes, setLocale } from './i18n';
-import type { Locale } from './i18n';
+import { t } from './i18n';
+import {
+  readUrlParams, writeUrlParams, restoreLocaleAndApplyI18n, createSharedViewerControlState,
+} from './view-bootstrap';
 
 // ---- Application state ------------------------------------------------
 
@@ -87,9 +89,7 @@ interface ControlState {
 function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
   return {
     viewer: {
-      scale: prefs.scale ? parseFloat(prefs.scale) : 1,
-      futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.1,
-      targetDate: prefs.targetDate ?? null,
+      ...createSharedViewerControlState(prefs),
       displayTimezone: prefs.displayTimezone ?? '',
       hiddenColumns: new Set(prefs.hiddenColumns ?? []),
     },
@@ -206,23 +206,6 @@ function showTimestamp(csvFilename: string): void {
   const el = document.getElementById('data_timestamp');
   if (!el || !state.timestampMap) return;
   el.textContent = state.timestampMap[csvFilename] ?? '';
-}
-
-// ---- URL parameter management ------------------------------------------
-
-function readUrlParams(): { competition: string; season?: string } {
-  const params = new URLSearchParams(location.search);
-  return {
-    competition: params.get('competition') ?? '',
-    season: params.get('season') ?? undefined,
-  };
-}
-
-function writeUrlParams(competition: string, season: string): void {
-  const url = new URL(location.href);
-  url.searchParams.set('competition', competition);
-  url.searchParams.set('season', season);
-  history.replaceState(null, '', url.toString());
 }
 
 // ---- Fixed dropdown population -----------------------------------------
@@ -598,10 +581,8 @@ function loadAndRender(seasonMap: SeasonMap): void {
 
 async function main(): Promise<void> {
   // Restore locale from prefs before any i18n calls.
-  const savedLocale = loadPrefs().locale;
-  if (savedLocale === 'ja' || savedLocale === 'en') setLocale(savedLocale as Locale);
+  const savedLocale = restoreLocaleAndApplyI18n(loadPrefs().locale);
 
-  applyI18nAttributes();
   void loadTimestampMap();
 
   let seasonMap: SeasonMap;
