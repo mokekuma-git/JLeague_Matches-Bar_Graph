@@ -47,6 +47,18 @@ function getGoalCols(): ColDef[] {
   ];
 }
 
+// Columns the user may hide via the column-visibility control (rank/name and the
+// champion/promotion/relegation/pk/ex columns always stay visible).
+export function getToggleableColumns(): ColDef[] {
+  return [...getStatCols().filter(c => c.id !== 'name'), ...getGoalCols()];
+}
+
+// Removes columns whose id is in hiddenColumns. Columns without an id (e.g. the
+// '-' separator) and 'name' (always required, embedded in getStatCols()) are never hidden.
+function filterHiddenCols(cols: ColDef[], hiddenColumns: ReadonlySet<string>): ColDef[] {
+  return cols.filter(c => !c.id || c.id === 'name' || !hiddenColumns.has(c.id));
+}
+
 // Builds a <thead> row from a column definition array.
 function buildTableHead(tableEl: HTMLElement, cols: ColDef[]): void {
   const thead = tableEl.querySelector('thead');
@@ -217,10 +229,14 @@ export function makeRankData(
 // Builds the <thead> for per-group ranking tables.
 // pk_win / pk_loss columns are included only when hasPk=true.
 // ex_win / ex_loss columns are included only when hasEx=true.
-function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean, hasEx: boolean, promotionLabel: string = t('col.promotion')): void {
+function buildRankTableHead(
+  tableEl: HTMLElement, hasPk: boolean, hasEx: boolean,
+  promotionLabel: string = t('col.promotion'),
+  hiddenColumns: ReadonlySet<string> = new Set(),
+): void {
   const cols: ColDef[] = [
     { id: 'rank',        label: '',          sortable: true },
-    ...getStatCols(),
+    ...filterHiddenCols(getStatCols(), hiddenColumns),
     ...(hasPk ? [
       { id: 'pk_win',  label: t('col.pkWin'),  sortable: true as true },
       { id: 'pk_loss', label: t('col.pkLoss'), sortable: true as true },
@@ -229,7 +245,7 @@ function buildRankTableHead(tableEl: HTMLElement, hasPk: boolean, hasEx: boolean
       { id: 'ex_win',  label: t('col.exWin'),  sortable: true as true },
       { id: 'ex_loss', label: t('col.exLoss'), sortable: true as true },
     ] : []),
-    ...getGoalCols(),
+    ...filterHiddenCols(getGoalCols(), hiddenColumns),
     {                    label: '-' },
     { id: 'champion',    label: t('col.champion'),    sortable: true },
     { id: 'promotion',   label: promotionLabel, sortable: true },
@@ -254,8 +270,12 @@ function applyRowClasses(tbody: HTMLElement, rankMap: Map<number, string>): void
 // hasPk controls whether PK win/loss columns appear in the table header.
 // Row CSS classes (promoted/relegated/etc.) are applied based on points-based rank
 // and reapplied after every re-sort via MutationObserver.
-export function makeRankTable(tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean, hasEx: boolean = false, promotionLabel: string = t('col.promotion')): void {
-  buildRankTableHead(tableEl, hasPk, hasEx, promotionLabel);
+export function makeRankTable(
+  tableEl: HTMLElement, rankData: RankRow[], hasPk: boolean, hasEx: boolean = false,
+  promotionLabel: string = t('col.promotion'),
+  hiddenColumns: ReadonlySet<string> = new Set(),
+): void {
+  buildRankTableHead(tableEl, hasPk, hasEx, promotionLabel, hiddenColumns);
   const sortableTable = new SortableTable();
   sortableTable.setTable(tableEl);
   sortableTable.setData(rankData);
@@ -400,6 +420,7 @@ export function buildCrossGroupRows(
 // Highlights top advance_count rows with .promoted CSS class.
 export function makeCrossGroupTable(
   rows: CrossGroupRow[], config: CrossGroupStanding,
+  hiddenColumns: ReadonlySet<string> = new Set(),
 ): HTMLTableElement {
   const { position, exclude_from_rank, advance_count = 0 } = config;
 
@@ -415,8 +436,8 @@ export function makeCrossGroupTable(
   table.appendChild(document.createElement('thead'));
   buildTableHead(table, [
     { id: 'rank', label: t('col.group'), sortable: true },
-    ...getStatCols(),
-    ...getGoalCols(),
+    ...filterHiddenCols(getStatCols(), hiddenColumns),
+    ...filterHiddenCols(getGoalCols(), hiddenColumns),
   ]);
 
   const sortableTable = new SortableTable();

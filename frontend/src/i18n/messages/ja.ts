@@ -18,6 +18,7 @@ export const ja = {
   'label.bracketLayout': '表示方向',
   'label.layoutHorizontal': '横 (左→右)',
   'label.layoutVertical': '縦 (下→上)',
+  'label.columnToggle': '表示列の選択',
 
   // Buttons
   'btn.resetDate': '最新にリセット',

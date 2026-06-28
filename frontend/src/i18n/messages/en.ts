@@ -20,6 +20,7 @@ export const en: Record<MessageKey, string> = {
   'label.bracketLayout': 'Layout',
   'label.layoutHorizontal': 'Horizontal (L→R)',
   'label.layoutVertical': 'Vertical (bottom→up)',
+  'label.columnToggle': 'Columns',
 
   // Buttons
   'btn.resetDate': 'Reset to latest',
