@@ -45,6 +45,7 @@ interface TeamMapCache {
   teamCount: number;
   hasPk: boolean;
   hasEx: boolean;
+  hasTimezone: boolean;  // true → at least one match carries a source TZ (per-row column or season)
 }
 
 /** Mutable application state collected in one place. */
@@ -68,6 +69,7 @@ interface ViewerControlState {
   scale: number;
   futureOpacity: number;
   targetDate: string | null;
+  displayTimezone: string;  // '' = browser default; otherwise an IANA TZ name
 }
 
 interface LeagueControlState {
@@ -87,6 +89,7 @@ function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
       scale: prefs.scale ? parseFloat(prefs.scale) : 1,
       futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.1,
       targetDate: prefs.targetDate ?? null,
+      displayTimezone: prefs.displayTimezone ?? '',
     },
     league: {
       teamSortKey: prefs.teamSortKey ?? 'disp_point',
@@ -123,6 +126,24 @@ function getMatchSortOptions(): { value: string; label: string }[] {
     { value: 'new_bottom',   label: t('sort.newBottom') },
     { value: 'first_bottom', label: t('sort.firstBottom') },
     { value: 'last_bottom',  label: t('sort.lastBottom') },
+  ];
+}
+
+// Curated display-TZ list: browser default (empty value) + JST/UTC + WC2026 host zones.
+// Labels are language-neutral (IANA name + offset hint); only the default is translated.
+function getDisplayTzOptions(): { value: string; label: string }[] {
+  return [
+    { value: '',                     label: t('tz.browserDefault') },
+    { value: 'Asia/Tokyo',           label: 'Asia/Tokyo (JST)' },
+    { value: 'UTC',                  label: 'UTC' },
+    { value: 'America/New_York',     label: 'America/New_York (ET)' },
+    { value: 'America/Chicago',      label: 'America/Chicago (CT)' },
+    { value: 'America/Denver',       label: 'America/Denver (MT)' },
+    { value: 'America/Los_Angeles',  label: 'America/Los_Angeles (PT)' },
+    { value: 'America/Mexico_City',  label: 'America/Mexico_City' },
+    { value: 'America/Monterrey',    label: 'America/Monterrey' },
+    { value: 'America/Vancouver',    label: 'America/Vancouver' },
+    { value: 'America/Toronto',      label: 'America/Toronto' },
   ];
 }
 
@@ -308,6 +329,10 @@ function renderFromCache(
   const seasonInfo = resolveLeagueSeasonInfo(found.family, found.competition, entry, found.familyKey);
   const { hasPk, hasEx } = cache;
 
+  // Show the display-timezone selector only when this season actually has source TZ data.
+  const tzLabel = document.getElementById('display_timezone_label');
+  if (tzLabel) tzLabel.hidden = !cache.hasTimezone;
+
   // Determine which groups to render and in what order.
   const allGroups = Object.keys(cache.teamMap);
   const groupKeys = seasonInfo.shownGroups
@@ -359,6 +384,7 @@ function renderFromCache(
       const { fragment, matchDates } = renderBarGraph(
         groupData, sortedTeams, perGroupInfo,
         targetDate, disp, bottomFirst, state.heightUnit, hasPk, hasEx,
+        controlState.viewer.displayTimezone || undefined,
       );
       for (const d of matchDates) globalMatchDateSet.add(d);
 
@@ -521,12 +547,15 @@ function loadAndRender(seasonMap: SeasonMap): void {
         seasonInfo.teams,
         DEFAULT_GROUP,
         seasonInfo.pointSystem,
+        seasonInfo.timezone,
       );
       const fields = results.meta.fields ?? [];
       const hasPk = fields.includes('home_pk_score');
       const hasEx = fields.includes('home_score_ex');
+      // Source TZ is available when the CSV carries a per-row column or the season sets one.
+      const hasTimezone = fields.includes('timezone') || Boolean(seasonInfo.timezone);
 
-      const newCache = { key: csvKey, teamMap, teamCount: seasonInfo.teamCount, hasPk, hasEx };
+      const newCache = { key: csvKey, teamMap, teamCount: seasonInfo.teamCount, hasPk, hasEx, hasTimezone };
       state.teamMapCache = newCache;
 
       renderFromCache(newCache, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
@@ -563,6 +592,7 @@ async function main(): Promise<void> {
   populateCompetitionPulldown(seasonMap);
   populateFixedSelect('team_sort_key', getTeamSortOptions());
   populateFixedSelect('match_sort_key', getMatchSortOptions());
+  populateFixedSelect('display_timezone', getDisplayTzOptions());
 
   // Determine initial competition/season from URL params → localStorage → default
   const urlParams = readUrlParams();
@@ -592,8 +622,10 @@ async function main(): Promise<void> {
 
   const teamSortSel  = document.getElementById('team_sort_key') as HTMLSelectElement | null;
   const matchSortSel = document.getElementById('match_sort_key') as HTMLSelectElement | null;
+  const displayTzSel = document.getElementById('display_timezone') as HTMLSelectElement | null;
   if (teamSortSel)  teamSortSel.value  = controlState.league.teamSortKey;
   if (matchSortSel) matchSortSel.value = controlState.league.matchSortKey;
+  if (displayTzSel) displayTzSel.value = controlState.viewer.displayTimezone;
 
   const futureOpacityEl = document.getElementById('future_opacity') as HTMLInputElement | null;
   const spaceColorEl    = document.getElementById('space_color')    as HTMLInputElement | null;
@@ -697,6 +729,15 @@ async function main(): Promise<void> {
     controlState.league.spaceColor = v;
     setSpace(v);
     savePrefs({ spaceColor: v });
+  });
+
+  // ---- Display timezone selector ----
+
+  document.getElementById('display_timezone')?.addEventListener('change', (e) => {
+    const v = (e.target as HTMLSelectElement).value;
+    controlState.viewer.displayTimezone = v;
+    savePrefs({ displayTimezone: v });
+    loadAndRender(seasonMap);
   });
 
   // ---- Locale selector ----

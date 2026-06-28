@@ -168,6 +168,7 @@ export function assembleTeamColumn(
  * @param heightUnit   CSS height in px for one point box (from getHeightUnit()).
  * @param hasPk        true → PK columns exist in the CSV.
  * @param hasEx        true → extra-time columns exist in the CSV.
+ * @param targetTz     Display IANA timezone, or undefined for the runtime default.
  */
 export function renderBarGraph(
   groupData: Record<string, TeamData>,
@@ -179,6 +180,7 @@ export function renderBarGraph(
   heightUnit: number,
   hasPk = false,
   hasEx = false,
+  targetTz?: string,
 ): RenderResult {
   // Step 1: Build column results for each team and collect all match dates.
   const columns: Record<string, ColumnResult> = {};
@@ -192,7 +194,7 @@ export function renderBarGraph(
   for (const teamName of sortedTeams) {
     const teamData = groupData[teamName];
     if (!teamData) continue;
-    const col = buildTeamColumn(teamName, teamData, targetDate, disp, hasPk, hasEx, seasonInfo.pointSystem);
+    const col = buildTeamColumn(teamName, teamData, targetDate, disp, hasPk, hasEx, seasonInfo.pointSystem, targetTz);
     columns[teamName] = col;
     maxAvblPt = Math.max(maxAvblPt, col.avlbl_pt);
     for (const d of col.matchDates) matchDateSet.add(d);

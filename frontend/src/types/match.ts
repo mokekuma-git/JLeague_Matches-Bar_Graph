@@ -21,6 +21,7 @@ export interface RawMatchRow {
   round?: string;           // Tournament round name (column may be absent)
   match_number?: string;    // Tournament match number (column may be absent)
   leg?: string;             // H&A leg number: 1 or 2 (column may be absent)
+  timezone?: string;        // Source IANA TZ of start_time (column may be absent)
 }
 
 // Per-match data from a single team's perspective, produced by parse_csvresults.
@@ -43,6 +44,9 @@ export interface TeamMatch {
   start_time: string;
   status: string;
   live: boolean;
+  // Resolved source IANA TZ of start_time (row.timezone ?? season timezone).
+  // undefined = display start_time/match_date as-is (no conversion).
+  timezone?: string;
 }
 
 // Classification of a single match result.

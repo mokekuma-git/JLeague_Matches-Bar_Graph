@@ -28,6 +28,10 @@ The `match_in_section` is the number of matches in each section.
 The `timezone_diff` is the time difference from JST.
   It is used to convert the match date and time to JST.
   '-' can be used to indicate a negative time difference. ex) -06:00
+The `use_venue_timezone` (bool) tags each row with the source IANA timezone
+  resolved from the stadium city token via the top-level `venue_timezone` map.
+  Used for competitions spanning multiple timezones (e.g. WC2026), where a
+  single `timezone_diff` cannot apply. start_time stays as venue-local time.
 """
 import argparse
 from datetime import timedelta
@@ -405,8 +409,37 @@ def read_all_group(comp_conf: dict[str, Any], year: int = None) -> pd.DataFrame:
         match_df['match_date'] = new_time.dt.date.strftime(config.standard_date_format)
         match_df['start_time'] = new_time.dt.time.strftime('%H:%M')
 
+    # Competitions spanning multiple timezones (e.g. WC2026) keep start_time as
+    # venue-local wall-clock and tag each row with its source IANA timezone,
+    # resolved from the stadium city token. Frontend converts at display time.
+    if comp_conf.get('use_venue_timezone'):
+        match_df['timezone'] = match_df['stadium'].map(_venue_to_timezone)
+
     match_df = match_df.sort_values(['group', 'section_no', 'match_index_in_section']).reset_index(drop=True)
     return match_df
+
+
+def _venue_to_timezone(stadium: str) -> str:
+    """Resolve a stadium string to its source IANA timezone.
+
+    The city token is the part of ``stadium`` before the first '(' (full- or
+    half-width). Unknown cities are logged and mapped to '' so the frontend
+    falls back to the season_map default or no conversion.
+
+    Args:
+        stadium (str): Stadium string, e.g. 'メキシコシティ(メキシコ)／メキシコシティスタジアム'
+
+    Returns:
+        str: IANA timezone name, or '' if the city is unknown.
+    """
+    if not isinstance(stadium, str) or not stadium:
+        return ''
+    city = re.split(r'[(（]', stadium, maxsplit=1)[0].strip()
+    timezone = config.venue_timezone.get(city)
+    if not timezone:
+        logger.warning("Unknown venue city for timezone mapping: \"%s\" (stadium: %s)", city, stadium)
+        return ''
+    return timezone
 
 
 def calc_time_diff(org_date: pd.Series, org_time: pd.Series, diff_str: str) -> pd.Series:

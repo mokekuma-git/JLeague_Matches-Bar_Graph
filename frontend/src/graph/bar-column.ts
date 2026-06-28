@@ -5,7 +5,7 @@
 
 import type { PointSystem } from '../types/config';
 import type { TeamData } from '../types/match';
-import { timeFormat } from '../core/date-utils';
+import { resolveDisplayDateTime } from '../core/date-utils';
 import { getPointHeightScale, getWinPoints } from '../core/point-calculator';
 import { teamCssClass } from '../core/team-utils';
 import { t } from '../i18n';
@@ -92,6 +92,7 @@ export interface ColumnResult {
  * @param hasPk      true → PK columns exist in the CSV.
  * @param hasEx      true → extra-time columns exist in the CSV.
  * @param pointSystem Scoring system.
+ * @param targetTz   Display IANA timezone, or undefined for the runtime default.
  */
 export function buildTeamColumn(
   teamName: string,
@@ -101,6 +102,7 @@ export function buildTeamColumn(
   hasPk = false,
   hasEx = false,
   pointSystem: PointSystem = 'standard',
+  targetTz?: string,
 ): ColumnResult {
   const graph: HTMLDivElement[] = [];
   const lossBox: string[] = [];
@@ -113,12 +115,18 @@ export function buildTeamColumn(
   const undecided = t('graph.undecided');
 
   for (const row of teamData.df) {
-    // Normalize display date: empty string → undecided label
+    // Normalize display date: empty string → undecided label.
+    // matchDateSet (slider/grouping) stays on the local date; only the displayed
+    // label is TZ-converted via resolveDisplayDateTime.
     const matchDate = row.match_date === '' ? undecided : row.match_date;
     if (matchDate !== undecided) matchDateSet.add(matchDate);
 
+    // Display-time values: TZ-converted when row.timezone is set, else local.
+    // targetTz undefined → runtime default zone.
+    const display = resolveDisplayDateTime(matchDate, row.start_time, row.timezone, targetTz);
+
     if (row.status === CSV_STATUS_CANCELLED) {
-      lossBox.push(makeCancelledContent(row, matchDate));
+      lossBox.push(makeCancelledContent(row, display.date));
       continue;
     }
 
@@ -132,8 +140,8 @@ export function buildTeamColumn(
       futureBg.classList.add('future', 'bg', cssClass);
       box.appendChild(futureBg);
       box.appendChild(createTooltip(
-        makeBoxBody(row, matchDate, futureClass),
-        `(${row.section_no}) ${timeFormat(row.start_time)}${statusSuffix}`,
+        makeBoxBody(row, display.date, futureClass),
+        `(${row.section_no}) ${display.time}${statusSuffix}`,
         [],
         [cssClass],
       ));
@@ -145,16 +153,16 @@ export function buildTeamColumn(
       if (row.live) box.classList.add('live');
       if (heightCls === 'short') {
         box.appendChild(createTooltip(
-          makeBoxBody(row, matchDate, heightCls),
-          makeFullContent(row, matchDate) + statusSuffix,
+          makeBoxBody(row, display.date, heightCls),
+          makeFullContent(row, display.date, display.time) + statusSuffix,
           [cssClass],
           ['fullW', cssClass],
         ));
       } else {
         const stadiumLine = heightCls !== 'tall' ? `<br/>${row.stadium}` : '';
         box.appendChild(createTooltip(
-          makeBoxBody(row, matchDate, heightCls),
-          `(${row.section_no}) ${timeFormat(row.start_time)}${stadiumLine}${statusSuffix}`,
+          makeBoxBody(row, display.date, heightCls),
+          `(${row.section_no}) ${display.time}${stadiumLine}${statusSuffix}`,
           [cssClass],
           ['halfW', cssClass],
         ));
@@ -162,7 +170,7 @@ export function buildTeamColumn(
       graph.push(box);
     } else {
       // Loss or 0-pt result → lossBox
-      let lossContent = makeFullContent(row, matchDate);
+      let lossContent = makeFullContent(row, display.date, display.time);
       if (row.live) {
         lossContent = `<div class="live">${lossContent}${statusSuffix}</div>`;
       }

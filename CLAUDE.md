@@ -98,6 +98,7 @@ npx playwright test --grep @full-render          # full-render のみ
 - `round`: トーナメントのラウンド名 (省略可能。Tournament View のブラケット構築・ラベル・絞り込みに使用)
 - `leg`: H&A の第1戦/第2戦を示す整数 1 or 2 (省略可能。aggregate 合算処理の識別子)
 - `match_number`: 公式の試合採番 (省略可能。data.j-league.jpやJFA JSONなどから取得可能な場合に付与)
+- `timezone`: `start_time` のソースTZ (IANA名。省略可能)。複数TZにまたがる CSV (WC2026 GS等) で per-row 指定。解決順序: 行 `timezone` → season_map `timezone` → 無変換 (現地時刻のまま)。`start_time` は現地 wall-clock のまま据え置き
 - その他付加情報 [`broadcast`, `attendance`]
 
 ## season_map.yaml 構造
@@ -156,6 +157,7 @@ jleague:
 - `season_start_month`: シーズン開始月。カスケード対象。コードデフォルト: `7` (秋春制)
 - `data_source`: データ参照元。`{label, url}` オブジェクト。カスケード対象 (スカラ: 下位が上書き)。フロントエンドで動的表示
 - `note`: 注記テキスト (`string | string[]`)。カスケード対象 (和集合: Family + Competition + Entry を結合)。フロントエンドで動的表示
+- `timezone`: `start_time` のソースTZ (IANA名)。カスケード対象 (スカラ: 下位が上書き)。CSV の per-row `timezone` 列があればそちらを優先。表示時に内部 UTC 化→表示先TZへ変換。表示先TZ 既定はブラウザ標準ロケール、画面上部の表示TZ セレクタで切替。セレクタはソースTZ を持つシーズン (行 `timezone` 列 or season_map `timezone` が解決) のみ表示し、それ以外は自動非表示。設定者向け詳細・有効化手順は `plan/guides/season_map_design.md` §4.5
 - `promotion_label`: 昇格枠のラベル文字列 (デフォルト: `'昇格'`)。カスケード対象 (スカラ: 下位が上書き)。HTML 許容 (例: `'昇格<br/>ACL'`)
 - `interior_point_columns`: 中間得点列 (順位/勝ち点軸) を挿入するか (デフォルト: `true`)。カスケード対象 (スカラ: 下位が上書き)。両端の得点列は常に表示され、`false` は中間挿入のみ抑制する。小規模グループ (例: W杯4チームグループ) で `promotion_count > 0` の勝ち抜けハイライトを出しつつ中間列の煩雑さを避ける用途。`getScaleColumnPositions()` が `[]` を返す
 
