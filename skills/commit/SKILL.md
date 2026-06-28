@@ -81,7 +81,7 @@ gh issue create --title "..." --body "..." --label "enhancement|bug|refactoring"
 ```
 
 Issue conventions:
-- **Title**: Japanese or English (Japanese is common for this project)
+- **Title**: English only (Issue/PR titles are unified to English in this project; the body may be Japanese or English)
 - **Body structure** (Japanese):
   ```
   ## 概要
@@ -175,6 +175,7 @@ After committing, if on a feature/fix/refactor branch and the work appears compl
    - Parent branch detected → `--base <parent-branch>`
    - No parent branch → `--base main` (default, omit the flag)
 3. **Create PR** using the project's PR format:
+   - **Title**: English only (same convention as Issue titles); the body may be Japanese or English
 
 **PR targeting `main`** (no parent branch):
 ```
