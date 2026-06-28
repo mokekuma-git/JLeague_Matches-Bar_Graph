@@ -450,6 +450,21 @@ export function buildBracket(
 }
 
 /**
+ * Decide what entrant label to show on a future (unplayed) node.
+ * - Leaf node (no child): keep the node's own label as-is.
+ * - Child winner already known: show it (richer than a stale reference text).
+ * - Child winner still unknown: keep the node's own label only if it's an
+ *   honest "pending" feeder reference (e.g. "No.89の勝者"); a concrete name
+ *   that merely happens to sit in the row is masked to TBD (null), matching
+ *   the conservative no-spoiler default for unresolved matches.
+ */
+function resolveFutureEntrant(label: string | null, maskedChild: BracketNode | null): string | null {
+  if (!maskedChild) return label;
+  if (maskedChild.winner != null) return maskedChild.winner;
+  return parseSlotReference(label) ? label : null;
+}
+
+/**
  * Mask a bracket tree for a target date.
  * - Nodes with matchDate > targetDate: clear scores and winner, keep date/stadium
  * - Aggregate (H&A) nodes: use earliest leg date; partially mask if between legs
@@ -476,9 +491,8 @@ export function maskBracketForDate(node: BracketNode, targetDate: string): Brack
   const isFuture = effectiveDate != null && effectiveDate > targetDate;
 
   if (isFuture) {
-    // Replace teams with child winners (may be null = TBD)
-    const homeTeam = maskedUpper ? maskedUpper.winner : node.homeTeam;
-    const awayTeam = maskedLower ? maskedLower.winner : node.awayTeam;
+    const homeTeam = resolveFutureEntrant(node.homeTeam, maskedUpper);
+    const awayTeam = resolveFutureEntrant(node.awayTeam, maskedLower);
     return {
       ...node,
       homeTeam,
