@@ -15,10 +15,14 @@ if [ $RUNNING_HOUR -eq 1 ]; then
   # 日ごと深夜自動実行 ⇒ 全CSVのアップデートを実行
   uv run python src/read_jleague_matches.py -f
   uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto WC2026 WC2026KO
+  # JFAでスケジュール生成後、openfootballで日次スコアを上書き (JFA反映遅延の補完)
+  uv run python src/read_openfootball_wc.py
   uv run python src/read_we_league.py
   # uv run python src/read_aclgl_matches.py
 else
   # 試合時間ごとの自動実行では、Jリーグと開催中のWC2026を更新
   uv run python src/read_jleague_matches.py
   uv run python src/read_jfamatch.py WC2026 WC2026KO
+  # JFAでスケジュール生成後、openfootballで日次スコアを上書き (JFA反映遅延の補完)
+  uv run python src/read_openfootball_wc.py
 fi
