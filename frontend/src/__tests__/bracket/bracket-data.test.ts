@@ -499,14 +499,26 @@ describe('buildBracket — real tournament fixtures', () => {
     expect(main.bracket_order).toHaveLength(32);
     const mainRoot = buildBracket(rows, main.bracket_order);
     assertNoUndefinedChildren(mainRoot);
-    // Round of 32 leaf nodes exist at depth 4, carrying the bracket_order teams.
-    // We intentionally do NOT assert that a leaf links to a CSV row here: leaves
-    // are matched to CSV rows by team name, which breaks once group placeholders
-    // (e.g. "グループA2位") resolve to real qualifiers. Position-based (match_number)
-    // linkage is tracked in #258 — restore a matchDate assertion once that lands.
+
+    // Round of 32 leaf is linked to its CSV row by match_number (#258), not by
+    // name. The CSV's away_team ("パラグアイ") has already resolved past the
+    // static season_map.yaml placeholder ("A/B/C/D/F3位" — see main.bracket_order[1])
+    // — proving the leaf follows the live CSV instead of going stale with it.
     const r32Leaf = mainRoot.children[0]?.children[0]?.children[0]?.children[0];
-    expect(r32Leaf).toBeDefined();
-    expect(r32Leaf?.homeTeam ?? r32Leaf?.awayTeam).toBeTruthy();
+    expect(main.bracket_order[1]).toBe('A/B/C/D/F3位');
+    expect(r32Leaf?.matchNumber).toBe(74);
+    expect(r32Leaf?.matchDate).toBe('2026/06/29');
+    expect(r32Leaf?.homeTeam).toBe('ドイツ');
+    expect(r32Leaf?.awayTeam).toBe('パラグアイ');
+
+    // An internal (not-yet-played) round is also linked by position: it
+    // carries the real schedule/venue even though its own CSV row still
+    // shows the feeder placeholder as entrant text.
+    const r16Node = mainRoot.children[0]?.children[0]?.children[0];
+    expect(r16Node?.matchNumber).toBe(89);
+    expect(r16Node?.matchDate).toBe('2026/07/04');
+    expect(r16Node?.homeTeam).toBe('No.74の勝者');
+    expect(r16Node?.awayTeam).toBe('No.77の勝者');
 
     // Third-place match is a standalone 2-team block.
     const thirdRoot = buildBracket(rows, third.bracket_order);
