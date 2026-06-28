@@ -30,8 +30,9 @@ JLeague_Matches-Bar_Graph/
 │   ├── set_config.py               #   設定管理 (YAML読み込み)
 │   ├── read_jleague_matches.py     #   Jリーグスクレイピング (BS4)
 │   ├── read_jfamatch.py            #   JFA JSON API データ取得
+│   ├── read_openfootball_wc.py     #   WC2026 日次スコア補完 (openfootball/worldcup.json)
 │   └── ...                         #   ACL, WEリーグ, cron生成等
-├── config/                          #   YAML設定 (jleague.yaml, jfamatch.yaml等)
+├── config/                          #   YAML設定 (jleague.yaml, jfamatch.yaml, openfootball.yaml等)
 ├── tests/                           #   pytest テストコード + test_data/
 ├── docs/                            # GitHub Pages 公開ディレクトリ
 │   ├── j_points.html, assets/      #   ★ ビルド生成物 (gitignore対象)
@@ -63,6 +64,7 @@ uv run pytest                                    # Python テスト実行
 uv run python src/read_jleague_matches.py        # Jリーグデータ取得 (差分更新)
 uv run python src/read_jleague_matches.py -f     # Jリーグデータ取得 (全更新)
 uv run python src/read_jfamatch.py <大会名>       # JFAデータ取得
+uv run python src/read_openfootball_wc.py        # WC2026 スコア補完 (--dry-run/--source 可)
 
 # === TypeScript フロントエンド (frontend/ で実行) ===
 npm test                  # vitest 実行 (npx vitest run)
@@ -201,6 +203,7 @@ uv run python scripts/check_type_sync.py
 ## 設計上の決定事項
 
 - **JFA JSON APIはCSVカラム名の参考情報源** — 新カラム追加時はJFA JSON構造を参照
+- **WC2026 スコアは openfootball が補完ソース** (`read_openfootball_wc.py`): allmatch CSV の生成 (日程・会場・TZ) は JFA リーダーが正本。`read_openfootball_wc.py` は openfootball/worldcup.json から `home_goal`/`away_goal`/`status` (+KO の延長/PK 列) のみを上書きし、JFA 反映遅延を埋める。照合は **GS=チーム名(EN→JP)+group / KO=openfootball `num`↔CSV `match_number`** (KO はプレースホルダ名に非依存)。EN→JP マッピングは `config/openfootball.yaml`。cron では JFA リーダーの**直後**に実行 (スケジュール生成→スコア上書きの順序)。openfootball スコア schema: `ft`(90分)/`et`(延長後・累積)/`p`(PK)。メインスコアは ET 込み、`home_score_ex`=`et`−`ft` の延長分のみ
 - **スクレイピング時のシーズン文字列は `config.season` (YAML) が正** — HTML読み取り値で上書きしない
 - **`get_sub_seasons(category)` の戻り値で更新動作が決まる**: `None` → スキップ / `[]` → 単一シーズン更新 / `[...]` → マルチグループ振り分け
 - **`match_utils.py` が共通ライブラリ** — CSV I/O, season_map 読み込み, 日付計算を提供。各 reader がインポートして使う
