@@ -87,4 +87,30 @@ test.describe('T5: Rank Table', () => {
 
     await assertInvariants(page);
   });
+
+  test('unchecking a column checkbox hides the column and persists across reload', async ({ page }) => {
+    await page.goto('/j_points.html?competition=J1&season=2024');
+    await waitForRender(page);
+
+    await page.locator('#column_toggle_section summary').click();
+    const pointCheckbox = page.locator('#column_toggle_list label', { hasText: '勝点' }).locator('input[type="checkbox"]');
+    await pointCheckbox.uncheck();
+    await page.waitForTimeout(200);
+
+    let headers = await page.locator('table.ranktable thead th').evaluateAll(
+      (ths) => ths.map((th) => (th as HTMLTableCellElement).dataset.id).filter(Boolean),
+    );
+    expect(headers).not.toContain('point');
+
+    await page.reload();
+    await waitForRender(page);
+
+    headers = await page.locator('table.ranktable thead th').evaluateAll(
+      (ths) => ths.map((th) => (th as HTMLTableCellElement).dataset.id).filter(Boolean),
+    );
+    expect(headers).not.toContain('point');
+    await expect(pointCheckbox).not.toBeChecked();
+
+    await assertInvariants(page);
+  });
 });

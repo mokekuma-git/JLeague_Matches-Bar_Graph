@@ -1,6 +1,10 @@
 // @vitest-environment happy-dom
 import { describe, test, expect, beforeAll, vi } from 'vitest';
-import { makeRankData, makeRankTable } from '../../ranking/rank-table';
+import {
+  makeRankData, makeRankTable, makeCrossGroupTable, getToggleableColumns,
+} from '../../ranking/rank-table';
+import type { CrossGroupRow } from '../../ranking/rank-table';
+import type { CrossGroupStanding } from '../../types/season';
 import type { TeamData } from '../../types/match';
 import { TeamStats } from '../../types/match';
 import { makeLeagueSeasonInfo } from '../fixtures/match-data';
@@ -681,5 +685,82 @@ describe('makeRankTable – thead hasEx=true', () => {
     const ids = getHeaderIds(table);
     expect(ids).not.toContain('pk_win');
     expect(ids).not.toContain('ex_win');
+  });
+});
+
+// ─── Column visibility toggle (#257) ────────────────────────────────────────
+
+describe('getToggleableColumns', () => {
+  test('excludes always-visible columns (name, rank, champion, promotion, relegation)', () => {
+    const ids = getToggleableColumns().map(c => c.id);
+    expect(ids).not.toContain('name');
+    expect(ids).not.toContain('rank');
+    expect(ids).not.toContain('champion');
+    expect(ids).not.toContain('promotion');
+    expect(ids).not.toContain('relegation');
+  });
+
+  test('returns exactly the 11 stat + goal columns', () => {
+    const ids = getToggleableColumns().map(c => c.id);
+    expect(ids).toEqual([
+      'all_game', 'point', 'avrg_pt', 'avlbl_pt', 'win', 'draw', 'loss',
+      'goal_get', 'goal_lose', 'goal_diff', 'future_game',
+    ]);
+  });
+});
+
+describe('makeRankTable – hiddenColumns', () => {
+  test('omits a hidden stat column from thead', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false, false, undefined, new Set(['point']));
+    expect(getHeaderIds(table)).not.toContain('point');
+  });
+
+  test('omits a hidden goal column from thead', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false, false, undefined, new Set(['goal_diff']));
+    expect(getHeaderIds(table)).not.toContain('goal_diff');
+  });
+
+  test('does not hide always-visible columns even if requested', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false, false, undefined, new Set(['name', 'rank', 'champion']));
+    const ids = getHeaderIds(table);
+    expect(ids).toContain('name');
+    expect(ids).toContain('rank');
+    expect(ids).toContain('champion');
+  });
+
+  test('no hiddenColumns argument → all columns shown (regression)', () => {
+    const table = makeTableEl();
+    makeRankTable(table, [], false, false);
+    const ids = getHeaderIds(table);
+    for (const col of getToggleableColumns()) {
+      expect(ids).toContain(col.id);
+    }
+  });
+});
+
+describe('makeCrossGroupTable – hiddenColumns', () => {
+  const config: CrossGroupStanding = { position: 3 };
+
+  function getCrossGroupHeaderIds(table: HTMLTableElement): string[] {
+    return Array.from(table.querySelectorAll('thead th'))
+      .map(th => th.getAttribute('data-id') ?? '');
+  }
+
+  test('omits a hidden column from thead', () => {
+    const rows: CrossGroupRow[] = [];
+    const table = makeCrossGroupTable(rows, config, new Set(['avrg_pt']));
+    expect(getCrossGroupHeaderIds(table)).not.toContain('avrg_pt');
+  });
+
+  test('no hiddenColumns argument → all columns shown (regression)', () => {
+    const rows: CrossGroupRow[] = [];
+    const table = makeCrossGroupTable(rows, config);
+    const ids = getCrossGroupHeaderIds(table);
+    for (const col of getToggleableColumns()) {
+      expect(ids).toContain(col.id);
+    }
   });
 });
