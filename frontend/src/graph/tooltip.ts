@@ -39,9 +39,14 @@ export function makeBoxBody(row: TeamMatch, matchDate: string, heightCls: string
   return `${datePart}${scoreLine}<br/>${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
-/** Full match details for tooltip span and lossBox: section, time, date, opponent, score, stadium. */
-export function makeFullContent(row: TeamMatch, matchDate: string): string {
-  return `(${row.section_no}) ${timeFormat(row.start_time)}<br/>${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${formatScore(row)} ${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
+/**
+ * Full match details for tooltip span and lossBox: section, time, date, opponent, score, stadium.
+ * `matchDate`/`dispTime` are the already-resolved display values (TZ-converted by the caller
+ * when a source timezone is known); `dispTime` defaults to the raw local start_time.
+ */
+export function makeFullContent(row: TeamMatch, matchDate: string, dispTime?: string): string {
+  const time = dispTime ?? timeFormat(row.start_time);
+  return `(${row.section_no}) ${time}<br/>${dateOnly(matchDate)} ${row.opponent.substring(0, OPPONENT_MAX_LEN)}<br/>${formatScore(row)} ${row.stadium.substring(0, STADIUM_MAX_LEN)}`;
 }
 
 /** Content for a cancelled match shown in the lossBox tooltip. */

@@ -44,6 +44,9 @@ export interface TeamMatch {
   start_time: string;
   status: string;
   live: boolean;
+  // Resolved source IANA TZ of start_time (row.timezone ?? season timezone).
+  // undefined = display start_time/match_date as-is (no conversion).
+  timezone?: string;
 }
 
 // Classification of a single match result.

@@ -49,6 +49,8 @@ function makeLiveAttr(match: RawMatchRow): boolean {
  * @param defaultGroup - Group name to assign when the CSV has no 'group' column.
  *                       Pass null to read the group name from each row.
  *                       The string 'null' is treated as 'DefaultGroup' (matches original JS behavior).
+ * @param seasonTimezone - Season-level source IANA TZ, used as fallback when a
+ *                       row has no `timezone` column value. undefined = no conversion.
  * @return TeamMap object structured as { [groupName]: { [teamName]: { df: TeamMatch[] } } }
  */
 export function parseCsvResults(
@@ -57,6 +59,7 @@ export function parseCsvResults(
   teamList: string[],
   defaultGroup: string | null = null,
   pointSystem: PointSystem = 'standard',
+  seasonTimezone?: string,
 ): TeamMap {
   const teamMap: TeamMap = {};
 
@@ -90,6 +93,8 @@ export function parseCsvResults(
     const hasResult = Boolean(match.home_goal && match.away_goal);
     const status = makeStatusAttr(match);
     const live = makeLiveAttr(match);
+    // Source TZ: per-row column wins, else season-level fallback (undefined = no conversion).
+    const timezone = (match.timezone && match.timezone !== '') ? match.timezone : seasonTimezone;
 
     const homeMatch: TeamMatch = {
       is_home: true,
@@ -108,6 +113,7 @@ export function parseCsvResults(
       start_time: match.start_time,
       status,
       live,
+      timezone,
     };
     teamMap[group][match.home_team].df.push(homeMatch);
 
@@ -128,6 +134,7 @@ export function parseCsvResults(
       start_time: match.start_time,
       status,
       live,
+      timezone,
     };
     teamMap[group][match.away_team].df.push(awayMatch);
   }

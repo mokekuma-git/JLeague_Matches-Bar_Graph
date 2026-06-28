@@ -521,6 +521,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
         seasonInfo.teams,
         DEFAULT_GROUP,
         seasonInfo.pointSystem,
+        seasonInfo.timezone,
       );
       const fields = results.meta.fields ?? [];
       const hasPk = fields.includes('home_pk_score');

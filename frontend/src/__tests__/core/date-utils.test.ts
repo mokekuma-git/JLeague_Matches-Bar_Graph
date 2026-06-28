@@ -5,6 +5,7 @@ import {
   dateOnly,
   zonedWallToUtc,
   formatInTimeZone,
+  resolveDisplayDateTime,
 } from '../../core/date-utils';
 
 describe('dateFormat', () => {
@@ -123,5 +124,42 @@ describe('formatInTimeZone', () => {
     expect(formatInTimeZone(mexicoCity13)).toEqual(
       formatInTimeZone(mexicoCity13, defaultZone),
     );
+  });
+});
+
+describe('resolveDisplayDateTime', () => {
+  test('converts wall-clock from source TZ to target TZ (Mexico City → Tokyo)', () => {
+    expect(resolveDisplayDateTime('2026/06/11', '13:00', 'America/Mexico_City', 'Asia/Tokyo')).toEqual({
+      date: '2026/06/12',
+      time: '04:00',
+    });
+  });
+
+  test('no source TZ → returns local date and HH:MM unchanged', () => {
+    expect(resolveDisplayDateTime('2025/03/15', '15:00:00', undefined)).toEqual({
+      date: '2025/03/15',
+      time: '15:00',
+    });
+  });
+
+  test('empty start_time → no conversion even with a source TZ', () => {
+    expect(resolveDisplayDateTime('2026/06/11', '', 'America/Mexico_City', 'Asia/Tokyo')).toEqual({
+      date: '2026/06/11',
+      time: '',
+    });
+  });
+
+  test('non-date placeholder label passes through unchanged', () => {
+    expect(resolveDisplayDateTime('未定', '13:00', 'America/Mexico_City', 'Asia/Tokyo')).toEqual({
+      date: '未定',
+      time: '13:00',
+    });
+  });
+
+  test('accepts hyphen-separated dates', () => {
+    expect(resolveDisplayDateTime('2026-06-11', '13:00', 'America/Mexico_City', 'Asia/Tokyo')).toEqual({
+      date: '2026/06/12',
+      time: '04:00',
+    });
   });
 });

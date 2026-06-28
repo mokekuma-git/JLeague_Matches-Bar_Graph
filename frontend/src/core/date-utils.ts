@@ -98,3 +98,34 @@ export function formatInTimeZone(
     time: `${hour}:${parts.minute}`,
   };
 }
+
+/** Matches a concrete calendar date "YYYY/MM/DD" or "YYYY-MM-DD". */
+const CONCRETE_DATE_RE = /^\d{4}[/-]\d{2}[/-]\d{2}$/;
+
+/**
+ * Resolves the date/time to display for a match.
+ *
+ * When a source timezone is known, the local wall-clock `matchDate`/`startTime`
+ * are interpreted in that zone and re-rendered in `targetTz` (default: runtime
+ * zone). Otherwise — the common case, and for placeholder dates such as the
+ * "undecided" label — the values are returned unchanged.
+ *
+ * Note: this only affects the displayed label. Section grouping and the date
+ * slider stay on the local `match_date` and are unaffected.
+ *
+ * @param matchDate - "YYYY/MM/DD" (or a non-date placeholder label)
+ * @param startTime - "HH:MM" (optionally with seconds), may be empty
+ * @param sourceTz  - source IANA TZ of the wall-clock values, or undefined
+ * @param targetTz  - display IANA TZ, or undefined for the runtime default
+ */
+export function resolveDisplayDateTime(
+  matchDate: string,
+  startTime: string,
+  sourceTz: string | undefined,
+  targetTz?: string,
+): { date: string; time: string } {
+  if (!sourceTz || !startTime || !CONCRETE_DATE_RE.test(matchDate)) {
+    return { date: matchDate, time: timeFormat(startTime) };
+  }
+  return formatInTimeZone(zonedWallToUtc(matchDate, startTime, sourceTz), targetTz);
+}
