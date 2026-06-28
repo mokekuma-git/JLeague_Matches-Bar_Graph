@@ -29,9 +29,11 @@ export interface ReferenceTopology {
   leafMatchNumbers: number[];
   /** Maps a normalized child match-number pair to the parent match number. */
   parentByChildPair: Map<string, number>;
+  /** All KO rows in this CSV, indexed by match_number. */
+  rowsByMatchNumber: Map<number, RawMatchRow>;
 }
 
-function childPairKey(a: number, b: number): string {
+export function childPairKey(a: number, b: number): string {
   return a < b ? `${a}-${b}` : `${b}-${a}`;
 }
 
@@ -86,5 +88,5 @@ export function buildReferenceTopology(rows: RawMatchRow[]): ReferenceTopology |
   }
   visit(rootCandidates[0]);
 
-  return { leafMatchNumbers, parentByChildPair };
+  return { leafMatchNumbers, parentByChildPair, rowsByMatchNumber };
 }
