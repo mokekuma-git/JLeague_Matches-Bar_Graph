@@ -8,6 +8,15 @@
 # Source: https://github.com/openfootball/worldcup.json (no API key, single curl).
 
 source_url: https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json
+http_timeout: 60
+
+# Used by MatchUtils.update_if_diff -> update_timestamp to record the update
+# time (shared with read_jfamatch.py so the frontend "last updated" stamp moves
+# when openfootball patches a score).
+timezone: "Asia/Tokyo"
+standard_date_format: "%Y/%m/%d"
+paths:
+  timestamp_file: "../docs/csv/csv_timestamp.csv"
 
 # Target CSVs. GS matches are matched by team name + group (openfootball GS has
 # no match number); KO matches are matched by openfootball `num` <-> CSV
