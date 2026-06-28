@@ -45,6 +45,7 @@ interface TeamMapCache {
   teamCount: number;
   hasPk: boolean;
   hasEx: boolean;
+  hasTimezone: boolean;  // true → at least one match carries a source TZ (per-row column or season)
 }
 
 /** Mutable application state collected in one place. */
@@ -328,6 +329,10 @@ function renderFromCache(
   const seasonInfo = resolveLeagueSeasonInfo(found.family, found.competition, entry, found.familyKey);
   const { hasPk, hasEx } = cache;
 
+  // Show the display-timezone selector only when this season actually has source TZ data.
+  const tzLabel = document.getElementById('display_timezone_label');
+  if (tzLabel) tzLabel.hidden = !cache.hasTimezone;
+
   // Determine which groups to render and in what order.
   const allGroups = Object.keys(cache.teamMap);
   const groupKeys = seasonInfo.shownGroups
@@ -547,8 +552,10 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const fields = results.meta.fields ?? [];
       const hasPk = fields.includes('home_pk_score');
       const hasEx = fields.includes('home_score_ex');
+      // Source TZ is available when the CSV carries a per-row column or the season sets one.
+      const hasTimezone = fields.includes('timezone') || Boolean(seasonInfo.timezone);
 
-      const newCache = { key: csvKey, teamMap, teamCount: seasonInfo.teamCount, hasPk, hasEx };
+      const newCache = { key: csvKey, teamMap, teamCount: seasonInfo.teamCount, hasPk, hasEx, hasTimezone };
       state.teamMapCache = newCache;
 
       renderFromCache(newCache, seasonMap, competition, season, targetDate, sortKey, matchSortKey, bottomFirst, disp);
