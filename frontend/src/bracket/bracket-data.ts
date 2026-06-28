@@ -7,6 +7,9 @@ import type { RawMatchRow } from '../types/match';
 import type { AggregateTiebreakCriterion } from '../types/season';
 import type { BracketNode, DecidedBy, LegDetail } from './bracket-types';
 import { normalizeBracketRoundLabel } from './round-label';
+import {
+  buildReferenceTopology, childPairKey, parseSlotReference, type ReferenceTopology,
+} from './bracket-reference-graph';
 
 /**
  * Determine the winner of a KO match from a CSV row.
@@ -61,6 +64,7 @@ function nodeFromMatch(
   upperTeam: string | null,
   lowerTeam: string | null,
   children: [BracketNode | null, BracketNode | null] = [null, null],
+  needsSwapOverride?: boolean,
 ): BracketNode {
   if (!row) {
     // Auto-advance: if one team exists and the opponent side is entirely
@@ -85,7 +89,10 @@ function nodeFromMatch(
 
   // Preserve bracket position: upperTeam must be homeTeam in the node.
   // If CSV home/away is reversed relative to bracket order, swap scores.
-  const needsSwap = upperTeam != null && row.home_team !== upperTeam;
+  // needsSwapOverride is used for position-linked nodes, where orientation is
+  // known from the CSV's own feeder reference rather than by name comparison
+  // (the row's text may still be an unresolved "No.Xの勝者" placeholder).
+  const needsSwap = needsSwapOverride ?? (upperTeam != null && row.home_team !== upperTeam);
   const parse = (v: string | undefined): number | undefined =>
     v ? parseInt(v, 10) : undefined;
 
@@ -314,6 +321,46 @@ function resolveMatch(
 }
 
 /**
+ * Determine swap orientation from the CSV row's own feeder reference, when
+ * the row still carries an unresolved placeholder (e.g. "No.74の勝者").
+ * Returns undefined when the row has no reference (real name already
+ * resolved), so callers fall back to name-based orientation detection.
+ */
+function needsSwapFromReference(row: RawMatchRow, upperMatchNumber: number): boolean | undefined {
+  const homeRef = parseSlotReference(row.home_team);
+  if (!homeRef) return undefined;
+  return homeRef.matchNumber !== upperMatchNumber;
+}
+
+/** Resolve a leaf matchup by CSV position (match_number) instead of team name. */
+function resolveLeafByPosition(
+  topology: ReferenceTopology,
+  pairIndex: number,
+  upperTeam: string | null,
+  lowerTeam: string | null,
+): BracketNode | null {
+  const matchNumber = topology.leafMatchNumbers[pairIndex];
+  const row = topology.rowsByMatchNumber.get(matchNumber);
+  if (!row) return null;
+  return nodeFromMatch(row, upperTeam, lowerTeam);
+}
+
+/** Resolve an internal-round matchup by CSV position (match_number) instead of team name. */
+function resolveInternalByPosition(
+  topology: ReferenceTopology,
+  upper: BracketNode,
+  lower: BracketNode,
+): BracketNode | null {
+  if (upper.matchNumber == null || lower.matchNumber == null) return null;
+  const parentNumber = topology.parentByChildPair.get(childPairKey(upper.matchNumber, lower.matchNumber));
+  if (parentNumber == null) return null;
+  const row = topology.rowsByMatchNumber.get(parentNumber);
+  if (!row) return null;
+  const needsSwap = needsSwapFromReference(row, upper.matchNumber);
+  return nodeFromMatch(row, upper.winner, lower.winner, [upper, lower], needsSwap);
+}
+
+/**
  * Recursively build a bracket tree from bracket_order positions.
  */
 function isValidPairingOrder(order: number[], width: number): boolean {
@@ -333,19 +380,26 @@ function buildNode(
   teams: (string | null)[],
   aggregateTiebreakOrder: AggregateTiebreakCriterion[],
   pairingOrders?: number[][],
+  topology?: ReferenceTopology,
 ): BracketNode {
+  // Position-based leaf linkage only applies when `teams` is the canonical
+  // entry-round array the topology was derived from (same pair count).
+  // Other lengths (e.g. round-start collapsed/extended arrays) fall back to
+  // name matching, which already works for those cases.
+  const usePositionLeaves = topology != null && topology.leafMatchNumbers.length === teams.length / 2;
+
+  const resolveLeaf = (pairIndex: number, upperTeam: string | null, lowerTeam: string | null): BracketNode => (
+    (usePositionLeaves && resolveLeafByPosition(topology, pairIndex, upperTeam, lowerTeam))
+      || resolveMatch(rows, upperTeam, lowerTeam, aggregateTiebreakOrder)
+  );
+
   if (teams.length === 2) {
-    return resolveMatch(rows, teams[0], teams[1], aggregateTiebreakOrder);
+    return resolveLeaf(0, teams[0], teams[1]);
   }
 
   let levelNodes: BracketNode[] = [];
   for (let i = 0; i < teams.length; i += 2) {
-    levelNodes.push(resolveMatch(
-      rows,
-      teams[i] ?? null,
-      teams[i + 1] ?? null,
-      aggregateTiebreakOrder,
-    ));
+    levelNodes.push(resolveLeaf(i / 2, teams[i] ?? null, teams[i + 1] ?? null));
   }
   let level = 0;
 
@@ -359,7 +413,8 @@ function buildNode(
     for (let i = 0; i < orderedNodes.length; i += 2) {
       const upper = orderedNodes[i];
       const lower = orderedNodes[i + 1];
-      nextLevel.push(resolveMatch(
+      const positionNode = topology && resolveInternalByPosition(topology, upper, lower);
+      nextLevel.push(positionNode || resolveMatch(
         rows,
         upper.winner,
         lower.winner,
@@ -390,7 +445,23 @@ export function buildBracket(
   if (bracketOrder.length < 2) {
     throw new Error(`bracket_order must have at least 2 teams, got ${bracketOrder.length}`);
   }
-  return buildNode(rows, bracketOrder, aggregateTiebreakOrder, pairingOrders);
+  const topology = buildReferenceTopology(rows) ?? undefined;
+  return buildNode(rows, bracketOrder, aggregateTiebreakOrder, pairingOrders, topology);
+}
+
+/**
+ * Decide what entrant label to show on a future (unplayed) node.
+ * - Leaf node (no child): keep the node's own label as-is.
+ * - Child winner already known: show it (richer than a stale reference text).
+ * - Child winner still unknown: keep the node's own label only if it's an
+ *   honest "pending" feeder reference (e.g. "No.89の勝者"); a concrete name
+ *   that merely happens to sit in the row is masked to TBD (null), matching
+ *   the conservative no-spoiler default for unresolved matches.
+ */
+function resolveFutureEntrant(label: string | null, maskedChild: BracketNode | null): string | null {
+  if (!maskedChild) return label;
+  if (maskedChild.winner != null) return maskedChild.winner;
+  return parseSlotReference(label) ? label : null;
 }
 
 /**
@@ -420,9 +491,8 @@ export function maskBracketForDate(node: BracketNode, targetDate: string): Brack
   const isFuture = effectiveDate != null && effectiveDate > targetDate;
 
   if (isFuture) {
-    // Replace teams with child winners (may be null = TBD)
-    const homeTeam = maskedUpper ? maskedUpper.winner : node.homeTeam;
-    const awayTeam = maskedLower ? maskedLower.winner : node.awayTeam;
+    const homeTeam = resolveFutureEntrant(node.homeTeam, maskedUpper);
+    const awayTeam = resolveFutureEntrant(node.awayTeam, maskedLower);
     return {
       ...node,
       homeTeam,

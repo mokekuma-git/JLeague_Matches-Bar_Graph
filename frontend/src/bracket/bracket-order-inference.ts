@@ -1,6 +1,6 @@
 import type { RawMatchRow } from '../types/match';
 
-function parseMatchNumber(row: RawMatchRow): number | undefined {
+export function parseMatchNumber(row: RawMatchRow): number | undefined {
   if (!row.match_number) return undefined;
   const value = Number.parseInt(row.match_number, 10);
   return Number.isNaN(value) ? undefined : value;

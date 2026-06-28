@@ -136,6 +136,36 @@ describe('maskBracketForDate', () => {
     expect(masked.homeGoal).toBeUndefined();
   });
 
+  it('keeps the feeder-reference label for a still-pending child instead of TBD', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B',
+        home_goal: '2', away_goal: '1',
+        match_date: '2024/12/01', round: '準決勝', match_number: '1',
+      }),
+      makeRow({
+        home_team: 'C', away_team: 'D',
+        home_goal: '', away_goal: '',
+        match_date: '2024/12/15', round: '準決勝', match_number: '2',
+      }),
+      makeRow({
+        home_team: 'No.1の勝者', away_team: 'No.2の勝者',
+        home_goal: '', away_goal: '',
+        match_date: '2024/12/22', round: '決勝', match_number: '3',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B', 'C', 'D']);
+    const masked = maskBracketForDate(root, '2024/12/10');
+
+    // SF1 completed → winner known. SF2 still pending.
+    expect(masked.children[0]!.winner).toBe('A');
+    expect(masked.children[1]!.winner).toBeNull();
+    // Final: home resolved from the known SF1 winner; away keeps the CSV's
+    // own pending feeder-reference label instead of collapsing to null.
+    expect(masked.homeTeam).toBe('A');
+    expect(masked.awayTeam).toBe('No.2の勝者');
+  });
+
   describe('H&A aggregate masking', () => {
     function buildHABracket(): BracketNode {
       const rows = [
