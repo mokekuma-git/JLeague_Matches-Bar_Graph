@@ -24,7 +24,7 @@ import { prepareRenderData } from './core/prepare-render';
 import type { MatchSortKey } from './ranking/stats-calculator';
 import {
   makeRankData, makeRankTable,
-  buildCrossGroupRows, makeCrossGroupTable,
+  buildCrossGroupRows, makeCrossGroupTable, getToggleableColumns,
 } from './ranking/rank-table';
 import type { GroupRenderResult } from './ranking/rank-table';
 import { getMaxPointsPerGame } from './core/point-calculator';
@@ -70,6 +70,7 @@ interface ViewerControlState {
   futureOpacity: number;
   targetDate: string | null;
   displayTimezone: string;  // '' = browser default; otherwise an IANA TZ name
+  hiddenColumns: Set<string>;  // rank table column data-ids hidden by the user
 }
 
 interface LeagueControlState {
@@ -90,6 +91,7 @@ function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
       futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.1,
       targetDate: prefs.targetDate ?? null,
       displayTimezone: prefs.displayTimezone ?? '',
+      hiddenColumns: new Set(prefs.hiddenColumns ?? []),
     },
     league: {
       teamSortKey: prefs.teamSortKey ?? 'disp_point',
@@ -239,6 +241,30 @@ function populateFixedSelect(
     opt.value = value;
     opt.textContent = label;
     sel.appendChild(opt);
+  }
+}
+
+// ---- Column visibility toggle population -------------------------------
+
+// Builds one checkbox per toggleable rank-table column inside #column_toggle_list.
+// onToggle is invoked with (columnId, checked) whenever a checkbox changes.
+function populateColumnToggleList(
+  hiddenColumns: ReadonlySet<string>,
+  onToggle: (columnId: string, checked: boolean) => void,
+): void {
+  const container = document.getElementById('column_toggle_list');
+  if (!container) return;
+  container.innerHTML = '';
+  for (const col of getToggleableColumns()) {
+    if (!col.id) continue;
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = !hiddenColumns.has(col.id);
+    checkbox.addEventListener('change', () => onToggle(col.id!, checkbox.checked));
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(col.label));
+    container.appendChild(label);
   }
 }
 
@@ -429,7 +455,7 @@ function renderFromCache(
       table.appendChild(document.createElement('thead'));
       sortableDiv.appendChild(table);
       const rankData = makeRankData(groupData, sortedTeams, perGroupInfo, disp, hasPk, hasEx);
-      makeRankTable(table, rankData, hasPk, hasEx, perGroupInfo.promotionLabel);
+      makeRankTable(table, rankData, hasPk, hasEx, perGroupInfo.promotionLabel, controlState.viewer.hiddenColumns);
     }
 
     // Collect for cross-group comparison.
@@ -445,7 +471,7 @@ function renderFromCache(
     const rows = buildCrossGroupRows(allGroupResults, cgs, disp, targetDate, maxPt);
     if (rows.length > 0) {
       sortableDiv.appendChild(document.createElement('hr'));
-      sortableDiv.appendChild(makeCrossGroupTable(rows, cgs));
+      sortableDiv.appendChild(makeCrossGroupTable(rows, cgs, controlState.viewer.hiddenColumns));
     }
   }
 
@@ -626,6 +652,13 @@ async function main(): Promise<void> {
   if (teamSortSel)  teamSortSel.value  = controlState.league.teamSortKey;
   if (matchSortSel) matchSortSel.value = controlState.league.matchSortKey;
   if (displayTzSel) displayTzSel.value = controlState.viewer.displayTimezone;
+
+  populateColumnToggleList(controlState.viewer.hiddenColumns, (columnId, checked) => {
+    if (checked) controlState.viewer.hiddenColumns.delete(columnId);
+    else controlState.viewer.hiddenColumns.add(columnId);
+    savePrefs({ hiddenColumns: [...controlState.viewer.hiddenColumns] });
+    loadAndRender(seasonMap);
+  });
 
   const futureOpacityEl = document.getElementById('future_opacity') as HTMLInputElement | null;
   const spaceColorEl    = document.getElementById('space_color')    as HTMLInputElement | null;
