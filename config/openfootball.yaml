@@ -1,0 +1,68 @@
+# openfootball/worldcup.json based daily score patcher for WC2026.
+#
+# This is a supplementary source: the allmatch CSVs (schedule, venue, timezone)
+# are generated and kept authoritative by read_jfamatch.py. This reader only
+# overwrites home_goal / away_goal / status from openfootball, which reflects
+# live scores faster than the JFA feed.
+#
+# Source: https://github.com/openfootball/worldcup.json (no API key, single curl).
+
+source_url: https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json
+
+# Target CSVs. GS matches are matched by team name + group (openfootball GS has
+# no match number); KO matches are matched by openfootball `num` <-> CSV
+# `match_number` (robust against placeholder team names in the bracket).
+group_stage_csv: ../docs/csv/2026_allmatch_result-WC_GS.csv
+knockout_csv: ../docs/csv/2026_allmatch_result-WC_KO.csv
+
+# openfootball English team name -> CSV Japanese team name (48 nations).
+# Validated 1:1 against the existing WC_GS CSV (names + home/away orientation).
+team_name_map:
+  Algeria: アルジェリア
+  Argentina: アルゼンチン
+  Australia: オーストラリア
+  Austria: オーストリア
+  Belgium: ベルギー
+  Bosnia & Herzegovina: ボスニア・ヘルツェゴビナ
+  Brazil: ブラジル
+  Canada: カナダ
+  Cape Verde: カーボベルデ
+  Colombia: コロンビア
+  Croatia: クロアチア
+  Curaçao: キュラソー
+  Czech Republic: チェコ
+  DR Congo: コンゴ
+  Ecuador: エクアドル
+  Egypt: エジプト
+  England: イングランド
+  France: フランス
+  Germany: ドイツ
+  Ghana: ガーナ
+  Haiti: ハイチ
+  Iran: イラン
+  Iraq: イラク
+  Ivory Coast: コートジボワール
+  Japan: 日本
+  Jordan: ヨルダン
+  Mexico: メキシコ
+  Morocco: モロッコ
+  Netherlands: オランダ
+  New Zealand: ニュージーランド
+  Norway: ノルウェー
+  Panama: パナマ
+  Paraguay: パラグアイ
+  Portugal: ポルトガル
+  Qatar: カタール
+  Saudi Arabia: サウジアラビア
+  Scotland: スコットランド
+  Senegal: セネガル
+  South Africa: 南アフリカ
+  South Korea: 韓国
+  Spain: スペイン
+  Sweden: スウェーデン
+  Switzerland: スイス
+  Tunisia: チュニジア
+  Turkey: トルコ
+  USA: アメリカ
+  Uruguay: ウルグアイ
+  Uzbekistan: ウズベキスタン
