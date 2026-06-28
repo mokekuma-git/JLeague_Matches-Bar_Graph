@@ -1,5 +1,5 @@
 ,match_date,section_no,start_time,stadium,home_team,away_team,status,match_number,round,home_goal,away_goal,home_pk_score,away_pk_score,match_index_in_section,group,timezone
-0,2026/06/28,-6,12:00,ロサンゼルス(アメリカ)／ロサンゼルススタジアム,南アフリカ,カナダ,,73,ラウンド32,,,,,1,,America/Los_Angeles
+0,2026/06/28,-6,12:00,ロサンゼルス(アメリカ)／ロサンゼルススタジアム,南アフリカ,カナダ,試合終了,73,ラウンド32,0,1,,,1,,America/Los_Angeles
 1,2026/06/29,-6,16:30,ボストン(アメリカ)／ボストンスタジアム,ドイツ,パラグアイ,,74,ラウンド32,,,,,2,,America/New_York
 2,2026/06/29,-6,19:00,モンテレイ(メキシコ)／モンテレイスタジアム,オランダ,モロッコ,,75,ラウンド32,,,,,3,,America/Monterrey
 3,2026/06/29,-6,12:00,ヒューストン(アメリカ)／ヒューストンスタジアム,ブラジル,日本,,76,ラウンド32,,,,,4,,America/Chicago
