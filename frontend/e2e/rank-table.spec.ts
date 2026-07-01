@@ -3,7 +3,7 @@ import { waitForRender, assertInvariants } from './helpers/invariants';
 
 test.describe('T5: Rank Table', () => {
   test('table has expected header columns', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     const headers = await page.locator('table.ranktable thead th').evaluateAll(
@@ -20,7 +20,7 @@ test.describe('T5: Rank Table', () => {
   });
 
   test('team names do not wrap', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     const teamNames = page.locator('table.ranktable [data-rank-team-name]');
@@ -29,7 +29,7 @@ test.describe('T5: Rank Table', () => {
   });
 
   test('sortable header click changes row order', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     const teamsBefore = await page.locator('table.ranktable tbody tr').evaluateAll(
@@ -51,7 +51,7 @@ test.describe('T5: Rank Table', () => {
   });
 
   test('promotion/relegation row styling present', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     // J1 2024 has promotion and relegation zones
@@ -65,7 +65,7 @@ test.describe('T5: Rank Table', () => {
 
   test('PK columns shown for seasons with PK data', async ({ page }) => {
     // 1995A has PK data (win3all-pkloss1 system)
-    await page.goto('/j_points.html?competition=J1&season=1995A');
+    await page.goto('/matches.html?competition=J1&season=1995A');
     await waitForRender(page);
 
     const headers = await page.locator('table.ranktable thead th').evaluateAll(
@@ -77,7 +77,7 @@ test.describe('T5: Rank Table', () => {
   });
 
   test('PK columns not shown for standard seasons', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     const headers = await page.locator('table.ranktable thead th').evaluateAll(
@@ -89,7 +89,7 @@ test.describe('T5: Rank Table', () => {
   });
 
   test('unchecking a column checkbox hides the column and persists across reload', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     await page.locator('#column_toggle_section summary').click();

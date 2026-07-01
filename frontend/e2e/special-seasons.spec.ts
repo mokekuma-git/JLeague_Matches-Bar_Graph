@@ -3,7 +3,7 @@ import { waitForRender, assertInvariants } from './helpers/invariants';
 
 test.describe('T7: Special Point Systems', () => {
   test('victory-count (1993) has 3x box height scaling', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=1993A');
+    await page.goto('/matches.html?competition=J1&season=1993A');
     await waitForRender(page);
 
     // Numbered point boxes should be 75px (25px * scale 3) instead of default 25px
@@ -17,7 +17,7 @@ test.describe('T7: Special Point Systems', () => {
   });
 
   test('standard (2024) has default 25px box height', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     const pointBoxHeight = await page.locator('.point_column .box').first().evaluate(
@@ -29,7 +29,7 @@ test.describe('T7: Special Point Systems', () => {
   });
 
   test('graduated-win (1997) renders with invariants', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=1997A');
+    await page.goto('/matches.html?competition=J1&season=1997A');
     await waitForRender(page);
 
     // Should have ET/PK related columns in rank table
@@ -43,7 +43,7 @@ test.describe('T7: Special Point Systems', () => {
   });
 
   test('pk-win2-loss1 (2026) renders with invariants', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2026East');
+    await page.goto('/matches.html?competition=J1&season=2026East');
     await waitForRender(page);
 
     const headers = await page.locator('table.ranktable thead th').evaluateAll(
@@ -59,7 +59,7 @@ test.describe('T7: Special Point Systems', () => {
 
 test.describe('T8: Notes and Data Source Display', () => {
   test('data_source link is displayed for J1', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     const dsSection = page.locator('#data_source_section');
@@ -72,10 +72,10 @@ test.describe('T8: Notes and Data Source Display', () => {
 
   test('auto-generated rule note for non-standard point system', async ({ page }) => {
     // graduated-win should auto-generate a rule explanation note
-    await page.goto('/j_points.html?competition=J1&season=1997A');
+    await page.goto('/matches.html?competition=J1&season=1997A');
     await waitForRender(page);
 
-    const notes = page.locator('#season_notes li');
+    const notes = page.locator('#league_season_notes li');
     expect(await notes.count()).toBeGreaterThan(0);
 
     // Note content should mention point rules
@@ -89,10 +89,10 @@ test.describe('T8: Notes and Data Source Display', () => {
 
   test('manual note displayed for season with configured note', async ({ page }) => {
     // J3 2021 has a manual note about 宮崎
-    await page.goto('/j_points.html?competition=J3&season=2021');
+    await page.goto('/matches.html?competition=J3&season=2021');
     await waitForRender(page);
 
-    const notes = page.locator('#season_notes li');
+    const notes = page.locator('#league_season_notes li');
     expect(await notes.count()).toBeGreaterThan(0);
 
     const noteTexts = await notes.evaluateAll(
@@ -103,12 +103,12 @@ test.describe('T8: Notes and Data Source Display', () => {
   });
 
   test('no notes for standard season without configured note', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     // Standard point system + default tiebreak = no auto-generated notes
     // J1 group-level note exists but it's about ACL
-    const notes = page.locator('#season_notes li');
+    const notes = page.locator('#league_season_notes li');
     const count = await notes.count();
 
     // Should have the group-level ACL note but no rule-related auto-note

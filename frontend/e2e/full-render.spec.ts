@@ -1,5 +1,5 @@
 import { test, expect } from './helpers/test-base';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
@@ -20,16 +20,24 @@ const __dirname = dirname(__filename);
 
 interface SeasonMap {
   [group: string]: {
+    view_type?: string | string[];
     competitions: {
       [competition: string]: {
-        seasons: { [season: string]: unknown[] };
+        view_type?: string | string[];
+        seasons: { [season: string]: unknown };
       };
     };
   };
 }
 
+function includesLeagueView(...values: Array<string | string[] | undefined>): boolean {
+  const configured = values.flatMap(value => value == null ? [] : [value].flat());
+  return configured.length === 0 || configured.includes('league');
+}
+
 function loadSeasonEntries(): Array<{ competition: string; season: string }> {
   const yamlPath = resolve(__dirname, '../../docs/yaml/season_map.yaml');
+  const csvDir = resolve(__dirname, '../../docs/csv');
   const data: SeasonMap = yaml.load(readFileSync(yamlPath, 'utf-8')) as SeasonMap;
   const entries: Array<{ competition: string; season: string }> = [];
 
@@ -37,7 +45,9 @@ function loadSeasonEntries(): Array<{ competition: string; season: string }> {
     if (!group.competitions) continue;
     for (const [competition, comp] of Object.entries(group.competitions)) {
       if (!comp.seasons) continue;
+      if (!includesLeagueView(group.view_type, comp.view_type)) continue;
       for (const season of Object.keys(comp.seasons)) {
+        if (!existsSync(resolve(csvDir, `${season}_allmatch_result-${competition}.csv`))) continue;
         entries.push({ competition, season });
       }
     }
@@ -50,14 +60,8 @@ const allEntries = loadSeasonEntries();
 test.describe('@full-render: All seasons invariant check', () => {
   for (const { competition, season } of allEntries) {
     test(`${competition} ${season}`, async ({ page }) => {
-      await page.goto(`/j_points.html?competition=${competition}&season=${season}`);
-      try {
-        await waitForRender(page);
-      } catch {
-        // Some seasons may have no CSV data yet — skip gracefully
-        test.skip();
-        return;
-      }
+      await page.goto(`/matches.html?competition=${competition}&season=${season}`);
+      await waitForRender(page);
       await assertInvariants(page);
 
       // I3: no team color warning
