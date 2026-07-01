@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { __testables } from '../../tournament-app';
+import { __testables } from '../../bracket-view';
 import type { RawMatchRow } from '../../types/match';
 import type { BracketBlock } from '../../types/season';
 import type { BracketNode } from '../../bracket/bracket-types';
