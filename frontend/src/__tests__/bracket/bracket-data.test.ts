@@ -474,26 +474,28 @@ describe('buildBracket — real tournament fixtures', () => {
   });
 
   it('builds the WC2026 knockout blocks from season_map placeholder order', () => {
+    // Uses a frozen fixture, not the live docs/csv or season_map.yaml: WC2026
+    // is an in-progress tournament and the CSV update cron appends new rows
+    // (and eventually resolves these very placeholders) continuously, which
+    // would make match_number-based assertions below go stale on their own.
     const csvText = readFileSync(
-      resolve(__dirname, '../../../../docs/csv/2026_allmatch_result-WC_KO.csv'),
-      'utf-8',
-    );
-    const seasonMapText = readFileSync(
-      resolve(__dirname, '../../../../docs/yaml/season_map.yaml'),
+      resolve(__dirname, '../fixtures/csv/2026_wc_ko_snapshot.csv'),
       'utf-8',
     );
     const rows = Papa.parse<RawMatchRow>(csvText, {
       header: true,
       skipEmptyLines: 'greedy',
     }).data;
-    const seasonMap = yaml.load(seasonMapText) as {
-      national: { competitions: { WC_KO: { seasons: { '2026': {
-        bracket_blocks: { label: string; round_filter?: string[]; bracket_order: (string | null)[] }[];
-      } } } } };
+    const main = {
+      label: '決勝トーナメント',
+      bracket_order: [
+        'ドイツ', 'A/B/C/D/F3位', 'グループI1位', 'C/D/F/G/H3位', 'グループA2位', 'グループB2位', 'グループF1位', 'グループC2位',
+        'グループK2位', 'グループL2位', 'グループH1位', 'グループJ2位', 'アメリカ', 'B/E/F/I/J3位', 'グループG1位', 'A/E/H/I/J3位',
+        'グループC1位', 'グループF2位', 'グループE2位', 'グループI2位', 'メキシコ', 'C/E/F/H/I3位', 'グループL1位', 'E/H/I/J/K3位',
+        'グループJ1位', 'グループH2位', 'グループD2位', 'グループG2位', 'グループB1位', 'E/F/G/I/J3位', 'グループK1位', 'D/E/I/J/L3位',
+      ] as (string | null)[],
     };
-    const blocks = seasonMap.national.competitions.WC_KO.seasons['2026'].bracket_blocks;
-    const main = blocks.find(b => b.label === '決勝トーナメント')!;
-    const third = blocks.find(b => b.label === '３位決定戦')!;
+    const third = { label: '３位決定戦', bracket_order: ['No.101の敗者', 'No.102の敗者'] as (string | null)[] };
 
     // Main draw: 32 placeholder entrants resolve into a 5-deep single-elim tree.
     expect(main.bracket_order).toHaveLength(32);
@@ -502,8 +504,8 @@ describe('buildBracket — real tournament fixtures', () => {
 
     // Round of 32 leaf is linked to its CSV row by match_number (#258), not by
     // name. The CSV's away_team ("パラグアイ") has already resolved past the
-    // static season_map.yaml placeholder ("A/B/C/D/F3位" — see main.bracket_order[1])
-    // — proving the leaf follows the live CSV instead of going stale with it.
+    // static season_map-style placeholder ("A/B/C/D/F3位" — see main.bracket_order[1])
+    // — proving the leaf follows the CSV row instead of going stale with it.
     const r32Leaf = mainRoot.children[0]?.children[0]?.children[0]?.children[0];
     expect(main.bracket_order[1]).toBe('A/B/C/D/F3位');
     expect(r32Leaf?.matchNumber).toBe(74);

@@ -41,7 +41,10 @@ describe('parseSlotReference', () => {
 
 describe('buildReferenceTopology', () => {
   it('derives leaf match numbers and parent links from WC_KO feeder references', () => {
-    const rows = loadCsv('../../../../docs/csv/2026_allmatch_result-WC_KO.csv');
+    // Frozen fixture, not the live docs/csv: WC2026 is in progress and the CSV
+    // update cron resolves these placeholders over time, which would make the
+    // match_number assertions below go stale on their own (see #279).
+    const rows = loadCsv('../fixtures/csv/2026_wc_ko_snapshot.csv');
     const topology = buildReferenceTopology(rows);
 
     expect(topology).not.toBeNull();
