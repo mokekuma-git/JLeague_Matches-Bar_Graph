@@ -529,4 +529,49 @@ describe('buildBracket — real tournament fixtures', () => {
     expect(thirdRoot.awayTeam).toBe('No.102の敗者');
     expect(thirdRoot.children).toEqual([null, null]);
   });
+
+  it('keeps round/date/stadium for a round-16 match once both feeders resolve to real names (#281)', () => {
+    // Regression fixture: match 89 (round of 16, feeders 74/77) already shows
+    // real team names ("ドイツ"/"フランス") because both feeder matches were
+    // played, while the rest of round 32 is still unplayed. Before the fix,
+    // this broke position-based leaf linkage (usePositionLeaves), so the
+    // whole main draw fell back to name matching and lost round/date/stadium
+    // for nodes whose entrants don't literally match season_map placeholders.
+    const csvText = readFileSync(
+      resolve(__dirname, '../fixtures/csv/2026_wc_ko_r16_partial_resolved.csv'),
+      'utf-8',
+    );
+    const rows = Papa.parse<RawMatchRow>(csvText, {
+      header: true,
+      skipEmptyLines: 'greedy',
+    }).data;
+    const main = {
+      label: '決勝トーナメント',
+      bracket_order: [
+        'ドイツ', 'A/B/C/D/F3位', 'グループI1位', 'C/D/F/G/H3位', 'グループA2位', 'グループB2位', 'グループF1位', 'グループC2位',
+        'グループK2位', 'グループL2位', 'グループH1位', 'グループJ2位', 'アメリカ', 'B/E/F/I/J3位', 'グループG1位', 'A/E/H/I/J3位',
+        'グループC1位', 'グループF2位', 'グループE2位', 'グループI2位', 'メキシコ', 'C/E/F/H/I3位', 'グループL1位', 'E/H/I/J/K3位',
+        'グループJ1位', 'グループH2位', 'グループD2位', 'グループG2位', 'グループB1位', 'E/F/G/I/J3位', 'グループK1位', 'D/E/I/J/L3位',
+      ] as (string | null)[],
+    };
+
+    const mainRoot = buildBracket(rows, main.bracket_order);
+    assertNoUndefinedChildren(mainRoot);
+
+    // Round of 32 leaves still link by position/match_number.
+    const r32Leaf = mainRoot.children[0]?.children[0]?.children[0]?.children[0];
+    expect(r32Leaf?.matchNumber).toBe(74);
+    expect(r32Leaf?.homeTeam).toBe('ドイツ');
+    expect(r32Leaf?.awayTeam).toBe('パラグアイ');
+
+    // Round of 16 node keeps its own row's real names, and round/date/stadium
+    // survive instead of falling back to an "undecided" node.
+    const r16Node = mainRoot.children[0]?.children[0]?.children[0];
+    expect(r16Node?.matchNumber).toBe(89);
+    expect(r16Node?.round).toBe('ラウンド16');
+    expect(r16Node?.matchDate).toBe('2026/07/04');
+    expect(r16Node?.stadium).toBe('フィラデルフィア(アメリカ)／フィラデルフィアスタジアム');
+    expect(r16Node?.homeTeam).toBe('ドイツ');
+    expect(r16Node?.awayTeam).toBe('フランス');
+  });
 });

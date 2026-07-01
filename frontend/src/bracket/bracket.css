@@ -127,9 +127,19 @@
   color: #333;
 }
 
+/* Long team names have the same unbounded-growth issue as stadium names
+   (#281 follow-up): .bracket-team is a flex row with no fixed width, so an
+   unwrapped long name inflates the whole card instead of just this cell.
+   min-width: 0 lets this flex item shrink below its content size so
+   max-width/ellipsis can actually take effect. Full name remains available
+   via the card's hover/click tooltip. */
 .bracket-team-name {
   margin-right: 12px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 130px;
 }
 
 .bracket-score {
@@ -149,15 +159,31 @@
   font-size: 0.85em;
   color: #666;
   margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Stadium line below team rows */
+/* Stadium line below team rows.
+   Long venue names must not wrap onto a second line — that would break the
+   fixed card height the bracket layout (and its SVG connectors) depends on.
+   Truncated text remains reachable via the card's hover/click tooltip.
+   .bracket-match is a flex item sized by its content (min-width:200px only),
+   so an unwrapped long stadium name would inflate the whole card's width
+   instead of just its own line — capping this element's own max-width keeps
+   card width governed by the team-name rows as before. */
 .bracket-match-stadium {
   font-size: 0.75em;
   color: #fff;
   background: #333;
   padding: 3px 8px;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 /* ---- Tooltip (floating, appended to body) ---- */

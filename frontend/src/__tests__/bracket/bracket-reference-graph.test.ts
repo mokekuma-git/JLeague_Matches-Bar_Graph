@@ -58,6 +58,22 @@ describe('buildReferenceTopology', () => {
     expect(topology?.parentByChildPair.get('101-103')).toBeUndefined();
   });
 
+  it('keeps position-based leaves when a round-16 match has already resolved both feeders to real names', () => {
+    // Regression fixture for #281: match 89 (round of 16) here carries real
+    // team names ("ドイツ"/"フランス") because its feeders (74, 77) have been
+    // played, while the rest of round 32 is still unplayed. Before the fix,
+    // visit() re-parsed row 89's own home/away text, saw no "No.X" pattern,
+    // and misclassified 89 itself as a leaf instead of recursing into 74/77.
+    const rows = loadCsv('../fixtures/csv/2026_wc_ko_r16_partial_resolved.csv');
+    const topology = buildReferenceTopology(rows);
+
+    expect(topology).not.toBeNull();
+    expect(topology?.leafMatchNumbers).toEqual([
+      74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87,
+    ]);
+    expect(topology?.parentByChildPair.get('74-77')).toBe(89);
+  });
+
   it('returns null for competitions without feeder references (name-matched fallback)', () => {
     const rows = loadCsv('../../../../docs/csv/2024_allmatch_result-EmperorsCup.csv');
     expect(buildReferenceTopology(rows)).toBeNull();
