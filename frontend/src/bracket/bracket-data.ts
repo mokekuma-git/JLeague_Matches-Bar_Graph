@@ -8,32 +8,8 @@ import type { AggregateTiebreakCriterion } from '../types/season';
 import type { BracketNode, DecidedBy, LegDetail } from './bracket-types';
 import { normalizeBracketRoundLabel } from './round-label';
 import {
-  buildReferenceTopology, childPairKey, parseSlotReference, type ReferenceTopology,
+  buildReferenceTopology, childPairKey, determineWinner, parseSlotReference, type ReferenceTopology,
 } from './bracket-reference-graph';
-
-/**
- * Determine the winner of a KO match from a CSV row.
- * Returns null if the match hasn't been played.
- */
-function determineWinner(row: RawMatchRow): string | null {
-  if (!row.home_goal || !row.away_goal) return null;
-  const hg = parseInt(row.home_goal, 10);
-  const ag = parseInt(row.away_goal, 10);
-  if (isNaN(hg) || isNaN(ag)) return null;
-
-  // PK decides
-  if (row.home_pk_score && row.away_pk_score) {
-    const hpk = parseInt(row.home_pk_score, 10);
-    const apk = parseInt(row.away_pk_score, 10);
-    return hpk > apk ? row.home_team : row.away_team;
-  }
-
-  // home_goal/away_goal already include ET — no need to add score_ex
-  if (hg !== ag) return hg > ag ? row.home_team : row.away_team;
-
-  // Equal score without PK — shouldn't happen in KO but return null
-  return null;
-}
 
 /**
  * Find all CSV rows matching a matchup between two teams.
