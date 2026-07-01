@@ -13,6 +13,7 @@ export default defineConfig(({ command }) => ({
       input: {
         j_points: new URL('src/j_points.html', import.meta.url).pathname,
         tournament: new URL('src/tournament.html', import.meta.url).pathname,
+        matches: new URL('src/matches.html', import.meta.url).pathname,
       },
     },
   },
