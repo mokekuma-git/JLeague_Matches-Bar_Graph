@@ -67,7 +67,7 @@ const state: AppState = {
   renderVersion: 0,
 };
 
-// ---- Control state (symmetric with tournament-app.ts) -----------------
+// ---- Control state (symmetric with bracket-view.ts) --------------------
 
 interface LeagueViewerControlState extends SharedViewerControlState {
   displayTimezone: string;  // '' = browser default; otherwise an IANA TZ name

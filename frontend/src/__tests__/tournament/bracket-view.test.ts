@@ -34,7 +34,7 @@ function makeNode(overrides: Partial<BracketNode> = {}): BracketNode {
   };
 }
 
-describe('tournament-app helpers', () => {
+describe('bracket-view helpers', () => {
   describe('resolveSeasonBracketOrder', () => {
     test('uses explicit bracket_order with highest priority', () => {
       const order = __testables.resolveSeasonBracketOrder({
