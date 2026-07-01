@@ -1,6 +1,6 @@
 // Bar graph renderer: assembles DOM elements from ColumnResult objects.
 //
-// All exported functions build DOM nodes. The caller (app.ts)
+// All exported functions build DOM nodes. The caller (league-view.ts)
 // is responsible for inserting the returned fragment into the DOM.
 
 import type { TeamData } from '../types/match';
@@ -12,7 +12,7 @@ import type { ColumnResult } from './bar-column';
 import { getRankClass, joinLossBox } from './tooltip';
 import { t } from '../i18n';
 
-/** Return value of renderBarGraph, consumed by app.ts. */
+/** Return value of renderBarGraph, consumed by league-view.ts. */
 export interface RenderResult {
   /** DocumentFragment to insert into #box_container. */
   fragment: DocumentFragment;

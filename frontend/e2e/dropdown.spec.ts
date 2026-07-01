@@ -3,7 +3,7 @@ import { waitForRender, assertInvariants } from './helpers/invariants';
 
 test.describe('T2: Dropdown Interaction', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
   });
 
@@ -14,7 +14,7 @@ test.describe('T2: Dropdown Interaction', () => {
     );
 
     // Switch to a different group that has different competitions
-    const competitionOptions = await page.locator('#competition_key option').evaluateAll(
+    const competitionOptions = await page.locator('#competition_key option[data-view-type="league"]').evaluateAll(
       (opts) => opts.map((o) => (o as HTMLOptionElement).value),
     );
 

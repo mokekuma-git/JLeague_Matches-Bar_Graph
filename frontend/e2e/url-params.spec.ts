@@ -3,7 +3,7 @@ import { waitForRender, assertInvariants } from './helpers/invariants';
 
 test.describe('T3: URL Parameters', () => {
   test('URL params initialize dropdowns correctly', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     const competition = await page.locator('#competition_key').inputValue();
@@ -15,7 +15,7 @@ test.describe('T3: URL Parameters', () => {
   });
 
   test('dropdown change updates URL params', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     // Get available seasons and switch
@@ -33,7 +33,7 @@ test.describe('T3: URL Parameters', () => {
   });
 
   test('invalid params fall back to defaults without error', async ({ page }) => {
-    await page.goto('/j_points.html?competition=INVALID&season=INVALID');
+    await page.goto('/matches.html?competition=INVALID&season=INVALID');
     // Should still render something (falls back to first available)
     await waitForRender(page);
 

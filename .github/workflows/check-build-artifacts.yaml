@@ -16,7 +16,7 @@ jobs:
 
       - name: Verify build artifacts are not tracked in git
         run: |
-          tracked=$(git ls-files docs/j_points.html 'docs/assets/j_points-*.js' 'docs/assets/j_points-*.css')
+          tracked=$(git ls-files docs/matches.html docs/assets)
           if [ -n "$tracked" ]; then
             echo "::error::Build artifacts must not be committed to git:"
             echo "$tracked" | sed 's/^/::error::  /'
