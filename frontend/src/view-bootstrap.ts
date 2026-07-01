@@ -52,6 +52,22 @@ export interface SharedViewerControlDefaults {
   futureOpacity?: number;
 }
 
+export function normalizeTargetDate(value: string | null | undefined): string | null {
+  if (value == null || value === '') return null;
+  return value.replace(/-/g, '/');
+}
+
+export function toInputDate(value: string | null | undefined): string {
+  return normalizeTargetDate(value)?.replace(/\//g, '-') ?? '';
+}
+
+export function clampToSlider(value: number, slider: HTMLInputElement): number {
+  const min = slider.min === '' ? Number.NEGATIVE_INFINITY : Number(slider.min);
+  const max = slider.max === '' ? Number.POSITIVE_INFINITY : Number(slider.max);
+  const finiteValue = Number.isFinite(value) ? value : Number(slider.value);
+  return Math.min(max, Math.max(min, finiteValue));
+}
+
 export function createSharedViewerControlState(
   prefs: ViewerPrefs,
   defaults: SharedViewerControlDefaults = {},
@@ -59,6 +75,6 @@ export function createSharedViewerControlState(
   return {
     scale: prefs.scale ? parseFloat(prefs.scale) : (defaults.scale ?? 1),
     futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : (defaults.futureOpacity ?? 0.1),
-    targetDate: prefs.targetDate ?? null,
+    targetDate: normalizeTargetDate(prefs.targetDate),
   };
 }
