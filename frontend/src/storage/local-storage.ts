@@ -8,7 +8,7 @@ const STORAGE_KEY = 'jleague_viewer_prefs';
 export interface ViewerPrefs {
   competition?: string;
   season?: string;
-  targetDate?: string;   // YYYY/MM/DD (CSV date format) or YYYY-MM-DD (HTML date input)
+  targetDate?: string;   // Canonical YYYY/MM/DD (CSV date format)
   teamSortKey?: string;
   matchSortKey?: string;
   futureOpacity?: string;

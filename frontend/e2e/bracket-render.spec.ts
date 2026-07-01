@@ -2,14 +2,14 @@ import { test, expect } from './helpers/test-base';
 
 /** Wait for bracket to render (status message shows loaded count). */
 async function waitForBracketRender(page: import('@playwright/test').Page): Promise<void> {
-  await page.locator('#status_msg').filter({ hasText: /\d+/ }).waitFor({ timeout: 15000 });
+  await page.locator('#bracket_status_msg').filter({ hasText: /\d+/ }).waitFor({ timeout: 15000 });
   await page.locator('.bracket-match').first().waitFor({ timeout: 5000 });
 }
 
 test.describe('Bracket rendering — connectors and layout', () => {
   test.beforeEach(async ({ page }) => {
     // EmperorsCup 2025: simple bracket tree (R16 onward)
-    await page.goto('/tournament.html?competition=EmperorsCup&season=2025');
+    await page.goto('/matches.html?competition=EmperorsCup&season=2025');
     await waitForBracketRender(page);
   });
 
@@ -26,7 +26,7 @@ test.describe('Bracket rendering — connectors and layout', () => {
     const beforeSolid = await solid.count();
     expect(beforeSolid).toBeGreaterThan(0);
 
-    const slider = page.locator('#date_slider');
+    const slider = page.locator('#bracket_date_slider');
     await slider.fill('0');
     await slider.dispatchEvent('change');
     await page.locator('.bracket-match').first().waitFor({ timeout: 5000 });
@@ -75,7 +75,7 @@ test.describe('Bracket rendering — connectors and layout', () => {
 test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-render' }, () => {
   test('multi-section mode renders separate section containers', async ({ page }) => {
     // JLeagueCup 2025 has bracket_blocks (1回戦, 2回戦, プレーオフ, プライム)
-    await page.goto('/tournament.html?competition=JLeagueCup&season=2025');
+    await page.goto('/matches.html?competition=JLeagueCup&season=2025');
     await waitForBracketRender(page);
 
     // Switch to multi-section mode
@@ -95,7 +95,7 @@ test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-
   });
 
   test('matchup_pairs blocks render as pair-based brackets', async ({ page }) => {
-    await page.goto('/tournament.html?competition=JLeagueCup&season=2025');
+    await page.goto('/matches.html?competition=JLeagueCup&season=2025');
     await waitForBracketRender(page);
 
     // Switch to multi-section mode
@@ -116,7 +116,7 @@ test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-
 
   test('WC2026 knockout renders main draw and third-place blocks', async ({ page }) => {
     // WC_KO 2026 defaults to multi-section (bracket_blocks present).
-    await page.goto('/tournament.html?competition=WC_KO&season=2026');
+    await page.goto('/matches.html?competition=WC_KO&season=2026');
     await waitForBracketRender(page);
 
     const summaries = await page.locator('.bracket-section-summary').allTextContents();

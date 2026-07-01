@@ -11,8 +11,10 @@ GitHub Pages で公開: <https://mokekuma-git.github.io/JLeague_Matches-Bar_Grap
 JLeague_Matches-Bar_Graph/
 ├── frontend/                        # TypeScript フロントエンド (Vite)
 │   ├── src/
-│   │   ├── app.ts                  #   エントリポイント
-│   │   ├── j_points.html           #   HTMLテンプレート (Vite input)
+│   │   ├── matches-app.ts          #   統合Viewエントリポイント
+│   │   ├── matches.html            #   HTMLテンプレート (Vite input)
+│   │   ├── league-view.ts          #   リーグView lifecycle
+│   │   ├── bracket-view.ts         #   トーナメントView lifecycle
 │   │   ├── config/season-map.ts    #   season_map.yaml 読み込み・ユーティリティ
 │   │   ├── config/rule-notes.ts   #   ルール説明ノート自動生成 (i18n準備済)
 │   │   ├── core/                   #   CSV解析, 勝ち点計算, ソート, 日付ユーティリティ
@@ -35,7 +37,7 @@ JLeague_Matches-Bar_Graph/
 ├── config/                          #   YAML設定 (jleague.yaml, jfamatch.yaml, openfootball.yaml等)
 ├── tests/                           #   pytest テストコード + test_data/
 ├── docs/                            # GitHub Pages 公開ディレクトリ
-│   ├── j_points.html, assets/      #   ★ ビルド生成物 (gitignore対象)
+│   ├── matches.html, assets/       #   ★ ビルド生成物 (gitignore対象)
 │   ├── *.css                       #   スタイル (チームカラー定義含む)
 │   ├── csv/                        #   処理済みCSV
 │   └── yaml/                       #   season_map.yaml
@@ -81,7 +83,7 @@ npx playwright test --grep @full-render          # full-render のみ
 ## デプロイモデル
 
 - **GitHub Pages は GitHub Actions 経由** (`deploy-pages.yaml`): main push 時に TS ビルド → `docs/` を artifact としてアップロード → デプロイ
-- **ビルド生成物 (`docs/j_points.html`, `docs/assets/`) は git 管理外** (`.gitignore` に記載)
+- **ビルド生成物 (`docs/matches.html`, `docs/assets/`) は git 管理外** (`.gitignore` に記載)
 - `docs/` 内の CSV, YAML, CSS はそのまま git 管理 (Python 側が直接更新)
 - `check-build-artifacts.yaml` が PR 時にビルド生成物の誤コミットを検出
 

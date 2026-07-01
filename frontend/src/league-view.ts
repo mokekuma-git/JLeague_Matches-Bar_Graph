@@ -1,4 +1,4 @@
-// Unified viewer entry point.
+// League view module.
 //
 // Navigates the 4-tier season_map.yaml hierarchy:
 //   family → competition → seasons → entry
@@ -12,8 +12,7 @@ import Papa from 'papaparse';
 import type { RawMatchRow, TeamMap } from './types/match';
 import type { SeasonMap, LeagueSeasonInfo } from './types/season';
 import {
-  loadSeasonMap, getCsvFilename, findCompetition, resolveLeagueSeasonInfo,
-  getCompetitionViewTypes,
+  getCsvFilename, findCompetition, resolveLeagueSeasonInfo,
 } from './config/season-map';
 import { parseCsvResults } from './core/csv-parser';
 import { dateFormat } from './core/date-utils';
@@ -32,10 +31,13 @@ import { renderBarGraph } from './graph/renderer';
 import { DEFAULT_HEIGHT_UNIT, getHeightUnit, setFutureOpacity, setSpace, setScale } from './graph/css-utils';
 import { findTeamsWithoutColor } from './graph/css-validator';
 import { teamCssClass } from './core/team-utils';
-import { loadPrefs, savePrefs, clearPrefs } from './storage/local-storage';
+import { loadPrefs, savePrefs } from './storage/local-storage';
 import type { ViewerPrefs } from './storage/local-storage';
-import { t, applyI18nAttributes, setLocale } from './i18n';
-import type { Locale } from './i18n';
+import { t } from './i18n';
+import {
+  clampToSlider, normalizeTargetDate, toInputDate,
+} from './view-bootstrap';
+import type { SharedViewerControlState } from './view-bootstrap';
 
 // ---- Application state ------------------------------------------------
 
@@ -54,6 +56,7 @@ interface AppState {
   teamMapCache: TeamMapCache | null;
   currentMatchDates: string[];
   heightUnit: number;
+  renderVersion: number;
 }
 
 const state: AppState = {
@@ -61,14 +64,12 @@ const state: AppState = {
   teamMapCache: null,
   currentMatchDates: [],
   heightUnit: DEFAULT_HEIGHT_UNIT,
+  renderVersion: 0,
 };
 
-// ---- Control state (symmetric with tournament-app.ts) -----------------
+// ---- Control state (symmetric with bracket-view.ts) --------------------
 
-interface ViewerControlState {
-  scale: number;
-  futureOpacity: number;
-  targetDate: string | null;
+interface LeagueViewerControlState extends SharedViewerControlState {
   displayTimezone: string;  // '' = browser default; otherwise an IANA TZ name
   hiddenColumns: Set<string>;  // rank table column data-ids hidden by the user
 }
@@ -80,16 +81,17 @@ interface LeagueControlState {
 }
 
 interface ControlState {
-  viewer: ViewerControlState;
+  viewer: LeagueViewerControlState;
   league: LeagueControlState;
 }
 
-function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
+function createControlStateFromPrefs(
+  prefs: ViewerPrefs,
+  shared: SharedViewerControlState,
+): ControlState {
   return {
     viewer: {
-      scale: prefs.scale ? parseFloat(prefs.scale) : 1,
-      futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.1,
-      targetDate: prefs.targetDate ?? null,
+      ...shared,
       displayTimezone: prefs.displayTimezone ?? '',
       hiddenColumns: new Set(prefs.hiddenColumns ?? []),
     },
@@ -101,13 +103,159 @@ function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
   };
 }
 
-let controlState: ControlState = createControlStateFromPrefs({});
+let controlState: ControlState;
+let activeSeasonMap: SeasonMap | null = null;
+let activeSelection: LeagueViewSelection | null = null;
 
-const DEFAULT_COMPETITION = 'J1';
 const DEFAULT_GROUP = 'matches';
 
 // CSV URL cache-busting: same bucket for requests within this window (seconds).
 const CACHE_BUST_WINDOW_SEC = 300; // 5 minutes
+
+export interface LeagueViewSelection {
+  competition: string;
+  season: string;
+}
+
+export interface LeagueViewContext {
+  shared: SharedViewerControlState;
+  onViewerChange(): void;
+}
+
+export interface LeagueViewHandle {
+  activate(seasonMap: SeasonMap, selection: LeagueViewSelection): void;
+  deactivate(): void;
+}
+
+export interface LeagueViewIds {
+  competition: string;
+  season: string;
+  teamSort: string;
+  matchSort: string;
+  displayTimezone: string;
+  displayTimezoneLabel: string;
+  dateSlider: string;
+  dateSliderDown: string;
+  dateSliderUp: string;
+  dateSliderReset: string;
+  postDateSlider: string;
+  targetDate: string;
+  scaleSlider: string;
+  futureOpacity: string;
+  spaceColor: string;
+  columnToggleList: string;
+  status: string;
+  warning: string;
+  timestamp: string;
+  boxContainer: string;
+  ranktableSection: string;
+  seasonNotes: string;
+  dataSourceSection: string;
+}
+
+export const LEAGUE_STANDALONE_IDS: LeagueViewIds = {
+  competition: 'competition_key',
+  season: 'season_key',
+  teamSort: 'team_sort_key',
+  matchSort: 'match_sort_key',
+  displayTimezone: 'display_timezone',
+  displayTimezoneLabel: 'display_timezone_label',
+  dateSlider: 'date_slider',
+  dateSliderDown: 'date_slider_down',
+  dateSliderUp: 'date_slider_up',
+  dateSliderReset: 'reset_date_slider',
+  postDateSlider: 'post_date_slider',
+  targetDate: 'target_date',
+  scaleSlider: 'scale_slider',
+  futureOpacity: 'future_opacity',
+  spaceColor: 'space_color',
+  columnToggleList: 'column_toggle_list',
+  status: 'status_msg',
+  warning: 'warning_msg',
+  timestamp: 'data_timestamp',
+  boxContainer: 'box_container',
+  ranktableSection: 'ranktable_section',
+  seasonNotes: 'season_notes',
+  dataSourceSection: 'data_source_section',
+};
+
+export const LEAGUE_NAMESPACED_IDS: LeagueViewIds = {
+  ...LEAGUE_STANDALONE_IDS,
+  dateSlider: 'league_date_slider',
+  dateSliderDown: 'league_date_slider_down',
+  dateSliderUp: 'league_date_slider_up',
+  postDateSlider: 'league_post_date_slider',
+  scaleSlider: 'league_scale_slider',
+  futureOpacity: 'league_future_opacity',
+  status: 'league_status_msg',
+  seasonNotes: 'league_season_notes',
+};
+
+interface LeagueViewRefs {
+  competition: HTMLSelectElement;
+  season: HTMLSelectElement;
+  teamSort: HTMLSelectElement;
+  matchSort: HTMLSelectElement;
+  displayTimezone: HTMLSelectElement;
+  displayTimezoneLabel: HTMLElement;
+  dateSlider: HTMLInputElement;
+  dateSliderDown: HTMLElement;
+  dateSliderUp: HTMLElement;
+  dateSliderReset: HTMLElement;
+  postDateSlider: HTMLElement;
+  targetDate: HTMLInputElement;
+  scaleSlider: HTMLInputElement;
+  futureOpacity: HTMLInputElement;
+  spaceColor: HTMLInputElement;
+  columnToggleList: HTMLElement;
+  status: HTMLElement;
+  warning: HTMLElement;
+  timestamp: HTMLElement;
+  boxContainer: HTMLElement;
+  sortableTable: HTMLElement;
+  seasonNotes: HTMLElement;
+  dataSourceSection: HTMLElement;
+}
+
+let refs: LeagueViewRefs;
+let viewContext: LeagueViewContext;
+
+function requireElement<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`League view element not found: #${id}`);
+  return element as T;
+}
+
+function resolveRefs(ids: LeagueViewIds): LeagueViewRefs {
+  const ranktableSection = requireElement<HTMLElement>(ids.ranktableSection);
+  const sortableTable = ranktableSection.querySelector<HTMLElement>('.sortable-table');
+  if (!sortableTable) throw new Error(`League view sortable table not found in #${ids.ranktableSection}`);
+  return {
+    competition: requireElement(ids.competition),
+    season: requireElement(ids.season),
+    teamSort: requireElement(ids.teamSort),
+    matchSort: requireElement(ids.matchSort),
+    displayTimezone: requireElement(ids.displayTimezone),
+    displayTimezoneLabel: requireElement(ids.displayTimezoneLabel),
+    dateSlider: requireElement(ids.dateSlider),
+    dateSliderDown: requireElement(ids.dateSliderDown),
+    dateSliderUp: requireElement(ids.dateSliderUp),
+    dateSliderReset: requireElement(ids.dateSliderReset),
+    postDateSlider: requireElement(ids.postDateSlider),
+    targetDate: requireElement(ids.targetDate),
+    scaleSlider: requireElement(ids.scaleSlider),
+    futureOpacity: requireElement(ids.futureOpacity),
+    spaceColor: requireElement(ids.spaceColor),
+    columnToggleList: requireElement(ids.columnToggleList),
+    status: requireElement(ids.status),
+    warning: requireElement(ids.warning),
+    timestamp: requireElement(ids.timestamp),
+    boxContainer: requireElement(ids.boxContainer),
+    sortableTable,
+    seasonNotes: requireElement(ids.seasonNotes),
+    dataSourceSection: requireElement(ids.dataSourceSection),
+  };
+}
 
 // ---- Fixed dropdown options (generated into HTML by TS) ------------------
 
@@ -151,24 +299,17 @@ function getDisplayTzOptions(): { value: string; label: string }[] {
 
 // ---- DOM helpers -------------------------------------------------------
 
-function getSelectValue(id: string): string {
-  return (document.getElementById(id) as HTMLSelectElement).value;
-}
-
 function setStatus(msg: string): void {
-  const el = document.getElementById('status_msg');
-  if (el) el.textContent = msg;
+  refs.status.textContent = msg;
 }
 
 function showWarning(msg: string | null): void {
-  const el = document.getElementById('warning_msg');
-  if (!el) return;
   if (msg) {
-    el.textContent = msg;
-    el.hidden = false;
+    refs.warning.textContent = msg;
+    refs.warning.hidden = false;
   } else {
-    el.textContent = '';
-    el.hidden = true;
+    refs.warning.textContent = '';
+    refs.warning.hidden = true;
   }
 }
 
@@ -203,26 +344,8 @@ function formatTimestamp(d: Date): string {
 }
 
 function showTimestamp(csvFilename: string): void {
-  const el = document.getElementById('data_timestamp');
-  if (!el || !state.timestampMap) return;
-  el.textContent = state.timestampMap[csvFilename] ?? '';
-}
-
-// ---- URL parameter management ------------------------------------------
-
-function readUrlParams(): { competition: string; season?: string } {
-  const params = new URLSearchParams(location.search);
-  return {
-    competition: params.get('competition') ?? '',
-    season: params.get('season') ?? undefined,
-  };
-}
-
-function writeUrlParams(competition: string, season: string): void {
-  const url = new URL(location.href);
-  url.searchParams.set('competition', competition);
-  url.searchParams.set('season', season);
-  history.replaceState(null, '', url.toString());
+  if (!state.timestampMap) return;
+  refs.timestamp.textContent = state.timestampMap[csvFilename] ?? '';
 }
 
 // ---- Fixed dropdown population -----------------------------------------
@@ -230,11 +353,9 @@ function writeUrlParams(competition: string, season: string): void {
 type MatchSortUiValue = typeof MATCH_SORT_VALUES[number];
 
 function populateFixedSelect(
-  id: string,
+  sel: HTMLSelectElement,
   options: ReadonlyArray<{ readonly value: string; readonly label: string }>,
 ): void {
-  const sel = document.getElementById(id) as HTMLSelectElement | null;
-  if (!sel) return;
   sel.innerHTML = '';
   for (const { value, label } of options) {
     const opt = document.createElement('option');
@@ -252,8 +373,7 @@ function populateColumnToggleList(
   hiddenColumns: ReadonlySet<string>,
   onToggle: (columnId: string, checked: boolean) => void,
 ): void {
-  const container = document.getElementById('column_toggle_list');
-  if (!container) return;
+  const container = refs.columnToggleList;
   container.innerHTML = '';
   for (const col of getToggleableColumns()) {
     if (!col.id) continue;
@@ -280,59 +400,15 @@ function isBottomFirst(uiValue: string): boolean {
   return (v === 'old_bottom' || v === 'first_bottom');
 }
 
-// ---- Competition pulldown population -----------------------------------
-
-function populateCompetitionPulldown(seasonMap: SeasonMap): void {
-  const sel = document.getElementById('competition_key') as HTMLSelectElement;
-  sel.innerHTML = '';
-  const families = Object.entries(seasonMap);
-  const multiFamily = families.length > 1;
-  for (const [familyKey, family] of families) {
-    if (multiFamily) {
-      // Disabled separator showing family name (only when multiple families exist)
-      const sep = document.createElement('option');
-      sep.disabled = true;
-      sep.textContent = `── ${family.display_name ?? familyKey} `;
-      sel.appendChild(sep);
-    }
-
-    for (const [compKey, comp] of Object.entries(family.competitions)) {
-      if (!getCompetitionViewTypes(family, comp).includes('league')) continue;
-      const opt = document.createElement('option');
-      opt.value = compKey;
-      opt.textContent = comp.league_display ?? compKey;
-      sel.appendChild(opt);
-    }
-  }
-}
-
-// ---- Season pulldown population ----------------------------------------
-
-function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void {
-  const sel = document.getElementById('season_key') as HTMLSelectElement;
-  sel.innerHTML = '';
-  const found = findCompetition(seasonMap, competition);
-  if (!found) return;
-  const seasons = Object.keys(found.competition.seasons).sort().reverse();
-  for (const s of seasons) {
-    const opt = document.createElement('option');
-    opt.value = s;
-    opt.textContent = s;
-    sel.appendChild(opt);
-  }
-}
-
 // ---- Date slider management --------------------------------------------
 
 function resetDateSlider(matchDates: string[], targetDate: string): void {
   state.currentMatchDates = matchDates;
-  const slider = document.getElementById('date_slider') as HTMLInputElement | null;
-  if (!slider || matchDates.length === 0) return;
-  syncSliderToTargetDate(slider, matchDates, targetDate);
+  if (matchDates.length === 0) return;
+  syncSliderToTargetDate(refs.dateSlider, matchDates, targetDate);
 
-  const postEl = document.getElementById('post_date_slider');
   const lastDate = getLastMatchDate(matchDates);
-  if (postEl && lastDate) postEl.textContent = lastDate;
+  if (lastDate) refs.postDateSlider.textContent = lastDate;
 }
 
 // ---- Core render pipeline ----------------------------------------------
@@ -356,8 +432,7 @@ function renderFromCache(
   const { hasPk, hasEx } = cache;
 
   // Show the display-timezone selector only when this season actually has source TZ data.
-  const tzLabel = document.getElementById('display_timezone_label');
-  if (tzLabel) tzLabel.hidden = !cache.hasTimezone;
+  refs.displayTimezoneLabel.hidden = !cache.hasTimezone;
 
   // Determine which groups to render and in what order.
   const allGroups = Object.keys(cache.teamMap);
@@ -368,8 +443,8 @@ function renderFromCache(
 
   const globalMatchDateSet = new Set<string>();
   const allTeamCssClasses: string[] = [];
-  const boxCon = document.getElementById('box_container') as HTMLElement | null;
-  if (boxCon) {
+  const boxCon = refs.boxContainer;
+  {
     boxCon.replaceChildren();
     // Multi-group graphs are laid out as stacked block rows (column); single-group
     // keeps the original single horizontal row.
@@ -382,8 +457,8 @@ function renderFromCache(
   let currentRowTeams = 0;
 
   // Prepare ranking table container.
-  const sortableDiv = document.querySelector('#ranktable_section .sortable-table') as HTMLElement | null;
-  if (sortableDiv) sortableDiv.innerHTML = '';
+  const sortableDiv = refs.sortableTable;
+  sortableDiv.innerHTML = '';
 
   // Collect per-group results for cross-group comparison (populated during loop).
   const allGroupResults: Record<string, GroupRenderResult> = {};
@@ -475,35 +550,26 @@ function renderFromCache(
     }
   }
 
-  if (boxCon) {
-    const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
-    setScale(boxCon, scaleSlider?.value ?? '1');
-    const globalMatchDates = [...globalMatchDateSet].sort();
-    resetDateSlider(globalMatchDates, targetDate);
-  }
+  setScale(boxCon, refs.scaleSlider.value);
+  const globalMatchDates = [...globalMatchDateSet].sort();
+  resetDateSlider(globalMatchDates, targetDate);
 
   // Update season notes from season_map config.
-  const notesEl = document.getElementById('season_notes');
-  if (notesEl) {
-    notesEl.replaceChildren();
-    for (const text of seasonInfo.notes) {
-      const li = document.createElement('li');
-      li.textContent = text;
-      notesEl.appendChild(li);
-    }
+  refs.seasonNotes.replaceChildren();
+  for (const text of seasonInfo.notes) {
+    const li = document.createElement('li');
+    li.textContent = text;
+    refs.seasonNotes.appendChild(li);
   }
 
   // Update data source link from season_map config.
-  const dsSection = document.getElementById('data_source_section');
-  if (dsSection) {
-    if (seasonInfo.dataSource) {
-      const a = document.createElement('a');
-      a.href = seasonInfo.dataSource.url;
-      a.textContent = seasonInfo.dataSource.label;
-      dsSection.replaceChildren(t('status.dataSource'), a);
-    } else {
-      dsSection.replaceChildren();
-    }
+  if (seasonInfo.dataSource) {
+    const a = document.createElement('a');
+    a.href = seasonInfo.dataSource.url;
+    a.textContent = seasonInfo.dataSource.label;
+    refs.dataSourceSection.replaceChildren(t('status.dataSource'), a);
+  } else {
+    refs.dataSourceSection.replaceChildren();
   }
 
   // I3: Warn about teams with undefined CSS colors.
@@ -515,12 +581,14 @@ function renderFromCache(
   }
 }
 
-function loadAndRender(seasonMap: SeasonMap): void {
-  const competition = getSelectValue('competition_key');
-  const season      = getSelectValue('season_key');
+function loadAndRender(): void {
+  if (!activeSeasonMap || !activeSelection) return;
+  const renderVersion = ++state.renderVersion;
+  const seasonMap = activeSeasonMap;
+  const { competition, season } = activeSelection;
   const csvKey      = `${competition}/${season}`;
 
-  const targetDate    = controlState.viewer.targetDate?.replace(/-/g, '/') ?? dateFormat(new Date(), '/');
+  const targetDate = normalizeTargetDate(viewContext.shared.targetDate) ?? dateFormat(new Date(), '/');
 
   const sortKey      = controlState.league.teamSortKey;
   const matchSortKey = getMatchSortKey(controlState.league.matchSortKey);
@@ -540,10 +608,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     found.familyKey,
   ).leagueDisplay;
 
-  writeUrlParams(competition, season);
   savePrefs({
-    competition, season,
-    targetDate: controlState.viewer.targetDate ?? undefined,
     teamSortKey: sortKey,
     matchSortKey: controlState.league.matchSortKey,
   });
@@ -565,6 +630,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     skipEmptyLines: 'greedy',
     download: true,
     complete: (results) => {
+      if (renderVersion !== state.renderVersion) return;
       const entry = found.competition.seasons[season];
       const seasonInfo = resolveLeagueSeasonInfo(found.family, found.competition, entry, found.familyKey);
       const teamMap = parseCsvResults(
@@ -589,6 +655,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
       setStatus(t('status.loaded', { league: leagueDisplay, season, rows: results.data.length }));
     },
     error: (err: unknown) => {
+      if (renderVersion !== state.renderVersion) return;
       setStatus(t('status.error', { detail: String(err) }));
     },
   });
@@ -596,203 +663,124 @@ function loadAndRender(seasonMap: SeasonMap): void {
 
 // ---- Initialization & event wiring ------------------------------------
 
-async function main(): Promise<void> {
-  // Restore locale from prefs before any i18n calls.
-  const savedLocale = loadPrefs().locale;
-  if (savedLocale === 'ja' || savedLocale === 'en') setLocale(savedLocale as Locale);
-
-  applyI18nAttributes();
-  void loadTimestampMap();
-
-  let seasonMap: SeasonMap;
-  try {
-    seasonMap = await loadSeasonMap();
-  } catch (err) {
-    setStatus(t('status.seasonMapError'));
-    console.error('Failed to load season map:', err);
-    return;
-  }
-
+export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): LeagueViewHandle {
+  refs = resolveRefs(ids);
+  viewContext = ctx;
+  const prefs = loadPrefs();
+  controlState = createControlStateFromPrefs(prefs, ctx.shared);
   state.heightUnit = getHeightUnit();
+  void loadTimestampMap().then(() => {
+    if (activeSelection) showTimestamp(getCsvFilename(
+      activeSelection.competition,
+      activeSelection.season,
+    ));
+  });
 
-  populateCompetitionPulldown(seasonMap);
-  populateFixedSelect('team_sort_key', getTeamSortOptions());
-  populateFixedSelect('match_sort_key', getMatchSortOptions());
-  populateFixedSelect('display_timezone', getDisplayTzOptions());
-
-  // Determine initial competition/season from URL params → localStorage → default
-  const urlParams = readUrlParams();
-  const prefs     = loadPrefs();
-
-  const competitionSel = document.getElementById('competition_key') as HTMLSelectElement;
-  const initCompetition = (urlParams.competition && findCompetition(seasonMap, urlParams.competition))
-    ? urlParams.competition
-    : (prefs.competition && findCompetition(seasonMap, prefs.competition))
-    ? prefs.competition
-    : DEFAULT_COMPETITION;
-  competitionSel.value = initCompetition;
-
-  populateSeasonPulldown(seasonMap, initCompetition);
-
-  const seasonSel = document.getElementById('season_key') as HTMLSelectElement;
-  const found = findCompetition(seasonMap, initCompetition);
-  const initSeason = (urlParams.season && found?.competition.seasons[urlParams.season])
-    ? urlParams.season
-    : (prefs.season && found?.competition.seasons[prefs.season])
-    ? prefs.season
-    : seasonSel.options[0]?.value ?? '';
-  seasonSel.value = initSeason;
-
-  // Restore control state from prefs
-  controlState = createControlStateFromPrefs(prefs);
-
-  const teamSortSel  = document.getElementById('team_sort_key') as HTMLSelectElement | null;
-  const matchSortSel = document.getElementById('match_sort_key') as HTMLSelectElement | null;
-  const displayTzSel = document.getElementById('display_timezone') as HTMLSelectElement | null;
-  if (teamSortSel)  teamSortSel.value  = controlState.league.teamSortKey;
-  if (matchSortSel) matchSortSel.value = controlState.league.matchSortKey;
-  if (displayTzSel) displayTzSel.value = controlState.viewer.displayTimezone;
+  populateFixedSelect(refs.teamSort, getTeamSortOptions());
+  populateFixedSelect(refs.matchSort, getMatchSortOptions());
+  populateFixedSelect(refs.displayTimezone, getDisplayTzOptions());
+  refs.teamSort.value = controlState.league.teamSortKey;
+  refs.matchSort.value = controlState.league.matchSortKey;
+  refs.displayTimezone.value = controlState.viewer.displayTimezone;
+  refs.spaceColor.value = controlState.league.spaceColor;
 
   populateColumnToggleList(controlState.viewer.hiddenColumns, (columnId, checked) => {
     if (checked) controlState.viewer.hiddenColumns.delete(columnId);
     else controlState.viewer.hiddenColumns.add(columnId);
     savePrefs({ hiddenColumns: [...controlState.viewer.hiddenColumns] });
-    loadAndRender(seasonMap);
+    loadAndRender();
   });
 
-  const futureOpacityEl = document.getElementById('future_opacity') as HTMLInputElement | null;
-  const spaceColorEl    = document.getElementById('space_color')    as HTMLInputElement | null;
-  const scaleSliderEl   = document.getElementById('scale_slider')   as HTMLInputElement | null;
-  if (futureOpacityEl) futureOpacityEl.value = String(controlState.viewer.futureOpacity);
-  if (spaceColorEl)    spaceColorEl.value    = controlState.league.spaceColor;
-  if (scaleSliderEl)   scaleSliderEl.value   = String(controlState.viewer.scale);
-
-  setFutureOpacity(String(controlState.viewer.futureOpacity), false);
-  if (prefs.spaceColor) setSpace(controlState.league.spaceColor, false);
-
-  const dateInput = document.getElementById('target_date') as HTMLInputElement;
-  dateInput.value = controlState.viewer.targetDate ?? dateFormat(new Date(), '-');
-
-  // ---- Data-selection events ----
-
-  competitionSel.addEventListener('change', () => {
-    state.teamMapCache = null;
-    populateSeasonPulldown(seasonMap, competitionSel.value);
-    loadAndRender(seasonMap);
+  refs.targetDate.addEventListener('change', () => {
+    ctx.shared.targetDate = normalizeTargetDate(refs.targetDate.value);
+    ctx.onViewerChange();
+    loadAndRender();
+  });
+  refs.teamSort.addEventListener('change', () => {
+    controlState.league.teamSortKey = refs.teamSort.value;
+    loadAndRender();
+  });
+  refs.matchSort.addEventListener('change', () => {
+    controlState.league.matchSortKey = refs.matchSort.value;
+    loadAndRender();
   });
 
-  document.getElementById('season_key')?.addEventListener('change', () => {
-    state.teamMapCache = null;
-    loadAndRender(seasonMap);
+  const updateFromSlider = (): void => {
+    const date = getSliderDate(state.currentMatchDates, parseInt(refs.dateSlider.value, 10));
+    if (!date) return;
+    refs.targetDate.value = toInputDate(date);
+    ctx.shared.targetDate = normalizeTargetDate(date);
+    ctx.onViewerChange();
+    loadAndRender();
+  };
+  refs.dateSlider.addEventListener('change', updateFromSlider);
+  refs.dateSlider.addEventListener('input', () => {
+    const date = getSliderDate(state.currentMatchDates, parseInt(refs.dateSlider.value, 10));
+    if (date) refs.targetDate.value = toInputDate(date);
+  });
+  refs.dateSliderDown.addEventListener('click', () => {
+    refs.dateSlider.value = String(Math.max(0, parseInt(refs.dateSlider.value, 10) - 1));
+    updateFromSlider();
+  });
+  refs.dateSliderUp.addEventListener('click', () => {
+    refs.dateSlider.value = String(
+      Math.min(parseInt(refs.dateSlider.max, 10), parseInt(refs.dateSlider.value, 10) + 1),
+    );
+    updateFromSlider();
+  });
+  refs.dateSliderReset.addEventListener('click', () => {
+    const today = dateFormat(new Date(), '/');
+    refs.targetDate.value = toInputDate(today);
+    ctx.shared.targetDate = today;
+    ctx.onViewerChange();
+    loadAndRender();
   });
 
-  document.getElementById('target_date')?.addEventListener('change', () => {
-    controlState.viewer.targetDate = (document.getElementById('target_date') as HTMLInputElement).value;
-    loadAndRender(seasonMap);
+  refs.scaleSlider.addEventListener('input', () => {
+    ctx.shared.scale = parseFloat(refs.scaleSlider.value);
+    setScale(refs.boxContainer, refs.scaleSlider.value);
+    ctx.onViewerChange();
+  });
+  refs.futureOpacity.addEventListener('input', () => {
+    ctx.shared.futureOpacity = parseFloat(refs.futureOpacity.value);
+    setFutureOpacity(refs.futureOpacity.value);
+    ctx.onViewerChange();
+  });
+  refs.spaceColor.addEventListener('input', () => {
+    controlState.league.spaceColor = refs.spaceColor.value;
+    setSpace(refs.spaceColor.value);
+    savePrefs({ spaceColor: refs.spaceColor.value });
+  });
+  refs.displayTimezone.addEventListener('change', () => {
+    controlState.viewer.displayTimezone = refs.displayTimezone.value;
+    savePrefs({ displayTimezone: refs.displayTimezone.value });
+    loadAndRender();
   });
 
-  document.getElementById('team_sort_key')?.addEventListener('change', () => {
-    controlState.league.teamSortKey = getSelectValue('team_sort_key');
-    loadAndRender(seasonMap);
-  });
+  return {
+    activate(seasonMap, selection) {
+      const selectionChanged = activeSelection?.competition !== selection.competition
+        || activeSelection?.season !== selection.season;
+      activeSeasonMap = seasonMap;
+      activeSelection = selection;
+      if (selectionChanged) state.teamMapCache = null;
 
-  document.getElementById('match_sort_key')?.addEventListener('change', () => {
-    controlState.league.matchSortKey = getSelectValue('match_sort_key');
-    loadAndRender(seasonMap);
-  });
-
-  // ---- Date slider events ----
-
-  const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
-  if (dateSlider) {
-    const updateFromSlider = (): void => {
-      const date = getSliderDate(state.currentMatchDates, parseInt(dateSlider.value, 10));
-      if (!date) return;
-      const htmlDate = date.replace(/\//g, '-');
-      (document.getElementById('target_date') as HTMLInputElement).value = htmlDate;
-      controlState.viewer.targetDate = htmlDate;
-      loadAndRender(seasonMap);
-    };
-
-    dateSlider.addEventListener('change', updateFromSlider);
-
-    // Show date label in real-time while dragging (no graph redraw)
-    dateSlider.addEventListener('input', () => {
-      const date = getSliderDate(state.currentMatchDates, parseInt(dateSlider.value, 10));
-      if (!date) return;
-      (document.getElementById('target_date') as HTMLInputElement).value = date.replace(/\//g, '-');
-    });
-
-    document.getElementById('date_slider_down')?.addEventListener('click', () => {
-      dateSlider.value = String(Math.max(0, parseInt(dateSlider.value, 10) - 1));
-      updateFromSlider();
-    });
-    document.getElementById('date_slider_up')?.addEventListener('click', () => {
-      dateSlider.value = String(Math.min(parseInt(dateSlider.max, 10), parseInt(dateSlider.value, 10) + 1));
-      updateFromSlider();
-    });
-    document.getElementById('reset_date_slider')?.addEventListener('click', () => {
-      const today = dateFormat(new Date(), '-');
-      (document.getElementById('target_date') as HTMLInputElement).value = today;
-      controlState.viewer.targetDate = today;
-      loadAndRender(seasonMap);
-    });
-  }
-
-  // ---- Appearance events ----
-
-  const boxCon = document.getElementById('box_container') as HTMLElement;
-
-  document.getElementById('scale_slider')?.addEventListener('input', (e) => {
-    const v = (e.target as HTMLInputElement).value;
-    controlState.viewer.scale = parseFloat(v);
-    setScale(boxCon, v);
-    savePrefs({ scale: v });
-  });
-
-  document.getElementById('future_opacity')?.addEventListener('input', (e) => {
-    const v = (e.target as HTMLInputElement).value;
-    controlState.viewer.futureOpacity = parseFloat(v);
-    setFutureOpacity(v);
-    savePrefs({ futureOpacity: v });
-  });
-
-  document.getElementById('space_color')?.addEventListener('input', (e) => {
-    const v = (e.target as HTMLInputElement).value;
-    controlState.league.spaceColor = v;
-    setSpace(v);
-    savePrefs({ spaceColor: v });
-  });
-
-  // ---- Display timezone selector ----
-
-  document.getElementById('display_timezone')?.addEventListener('change', (e) => {
-    const v = (e.target as HTMLSelectElement).value;
-    controlState.viewer.displayTimezone = v;
-    savePrefs({ displayTimezone: v });
-    loadAndRender(seasonMap);
-  });
-
-  // ---- Locale selector ----
-
-  const localeSel = document.getElementById('locale_key') as HTMLSelectElement | null;
-  if (localeSel) {
-    if (savedLocale) localeSel.value = savedLocale;
-    localeSel.addEventListener('change', () => {
-      savePrefs({ locale: localeSel.value });
-      location.reload();
-    });
-  }
-
-  // ---- Reset ----
-
-  document.getElementById('reset_prefs')?.addEventListener('click', () => {
-    clearPrefs();
-    location.assign(location.pathname);
-  });
-
-  // Initial render
-  loadAndRender(seasonMap);
+      const previousScale = ctx.shared.scale;
+      const clampedScale = clampToSlider(previousScale, refs.scaleSlider);
+      refs.scaleSlider.value = String(clampedScale);
+      ctx.shared.scale = parseFloat(refs.scaleSlider.value);
+      if (ctx.shared.scale !== previousScale) ctx.onViewerChange();
+      controlState.viewer.scale = ctx.shared.scale;
+      refs.futureOpacity.value = String(ctx.shared.futureOpacity);
+      controlState.viewer.futureOpacity = ctx.shared.futureOpacity;
+      controlState.viewer.targetDate = ctx.shared.targetDate;
+      refs.targetDate.value = toInputDate(ctx.shared.targetDate) || dateFormat(new Date(), '-');
+      setFutureOpacity(refs.futureOpacity.value, false);
+      if (prefs.spaceColor) setSpace(controlState.league.spaceColor, false);
+      loadAndRender();
+    },
+    deactivate() {
+      // League view currently has no transient UI state to clean up.
+    },
+  };
 }
-
-main().catch(console.error);

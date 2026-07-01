@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match Results Viewer</title>
+  <meta property="og:title" content="JLeague_Matches-Bar_Graph" />
+  <meta property="og:description" content="Jリーグ・各種サッカー大会の勝ち点積み上げグラフとトーナメントブラケットを統合表示" />
+  <meta property="og:image" content="https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/android-chrome-256x256.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@Moke_kuma" />
+  <link rel="icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="android-chrome-192x192.png">
+  <script src="https://cdn.jsdelivr.net/npm/@riversun/sortable-table@1.1.2/lib/sortable-table.js"
+          integrity="sha384-LWX4/EsjUytgODwrauhUKkKTx/K3AFLgbEh/Mhr4YZABcgO0N9yZeK7uBWuLWYPn"
+          crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="j_points.css">
+  <link rel="stylesheet" href="team_style.css">
+  <link rel="stylesheet" href="national_team_style.css">
+</head>
+<body>
+<main>
+
+<!-- Shared controls: meaning is common to League View / Bracket View, IDs are not namespaced -->
+<section id="shared_controls">
+  <label>
+    <span data-i18n="label.competition"></span>
+    <select id="competition_key">
+      <!-- populated dynamically from season_map.yaml -->
+    </select>
+  </label>
+  <label>
+    <span data-i18n="label.season"></span>
+    <select id="season_key"></select>
+  </label>
+  <label>
+    <span data-i18n="label.language"></span>
+    <select id="locale_key">
+      <option value="ja">日本語</option>
+      <option value="en">English</option>
+    </select>
+  </label>
+  <label id="display_timezone_label" hidden>
+    <span data-i18n="label.displayTz"></span>
+    <select id="display_timezone"></select>
+  </label>
+  <button id="reset_prefs" data-i18n="btn.resetPrefs"></button>
+</section>
+
+<!-- View switch: Phase 2 orchestrator will set #view_root[data-active] to toggle which view is shown -->
+<div id="view_root" data-active="pending">
+
+<div id="league_view">
+
+<section id="league_controls">
+  <label>
+    <span data-i18n="label.teamSort"></span>
+    <select id="team_sort_key">
+      <!-- populated by league-view.ts -->
+    </select>
+  </label>
+  <label>
+    <span data-i18n="label.matchSort"></span>
+    <select id="match_sort_key">
+      <!-- populated by league-view.ts -->
+    </select>
+  </label>
+</section>
+
+<!-- Date slider -->
+<section id="league_date_slider_section">
+  <span id="pre_date_slider" data-i18n="slider.preseason"></span>
+  <button id="league_date_slider_down" data-i18n="btn.sliderPrev"></button>
+  <input type="range" id="league_date_slider" min="0" max="0" step="1" value="0"/>
+  <button id="league_date_slider_up" data-i18n="btn.sliderNext"></button>
+  <span id="league_post_date_slider"></span>
+  <button id="reset_date_slider" data-i18n="btn.resetDate"></button>
+  <label>
+    <span data-i18n="label.displayDate"></span>
+    <input type="date" id="target_date">
+  </label>
+</section>
+
+<!-- Appearance controls -->
+<section id="appearance_controls">
+  <label>
+    <span data-i18n="label.graphScale"></span>
+    <input type="range" id="league_scale_slider" min="0.1" max="1" step="0.1" value="1"/>
+    <span id="league_current_scale">1</span><span data-i18n="label.scaleUnit"></span>
+  </label>
+  <label>
+    <span data-i18n="label.futureOpacity"></span>
+    <input type="range" id="league_future_opacity" min="0" max="0.5" step="0.01" value="0.1"/>
+    [<span id="league_current_opacity"></span>]
+  </label>
+  <label>
+    <span data-i18n="label.spaceColor"></span>
+    <input type="color" id="space_color" value="#000000"/>
+  </label>
+  <details id="column_toggle_section">
+    <summary data-i18n="label.columnToggle"></summary>
+    <div id="column_toggle_list"><!-- populated by league-view.ts --></div>
+  </details>
+</section>
+
+<!-- Status message and data timestamp -->
+<div id="league_status_bar">
+  <span id="league_status_msg"></span>
+  <span class="timestamp-label"><span data-i18n="label.dataTimestamp"></span> <span id="data_timestamp"></span></span>
+</div>
+
+<!-- Warning message (team color CSS undefined etc.) -->
+<div id="warning_msg" hidden></div>
+
+<!-- Bar graph container -->
+<div id="box_container"></div>
+
+<hr/>
+<span id="data_source_section"></span>
+
+<section id="ranktable_section">
+  <div class="sortable-table">
+    <table id="ranktable" class="ranktable">
+      <thead></thead>
+    </table>
+  </div>
+  <ul>
+    <li data-i18n="note.judgmentCaveat"></li>
+    <li data-i18n="note.judgmentDecided"></li>
+    <li data-i18n="note.playoffNote"></li>
+    <li data-i18n="note.otherLeague"></li>
+  </ul>
+  <ul id="league_season_notes"></ul>
+</section>
+
+</div><!-- /#league_view -->
+
+<div id="bracket_view">
+
+<section id="bracket_round_select">
+  <label>
+    <span data-i18n="label.roundStart"></span>
+    <select id="round_start_key"></select>
+  </label>
+</section>
+
+<section id="bracket_controls">
+  <div id="bracket_date_slider_section">
+    <button id="bracket_date_slider_down" data-i18n="btn.sliderPrev"></button>
+    <input type="range" id="bracket_date_slider" min="0" max="0" step="1" value="0"/>
+    <button id="bracket_date_slider_up" data-i18n="btn.sliderNext"></button>
+    <span id="bracket_post_date_slider"></span>
+    <button id="date_slider_reset" data-i18n="btn.resetDate"></button>
+  </div>
+  <label>
+    <span data-i18n="label.futureOpacity"></span>
+    <input type="range" id="bracket_future_opacity" min="0" max="0.5" step="0.01" value="0.2"/>
+    [<span id="bracket_current_opacity"></span>]
+  </label>
+  <label>
+    <span data-i18n="label.graphScale"></span>
+    <input type="range" id="bracket_scale_slider" min="0.3" max="1" step="0.1" value="1"/>
+    <span id="bracket_current_scale">1</span><span data-i18n="label.scaleUnit"></span>
+  </label>
+  <label>
+    <span data-i18n="label.bracketLayout"></span>
+    <select id="layout_toggle">
+      <option value="horizontal" data-i18n="label.layoutHorizontal"></option>
+      <option value="vertical" data-i18n="label.layoutVertical"></option>
+    </select>
+  </label>
+</section>
+
+<div id="bracket_status_bar">
+  <span id="bracket_status_msg"></span>
+</div>
+
+<div id="bracket_container"></div>
+
+<ul id="bracket_season_notes"></ul>
+
+</div><!-- /#bracket_view -->
+
+</div><!-- /#view_root -->
+
+<hr/>
+<a href="https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph" data-i18n="link.github"></a>
+
+</main>
+
+<script type="module" src="./matches-app.ts"></script>
+
+</body>
+</html>

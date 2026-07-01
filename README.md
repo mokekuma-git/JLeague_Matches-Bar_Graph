@@ -18,9 +18,7 @@ Make a bar graph of points each team got and will get.
 - **WEリーグ** — WEリーグ / WEリーグカップ (決勝トーナメントはトーナメント表示対応)
 - **国際大会** — W杯アジア最終予選 / W杯グループステージ / オリンピック グループステージ
 
-トーナメント形式の大会 は、別ページでトーナメントのViewを閲覧できます:
-
-<https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/tournament.html>
+トーナメント形式の大会を選ぶと、同じページ内でトーナメントViewに切り替わります。
 
 ## 簡単な説明
 
@@ -139,8 +137,7 @@ ACLのデータは、Yahoo スポーツナビさんの<https://soccer.yahoo.co.j
 ### トーナメント表示
 
 天皇杯やルヴァンカップなどのノックアウト形式の試合は、勝ち点グラフではなくトーナメント形式で表示できます。
-
-<https://mokekuma-git.github.io/JLeague_Matches-Bar_Graph/tournament.html>
+ページ上部の「大会」プルダウンから対象大会を選ぶと、同じページ内で表示が切り替わります。
 
 勝ち点グラフと同様に、日付スライダーで大会の進行を時系列で追うことができます。  
 まだ行われていない試合は半透明で表示され、結果が出た試合から順に確定していきます。

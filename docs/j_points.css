@@ -124,14 +124,14 @@ p {
 }
 
 /* --- Controls layout (TS template) --- */
-#controls {
+#controls, #shared_controls, #league_controls {
   margin: 1em;
   display: flex;
   gap: 1.5em;
   flex-wrap: wrap;
   align-items: center;
 }
-#date_slider_section {
+#date_slider_section, #league_date_slider_section {
   margin: 0.5em 0;
   display: flex;
   gap: 0.5em;
@@ -139,7 +139,7 @@ p {
   align-items: center;
   width: 100%;
 }
-#date_slider {
+#date_slider, #league_date_slider, #bracket_date_slider {
   flex: 1;
   min-width: 200px;
 }
@@ -166,12 +166,12 @@ p {
   gap: 0.25em;
   white-space: nowrap;
 }
-#status_bar {
+#status_bar, #league_status_bar, #bracket_status_bar {
   margin: 0.5em 1em;
   font-size: 0.9em;
   color: #666;
 }
-#status_bar .timestamp-label {
+#status_bar .timestamp-label, #league_status_bar .timestamp-label {
   color: #999;
   margin-left: 1em;
 }
@@ -187,12 +187,27 @@ p {
 #ranktable_section {
   margin: 1em;
 }
-#date_slider_up, #date_slider_down {
+#date_slider_up, #date_slider_down,
+#league_date_slider_up, #league_date_slider_down,
+#bracket_date_slider_up, #bracket_date_slider_down {
   background-color: black;
   color: white;
 }
 #target_date {
   font-weight: bold;
+}
+
+/* --- Issue #269: unified page shell (matches.html) view switch --- */
+#view_root[data-active="league"] #bracket_view {
+  display: none;
+}
+#view_root[data-active="bracket"] #league_view {
+  display: none;
+}
+
+#view_root[data-active="pending"] #league_view,
+#view_root[data-active="pending"] #bracket_view {
+  display: none;
 }
 
 /***********************************************************************************/

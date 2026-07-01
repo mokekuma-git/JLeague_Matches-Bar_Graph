@@ -1,4 +1,4 @@
-// Tournament bracket viewer entry point.
+// Tournament bracket view module.
 //
 // Loads season_map.yaml, filters to bracket-enabled competitions,
 // and renders a CSS bracket for the selected season.
@@ -14,8 +14,7 @@ import type {
   TournamentSeasonInfo,
 } from './types/season';
 import {
-  loadSeasonMap, getCsvFilename, findCompetition, resolveTournamentSeasonInfo,
-  getCompetitionViewTypes,
+  getCsvFilename, findCompetition, resolveTournamentSeasonInfo,
 } from './config/season-map';
 import {
   PRESEASON_SENTINEL,
@@ -32,8 +31,9 @@ import { inferRoundFilter } from './bracket/round-filter-inference';
 import { renderBracketInto, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import type { ViewerPrefs } from './storage/local-storage';
-import { t, applyI18nAttributes, setLocale } from './i18n';
-import type { Locale } from './i18n';
+import { t } from './i18n';
+import { clampToSlider, createSharedViewerControlState } from './view-bootstrap';
+import type { SharedViewerControlState } from './view-bootstrap';
 import type { BracketNode } from './bracket/bracket-types';
 
 // ---- State ------------------------------------------------------------------
@@ -50,11 +50,7 @@ interface BracketState {
   season: string;
 }
 
-interface ViewerControlState {
-  scale: number;
-  futureOpacity: number;
-  targetDate: string | null;
-}
+type ViewerControlState = SharedViewerControlState;
 
 interface BracketControlState {
   layout: 'horizontal' | 'vertical';
@@ -94,13 +90,12 @@ let controlState: ControlState = {
   },
 };
 
-function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
+function createControlStateFromPrefs(
+  prefs: ViewerPrefs,
+  shared = createSharedViewerControlState(prefs, { futureOpacity: 0.2 }),
+): ControlState {
   return {
-    viewer: {
-      scale: prefs.scale ? parseFloat(prefs.scale) : 1,
-      futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : 0.2,
-      targetDate: prefs.targetDate ?? null,
-    },
+    viewer: shared,
     bracket: {
       layout: 'horizontal',
       roundStart: prefs.roundStart ?? null,
@@ -108,15 +103,125 @@ function createControlStateFromPrefs(prefs: ViewerPrefs): ControlState {
   };
 }
 
-// ---- DOM helpers -----------------------------------------------------------
+export interface BracketViewSelection {
+  competition: string;
+  season: string;
+}
 
-function getSelectValue(id: string): string {
-  return (document.getElementById(id) as HTMLSelectElement).value;
+export interface BracketViewContext {
+  shared: SharedViewerControlState;
+  onViewerChange(): void;
+}
+
+export interface BracketViewHandle {
+  activate(seasonMap: SeasonMap, selection: BracketViewSelection): void;
+  deactivate(): void;
+}
+
+export interface BracketViewIds {
+  competition: string;
+  season: string;
+  roundStart: string;
+  dateSlider: string;
+  dateSliderDown: string;
+  dateSliderUp: string;
+  dateSliderReset: string;
+  postDateSlider: string;
+  futureOpacity: string;
+  currentOpacity: string;
+  scaleSlider: string;
+  currentScale: string;
+  layout: string;
+  status: string;
+  container: string;
+  seasonNotes: string;
+}
+
+export const BRACKET_STANDALONE_IDS: BracketViewIds = {
+  competition: 'competition_key',
+  season: 'season_key',
+  roundStart: 'round_start_key',
+  dateSlider: 'date_slider',
+  dateSliderDown: 'date_slider_down',
+  dateSliderUp: 'date_slider_up',
+  dateSliderReset: 'date_slider_reset',
+  postDateSlider: 'post_date_slider',
+  futureOpacity: 'future_opacity',
+  currentOpacity: 'current_opacity',
+  scaleSlider: 'scale_slider',
+  currentScale: 'current_scale',
+  layout: 'layout_toggle',
+  status: 'status_msg',
+  container: 'bracket_container',
+  seasonNotes: 'season_notes',
+};
+
+export const BRACKET_NAMESPACED_IDS: BracketViewIds = {
+  ...BRACKET_STANDALONE_IDS,
+  dateSlider: 'bracket_date_slider',
+  dateSliderDown: 'bracket_date_slider_down',
+  dateSliderUp: 'bracket_date_slider_up',
+  postDateSlider: 'bracket_post_date_slider',
+  futureOpacity: 'bracket_future_opacity',
+  currentOpacity: 'bracket_current_opacity',
+  scaleSlider: 'bracket_scale_slider',
+  currentScale: 'bracket_current_scale',
+  status: 'bracket_status_msg',
+  seasonNotes: 'bracket_season_notes',
+};
+
+interface BracketViewRefs {
+  competition: HTMLSelectElement;
+  season: HTMLSelectElement;
+  roundStart: HTMLSelectElement;
+  dateSlider: HTMLInputElement;
+  dateSliderDown: HTMLElement;
+  dateSliderUp: HTMLElement;
+  dateSliderReset: HTMLElement;
+  postDateSlider: HTMLElement;
+  futureOpacity: HTMLInputElement;
+  currentOpacity: HTMLElement;
+  scaleSlider: HTMLInputElement;
+  currentScale: HTMLElement;
+  layout: HTMLSelectElement;
+  status: HTMLElement;
+  container: HTMLElement;
+  seasonNotes: HTMLElement;
+}
+
+let refs: BracketViewRefs;
+let viewContext: BracketViewContext;
+let activeSelection: BracketViewSelection | null = null;
+
+function requireElement<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`Bracket view element not found: #${id}`);
+  return element as T;
+}
+
+function resolveRefs(ids: BracketViewIds): BracketViewRefs {
+  return {
+    competition: requireElement(ids.competition),
+    season: requireElement(ids.season),
+    roundStart: requireElement(ids.roundStart),
+    dateSlider: requireElement(ids.dateSlider),
+    dateSliderDown: requireElement(ids.dateSliderDown),
+    dateSliderUp: requireElement(ids.dateSliderUp),
+    dateSliderReset: requireElement(ids.dateSliderReset),
+    postDateSlider: requireElement(ids.postDateSlider),
+    futureOpacity: requireElement(ids.futureOpacity),
+    currentOpacity: requireElement(ids.currentOpacity),
+    scaleSlider: requireElement(ids.scaleSlider),
+    currentScale: requireElement(ids.currentScale),
+    layout: requireElement(ids.layout),
+    status: requireElement(ids.status),
+    container: requireElement(ids.container),
+    seasonNotes: requireElement(ids.seasonNotes),
+  };
 }
 
 function setStatus(msg: string): void {
-  const el = document.getElementById('status_msg');
-  if (el) el.textContent = msg;
+  refs.status.textContent = msg;
 }
 
 // ---- Match date collection --------------------------------------------------
@@ -174,34 +279,12 @@ function hasBracketMetadata(entry: RawSeasonEntry): boolean {
 
 // ---- Dropdown population ---------------------------------------------------
 
-function populateCompetitionPulldown(seasonMap: SeasonMap): void {
-  const sel = document.getElementById('competition_key') as HTMLSelectElement;
-  sel.innerHTML = '';
-  const families = Object.entries(seasonMap);
-  const multiFamily = families.length > 1;
-  for (const [familyKey, family] of families) {
-    const bracketComps = Object.entries(family.competitions)
-      .filter(([, comp]) => getCompetitionViewTypes(family, comp).includes('bracket'));
-    if (bracketComps.length === 0) continue;
-
-    if (multiFamily) {
-      const sep = document.createElement('option');
-      sep.disabled = true;
-      sep.textContent = `── ${family.display_name ?? familyKey} `;
-      sel.appendChild(sep);
-    }
-    for (const [compKey, comp] of bracketComps) {
-      const opt = document.createElement('option');
-      opt.value = compKey;
-      opt.textContent = comp.league_display ?? compKey;
-      sel.appendChild(opt);
-    }
-  }
-}
-
-function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void {
-  const sel = document.getElementById('season_key') as HTMLSelectElement;
-  sel.innerHTML = '';
+export function populateBracketSeasonPulldown(
+  seasonMap: SeasonMap,
+  competition: string,
+  select: HTMLSelectElement = refs.season,
+): void {
+  select.replaceChildren();
   const found = findCompetition(seasonMap, competition);
   if (!found) return;
   const seasons = Object.keys(found.competition.seasons)
@@ -214,25 +297,8 @@ function populateSeasonPulldown(seasonMap: SeasonMap, competition: string): void
     const opt = document.createElement('option');
     opt.value = s;
     opt.textContent = s;
-    sel.appendChild(opt);
+    select.appendChild(opt);
   }
-}
-
-// ---- URL params ------------------------------------------------------------
-
-function readUrlParams(): { competition: string; season?: string } {
-  const params = new URLSearchParams(location.search);
-  return {
-    competition: params.get('competition') ?? '',
-    season: params.get('season') ?? undefined,
-  };
-}
-
-function writeUrlParams(competition: string, season: string): void {
-  const url = new URL(location.href);
-  url.searchParams.set('competition', competition);
-  url.searchParams.set('season', season);
-  history.replaceState(null, '', url.toString());
 }
 
 // ---- Round start helpers ---------------------------------------------------
@@ -396,9 +462,8 @@ function populateRoundStartPulldown(
   hasSections?: boolean,
   explicitOptions?: string[],
 ): void {
-  const sel = document.getElementById('round_start_key') as HTMLSelectElement;
-  if (!sel) return;
-  sel.innerHTML = '';
+  const sel = refs.roundStart;
+  sel.replaceChildren();
   sel.disabled = false;
 
   const options = explicitOptions ?? [
@@ -522,8 +587,7 @@ function createInclusiveBracketRenderInput(
  */
 function renderMultiSections(): void {
   if (!currentState?.bracketBlocks) return;
-  const container = document.getElementById('bracket_container');
-  if (!container) return;
+  const container = refs.container;
 
   // Save open/closed state of existing sections before re-render
   const prevOpen = new Map<string, boolean>();
@@ -610,8 +674,7 @@ function renderInclusiveBracket(container: HTMLElement): void {
 
 function renderWithDateFilter(): void {
   if (!currentState) return;
-  const container = document.getElementById('bracket_container');
-  if (!container) return;
+  const container = refs.container;
 
   // Dismiss any pinned tooltip before re-render (DOM will be replaced)
   unpinTooltip();
@@ -619,34 +682,32 @@ function renderWithDateFilter(): void {
   // Multi-section mode: render each section as its own bracket block.
   if (shouldRenderMultiSectionView(currentState.bracketBlocks, controlState.bracket.roundStart)) {
     renderMultiSections();
-    return;
+  } else {
+    // Inclusive mode: resolve one effective bracket order, then render it as one tree.
+    renderInclusiveBracket(container);
   }
 
-  // Inclusive mode: resolve one effective bracket order, then render it as one tree.
-  renderInclusiveBracket(container);
 }
 
 /** Sync viewer control targetDate from slider position. */
 function syncTargetDateFromSlider(): void {
   if (!currentState) return;
-  const slider = document.getElementById('date_slider') as HTMLInputElement | null;
-  if (!slider) return;
+  const slider = refs.dateSlider;
   controlState.viewer.targetDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10));
 }
 
 /** Align slider position to the kept target date without overwriting the target itself. */
 function syncSliderFromTargetDate(): void {
   if (!currentState) return;
-  const slider = document.getElementById('date_slider') as HTMLInputElement | null;
+  const slider = refs.dateSlider;
   syncSliderToTargetDate(slider, currentState.matchDates, controlState.viewer.targetDate);
 }
 
 /** Update display label from current slider position + kept target date. */
 function updateSliderDisplay(): void {
   if (!currentState) return;
-  const slider = document.getElementById('date_slider') as HTMLInputElement | null;
-  const display = document.getElementById('post_date_slider');
-  if (!slider || !display) return;
+  const slider = refs.dateSlider;
+  const display = refs.postDateSlider;
   const sliderDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10)) ?? '';
   const targetDate = resolveTargetDate(currentState.matchDates, controlState.viewer.targetDate) ?? sliderDate;
   display.textContent = formatSliderDate(sliderDate, targetDate);
@@ -656,35 +717,39 @@ function updateSliderDisplay(): void {
 
 /** Apply futureOpacity from controlState to all .bracket-future elements. */
 function applyFutureOpacity(): void {
-  const container = document.getElementById('bracket_container');
-  if (!container) return;
+  const container = refs.container;
   const value = String(controlState.viewer.futureOpacity);
   for (const el of Array.from(container.querySelectorAll('.bracket-future'))) {
     (el as HTMLElement).style.opacity = value;
   }
-  const display = document.getElementById('current_opacity');
-  if (display) display.textContent = value;
+  refs.currentOpacity.textContent = value;
 }
 
 /** Keep layout height in sync with the visual scale of the bracket container. */
 function syncBracketContainerHeight(container: HTMLElement): void {
   container.style.height = 'auto';
-  const rawHeight = container.scrollHeight;
-  if (rawHeight > 0) {
-    container.style.height = `${rawHeight * controlState.viewer.scale}px`;
+  // scrollHeight can retain the previous explicit height and offsetHeight
+  // excludes the translated match wrappers used to align bracket branches.
+  // Measure the rendered descendant bounds, which include those transforms.
+  const containerTop = container.getBoundingClientRect().top;
+  const visualBottom = Array.from(container.querySelectorAll<HTMLElement>('*')).reduce(
+    (bottom, child) => Math.max(bottom, child.getBoundingClientRect().bottom),
+    containerTop,
+  );
+  const visualHeight = visualBottom - containerTop;
+  if (visualHeight > 0) {
+    container.style.height = `${visualHeight}px`;
   }
 }
 
 /** Apply scale from controlState to bracket container. */
 function applyScale(): void {
-  const container = document.getElementById('bracket_container');
-  if (!container) return;
+  const container = refs.container;
   const value = String(controlState.viewer.scale);
   container.style.transform = `scale(${value})`;
   container.style.transformOrigin = 'top left';
   syncBracketContainerHeight(container);
-  const display = document.getElementById('current_scale');
-  if (display) display.textContent = value;
+  refs.currentScale.textContent = value;
 }
 
 // ---- Render pipeline -------------------------------------------------------
@@ -692,8 +757,8 @@ function applyScale(): void {
 const CACHE_BUST_WINDOW_SEC = 300;
 
 function loadAndRender(seasonMap: SeasonMap): void {
-  const competition = getSelectValue('competition_key');
-  const season = getSelectValue('season_key');
+  const competition = activeSelection?.competition ?? '';
+  const season = activeSelection?.season ?? '';
   if (!competition || !season) return;
 
   const found = findCompetition(seasonMap, competition);
@@ -703,9 +768,6 @@ function loadAndRender(seasonMap: SeasonMap): void {
   }
 
   const entry = found.competition.seasons[season];
-
-  writeUrlParams(competition, season);
-  savePrefs({ competition, season });
 
   const filename = getCsvFilename(competition, season);
   const cachebuster = Math.floor(Date.now() / 1000 / CACHE_BUST_WINDOW_SEC);
@@ -781,8 +843,8 @@ function loadAndRender(seasonMap: SeasonMap): void {
       );
 
       // Sync round start: restore from controlState or pick up dropdown default
-      const roundSel = document.getElementById('round_start_key') as HTMLSelectElement | null;
-      if (roundSel && controlState.bracket.roundStart) {
+      const roundSel = refs.roundStart;
+      if (controlState.bracket.roundStart) {
         const normalizedSelected = normalizeBracketRoundLabel(controlState.bracket.roundStart);
         const hasOption = Array.from(roundSel.options).some(o => o.value === normalizedSelected);
         if (hasOption) {
@@ -791,13 +853,13 @@ function loadAndRender(seasonMap: SeasonMap): void {
         } else {
           controlState.bracket.roundStart = roundSel.value;
         }
-      } else if (roundSel) {
+      } else {
         controlState.bracket.roundStart = roundSel.value;
       }
 
       // Set up date slider and sync viewer control targetDate
-      const slider = document.getElementById('date_slider') as HTMLInputElement | null;
-      if (slider && matchDates.length > 0) {
+      const slider = refs.dateSlider;
+      if (matchDates.length > 0) {
         slider.min = '0';
         if (!controlState.viewer.targetDate) {
           controlState.viewer.targetDate = getLastMatchDate(matchDates);
@@ -811,8 +873,8 @@ function loadAndRender(seasonMap: SeasonMap): void {
       applyScale();
 
       // Update season notes + bracket-specific notes
-      const notesEl = document.getElementById('season_notes');
-      if (notesEl) {
+      const notesEl = refs.seasonNotes;
+      {
         notesEl.replaceChildren();
         const bracketNotes = [
           t('bracketNote.aggregateScore'),
@@ -836,166 +898,93 @@ function loadAndRender(seasonMap: SeasonMap): void {
   });
 }
 
-// ---- Initialization --------------------------------------------------------
+// ---- Lifecycle -------------------------------------------------------------
 
-async function main(): Promise<void> {
-  const savedLocale = loadPrefs().locale;
-  if (savedLocale === 'ja' || savedLocale === 'en') setLocale(savedLocale as Locale);
-  applyI18nAttributes();
-
-  let seasonMap: SeasonMap;
-  try {
-    seasonMap = await loadSeasonMap();
-  } catch (err) {
-    setStatus(t('status.seasonMapError'));
-    console.error('Failed to load season map:', err);
-    return;
-  }
-
-  populateCompetitionPulldown(seasonMap);
-
-  const urlParams = readUrlParams();
+export function initBracketView(
+  ids: BracketViewIds,
+  context: BracketViewContext,
+): BracketViewHandle {
+  refs = resolveRefs(ids);
+  viewContext = context;
   const prefs = loadPrefs();
+  controlState = createControlStateFromPrefs(prefs, context.shared);
 
-  // Initialize control state from saved preferences
-  controlState = createControlStateFromPrefs(prefs);
-
-  const competitionSel = document.getElementById('competition_key') as HTMLSelectElement;
-  const initCompetition = (urlParams.competition && findCompetition(seasonMap, urlParams.competition))
-    ? urlParams.competition
-    : (prefs.competition && findCompetition(seasonMap, prefs.competition))
-    ? prefs.competition
-    : competitionSel.options[0]?.value ?? '';
-  competitionSel.value = initCompetition;
-
-  populateSeasonPulldown(seasonMap, initCompetition);
-
-  const seasonSel = document.getElementById('season_key') as HTMLSelectElement;
-  const found = findCompetition(seasonMap, initCompetition);
-  const initSeason = (urlParams.season && found?.competition.seasons[urlParams.season])
-    ? urlParams.season
-    : (prefs.season && found?.competition.seasons[prefs.season])
-    ? prefs.season
-    : seasonSel.options[0]?.value ?? '';
-  seasonSel.value = initSeason;
-
-  // Locale selector
-  const localeSel = document.getElementById('locale_key') as HTMLSelectElement | null;
-  if (localeSel) {
-    if (savedLocale) localeSel.value = savedLocale;
-    localeSel.addEventListener('change', () => {
-      savePrefs({ locale: localeSel.value });
-      location.reload();
-    });
-  }
-
-  // ---- Sync DOM sliders from controlState ----------------------------------
-
-  const opacitySlider = document.getElementById('future_opacity') as HTMLInputElement | null;
-  if (opacitySlider) opacitySlider.value = String(controlState.viewer.futureOpacity);
-
-  const scaleSlider = document.getElementById('scale_slider') as HTMLInputElement | null;
-  if (scaleSlider) scaleSlider.value = String(controlState.viewer.scale);
-
-  // ---- Date slider events --------------------------------------------------
-
-  const dateSlider = document.getElementById('date_slider') as HTMLInputElement | null;
-  if (dateSlider) {
-    dateSlider.addEventListener('input', () => {
-      syncTargetDateFromSlider();
-      updateSliderDisplay();
-    });
-    dateSlider.addEventListener('change', () => {
-      syncTargetDateFromSlider();
-      updateSliderDisplay();
-      renderWithDateFilter();
-      applyFutureOpacity();
-      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
-    });
-
-    document.getElementById('date_slider_down')?.addEventListener('click', () => {
-      dateSlider.value = String(Math.max(0, parseInt(dateSlider.value, 10) - 1));
-      syncTargetDateFromSlider();
-      updateSliderDisplay();
-      renderWithDateFilter();
-      applyFutureOpacity();
-      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
-    });
-    document.getElementById('date_slider_up')?.addEventListener('click', () => {
-      dateSlider.value = String(Math.min(
-        parseInt(dateSlider.max, 10), parseInt(dateSlider.value, 10) + 1,
-      ));
-      syncTargetDateFromSlider();
-      updateSliderDisplay();
-      renderWithDateFilter();
-      applyFutureOpacity();
-      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
-    });
-    document.getElementById('date_slider_reset')?.addEventListener('click', () => {
-      if (!currentState) return;
-      controlState.viewer.targetDate = getLastMatchDate(currentState.matchDates);
-      syncSliderFromTargetDate();
-      updateSliderDisplay();
-      renderWithDateFilter();
-      applyFutureOpacity();
-      savePrefs({ targetDate: controlState.viewer.targetDate ?? undefined });
-    });
-  }
-
-  // ---- Opacity slider events -----------------------------------------------
-
-  if (opacitySlider) {
-    opacitySlider.addEventListener('input', () => {
-      controlState.viewer.futureOpacity = parseFloat(opacitySlider.value);
-      applyFutureOpacity();
-      savePrefs({ futureOpacity: opacitySlider.value });
-    });
-  }
-
-  // ---- Scale slider events -------------------------------------------------
-
-  if (scaleSlider) {
-    scaleSlider.addEventListener('input', () => {
-      controlState.viewer.scale = parseFloat(scaleSlider.value);
-      applyScale();
-      savePrefs({ scale: scaleSlider.value });
-    });
-  }
-
-  // ---- Layout toggle events ------------------------------------------------
-
-  const layoutSel = document.getElementById('layout_toggle') as HTMLSelectElement | null;
-  if (layoutSel) {
-    layoutSel.addEventListener('change', () => {
-      controlState.bracket.layout = layoutSel.value as 'horizontal' | 'vertical';
-      // Full re-render to recompute positions and connectors per section
-      renderWithDateFilter();
-      applyFutureOpacity();
-    });
-  }
-
-  // ---- Round start change events --------------------------------------------
-
-  document.getElementById('round_start_key')?.addEventListener('change', () => {
-    controlState.bracket.roundStart = getSelectValue('round_start_key');
+  refs.dateSlider.addEventListener('input', () => {
+    syncTargetDateFromSlider();
+    updateSliderDisplay();
+  });
+  refs.dateSlider.addEventListener('change', () => {
+    syncTargetDateFromSlider();
+    updateSliderDisplay();
     renderWithDateFilter();
     applyFutureOpacity();
+    viewContext.onViewerChange();
+  });
+  refs.dateSliderDown.addEventListener('click', () => {
+    refs.dateSlider.value = String(Math.max(0, parseInt(refs.dateSlider.value, 10) - 1));
+    syncTargetDateFromSlider();
+    updateSliderDisplay();
+    renderWithDateFilter();
+    applyFutureOpacity();
+    viewContext.onViewerChange();
+  });
+  refs.dateSliderUp.addEventListener('click', () => {
+    refs.dateSlider.value = String(Math.min(
+      parseInt(refs.dateSlider.max, 10), parseInt(refs.dateSlider.value, 10) + 1,
+    ));
+    syncTargetDateFromSlider();
+    updateSliderDisplay();
+    renderWithDateFilter();
+    applyFutureOpacity();
+    viewContext.onViewerChange();
+  });
+  refs.dateSliderReset.addEventListener('click', () => {
+    if (!currentState) return;
+    controlState.viewer.targetDate = getLastMatchDate(currentState.matchDates);
+    syncSliderFromTargetDate();
+    updateSliderDisplay();
+    renderWithDateFilter();
+    applyFutureOpacity();
+    viewContext.onViewerChange();
+  });
+  refs.futureOpacity.addEventListener('input', () => {
+    controlState.viewer.futureOpacity = parseFloat(refs.futureOpacity.value);
+    applyFutureOpacity();
+    viewContext.onViewerChange();
+  });
+  refs.scaleSlider.addEventListener('input', () => {
+    controlState.viewer.scale = parseFloat(refs.scaleSlider.value);
+    applyScale();
+    viewContext.onViewerChange();
+  });
+  refs.layout.addEventListener('change', () => {
+    controlState.bracket.layout = refs.layout.value as 'horizontal' | 'vertical';
+    renderWithDateFilter();
+    applyFutureOpacity();
+    applyScale();
+  });
+  refs.roundStart.addEventListener('change', () => {
+    controlState.bracket.roundStart = refs.roundStart.value;
+    renderWithDateFilter();
+    applyFutureOpacity();
+    applyScale();
     savePrefs({ roundStart: controlState.bracket.roundStart });
   });
 
-  // ---- Competition/season change events ------------------------------------
-
-  competitionSel.addEventListener('change', () => {
-    populateSeasonPulldown(seasonMap, competitionSel.value);
-    loadAndRender(seasonMap);
-  });
-  document.getElementById('season_key')?.addEventListener('change', () => {
-    loadAndRender(seasonMap);
-  });
-
-  loadAndRender(seasonMap);
-}
-
-if (typeof document !== 'undefined') {
-  main().catch(console.error);
+  return {
+    activate(seasonMap, selection) {
+      activeSelection = selection;
+      refs.competition.value = selection.competition;
+      refs.season.value = selection.season;
+      refs.futureOpacity.value = String(controlState.viewer.futureOpacity);
+      const previousScale = controlState.viewer.scale;
+      controlState.viewer.scale = clampToSlider(previousScale, refs.scaleSlider);
+      refs.scaleSlider.value = String(controlState.viewer.scale);
+      if (controlState.viewer.scale !== previousScale) viewContext.onViewerChange();
+      loadAndRender(seasonMap);
+    },
+    deactivate() {
+      unpinTooltip();
+    },
+  };
 }
