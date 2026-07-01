@@ -2,12 +2,12 @@ import { expect, type Page, type Locator } from '@playwright/test';
 
 /**
  * Wait for the bar graph to finish rendering after a data-changing action.
- * Waits until #box_container has at least one team column and #status_msg
+ * Waits until #box_container has at least one team column and #league_status_msg
  * no longer shows the loading indicator.
  */
 export async function waitForRender(page: Page): Promise<void> {
   // Wait for status message to stop showing loading text
-  await page.locator('#status_msg').filter({ hasNotText: '読み込み中' }).waitFor({ timeout: 15000 });
+  await page.locator('#league_status_msg').filter({ hasNotText: '読み込み中' }).waitFor({ timeout: 15000 });
   // Wait for at least one team column to appear
   await page.locator('#box_container [id$="_column"]').first().waitFor({ timeout: 15000 });
 }

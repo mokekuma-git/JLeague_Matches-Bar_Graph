@@ -3,7 +3,7 @@ import { waitForRender, assertInvariants } from './helpers/invariants';
 
 test.describe('T6: Multi-Group Rendering', () => {
   test('WE Cup 25-26 renders 3 groups (A/B/C)', async ({ page }) => {
-    await page.goto('/j_points.html?competition=WE_Cup&season=25-26');
+    await page.goto('/matches.html?competition=WE_Cup&season=25-26');
     await waitForRender(page);
 
     // group_wrapper elements for A, B, C
@@ -38,7 +38,7 @@ test.describe('T6: Multi-Group Rendering', () => {
   });
 
   test('single-group season has no group_wrapper', async ({ page }) => {
-    await page.goto('/j_points.html?competition=J1&season=2024');
+    await page.goto('/matches.html?competition=J1&season=2024');
     await waitForRender(page);
 
     const groups = page.locator('#box_container .group_wrapper');
@@ -52,7 +52,7 @@ test.describe('T6: Multi-Group Rendering', () => {
   });
 
   test('WC_GS 2026 renders 12 groups with no interior point column', async ({ page }) => {
-    await page.goto('/j_points.html?competition=WC_GS&season=2026');
+    await page.goto('/matches.html?competition=WC_GS&season=2026');
     await waitForRender(page);
 
     // 12 groups (A..L).

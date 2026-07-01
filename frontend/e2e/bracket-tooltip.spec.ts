@@ -2,14 +2,14 @@ import { test, expect } from './helpers/test-base';
 
 /** Wait for bracket to render (status message shows loaded count). */
 async function waitForBracketRender(page: import('@playwright/test').Page): Promise<void> {
-  await page.locator('#status_msg').filter({ hasText: /\d+/ }).waitFor({ timeout: 15000 });
+  await page.locator('#bracket_status_msg').filter({ hasText: /\d+/ }).waitFor({ timeout: 15000 });
   // Wait for at least one match card to appear
   await page.locator('.bracket-match').first().waitFor({ timeout: 5000 });
 }
 
 test.describe('Bracket tooltip pin/unpin', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/tournament.html?competition=JLeagueCup&season=2025');
+    await page.goto('/matches.html?competition=JLeagueCup&season=2025');
     await waitForBracketRender(page);
   });
 
@@ -81,7 +81,7 @@ test.describe('Bracket tooltip pin/unpin', () => {
 
     // Change date slider → re-render → pin dismissed
     // (tooltip may reappear unpinned if cursor hovers a new card after re-render)
-    const slider = page.locator('#date_slider');
+    const slider = page.locator('#bracket_date_slider');
     const max = Number(await slider.getAttribute('max'));
     if (max > 0) {
       await slider.fill(String(max - 1));
