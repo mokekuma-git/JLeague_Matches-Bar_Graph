@@ -64,6 +64,18 @@ export function getCompetitionViewTypes(family: CompetitionFamilyEntry, comp: Co
   return viewTypes.length > 0 ? viewTypes : ['league'];
 }
 
+/** Resolve the one view used by a competition, rejecting ambiguous inheritance. */
+export function resolveCompetitionViewType(
+  family: CompetitionFamilyEntry,
+  comp: CompetitionEntry,
+): ViewType {
+  const viewTypes = getCompetitionViewTypes(family, comp);
+  if (viewTypes.length !== 1) {
+    throw new Error(`Ambiguous competition view_type: ${viewTypes.join(', ')}`);
+  }
+  return viewTypes[0];
+}
+
 function pickCascade<T>(...values: (T | undefined)[]): T | undefined {
   return values.find((value) => value !== undefined);
 }

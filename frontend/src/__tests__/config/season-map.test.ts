@@ -1,10 +1,13 @@
 import { describe, test, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import yaml from 'js-yaml';
 import type {
   SeasonMap, CompetitionFamilyEntry, CompetitionEntry, RawSeasonEntry,
 } from '../../types/season';
 import {
   getCsvFilename,
   findCompetition,
+  resolveCompetitionViewType,
   resolveLeagueSeasonInfo,
   resolveTournamentSeasonInfo,
 } from '../../config/season-map';
@@ -54,6 +57,49 @@ const sampleMap: SeasonMap = {
   jleague: sampleFamily,
   national: nationalFamily,
 };
+
+describe('resolveCompetitionViewType', () => {
+  test('defaults to league when no view_type is configured', () => {
+    expect(resolveCompetitionViewType(sampleFamily, sampleFamily.competitions.J1)).toBe('league');
+  });
+
+  test('returns an explicitly configured bracket view', () => {
+    const competition: CompetitionEntry = {
+      view_type: ['bracket'],
+      seasons: {},
+    };
+    expect(resolveCompetitionViewType(sampleFamily, competition)).toBe('bracket');
+  });
+
+  test('rejects ambiguous inherited view types', () => {
+    const family: CompetitionFamilyEntry = {
+      ...sampleFamily,
+      view_type: ['league'],
+    };
+    const competition: CompetitionEntry = {
+      view_type: ['bracket'],
+      seasons: {},
+    };
+    expect(() => resolveCompetitionViewType(family, competition))
+      .toThrow('Ambiguous competition view_type');
+  });
+
+  test('every shipped competition resolves to exactly one view type', () => {
+    const source = readFileSync(
+      new URL('../../../../docs/yaml/season_map.yaml', import.meta.url),
+      'utf8',
+    );
+    const seasonMap = yaml.load(source) as SeasonMap;
+    for (const [familyKey, family] of Object.entries(seasonMap)) {
+      for (const [competitionKey, competition] of Object.entries(family.competitions)) {
+        expect(
+          () => resolveCompetitionViewType(family, competition),
+          `${familyKey}.${competitionKey}`,
+        ).not.toThrow();
+      }
+    }
+  });
+});
 
 // ---- getCsvFilename -------------------------------------------------------
 

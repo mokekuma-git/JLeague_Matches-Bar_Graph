@@ -45,10 +45,11 @@
     <span data-i18n="label.displayTz"></span>
     <select id="display_timezone"></select>
   </label>
+  <button id="reset_prefs" data-i18n="btn.resetPrefs"></button>
 </section>
 
 <!-- View switch: Phase 2 orchestrator will set #view_root[data-active] to toggle which view is shown -->
-<div id="view_root" data-active="league">
+<div id="view_root" data-active="pending">
 
 <div id="league_view">
 
@@ -97,7 +98,6 @@
     <span data-i18n="label.spaceColor"></span>
     <input type="color" id="space_color" value="#000000"/>
   </label>
-  <button id="reset_prefs" data-i18n="btn.resetPrefs"></button>
   <details id="column_toggle_section">
     <summary data-i18n="label.columnToggle"></summary>
     <div id="column_toggle_list"><!-- populated by app.ts --></div>
@@ -189,7 +189,7 @@
 
 </main>
 
-<!-- Phase 2: load the view orchestrator module here (app.ts / tournament-app.ts logic extraction) -->
+<script type="module" src="./matches-app.ts"></script>
 
 </body>
 </html>
