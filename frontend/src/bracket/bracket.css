@@ -127,9 +127,19 @@
   color: #333;
 }
 
+/* Long team names have the same unbounded-growth issue as stadium names
+   (#281 follow-up): .bracket-team is a flex row with no fixed width, so an
+   unwrapped long name inflates the whole card instead of just this cell.
+   min-width: 0 lets this flex item shrink below its content size so
+   max-width/ellipsis can actually take effect. Full name remains available
+   via the card's hover/click tooltip. */
 .bracket-team-name {
   margin-right: 12px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 130px;
 }
 
 .bracket-score {

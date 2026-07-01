@@ -169,9 +169,10 @@ function buildSingleTooltip(node: BracketNode): string {
   } else if (node.homeScoreEx != null && node.awayScoreEx != null) {
     ann = ` (ET${node.homeScoreEx}-${node.awayScoreEx})`;
   }
-  if (hg !== '' && ag !== '') {
-    lines.push(`<div class="bracket-tooltip-leg-score">${home} ${hg}-${ag} ${away}${ann}</div>`);
-  }
+  // Team names are shown even before kickoff — this is the only place a
+  // truncated .bracket-team-name can be read in full for a not-yet-played match.
+  const matchup = (hg !== '' && ag !== '') ? `${home} ${hg}-${ag} ${away}${ann}` : `${home} - ${away}`;
+  lines.push(`<div class="bracket-tooltip-leg-score">${matchup}</div>`);
 
   return lines.join('');
 }
@@ -192,8 +193,8 @@ function showTooltipForCard(card: HTMLElement, node: BracketNode): void {
 
 /** Attach tooltip hover/click events to a match card. */
 function attachTooltip(card: HTMLElement, node: BracketNode): void {
-  // Only show tooltip for played matches
-  if (node.status === 'ＶＳ' && !node.legs) return;
+  // Skip only when there's truly nothing to show (no teams decided yet).
+  if (!node.homeTeam && !node.awayTeam && !node.legs) return;
 
   setupGlobalListeners();
   card.style.cursor = 'pointer';
