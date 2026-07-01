@@ -682,11 +682,11 @@ function renderWithDateFilter(): void {
   // Multi-section mode: render each section as its own bracket block.
   if (shouldRenderMultiSectionView(currentState.bracketBlocks, controlState.bracket.roundStart)) {
     renderMultiSections();
-    return;
+  } else {
+    // Inclusive mode: resolve one effective bracket order, then render it as one tree.
+    renderInclusiveBracket(container);
   }
 
-  // Inclusive mode: resolve one effective bracket order, then render it as one tree.
-  renderInclusiveBracket(container);
 }
 
 /** Sync viewer control targetDate from slider position. */
@@ -728,9 +728,17 @@ function applyFutureOpacity(): void {
 /** Keep layout height in sync with the visual scale of the bracket container. */
 function syncBracketContainerHeight(container: HTMLElement): void {
   container.style.height = 'auto';
-  const rawHeight = container.scrollHeight;
-  if (rawHeight > 0) {
-    container.style.height = `${rawHeight * controlState.viewer.scale}px`;
+  // scrollHeight can retain the previous explicit height and offsetHeight
+  // excludes the translated match wrappers used to align bracket branches.
+  // Measure the rendered descendant bounds, which include those transforms.
+  const containerTop = container.getBoundingClientRect().top;
+  const visualBottom = Array.from(container.querySelectorAll<HTMLElement>('*')).reduce(
+    (bottom, child) => Math.max(bottom, child.getBoundingClientRect().bottom),
+    containerTop,
+  );
+  const visualHeight = visualBottom - containerTop;
+  if (visualHeight > 0) {
+    container.style.height = `${visualHeight}px`;
   }
 }
 
@@ -953,11 +961,13 @@ export function initBracketView(
     controlState.bracket.layout = refs.layout.value as 'horizontal' | 'vertical';
     renderWithDateFilter();
     applyFutureOpacity();
+    applyScale();
   });
   refs.roundStart.addEventListener('change', () => {
     controlState.bracket.roundStart = refs.roundStart.value;
     renderWithDateFilter();
     applyFutureOpacity();
+    applyScale();
     savePrefs({ roundStart: controlState.bracket.roundStart });
   });
 
