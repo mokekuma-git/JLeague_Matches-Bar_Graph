@@ -17,7 +17,6 @@ Status detection:
   <div class="teams">       -> ＶＳ (not yet played; site shows "VS" but output uses full-width to match project standard)
 """
 import argparse
-from datetime import date
 import logging
 import os
 from pathlib import Path

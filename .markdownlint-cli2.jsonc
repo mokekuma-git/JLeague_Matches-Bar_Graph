@@ -1,0 +1,22 @@
+{
+  // Markdown lint 設定 (markdownlint-cli2)
+  // 実行: cd frontend && npx markdownlint-cli2  (globs は本ファイル基準で解決)
+  "gitignore": true,
+  "globs": ["**/*.md"],
+  "ignores": [
+    // ローカル専用ファイル (git 管理外)
+    "AGENTS.md",
+    // skills/ への symlink (二重検出防止)
+    ".claude/**",
+    "plan/**",
+    "local_data/**",
+    "**/node_modules/**"
+  ],
+  "config": {
+    "default": true,
+    // 日本語長文の折り返しは強制しない
+    "MD013": false,
+    // 異なるセクション配下の同名見出しは許容
+    "MD024": { "siblings_only": true }
+  }
+}

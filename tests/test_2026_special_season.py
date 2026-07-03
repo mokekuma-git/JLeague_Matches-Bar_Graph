@@ -8,7 +8,7 @@
 from datetime import date
 from pathlib import Path
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pandas as pd
 import yaml

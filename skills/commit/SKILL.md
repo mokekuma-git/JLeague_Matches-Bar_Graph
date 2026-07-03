@@ -27,7 +27,7 @@ If there are no changes (no untracked, no modified, no staged), stop and tell th
 Classify the change set into one of:
 
 | Scope | Criteria | Action |
-|-------|----------|--------|
+| ----- | -------- | ------ |
 | **Trivial** | CLAUDE.md / README update, CSS color addition, single test addition, config tweak | Commit directly to `main`, no Issue/PR needed |
 | **Single-commit fix** | One logical change, 1-3 files, self-contained | May go to `main` or a branch — ask if unclear |
 | **Multi-commit work** | 2+ logical steps, or part of an ongoing series | Needs a branch. If no Issue exists, suggest creating one |
@@ -63,12 +63,13 @@ Store the confirmed parent branch as the PR base for Step 7. If no parent branch
 Three prefixes, chosen by the nature of the work:
 
 | Prefix | When to use | Label |
-|--------|------------|-------|
+| ------ | ---------- | ----- |
 | `fix/` | Bug fixes — correcting broken behavior | `bug` |
 | `feature/` | New functionality or enhancements | `enhancement` |
 | `refactor/` | Code cleanup, restructuring without behavior change | `refactoring` |
 
 Naming pattern:
+
 - With Issue: `{prefix}/issue-{N}-short-desc` (e.g. `fix/issue-63-csv-workflow-uv`)
 - Without Issue: `{prefix}/{short-desc}` (e.g. `feature/p5-state-and-render-split`)
 
@@ -76,20 +77,23 @@ Naming pattern:
 
 When multi-commit work has no associated Issue, offer to create one:
 
-```
+```bash
 gh issue create --title "..." --body "..." --label "enhancement|bug|refactoring"
 ```
 
 Issue conventions:
+
 - **Title**: English only (Issue/PR titles are unified to English in this project; the body may be Japanese or English)
 - **Body structure** (Japanese):
-  ```
+
+  ```markdown
   ## 概要
   [1-2 sentences on what and why]
 
   ## 変更内容
   [Bullet list of planned changes]
   ```
+
 - **Labels**: `enhancement` (feature), `bug` (defect), `refactoring` (cleanup)
 
 ## Step 5 — Craft the Commit Message
@@ -104,30 +108,38 @@ Issue conventions:
 4. **Issue reference**: Include `Fixes #{N}` or `Refs #{N}` in the body when this commit resolves or relates to an Issue. Only use `Fixes` on the commit that actually completes the work.
 5. **Agent attribution**: If the current coding agent has a reliable identity in the active system/developer instructions, use that identity for generated attribution. Do not hard-code or reuse a stale agent name from examples. If no reliable identity is available, omit agent attribution.
    - Commit footer format, when used:
-     ```
+
+     ```text
      Co-Authored-By: {Agent Name} <{agent-email-or-noreply}>
      ```
+
    - For Codex, use:
-     ```
+
+     ```text
      Co-Authored-By: Codex <noreply@openai.com>
      ```
+
    - Other examples:
-     ```
+
+     ```text
      Co-Authored-By: Claude Code <noreply@anthropic.com>
      Generated with Codex
      Generated with Claude Code
      ```
+
 6. **Never** enumerate individual files or list "Changed X, Y, Z" — those belong in PR descriptions
 
 ### Commit message examples
 
 Single-line (trivial):
-```
+
+```text
 Add team color for 滋賀 (J2 2026)
 ```
 
 With body (explaining why):
-```
+
+```text
 Replace print with standard logging across all Python scripts
 
 Unify output control using the logging module instead of bare print()
@@ -138,7 +150,8 @@ Co-Authored-By: {Agent Name} <{agent-email-or-noreply}>
 ```
 
 With issue reference:
-```
+
+```text
 Introduce MatchUtils class with singleton and eliminate global state
 
 Replace module-level config state in match_utils with a MatchUtils class
@@ -154,6 +167,7 @@ Co-Authored-By: {Agent Name} <{agent-email-or-noreply}>
 
 1. Stage specific files (prefer `git add <file>...` over `git add .`). Never stage `.env`, credentials, or secrets.
 2. Commit with GPG signing (do NOT use `--no-gpg-sign`):
+
    ```bash
    git commit -m "$(cat <<'EOF'
    Commit message here
@@ -162,6 +176,7 @@ Co-Authored-By: {Agent Name} <{agent-email-or-noreply}>
    EOF
    )"
    ```
+
 3. Run `git status` after to verify success.
 
 If a pre-commit hook fails: fix the issue, re-stage, and create a **new** commit (never `--amend` unless the user explicitly asks).
@@ -178,7 +193,8 @@ After committing, if on a feature/fix/refactor branch and the work appears compl
    - **Title**: English only (same convention as Issue titles); the body may be Japanese or English
 
 **PR targeting `main`** (no parent branch):
-```
+
+```bash
 gh pr create --title "..." --body "$(cat <<'EOF'
 Fixes #{N}
 
@@ -201,7 +217,8 @@ EOF
 ```
 
 **PR targeting a parent branch** (sub-issue work):
-```
+
+```bash
 gh pr create --title "..." --base <parent-branch> --body "$(cat <<'EOF'
 Refs #{sub-issue-N}
 
@@ -226,6 +243,7 @@ EOF
 ```
 
 PR conventions:
+
 - **Title**: English, concise (< 70 chars)
 - **`Fixes #N`**: Use only when the PR directly closes the Issue AND targets `main`. For sub-issue PRs targeting a parent branch, use `Refs #N` instead
 - **`--base`**: Always specify when not targeting `main`
