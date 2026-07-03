@@ -34,3 +34,7 @@ frontend/.vite/
 # Playwright
 frontend/test-results/
 frontend/playwright-report/
+
+# Claude Code personal settings (shared settings are .claude/settings.json)
+.claude/settings.local.json
+.claude/settings*.proposed
