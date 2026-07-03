@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # Constants
 ROOT_DIR = Path(__file__).resolve().parent.parent
 CSV_DIR = ROOT_DIR / Path("docs/csv")
-WORKFLOW_FILE = ROOT_DIR / Path(".github/workflows/upadate-match-csv.yaml")
+WORKFLOW_FILE = ROOT_DIR / Path(".github/workflows/update-match-csv.yaml")
 MATCH_PATTERN = r"(\d{4}[A-Za-z]*|\d{2}-\d{2}[A-Za-z]*)_allmatch_result-J(\d+).csv"
 
 
