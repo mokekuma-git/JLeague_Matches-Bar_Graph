@@ -1,0 +1,39 @@
+name: Lint Markdown
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+      - 'feature/**'
+      - 'refactor/**'
+    paths:
+      - '**.md'
+      - '.markdownlint-cli2.jsonc'
+  push:
+    branches:
+      - main
+    paths:
+      - '**.md'
+      - '.markdownlint-cli2.jsonc'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint Markdown
+        run: ./frontend/node_modules/.bin/markdownlint-cli2
