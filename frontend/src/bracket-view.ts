@@ -25,7 +25,7 @@ import {
   syncSliderToTargetDate,
 } from './core/date-slider';
 import { buildBracket, maskBracketForDate } from './bracket/bracket-data';
-import { extractTeamsFromBracketOrder, inferBracketOrderFromRows } from './bracket/bracket-order-inference';
+import { inferBracketOrderFromRows } from './bracket/bracket-order-inference';
 import { normalizeBracketRoundLabel } from './bracket/round-label';
 import { inferRoundFilter } from './bracket/round-filter-inference';
 import { renderBracketInto, unpinTooltip } from './bracket/bracket-renderer';
@@ -276,34 +276,12 @@ function resolveSeasonBracketOrder(
     return mainBlockOrder;
   }
 
-  const legacyOrder = entry.teams;
-  if (legacyOrder != null && legacyOrder.length > 0) {
-    return legacyOrder;
-  }
-
-  const sectionOrder = entry.bracket_blocks?.flatMap((section) => section.bracket_order ?? []);
-  if (sectionOrder != null && sectionOrder.length > 0) {
-    return sectionOrder;
-  }
-
   return inferredOrder;
-}
-
-function resolveSectionBracketOrders(
-  sections: BracketBlock[],
-  seasonTeams: string[],
-): BracketBlock[] {
-  return sections.map((section) => (
-    section.bracket_order && section.bracket_order.length > 0
-      ? section
-      : { ...section, bracket_order: seasonTeams }
-  ));
 }
 
 function hasBracketMetadata(entry: RawSeasonEntry): boolean {
   return entry.bracket_order != null
     || entry.bracket_blocks != null
-    || (entry.teams?.length ?? 0) > 0
     || entry.bracket_round_start != null;
 }
 
@@ -436,7 +414,6 @@ export const __testables = {
   createControlStateFromPrefs,
   resolveMainBlockOrder,
   resolveSeasonBracketOrder,
-  resolveSectionBracketOrders,
   filterRowsByRounds,
   resolveSectionRoundFilters,
   inferMissingSectionRoundFilters,
@@ -810,26 +787,17 @@ function loadAndRender(seasonMap: SeasonMap): void {
     download: true,
     complete: (results) => {
       const inferredOrder = inferBracketOrderFromRows(results.data);
-      const seasonTeams = entry.teams && entry.teams.length > 0
-        ? entry.teams
-        : (inferredOrder ? extractTeamsFromBracketOrder(inferredOrder) : []);
-      const rawSections = entry.bracket_blocks
-        ? resolveSectionBracketOrders(entry.bracket_blocks, seasonTeams)
-        : undefined;
-      const resolvedEntry = {
-        ...entry,
-        teams: seasonTeams,
-        team_count: entry.team_count ?? (seasonTeams.length > 0 ? seasonTeams.length : undefined),
-        bracket_blocks: rawSections,
-      };
+      const rawSections = entry.bracket_blocks;
       const tournamentSeasonInfo = resolveTournamentSeasonInfo(
-        found.family, found.competition, resolvedEntry, found.familyKey,
+        found.family, found.competition, entry, found.familyKey,
       );
-      const bracketOrder = resolveSeasonBracketOrder(entry, inferredOrder);
-      if (!bracketOrder || bracketOrder.length === 0) {
+      const seasonOrder = resolveSeasonBracketOrder(entry, inferredOrder);
+      const hasInclusiveTree = seasonOrder != null && seasonOrder.length > 0;
+      if (!hasInclusiveTree && !(rawSections && rawSections.length > 0)) {
         setStatus('No bracket data for this season.');
         return;
       }
+      const bracketOrder = seasonOrder ?? [];
       const resolved = rawSections
         ? resolveSectionRoundFilters(rawSections, entry.default_round_filter)
         : undefined;
@@ -840,13 +808,14 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const matchDates = collectMatchDates(bracketRows);
 
       // Build full tree to extract round structure and pre-populate cache.
-      // Multi-section-only competitions (e.g. matchup pairs across disjoint
-      // ties, which form no single power-of-two tree) have no inclusive tree,
-      // so skip the inclusive build — renderMultiSections builds each block's
-      // tree independently.
-      const multiSectionOnly =
+      // Multi-section-only competitions (matchup pairs across disjoint ties,
+      // or multiple tree blocks with no inclusive_tree main block) have no
+      // inclusive tree, so skip the inclusive build — renderMultiSections
+      // builds each block's tree independently.
+      const multiSectionOnly = !hasInclusiveTree || (
         tournamentSeasonInfo.roundStartOptions?.length === 1 &&
-        tournamentSeasonInfo.roundStartOptions[0] === MULTI_SECTION_VALUE;
+        tournamentSeasonInfo.roundStartOptions[0] === MULTI_SECTION_VALUE
+      );
       const fullRoot = multiSectionOnly
         ? EMPTY_BRACKET_ROOT
         : buildBracket(
@@ -855,7 +824,11 @@ function loadAndRender(seasonMap: SeasonMap): void {
           tournamentSeasonInfo.aggregateTiebreakOrder,
         );
       bracketCache = new Map();
-      bracketCache.set(JSON.stringify(bracketOrder), fullRoot);
+      // Don't cache the placeholder root: a section sharing the same order as
+      // the season order (e.g. the main block itself) must build its own tree.
+      if (!multiSectionOnly) {
+        bracketCache.set(JSON.stringify(bracketOrder), fullRoot);
+      }
       const roundsByDepth = collectRoundsByDepth(fullRoot);
       const bracketRounds = collectBracketRounds(fullRoot);
       const allRounds = bracketBlocks

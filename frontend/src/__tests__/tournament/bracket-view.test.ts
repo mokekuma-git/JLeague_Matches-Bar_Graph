@@ -47,16 +47,16 @@ describe('bracket-view helpers', () => {
       expect(order).toEqual(['ExplicitA', null, 'ExplicitB']);
     });
 
-    test('falls back to teams when explicit bracket_order is absent', () => {
+    test('ignores teams: tournament order comes from blocks, not the team list', () => {
       const order = __testables.resolveSeasonBracketOrder({
         team_count: 4, promotion_count: 0, relegation_count: 0,
         teams: ['LegacyA', 'LegacyB', 'LegacyC', 'LegacyD'],
       });
 
-      expect(order).toEqual(['LegacyA', 'LegacyB', 'LegacyC', 'LegacyD']);
+      expect(order).toBeUndefined();
     });
 
-    test('derives default global order from bracket_blocks when teams is empty', () => {
+    test('returns undefined for multiple tree blocks without an inclusive_tree marker', () => {
       const order = __testables.resolveSeasonBracketOrder({
         team_count: 4, promotion_count: 0, relegation_count: 0,
         teams: [],
@@ -66,7 +66,7 @@ describe('bracket-view helpers', () => {
         ],
       });
 
-      expect(order).toEqual(['A1', 'A2', 'B1', null, 'B2']);
+      expect(order).toBeUndefined();
     });
 
     test('returns undefined when no source bracket order exists', () => {
@@ -90,18 +90,14 @@ describe('bracket-view helpers', () => {
       expect(order).toEqual(['A', null, 'B', 'C']);
     });
 
-    test('prefers inferred order over derived teams populated later in load flow', () => {
+    test('uses inferred order even when teams is present', () => {
       const inferredOrder = ['A', null, 'B', 'C'];
-      const originalEntry = {
+      const entry = {
         team_count: 4, promotion_count: 0, relegation_count: 0,
-      };
-      const resolvedEntry = {
-        ...originalEntry,
         teams: ['A', 'B', 'C'],
       };
 
-      expect(__testables.resolveSeasonBracketOrder(originalEntry, inferredOrder)).toEqual(inferredOrder);
-      expect(__testables.resolveSeasonBracketOrder(resolvedEntry)).toEqual(['A', 'B', 'C']);
+      expect(__testables.resolveSeasonBracketOrder(entry, inferredOrder)).toEqual(inferredOrder);
     });
 
     test('prefers a sole non-matchup block order over teams', () => {
@@ -169,40 +165,6 @@ describe('bracket-view helpers', () => {
     test('returns undefined for missing or empty block list', () => {
       expect(__testables.resolveMainBlockOrder(undefined)).toBeUndefined();
       expect(blocks([])).toBeUndefined();
-    });
-  });
-
-  describe('resolveSectionBracketOrders', () => {
-    test('fills missing section bracket_order from season teams', () => {
-      const resolved = __testables.resolveSectionBracketOrders(
-        [{ label: '決勝トーナメント' }],
-        ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
-      );
-
-      expect(resolved[0].bracket_order).toEqual(['TeamA', 'TeamB', 'TeamC', 'TeamD']);
-    });
-
-    test('preserves explicit section bracket_order', () => {
-      const resolved = __testables.resolveSectionBracketOrders(
-        [{ label: '決勝トーナメント', bracket_order: ['X', 'Y'] }],
-        ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
-      );
-
-      expect(resolved[0].bracket_order).toEqual(['X', 'Y']);
-    });
-
-    test('fills only sections missing bracket_order and preserves explicit multi-block sections', () => {
-      const resolved = __testables.resolveSectionBracketOrders(
-        [
-          { label: 'プレーオフステージ', bracket_order: ['P1', 'P2'], matchup_pairs: true },
-          { label: 'プライムステージ', bracket_round_start: '準々決勝' },
-        ],
-        ['TeamA', 'TeamB', 'TeamC', 'TeamD'],
-      );
-
-      expect(resolved[0].bracket_order).toEqual(['P1', 'P2']);
-      expect(resolved[1].bracket_order).toEqual(['TeamA', 'TeamB', 'TeamC', 'TeamD']);
-      expect(resolved[1].bracket_round_start).toBe('準々決勝');
     });
   });
 
