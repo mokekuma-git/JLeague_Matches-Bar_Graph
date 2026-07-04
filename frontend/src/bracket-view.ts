@@ -243,6 +243,25 @@ function collectMatchDates(rows: RawMatchRow[]): string[] {
   return sorted;
 }
 
+/**
+ * Resolve the season-wide inclusive tree order from bracket_blocks: the
+ * bracket_order of the "main" block (the tree that crowns the champion).
+ * Matchup-pairs blocks form no tree and are never main. A sole non-matchup
+ * block is implicitly main; among several, `inclusive_tree: true` marks it.
+ * Returns undefined when no main block resolves (multi-section-only seasons).
+ */
+function resolveMainBlockOrder(
+  blocks: BracketBlock[] | undefined,
+): (string | null)[] | undefined {
+  if (!blocks || blocks.length === 0) return undefined;
+  const candidates = blocks.filter((block) => !block.matchup_pairs);
+  const main = candidates.length === 1
+    ? candidates[0]
+    : candidates.find((block) => block.inclusive_tree);
+  const order = main?.bracket_order;
+  return order != null && order.length > 0 ? order : undefined;
+}
+
 function resolveSeasonBracketOrder(
   entry: RawSeasonEntry,
   inferredOrder?: (string | null)[],
@@ -250,6 +269,11 @@ function resolveSeasonBracketOrder(
   const explicitOrder = entry.bracket_order;
   if (explicitOrder != null && explicitOrder.length > 0) {
     return explicitOrder;
+  }
+
+  const mainBlockOrder = resolveMainBlockOrder(entry.bracket_blocks);
+  if (mainBlockOrder != null) {
+    return mainBlockOrder;
   }
 
   const legacyOrder = entry.teams;
@@ -410,6 +434,7 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
 
 export const __testables = {
   createControlStateFromPrefs,
+  resolveMainBlockOrder,
   resolveSeasonBracketOrder,
   resolveSectionBracketOrders,
   filterRowsByRounds,

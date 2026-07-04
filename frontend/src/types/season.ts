@@ -50,6 +50,10 @@ export interface BracketBlock {
   bracket_round_start?: string;     // Override start round for this section
   matchup_pairs?: boolean;          // Render as independent matchup pairs (no elimination tree)
   bracket_pairing_orders?: number[][]; // Per level reorder of child matches before pairing
+  // Marks the block whose bracket_order is the season-wide inclusive tree order.
+  // Needed only when multiple non-matchup blocks exist (e.g. feeder blocks +
+  // final tournament); a sole non-matchup block is implicitly the main tree.
+  inclusive_tree?: boolean;
 }
 
 // Optional properties that can appear at family, competition, or season level.

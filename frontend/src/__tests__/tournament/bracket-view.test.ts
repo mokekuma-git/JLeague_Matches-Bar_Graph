@@ -103,6 +103,73 @@ describe('bracket-view helpers', () => {
       expect(__testables.resolveSeasonBracketOrder(originalEntry, inferredOrder)).toEqual(inferredOrder);
       expect(__testables.resolveSeasonBracketOrder(resolvedEntry)).toEqual(['A', 'B', 'C']);
     });
+
+    test('prefers a sole non-matchup block order over teams', () => {
+      const order = __testables.resolveSeasonBracketOrder({
+        teams: ['LegacyA', 'LegacyB'],
+        bracket_blocks: [
+          { label: '決勝トーナメント', bracket_order: ['A', null, 'B', 'C'] },
+        ],
+      });
+
+      expect(order).toEqual(['A', null, 'B', 'C']);
+    });
+
+    test('prefers the inclusive_tree-marked block order over teams and flatMap', () => {
+      const order = __testables.resolveSeasonBracketOrder({
+        teams: ['LegacyA', 'LegacyB'],
+        bracket_blocks: [
+          { label: 'フィーダー', bracket_order: ['F1', 'F2', 'A', 'B'] },
+          { label: '決勝トーナメント', bracket_order: ['A', 'B', 'C', 'D'], inclusive_tree: true },
+        ],
+      });
+
+      expect(order).toEqual(['A', 'B', 'C', 'D']);
+    });
+  });
+
+  describe('resolveMainBlockOrder', () => {
+    const blocks = (list: BracketBlock[]) => __testables.resolveMainBlockOrder(list);
+
+    test('returns the order of a sole block', () => {
+      expect(blocks([{ label: 'S', bracket_order: ['A', 'B'] }])).toEqual(['A', 'B']);
+    });
+
+    test('returns undefined for a sole block without order', () => {
+      expect(blocks([{ label: 'S' }])).toBeUndefined();
+    });
+
+    test('excludes matchup_pairs blocks from main candidacy', () => {
+      expect(blocks([
+        { label: 'プレーオフ', bracket_order: ['P1', 'P2'], matchup_pairs: true },
+        { label: 'プライム', bracket_order: ['A', 'B', 'C', 'D'] },
+      ])).toEqual(['A', 'B', 'C', 'D']);
+    });
+
+    test('returns undefined when multiple candidates lack an inclusive_tree marker', () => {
+      expect(blocks([
+        { label: 'ブロック1', bracket_order: ['A', 'B'] },
+        { label: 'ブロック2', bracket_order: ['C', 'D'] },
+      ])).toBeUndefined();
+    });
+
+    test('returns the inclusive_tree-marked block among multiple candidates', () => {
+      expect(blocks([
+        { label: '決勝トーナメント', bracket_order: ['A', 'B', 'C', 'D'], inclusive_tree: true },
+        { label: '３位決定戦', bracket_order: ['X', 'Y'] },
+      ])).toEqual(['A', 'B', 'C', 'D']);
+    });
+
+    test('returns undefined when only matchup_pairs blocks exist', () => {
+      expect(blocks([
+        { label: '順位決定戦', bracket_order: ['A', 'B', 'C', 'D'], matchup_pairs: true },
+      ])).toBeUndefined();
+    });
+
+    test('returns undefined for missing or empty block list', () => {
+      expect(__testables.resolveMainBlockOrder(undefined)).toBeUndefined();
+      expect(blocks([])).toBeUndefined();
+    });
   });
 
   describe('resolveSectionBracketOrders', () => {
