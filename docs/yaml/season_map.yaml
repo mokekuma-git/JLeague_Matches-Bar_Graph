@@ -650,6 +650,68 @@ jleague:
             '4': promoted_playoff
             '5': promoted_playoff
             '6': promoted_playoff
+    J1PO:
+      league_display: J1百年構想リーグ 順位決定戦
+      view_type: [bracket]
+      data_source:
+        label: 'Jリーグ公式: J1百年構想リーグ'
+        url: https://www.jleague.jp/special/2026specialseason/j1/
+      seasons:
+        '2026':
+          team_count: 20
+          teams: [神戸, 鹿島, Ｃ大阪, FC東京, 町田, 名古屋, 広島, 川崎Ｆ, Ｇ大阪, 東京Ｖ, 岡山, 浦和, 横浜FM, 清水, 柏, 京都, 長崎, 水戸, 福岡, 千葉]
+          round_start_options: [__multi_section__]
+          bracket_blocks:
+          - label: 順位決定戦
+            matchup_pairs: true
+          note: East n位 vs West n位 のホーム&アウェイ2戦制。合算で勝者が奇数位・敗者が偶数位。
+    J2J3PO:
+      league_display: J2・J3百年構想リーグ 順位決定戦
+      view_type: [bracket]
+      data_source:
+        label: 'Jリーグ公式: J2・J3百年構想リーグ'
+        url: https://www.jleague.jp/special/2026specialseason/j2-j3/
+      seasons:
+        '2026':
+          team_count: 40
+          teams: [仙台, 富山, 宮崎, 甲府, 鹿児島, 秋田, 新潟, 札幌, 徳島, いわき, 鳥栖, 湘南, 横浜FC, 山口, 大宮, 高知, 相模原, 熊本, 藤枝, 愛媛, 鳥取, 岐阜, 金沢, 群馬, 奈良, 松本, 大分, 山形, 栃木Ｃ, 滋賀, FC大阪, 磐田, 福島, 琉球, 今治, 八戸, 長野, 讃岐, 栃木SC, 北九州]
+          round_start_options: [__multi_section__]
+          bracket_blocks:
+          - label: 1〜4位
+            bracket_order: [仙台, 甲府, 富山, 宮崎]
+            round_filter: [1-4位決定戦, 1-2位決定戦]
+          - label: 5〜8位
+            bracket_order: [新潟, 鹿児島, 秋田, 札幌]
+            round_filter: [5-8位決定戦, 5-6位決定戦]
+          - label: 9〜12位
+            bracket_order: [湘南, いわき, 徳島, 鳥栖]
+            round_filter: [9-12位決定戦, 9-10位決定戦]
+          - label: 13〜16位
+            bracket_order: [横浜FC, 大宮, 高知, 山口]
+            round_filter: [13-16位決定戦, 13-14位決定戦]
+          - label: 17〜20位
+            bracket_order: [相模原, 藤枝, 愛媛, 熊本]
+            round_filter: [17-20位決定戦, 17-18位決定戦]
+          - label: 21〜24位
+            bracket_order: [金沢, 鳥取, 群馬, 岐阜]
+            round_filter: [21-24位決定戦, 21-22位決定戦]
+          - label: 25〜28位
+            bracket_order: [奈良, 大分, 山形, 松本]
+            round_filter: [25-28位決定戦, 25-26位決定戦]
+          - label: 29〜32位
+            bracket_order: [栃木Ｃ, 磐田, FC大阪, 滋賀]
+            round_filter: [29-32位決定戦, 29-30位決定戦]
+          - label: 33〜36位
+            bracket_order: [今治, 琉球, 八戸, 福島]
+            round_filter: [33-36位決定戦, 33-34位決定戦]
+          - label: 37〜40位
+            bracket_order: [讃岐, 北九州, 栃木SC, 長野]
+            round_filter: [37-40位決定戦, 37-38位決定戦]
+          - label: 3位決定戦
+            matchup_pairs: true
+            bracket_order: [宮崎, 甲府, 新潟, 札幌, 鳥栖, 湘南, 大宮, 高知, 藤枝, 愛媛, 金沢, 群馬, 大分, 山形, 磐田, FC大阪, 八戸, 今治, 栃木SC, 北九州]
+            round_filter: [3-4位決定戦, 7-8位決定戦, 11-12位決定戦, 15-16位決定戦, 19-20位決定戦, 23-24位決定戦, 27-28位決定戦, 31-32位決定戦, 35-36位決定戦, 39-40位決定戦]
+          note: 各グループ同順位4クラブによる1試合制ノックアウト (準決勝→決勝)。準決勝敗者は3位決定戦へ。
     EmperorsCup:
       league_display: 天皇杯
       view_type: [bracket]
