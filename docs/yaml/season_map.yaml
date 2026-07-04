@@ -650,6 +650,21 @@ jleague:
             '4': promoted_playoff
             '5': promoted_playoff
             '6': promoted_playoff
+    J1PO:
+      league_display: J1百年構想リーグ 順位決定戦
+      view_type: [bracket]
+      data_source:
+        label: 'Jリーグ公式: J1百年構想リーグ'
+        url: https://www.jleague.jp/special/2026specialseason/j1/
+      seasons:
+        '2026':
+          team_count: 20
+          teams: [神戸, 鹿島, Ｃ大阪, FC東京, 町田, 名古屋, 広島, 川崎Ｆ, Ｇ大阪, 東京Ｖ, 岡山, 浦和, 横浜FM, 清水, 柏, 京都, 長崎, 水戸, 福岡, 千葉]
+          round_start_options: [__multi_section__]
+          bracket_blocks:
+          - label: 順位決定戦
+            matchup_pairs: true
+          note: East n位 vs West n位 のホーム&アウェイ2戦制。合算で勝者が奇数位・敗者が偶数位。
     EmperorsCup:
       league_display: 天皇杯
       view_type: [bracket]

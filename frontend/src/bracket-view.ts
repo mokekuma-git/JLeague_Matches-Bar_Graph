@@ -73,6 +73,12 @@ interface SingleBracketRenderInput {
 
 const MULTI_SECTION_VALUE = '__multi_section__';
 
+/** Placeholder root for multi-section-only competitions that have no inclusive tree. */
+const EMPTY_BRACKET_ROOT: BracketNode = {
+  round: '', homeTeam: null, awayTeam: null, status: '', winner: null,
+  decidedBy: null, children: [null, null],
+};
+
 let currentState: BracketState | null = null;
 
 /** Cache buildBracket results to avoid redundant rebuilds on slider/layout changes. */
@@ -808,12 +814,21 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const bracketRows = collectBracketSourceRows(results.data, bracketBlocks);
       const matchDates = collectMatchDates(bracketRows);
 
-      // Build full tree to extract round structure and pre-populate cache
-      const fullRoot = buildBracket(
-        bracketRows,
-        bracketOrder,
-        tournamentSeasonInfo.aggregateTiebreakOrder,
-      );
+      // Build full tree to extract round structure and pre-populate cache.
+      // Multi-section-only competitions (e.g. matchup pairs across disjoint
+      // ties, which form no single power-of-two tree) have no inclusive tree,
+      // so skip the inclusive build — renderMultiSections builds each block's
+      // tree independently.
+      const multiSectionOnly =
+        tournamentSeasonInfo.roundStartOptions?.length === 1 &&
+        tournamentSeasonInfo.roundStartOptions[0] === MULTI_SECTION_VALUE;
+      const fullRoot = multiSectionOnly
+        ? EMPTY_BRACKET_ROOT
+        : buildBracket(
+          bracketRows,
+          bracketOrder,
+          tournamentSeasonInfo.aggregateTiebreakOrder,
+        );
       bracketCache = new Map();
       bracketCache.set(JSON.stringify(bracketOrder), fullRoot);
       const roundsByDepth = collectRoundsByDepth(fullRoot);
