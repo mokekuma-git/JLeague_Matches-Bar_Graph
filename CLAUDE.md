@@ -217,6 +217,7 @@ uv run python scripts/check_type_sync.py
   - `'ex-win-2'` (1999–2002): 90分勝3/延長勝2/分1/負0
   - `'pk-win2-loss1'` (2026特別大会): 勝3/PK勝2/PK負1/負0
 - **SeasonEntry バリデーション**: 必須キー (`team_count`, `promotion_count`, `relegation_count`, `teams`) の欠落・型不正は即エラー。未知のオプショナルキーは Warning で無視
+- **Tournament 設定の正本は `bracket_blocks`** (#287): 1 ブロック season でも `bracket_blocks` で書く。エントリレベル `bracket_order` は廃止。tournament の `teams` は派生値 (block の `bracket_order` から bye `~` を除去) で season_map に書かない (書くと Warning)。包括ツリー (単一ツリー表示) の主 block は「非 matchup block が単独ならそれ、複数なら `inclusive_tree: true` の block」で解決し、主 block がなければ multi-section 表示のみ (J1PO/J2J3PO 等)。authored 構造を持たない大会 (EmperorsCup) は CSV から全推定
 - **ルール説明ノート自動生成** (`config/rule-notes.ts`): `pointSystem` が `'standard'` 以外、または `tiebreakOrder` がデフォルト (`['goal_diff', 'goal_get']`) と異なる場合、`resolveSeasonInfo()` が note 配列末尾にルール説明を自動追加。メッセージは辞書オブジェクトで管理し、将来の多言語化に備える (locale 引数 + `Record<Locale, ...>` への拡張で対応可能)
 - **スコアアノテーション規則 (リーグ・トーナメント共通)**: メインスコア (`homeGoal`/`awayGoal`) は常に ET 込みの最終結果。`formatScore` が `(PKn)` / `(ETn)` アノテーションを付加。PK がある場合は PK のみ表示 (ET 後も同点なので ET スコアに情報価値なし)。単試合・H&A aggregate 共通ロジック
   - **単試合**: CSV の `home_pk_score`/`away_pk_score`/`home_score_ex`/`away_score_ex` をそのままマッピング
