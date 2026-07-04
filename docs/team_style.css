@@ -687,3 +687,19 @@
   color: white;
   background-color: #002060;
 }
+
+/* AFC Women's Champions League opponents (25-26, 東京NB のノックアウト対戦相手) */
+.スタリオン { /* Stallion Laguna FC (フィリピン) 赤黒 */
+  color: white;
+  background: -moz-linear-gradient(top left, #e60012, #1a1a1a 60%);
+  background: -webkit-linear-gradient(top left, #e60012, #1a1a1a 60%);
+  background: linear-gradient(to bottom right, #e60012, #1a1a1a 60%);
+}
+.メルボルン { /* Melbourne City FC (オーストラリア) シティブルー */
+  color: #002855;
+  background-color: #6cabdd;
+}
+.ネゴヒャン { /* Naegohyang Women's FC (北朝鮮) DPRK レッド */
+  color: white;
+  background-color: #d0021b;
+}
