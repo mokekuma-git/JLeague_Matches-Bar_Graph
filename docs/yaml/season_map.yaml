@@ -658,11 +658,10 @@ jleague:
         url: https://www.jleague.jp/special/2026specialseason/j1/
       seasons:
         '2026':
-          team_count: 20
-          teams: [神戸, 鹿島, Ｃ大阪, FC東京, 町田, 名古屋, 広島, 川崎Ｆ, Ｇ大阪, 東京Ｖ, 岡山, 浦和, 横浜FM, 清水, 柏, 京都, 長崎, 水戸, 福岡, 千葉]
           round_start_options: [__multi_section__]
           bracket_blocks:
           - label: 順位決定戦
+            bracket_order: [神戸, 鹿島, Ｃ大阪, FC東京, 町田, 名古屋, 広島, 川崎Ｆ, Ｇ大阪, 東京Ｖ, 岡山, 浦和, 横浜FM, 清水, 柏, 京都, 長崎, 水戸, 福岡, 千葉]
             matchup_pairs: true
           note: East n位 vs West n位 のホーム&アウェイ2戦制。合算で勝者が奇数位・敗者が偶数位。
     J2J3PO:
@@ -673,8 +672,6 @@ jleague:
         url: https://www.jleague.jp/special/2026specialseason/j2-j3/
       seasons:
         '2026':
-          team_count: 40
-          teams: [仙台, 富山, 宮崎, 甲府, 鹿児島, 秋田, 新潟, 札幌, 徳島, いわき, 鳥栖, 湘南, 横浜FC, 山口, 大宮, 高知, 相模原, 熊本, 藤枝, 愛媛, 鳥取, 岐阜, 金沢, 群馬, 奈良, 松本, 大分, 山形, 栃木Ｃ, 滋賀, FC大阪, 磐田, 福島, 琉球, 今治, 八戸, 長野, 讃岐, 栃木SC, 北九州]
           round_start_options: [__multi_section__]
           bracket_blocks:
           - label: 1〜4位
@@ -749,84 +746,80 @@ jleague:
       team_count: 8
       seasons:
         '1992':
-          team_count: 4
-          teams: [Ｖ川崎, 鹿島, 清水, 名古屋]
           bracket_round_start: 準決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [Ｖ川崎, 鹿島, 清水, 名古屋]
           shown_groups: [A]
           group_team_count: 10
           note: 予選は単一リーグ。
         '1993':
-          team_count: 4
-          teams: [Ｖ川崎, 横浜Ｆ, Ｇ大阪, 清水]
           bracket_round_start: 準決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [Ｖ川崎, 横浜Ｆ, Ｇ大阪, 清水]
           shown_groups: [A, B]
           group_team_count:
             A: 7
             B: 6
           note: 'Wikipedia group labels: A=Ｖ川崎/Ｇ大阪/鹿島/柏/市原/平塚/広島, B=清水/横浜Ｆ/磐田/名古屋/横浜M/浦和.'
         '1994':
-          team_count: 14
-          teams: [Ｖ川崎, 名古屋, 市原, Ｇ大阪, 広島, 鹿島, 浦和, 清水, 柏, 横浜M, 横浜Ｆ, Ｃ大阪, 磐田, 平塚]
-          bracket_order: [Ｖ川崎, ~, 名古屋, 市原, Ｇ大阪, 広島, 鹿島, 浦和, 清水, ~, 柏, 横浜M, 横浜Ｆ, Ｃ大阪, 磐田, 平塚]
+          bracket_blocks:
+          - label: 決勝トーナメント
+            bracket_order: [Ｖ川崎, ~, 名古屋, 市原, Ｇ大阪, 広島, 鹿島, 浦和, 清水, ~, 柏, 横浜M, 横浜Ｆ, Ｃ大阪, 磐田, 平塚]
           bracket_round_start: 1回戦
         '1996':
-          team_count: 4
-          teams: [柏, Ｖ川崎, 清水, 平塚]
           bracket_round_start: 準決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [柏, Ｖ川崎, 清水, 平塚]
           shown_groups: [A, B]
           group_team_count: 8
           note: 'Wikipedia group labels: A=柏/平塚/広島/横浜M/磐田/Ｇ大阪/浦和/京都, B=清水/Ｖ川崎/横浜Ｆ/市原/鹿島/Ｃ大阪/名古屋/福岡.'
         '1997':
-          teams: [市原, 名古屋, 鹿島, 札幌, 磐田, 浦和, 柏, 横浜Ｆ]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [市原, 名古屋, 鹿島, 札幌, 磐田, 浦和, 柏, 横浜Ｆ]
           shown_groups: [A, B, C, D, E]
           group_team_count: 4
           note: 'Wikipedia group labels: A=市原/清水/平塚/B仙台, B=札幌/Ｖ川崎/Ｇ大阪/横浜M, C=鹿島/浦和/Ｃ大阪/鳥栖, D=柏/名古屋/広島/神戸, E=横浜Ｆ/磐田/京都/福岡.'
         '1998':
-          team_count: 4
-          teams: [清水, 磐田, 市原, 鹿島]
           bracket_round_start: 準決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [清水, 磐田, 市原, 鹿島]
           shown_groups: [A, B, C, D]
           group_team_count: 5
           note: 'Wikipedia group labels: A=磐田/浦和/Ｖ川崎/広島/B仙台, B=鹿島/柏/福岡/横浜M/Ｃ大阪, C=清水/川崎Ｆ/Ｇ大阪/横浜Ｆ/札幌, D=市原/名古屋/平塚/神戸/京都.'
         '1999':
-          team_count: 26
-          teams: [磐田, 福岡, 札幌, 柏, 新潟, Ｃ大阪, 鳥栖, 清水, 京都, 山形, 名古屋, Ｖ川崎, 甲府, 市原, 神戸, Ｆ東京, 横浜FM, 大宮, 広島, 仙台, 鹿島, Ｇ大阪, 川崎Ｆ, 浦和, 平塚, 大分]
-          bracket_order: [磐田, ~, 福岡, 札幌, 柏, 新潟, Ｃ大阪, 鳥栖, 清水, ~, 京都, 山形, 名古屋, ~, Ｖ川崎, 甲府, 市原, ~, 神戸, Ｆ東京, 横浜FM, 大宮, 広島, 仙台, 鹿島, ~, Ｇ大阪, 川崎Ｆ, 浦和, ~, 平塚, 大分]
+          bracket_blocks:
+          - label: 決勝トーナメント
+            bracket_order: [磐田, ~, 福岡, 札幌, 柏, 新潟, Ｃ大阪, 鳥栖, 清水, ~, 京都, 山形, 名古屋, ~, Ｖ川崎, 甲府, 市原, ~, 神戸, Ｆ東京, 横浜FM, 大宮, 広島, 仙台, 鹿島, ~, Ｇ大阪, 川崎Ｆ, 浦和, ~, 平塚, 大分]
           bracket_round_start: 1回戦
         '2000':
-          team_count: 27
-          teams: [柏, 浦和, 川崎Ｆ, Ｖ川崎, 鳥栖, 仙台, Ｃ大阪, Ｆ東京, 京都, 新潟, 磐田, 札幌, Ｇ大阪, 鹿島, 福岡, 湘南, 広島, 山形, 横浜FM, 甲府, 名古屋, 市原, 大分, 水戸, 清水, 神戸, 大宮]
-          bracket_order: [柏, ~, 浦和, 川崎Ｆ, Ｖ川崎, 鳥栖, 仙台, Ｃ大阪, Ｆ東京, ~, 京都, 新潟, 磐田, ~, 札幌, Ｇ大阪, 鹿島, ~, 福岡, 湘南, 広島, 山形, 横浜FM, 甲府, 名古屋, ~, 市原, 大分, 水戸, 清水, 神戸, 大宮]
+          bracket_blocks:
+          - label: 決勝トーナメント
+            bracket_order: [柏, ~, 浦和, 川崎Ｆ, Ｖ川崎, 鳥栖, 仙台, Ｃ大阪, Ｆ東京, ~, 京都, 新潟, 磐田, ~, 札幌, Ｇ大阪, 鹿島, ~, 福岡, 湘南, 広島, 山形, 横浜FM, 甲府, 名古屋, ~, 市原, 大分, 水戸, 清水, 神戸, 大宮]
           bracket_round_start: 1回戦
         '2001':
-          team_count: 28
-          teams: [鹿島, 柏, 湘南, 浦和, 山形, Ｇ大阪, 京都, 清水, 市原, 大宮, 札幌, 大分, Ｃ大阪, 磐田, 川崎Ｆ, 東京Ｖ, 横浜FC, 横浜FM, 水戸, 福岡, 仙台, 名古屋, 神戸, 鳥栖, 甲府, Ｆ東京, 広島, 新潟]
-          bracket_order: [鹿島, ~, 柏, 湘南, 浦和, 山形, Ｇ大阪, 京都, 清水, ~, 市原, 大宮, 札幌, 大分, Ｃ大阪, 磐田, 川崎Ｆ, ~, 東京Ｖ, 横浜FC, 横浜FM, 水戸, 福岡, 仙台, 名古屋, ~, 神戸, 鳥栖, 甲府, Ｆ東京, 広島, 新潟]
+          bracket_blocks:
+          - label: 決勝トーナメント
+            bracket_order: [鹿島, ~, 柏, 湘南, 浦和, 山形, Ｇ大阪, 京都, 清水, ~, 市原, 大宮, 札幌, 大分, Ｃ大阪, 磐田, 川崎Ｆ, ~, 東京Ｖ, 横浜FC, 横浜FM, 水戸, 福岡, 仙台, 名古屋, ~, 神戸, 鳥栖, 甲府, Ｆ東京, 広島, 新潟]
           bracket_round_start: 1回戦
         '2002':
-          teams: [磐田, 鹿島, 市原, 清水, Ｆ東京, Ｇ大阪, 浦和, 柏]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [磐田, 鹿島, 市原, 清水, Ｆ東京, Ｇ大阪, 浦和, 柏]
           shown_groups: [A, B, C, D]
           group_team_count: 4
           note: 'Wikipedia group labels: A=磐田/柏/仙台/札幌, B=Ｆ東京/清水/東京Ｖ/神戸, C=市原/Ｇ大阪/横浜FM/京都, D=浦和/鹿島/名古屋/広島.'
         '2003':
-          teams: [磐田, 横浜FM, 名古屋, 鹿島, Ｆ東京, 浦和, Ｇ大阪, 清水]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [磐田, 横浜FM, 名古屋, 鹿島, Ｆ東京, 浦和, Ｇ大阪, 清水]
           shown_groups: [A, B, C, D]
           group_team_count:
             A: 4
@@ -835,27 +828,27 @@ jleague:
             D: 3
           note: 'Wikipedia group labels: A=磐田/浦和/東京Ｖ/神戸, B=Ｆ東京/横浜FM/仙台/柏, C=Ｇ大阪/Ｃ大阪/市原, D=名古屋/京都/大分. 鹿島と清水はACL出場のため準々決勝から参加.'
         '2004':
-          teams: [Ｆ東京, Ｇ大阪, 東京Ｖ, 清水, 名古屋, 鹿島, 浦和, 横浜FM]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [Ｆ東京, Ｇ大阪, 東京Ｖ, 清水, 名古屋, 鹿島, 浦和, 横浜FM]
           shown_groups: [A, B, C, D]
           group_team_count: 4
           note: 'Wikipedia group labels: A=東京Ｖ/横浜FM/広島/Ｃ大阪, B=名古屋/Ｇ大阪/新潟/磐田, C=浦和/清水/市原/大分, D=Ｆ東京/鹿島/柏/神戸.'
         '2005':
-          teams: [磐田, 千葉, 浦和, 清水, 横浜FM, 大宮, Ｇ大阪, Ｃ大阪]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [磐田, 千葉, 浦和, 清水, 横浜FM, 大宮, Ｇ大阪, Ｃ大阪]
           shown_groups: [A, B, C, D]
           group_team_count: 4
           note: 公式トーナメント図で順序確認。ACL出場の磐田、横浜FMは準々決勝から参加.
         '2006':
-          teams: [磐田, 横浜FM, Ｇ大阪, 鹿島, 千葉, Ｃ大阪, 川崎Ｆ, 浦和]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [磐田, 横浜FM, Ｇ大阪, 鹿島, 千葉, Ｃ大阪, 川崎Ｆ, 浦和]
           shown_groups: [A, B, C, D]
           group_team_count:
             A: 4
@@ -864,12 +857,12 @@ jleague:
             D: 5
           note: 公式トーナメント図で順序確認。ACL出場のＧ大阪は準々決勝から参加。GS通過はA1=浦和, A2=横浜FM, B1=川崎Ｆ, B2=鹿島, C1=千葉, D1=Ｃ大阪, D2=磐田.
         '2007':
-          teams: [Ｇ大阪, 浦和, 川崎Ｆ, 甲府, Ｆ東京, 横浜FM, 鹿島, 広島]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           round_start_options: [__multi_section__]
           bracket_blocks:
           - label: 準々決勝
+            bracket_order: [Ｇ大阪, 浦和, 川崎Ｆ, 甲府, Ｆ東京, 横浜FM, 鹿島, 広島]
             matchup_pairs: true
           - label: 準決勝・決勝
             bracket_order: [川崎Ｆ, 横浜FM, 鹿島, Ｇ大阪]
@@ -878,34 +871,33 @@ jleague:
           group_team_count: 4
           note: 公式トーナメント図で順序確認。ACL出場のＧ大阪、浦和は準々決勝から参加。準決勝は準々決勝後の組み替えに合わせて別セクション化.
         '2008':
-          teams: [大分, Ｆ東京, 名古屋, 千葉, 横浜FM, Ｇ大阪, 清水, 鹿島]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [大分, Ｆ東京, 名古屋, 千葉, 横浜FM, Ｇ大阪, 清水, 鹿島]
           shown_groups: [A, B, C, D]
           group_team_count: 4
           note: 公式トーナメント図で順序確認。ACL出場の横浜FM、清水は準々決勝から参加.
         '2009':
-          teams: [名古屋, Ｆ東京, 清水, 浦和, 横浜FM, Ｇ大阪, 川崎Ｆ, 鹿島]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [名古屋, Ｆ東京, 清水, 浦和, 横浜FM, Ｇ大阪, 川崎Ｆ, 鹿島]
           shown_groups: [A, B]
           group_team_count: 7
           note: 公式トーナメント図で順序確認。ACL出場の鹿島、川崎Ｆ、Ｇ大阪、名古屋は準々決勝から参加.
         '2010':
-          teams: [川崎Ｆ, 鹿島, 仙台, 磐田, Ｇ大阪, 広島, 清水, Ｆ東京]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [川崎Ｆ, 鹿島, 仙台, 磐田, Ｇ大阪, 広島, 清水, Ｆ東京]
           shown_groups: [A, B]
           group_team_count: 7
           note: 公式トーナメント図で順序確認。ACL出場の鹿島、川崎Ｆ、清水、Ｇ大阪は準々決勝から参加.
         '2011':
-          teams: [Ｃ大阪, 浦和, Ｇ大阪, 磐田, 名古屋, 新潟, 鹿島, 横浜FM]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
@@ -918,45 +910,46 @@ jleague:
           - label: 鹿島ブロック
             bracket_order: [鹿島, ~, ~, ~, 川崎Ｆ, 広島, 神戸, 横浜FM]
           - label: 決勝トーナメント
+            bracket_order: [Ｃ大阪, 浦和, Ｇ大阪, 磐田, 名古屋, 新潟, 鹿島, 横浜FM]
+            inclusive_tree: true
             bracket_round_start: 準々決勝
           note: 公式トーナメント図で順序確認。2011年は純粋KOで、1回戦・2回戦はH&A、準々決勝以降は単試合。途中合流シードを表すため、準々決勝進出決定ブロックと決勝トーナメントを分離している.
         '2012':
-          teams: [名古屋, 清水, Ｆ東京, 仙台, 柏, Ｇ大阪, Ｃ大阪, 鹿島]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [名古屋, 清水, Ｆ東京, 仙台, 柏, Ｇ大阪, Ｃ大阪, 鹿島]
           note: 公式トーナメント図で順序確認。準々決勝・準決勝はH&A、決勝は単試合。清水, 仙台, Ｃ大阪, 鹿島はGL上位通過チームのため図中に順位注記あり.
         '2013':
-          teams: [浦和, Ｃ大阪, 仙台, 川崎Ｆ, 横浜FM, 鹿島, 柏, 広島]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [浦和, Ｃ大阪, 仙台, 川崎Ｆ, 横浜FM, 鹿島, 柏, 広島]
           note: 公式トーナメント図で順序確認。準々決勝・準決勝はH&A、決勝は単試合.
         '2014':
-          teams: [浦和, 広島, 柏, 横浜FM, 川崎Ｆ, Ｃ大阪, Ｇ大阪, 神戸]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [浦和, 広島, 柏, 横浜FM, 川崎Ｆ, Ｃ大阪, Ｇ大阪, 神戸]
           note: 公式トーナメント図で順序確認。準々決勝・準決勝はH&A、決勝は単試合。浦和, 柏, Ｇ大阪, 神戸は図中にGL順位注記あり.
         '2015':
-          teams: [鹿島, FC東京, 神戸, 柏, 名古屋, Ｇ大阪, 浦和, 新潟]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [鹿島, FC東京, 神戸, 柏, 名古屋, Ｇ大阪, 浦和, 新潟]
           note: 公式トーナメント図で順序確認。2015年もH&Aはアウェイゴール適用。名古屋-Ｇ大阪は2戦合計得点・アウェイゴール数ともに並んだため延長・PK決着。鹿島, 神戸, 名古屋, 新潟は図中にGL順位注記あり.
         '2016':
-          teams: [横浜FM, 大宮, Ｇ大阪, 広島, 浦和, 神戸, 福岡, FC東京]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 決勝トーナメント
+            bracket_order: [横浜FM, 大宮, Ｇ大阪, 広島, 浦和, 神戸, 福岡, FC東京]
           note: 公式トーナメント図で順序確認。準々決勝・準決勝はH&A、決勝は単試合。横浜FM, 大宮, 神戸, 福岡は図中にGL順位注記あり.
         '2017':
-          teams: [Ｇ大阪, 神戸, 浦和, Ｃ大阪, FC東京, 川崎Ｆ, 鹿島, 仙台]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
@@ -964,10 +957,10 @@ jleague:
             bracket_order: [FC東京, 広島, Ｃ大阪, 札幌]
             matchup_pairs: true
           - label: ノックアウトステージ
+            bracket_order: [Ｇ大阪, 神戸, 浦和, Ｃ大阪, FC東京, 川崎Ｆ, 鹿島, 仙台]
             bracket_round_start: 準々決勝
           note: 公式トーナメント図で順序確認。2017年はプレーオフステージ後にノックアウトステージへ進む構造。準々決勝・準決勝はH&A、決勝は単試合。図中注記はACL=Ｇ大阪/浦和/川崎Ｆ/鹿島, A1=仙台, A2=FC東京, A3=札幌, B1=神戸, B2=Ｃ大阪, B3=広島.
         '2018':
-          teams: [Ｃ大阪, 湘南, 柏, 甲府, 横浜FM, Ｇ大阪, 川崎Ｆ, 鹿島]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
@@ -975,10 +968,10 @@ jleague:
             bracket_order: [仙台, 湘南, 磐田, Ｇ大阪, 浦和, 甲府, 神戸, 横浜FM]
             matchup_pairs: true
           - label: プライムステージ
+            bracket_order: [Ｃ大阪, 湘南, 柏, 甲府, 横浜FM, Ｇ大阪, 川崎Ｆ, 鹿島]
             bracket_round_start: 準々決勝
           note: 公式トーナメント図で順序確認。2018年は4組×4GS後に4ペアのプレーオフステージを実施。準々決勝・準決勝はH&A、決勝は単試合。図中注記はACL=Ｃ大阪/柏/川崎Ｆ/鹿島, A1=仙台, A2=横浜FM, B1=磐田, B2=甲府, C1=浦和, C2=Ｇ大阪, D1=神戸, D2=湘南.
         '2019':
-          teams: [広島, 札幌, FC東京, Ｇ大阪, 鹿島, 浦和, 名古屋, 川崎Ｆ]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
@@ -986,16 +979,16 @@ jleague:
             bracket_order: [札幌, 磐田, 仙台, 名古屋, Ｃ大阪, FC東京, Ｇ大阪, 長崎]
             matchup_pairs: true
           - label: プライムステージ
+            bracket_order: [広島, 札幌, FC東京, Ｇ大阪, 鹿島, 浦和, 名古屋, 川崎Ｆ]
             bracket_round_start: 準々決勝
           note: 公式トーナメント図で順序確認。2019年は4組×4GS後に4ペアのプレーオフステージを実施。準々決勝・準決勝はH&A、決勝は単試合。図中注記はACL=広島/鹿島/川崎Ｆ, A1=札幌, A2=長崎, B1=仙台, B2=FC東京, C1=Ｃ大阪, C2=名古屋, D1=Ｇ大阪, D2=磐田.
         '2020':
-          teams: [札幌, 横浜FM, Ｃ大阪, 柏, 神戸, 川崎Ｆ, FC東京, 名古屋]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: プライムステージ
+            bracket_order: [札幌, 横浜FM, Ｃ大阪, 柏, 神戸, 川崎Ｆ, FC東京, 名古屋]
           note: 公式トーナメント図で順序確認。2020年は短縮開催のためプライムステージの準々決勝・準決勝・決勝をすべて単試合で実施。図中注記はC1=札幌, ACL=横浜FM/神戸/FC東京, B1=Ｃ大阪, D1=柏, A1=川崎Ｆ, A2=名古屋.
         '2021':
-          teams: [FC東京, 札幌, 鹿島, 名古屋, Ｇ大阪, Ｃ大阪, 川崎Ｆ, 浦和]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
@@ -1003,10 +996,10 @@ jleague:
             bracket_order: [鹿島, 清水, FC東京, 湘南, 浦和, 神戸, 横浜FM, 札幌]
             matchup_pairs: true
           - label: プライムステージ
+            bracket_order: [FC東京, 札幌, 鹿島, 名古屋, Ｇ大阪, Ｃ大阪, 川崎Ｆ, 浦和]
             bracket_round_start: 準々決勝
           note: 公式トーナメント図で順序確認。2021年は4組×4GS後に4ペアのプレーオフステージを実施。プライムステージの準々決勝・準決勝はH&A、決勝は単試合。図中注記はA1=鹿島, A2=札幌, B1=FC東京, B2=神戸, C1=浦和, C2=湘南, D1=横浜FM, D2=清水, ACL=名古屋/Ｇ大阪/Ｃ大阪/川崎Ｆ.
         '2022':
-          teams: [浦和, 名古屋, 川崎Ｆ, Ｃ大阪, 横浜FM, 広島, 福岡, 神戸]
           aggregate_tiebreak_order: [away_goals, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
@@ -1014,16 +1007,16 @@ jleague:
             bracket_order: [福岡, 鹿島, 札幌, 広島, 名古屋, 京都, Ｃ大阪, 湘南]
             matchup_pairs: true
           - label: プライムステージ
+            bracket_order: [浦和, 名古屋, 川崎Ｆ, Ｃ大阪, 横浜FM, 広島, 福岡, 神戸]
             bracket_round_start: 準々決勝
           note: 公式トーナメント図で順序確認。2022年は4組×4GS後に4ペアのプレーオフステージを実施。プライムステージの準々決勝・準決勝はH&A、決勝は単試合。図中注記はACL=浦和/川崎Ｆ/横浜FM/神戸, A1=鹿島, A2=Ｃ大阪, B1=広島, B2=名古屋, C1=京都, C2=札幌, D1=湘南, D2=福岡.
         '2023':
-          teams: [鹿島, 名古屋, 福岡, FC東京, 浦和, Ｇ大阪, 横浜FM, 札幌]
           bracket_round_start: 準々決勝
           bracket_blocks:
           - label: プライムステージ
+            bracket_order: [鹿島, 名古屋, 福岡, FC東京, 浦和, Ｇ大阪, 横浜FM, 札幌]
           note: 公式トーナメント図で順序確認。2023年は5組×4GS後にプライムステージの準々決勝・準決勝をH&A、決勝を単試合で実施。図中注記はD2=鹿島, C1=名古屋, D1=福岡, E2=FC東京, B1=浦和, E1=Ｇ大阪, A1=横浜FM, A2=札幌.
         '2024':
-          teams: [新潟, 町田, 川崎Ｆ, 甲府, 名古屋, 広島, 横浜FM, 札幌]
           aggregate_tiebreak_order: [wins, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
@@ -1052,9 +1045,9 @@ jleague:
             matchup_pairs: true
           - label: プライムラウンド
             bracket_order: [広島, 名古屋, 札幌, 横浜FM, 甲府, 川崎Ｆ, 町田, 新潟]
+            inclusive_tree: true
           note: 公式トーナメント図と 2024 entry spec で順序確認。2024年は1stラウンド10ブロック、プレーオフラウンド5ペア、プライムラウンドで構成。H&A 判定は勝利数→得失点差→延長→PK を使用する.
         '2025':
-          teams: [横浜FC, 神戸, 湘南, 広島, 浦和, 川崎Ｆ, 横浜FM, 柏]
           aggregate_tiebreak_order: [wins, penalties]
           bracket_round_start: 準々決勝
           bracket_blocks:
@@ -1077,6 +1070,7 @@ jleague:
             matchup_pairs: true
           - label: プライムラウンド
             bracket_order: [柏, 横浜FM, 川崎Ｆ, 浦和, 広島, 湘南, 神戸, 横浜FC]
+            inclusive_tree: true
           note: 公式トーナメント図で順序確認。2025年は1stラウンド7ブロック、プレーオフラウンド4ペア、プライムラウンドで構成。H&A 判定は勝利数→得失点差→延長→PK。図中注記はACL=横浜FM/川崎Ｆ/神戸, CWC=浦和.
 national:
   display_name: ナショナルチーム
@@ -1124,13 +1118,12 @@ national:
         url: https://www.jfa.jp/national_team/samuraiblue/worldcup_2026/
       seasons:
         '2026':
-          # Anchor shared with the main block so the inclusive full tree (built
-          # from this top-level order) stays a clean 32-team / power-of-two tree.
-          bracket_order: &wc_ko_main [ドイツ, A/B/C/D/F3位, グループI1位, C/D/F/G/H3位, グループA2位, グループB2位, グループF1位, グループC2位, グループK2位, グループL2位, グループH1位, グループJ2位, アメリカ, B/E/F/I/J3位, グループG1位, A/E/H/I/J3位, グループC1位, グループF2位, グループE2位, グループI2位, メキシコ, C/E/F/H/I3位, グループL1位, E/H/I/J/K3位, グループJ1位, グループH2位, グループD2位, グループG2位, グループB1位, E/F/G/I/J3位, グループK1位, D/E/I/J/L3位]
           bracket_blocks:
           - label: 決勝トーナメント
             round_filter: [ラウンド32, ラウンド16, 準々決勝, 準決勝, 決勝戦]
-            bracket_order: *wc_ko_main
+            bracket_order: [ドイツ, A/B/C/D/F3位, グループI1位, C/D/F/G/H3位, グループA2位, グループB2位, グループF1位, グループC2位, グループK2位, グループL2位, グループH1位, グループJ2位, アメリカ, B/E/F/I/J3位, グループG1位, A/E/H/I/J3位, グループC1位, グループF2位, グループE2位, グループI2位, メキシコ, C/E/F/H/I3位, グループL1位, E/H/I/J/K3位, グループJ1位, グループH2位, グループD2位, グループG2位, グループB1位, E/F/G/I/J3位, グループK1位, D/E/I/J/L3位]
+            # Inclusive full-tree order (clean 32-team power-of-two); ３位決定戦 stays a separate block.
+            inclusive_tree: true
           - label: ３位決定戦
             round_filter: [３位決定戦]
             bracket_order: [No.101の敗者, No.102の敗者]
@@ -1451,14 +1444,17 @@ we:
       view_type: [bracket]
       seasons:
         22-23:
-          team_count: 2
-          teams: [浦和, 東京NB]
+          bracket_blocks:
+          - label: 決勝トーナメント
+            bracket_order: [浦和, 東京NB]
           bracket_round_start: 決勝
         23-24:
-          team_count: 2
-          teams: [S広島R, 新潟L]
+          bracket_blocks:
+          - label: 決勝トーナメント
+            bracket_order: [S広島R, 新潟L]
           bracket_round_start: 決勝
         24-25:
-          team_count: 4
-          teams: [S広島R, 浦和, I神戸, 新潟L]
+          bracket_blocks:
+          - label: 決勝トーナメント
+            bracket_order: [S広島R, 浦和, I神戸, 新潟L]
           bracket_round_start: 準決勝
