@@ -171,7 +171,7 @@ def check_point_system_values() -> list[str]:
 
 
 def check_view_type_consistency() -> list[str]:
-    """Check that bracket_order entries have view_type including 'bracket'."""
+    """Check that bracket_blocks entries have view_type including 'bracket'."""
     import yaml
     errors: list[str] = []
     season_map_path = PROJECT_ROOT / 'docs' / 'yaml' / 'season_map.yaml'
@@ -192,11 +192,11 @@ def check_view_type_consistency() -> list[str]:
                 resolved_vt = comp_vt | set(entry.get('view_type', []))
                 if not resolved_vt:
                     resolved_vt = {'league'}
-                has_bracket = entry.get('bracket_order') or entry.get('bracket_blocks')
+                has_bracket = entry.get('bracket_blocks')
                 if has_bracket and 'bracket' not in resolved_vt:
                     errors.append(
                         f"{family_key}/{comp_key}/{season_key}: "
-                        f"bracket_order exists but view_type {sorted(resolved_vt)} "
+                        f"bracket_blocks exists but view_type {sorted(resolved_vt)} "
                         f"does not include 'bracket'")
     return errors
 

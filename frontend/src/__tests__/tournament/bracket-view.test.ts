@@ -36,15 +36,17 @@ function makeNode(overrides: Partial<BracketNode> = {}): BracketNode {
 
 describe('bracket-view helpers', () => {
   describe('resolveSeasonBracketOrder', () => {
-    test('uses explicit bracket_order with highest priority', () => {
-      const order = __testables.resolveSeasonBracketOrder({
-        team_count: 4, promotion_count: 0, relegation_count: 0,
-        teams: ['LegacyA', 'LegacyB'],
-        bracket_order: ['ExplicitA', null, 'ExplicitB'],
-        bracket_blocks: [{ label: 'S1', bracket_order: ['SectionA', 'SectionB'] }],
-      });
+    test('uses the main block order with highest priority', () => {
+      const order = __testables.resolveSeasonBracketOrder(
+        {
+          team_count: 4, promotion_count: 0, relegation_count: 0,
+          teams: ['LegacyA', 'LegacyB'],
+          bracket_blocks: [{ label: 'S1', bracket_order: ['SectionA', 'SectionB'] }],
+        },
+        ['InferredA', 'InferredB'],
+      );
 
-      expect(order).toEqual(['ExplicitA', null, 'ExplicitB']);
+      expect(order).toEqual(['SectionA', 'SectionB']);
     });
 
     test('ignores teams: tournament order comes from blocks, not the team list', () => {

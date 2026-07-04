@@ -130,11 +130,19 @@ class SeasonEntry:
         'group_team_count', 'max_row_teams',
         'note', 'data_source', 'promotion_label',
         'aggregate_tiebreak_order',
-        'bracket_order', 'bracket_round_start', 'round_start_options',
+        'bracket_round_start', 'round_start_options',
         'default_round_filter', 'bracket_blocks',
         'bracket_pairing_orders',
         'view_type',
         'timezone',
+    }
+
+    # Keys allowed inside a bracket_blocks item. The block-level bracket_order
+    # is the single source of tournament structure (entry-level bracket_order
+    # and teams are not used for tournaments).
+    BRACKET_BLOCK_KEYS: set[str] = {
+        'label', 'bracket_order', 'round_filter', 'bracket_round_start',
+        'matchup_pairs', 'bracket_pairing_orders', 'inclusive_tree',
     }
 
     KNOWN_KEYS: set[str] = REQUIRED_KEYS | COMPETITION_DEFAULTABLE_KEYS | OPTIONAL_KEYS
@@ -245,6 +253,48 @@ class SeasonEntry:
         ps = self.options.get('point_system')
         if ps is not None and ps not in POINT_SYSTEM_VALUES:
             logger.warning("Season '%s': unknown point_system: '%s'", season_key, ps)
+
+        if teams and view_types == ['bracket']:
+            logger.warning(
+                "Season '%s': teams is derived for tournament seasons; "
+                "write the order into bracket_blocks instead", season_key)
+        self._validate_bracket_blocks(season_key, self.options.get('bracket_blocks'))
+
+    def _validate_bracket_blocks(self, season_key: str, blocks: Any) -> None:
+        """Validate bracket_blocks structure and inclusive_tree consistency.
+
+        Raises:
+            TypeError: If blocks is not a list of dicts with a str label.
+        """
+        if blocks is None:
+            return
+        if not isinstance(blocks, list):
+            raise TypeError(
+                f"Season '{season_key}': bracket_blocks must be list, "
+                f"got {type(blocks).__name__}")
+        marked = 0
+        for i, block in enumerate(blocks):
+            if not isinstance(block, dict) or not isinstance(block.get('label'), str):
+                raise TypeError(
+                    f"Season '{season_key}': bracket_blocks[{i}] must be "
+                    f"a dict with a str 'label'")
+            unknown = set(block.keys()) - self.BRACKET_BLOCK_KEYS
+            if unknown:
+                logger.warning(
+                    "Season '%s': bracket_blocks[%d] (%s): unknown keys: %s",
+                    season_key, i, block['label'], unknown)
+            if block.get('inclusive_tree'):
+                if block.get('matchup_pairs'):
+                    logger.warning(
+                        "Season '%s': bracket_blocks[%d] (%s): inclusive_tree "
+                        "on a matchup_pairs block has no effect",
+                        season_key, i, block['label'])
+                else:
+                    marked += 1
+        if marked > 1:
+            logger.warning(
+                "Season '%s': multiple bracket_blocks marked inclusive_tree; "
+                "only one main tree block is allowed", season_key)
 
 
 class MatchUtils:

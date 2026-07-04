@@ -266,22 +266,11 @@ function resolveSeasonBracketOrder(
   entry: RawSeasonEntry,
   inferredOrder?: (string | null)[],
 ): (string | null)[] | undefined {
-  const explicitOrder = entry.bracket_order;
-  if (explicitOrder != null && explicitOrder.length > 0) {
-    return explicitOrder;
-  }
-
-  const mainBlockOrder = resolveMainBlockOrder(entry.bracket_blocks);
-  if (mainBlockOrder != null) {
-    return mainBlockOrder;
-  }
-
-  return inferredOrder;
+  return resolveMainBlockOrder(entry.bracket_blocks) ?? inferredOrder;
 }
 
 function hasBracketMetadata(entry: RawSeasonEntry): boolean {
-  return entry.bracket_order != null
-    || entry.bracket_blocks != null
+  return entry.bracket_blocks != null
     || entry.bracket_round_start != null;
 }
 
