@@ -26,12 +26,10 @@ Ask the user for anything missing. These four keys are required on every Season 
 `season_map.yaml` has a 4-layer structure: CompetitionFamily → Competition → Seasons →
 Entry, with property cascade (CompetitionFamily → Competition → Season Entry; scalars are
 overridden by the lower layer, arrays like `css_files`/`note` are unioned, objects like
-`team_rename_map` are merged). See CLAUDE.md's "season_map.yaml 構造" section for the full
-key reference (`group_display`, `url_category`, `rank_properties`, `season_start_month`,
-`data_source`, `note`, `timezone`, `promotion_label`, `interior_point_columns`).
-
-If `plan/guides/season_map_design.md` exists locally, consult it for deeper design
-rationale — it may be absent since `plan/` is not tracked in git.
+`team_rename_map` are merged). See `docs/dev/season_map_design.md` for the full key
+reference (`group_display`, `url_category`, `rank_properties`, `season_start_month`,
+`data_source`, `note`, `timezone`, `promotion_label`, `interior_point_columns`) and
+design rationale.
 
 ## Step 3 — Edit season_map.yaml
 
