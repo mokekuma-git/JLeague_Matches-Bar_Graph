@@ -7,7 +7,6 @@ import logging
 import os
 from pathlib import Path
 import re
-from typing import Any
 
 from bs4 import BeautifulSoup
 import pandas as pd

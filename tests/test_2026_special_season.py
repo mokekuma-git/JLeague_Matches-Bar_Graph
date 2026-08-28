@@ -18,7 +18,6 @@ from unittest.mock import patch
 
 import pandas as pd
 import yaml
-from bs4 import BeautifulSoup
 
 from match_utils import SeasonEntry, mu, get_season_from_date
 from read_jleague_matches import (
