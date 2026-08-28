@@ -1,4 +1,5 @@
 """Tests for read_jleague_matches.py"""
+from datetime import date
 from datetime import datetime
 from datetime import timezone
 from pathlib import Path
@@ -219,27 +220,45 @@ class TestReadMatchFromWeb(HtmlLoadingTestCase):
 class TestDeriveStatus(unittest.TestCase):
     """Test for derive_status function"""
 
+    TODAY = date(2026, 8, 29)
+
     def test_score_means_finished(self):
-        self.assertEqual(derive_status('3-4'), '試合終了')
+        self.assertEqual(derive_status('3-4', '2026/08/07'), '試合終了')
 
     def test_shootout_score_means_finished(self):
-        self.assertEqual(derive_status('1-1(PK4-2)'), '試合終了')
+        self.assertEqual(derive_status('1-1(PK4-2)', '2026/08/07'), '試合終了')
 
-    def test_blank_means_scheduled(self):
-        self.assertEqual(derive_status(''), 'ＶＳ')
+    def test_blank_future_match_is_scheduled(self):
+        self.assertEqual(derive_status('', '2026/09/20', self.TODAY), 'ＶＳ')
 
     def test_vs_means_scheduled(self):
-        self.assertEqual(derive_status('vs'), 'ＶＳ')
+        self.assertEqual(derive_status('vs', '2026/09/20', self.TODAY), 'ＶＳ')
 
     def test_cancelled_is_detected(self):
-        self.assertEqual(derive_status('中止'), '試合中止')
+        """A cancellation stated by the Data Site needs no grace period."""
+        self.assertEqual(derive_status('中止', '2026/08/28', self.TODAY), '試合中止')
 
     def test_not_held_is_detected(self):
-        self.assertEqual(derive_status('不実施'), '試合不実施')
+        self.assertEqual(derive_status('不実施', '2026/08/28', self.TODAY), '試合不実施')
 
-    def test_past_date_without_score_stays_scheduled(self):
-        """Results are published with a lag; never guess a cancellation."""
-        self.assertEqual(derive_status(''), 'ＶＳ')
+    def test_just_played_match_is_not_called_off(self):
+        """The Data Site lags: yesterday's match has no result yet, not a cancellation."""
+        self.assertEqual(derive_status('', '2026/08/28', self.TODAY), 'ＶＳ')
+
+    def test_match_inside_grace_period_is_not_called_off(self):
+        """cancel_margin_days is 7, so a 7-day-old blank result still waits."""
+        self.assertEqual(derive_status('', '2026/08/22', self.TODAY), 'ＶＳ')
+
+    def test_match_past_grace_period_is_called_off(self):
+        """Beyond the grace period a still-empty result means the match was called off."""
+        self.assertEqual(derive_status('', '2026/08/21', self.TODAY), '試合中止')
+
+    def test_undecided_date_stays_scheduled(self):
+        """A match with no fixed date can never be judged by age."""
+        self.assertEqual(derive_status('', '未定', self.TODAY), 'ＶＳ')
+
+    def test_missing_date_stays_scheduled(self):
+        self.assertEqual(derive_status('', '', self.TODAY), 'ＶＳ')
 
 
 class TestConvertDatasiteDate(unittest.TestCase):

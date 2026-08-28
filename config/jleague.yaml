@@ -23,6 +23,12 @@ urls:
 # frame_ids -> competition_frame_ids query parameter
 # competition_names -> accepted values of the 大会 column (full-width)
 datasite:
+  # Days to wait after the match date before treating a result-less match as
+  # called off.  The Data Site publishes results with a lag, so a match that has
+  # merely kicked off must not be reported as cancelled; only one still empty
+  # after this grace period is.  Genuine cancellations that the Data Site states
+  # in the score cell ("中止" / "不実施") are detected immediately regardless.
+  cancel_margin_days: 7
   frame_ids:
     J1: 1
     J2: 2

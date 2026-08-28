@@ -1,5 +1,6 @@
 """Read match information of J-League and save as CSV"""
 import argparse
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 import logging
@@ -192,7 +193,8 @@ def build_match_frame(matches: pd.DataFrame) -> pd.DataFrame:
     matches['home_pk_score'] = pks[0].fillna('')
     matches['away_pk_score'] = pks[1].fillna('')
 
-    matches['status'] = matches['score'].apply(derive_status)
+    matches['status'] = matches.apply(
+        lambda row: derive_status(row['score'], row['match_date']), axis=1)
 
     # Number matches in the order the Data Site lists them, which is how the
     # historical CSVs were built; a stable sort keeps that order within a section.
@@ -201,17 +203,20 @@ def build_match_frame(matches: pd.DataFrame) -> pd.DataFrame:
     return matches[CSV_COLUMNS].reset_index(drop=True)
 
 
-def derive_status(score: str) -> str:
+def derive_status(score: str, match_date: str = '', today: date = None) -> str:
     """Map an SFMS01 score cell to the published CSV status vocabulary.
 
-    Only what the Data Site actually states is trusted.  A past-dated match
-    with no score is left as 'ＶＳ' rather than being guessed as cancelled:
-    the Data Site publishes results with some lag, so a date-based guess would
-    briefly mark every just-finished match as called off.  Cancellations are
-    written into the score cell itself, so they are detected explicitly.
+    A cancellation stated by the Data Site itself ('中止' / '不実施' in the score
+    cell) is taken at face value.  Otherwise a match with no result is only
+    reported as called off once it is more than 'datasite.cancel_margin_days'
+    past its match date: the Data Site publishes results with a noticeable lag,
+    so without that grace period a match that has merely kicked off would be
+    marked cancelled and then flip back on the next run.
 
     Args:
         score (str): Raw text of the スコア column.
+        match_date (str): Match date in the standard 'YYYY/MM/DD' format.
+        today (date, optional): Reference date; defaults to today in config.timezone.
 
     Returns:
         str: One of '試合終了', '試合不実施', '試合中止', 'ＶＳ'.
@@ -223,7 +228,17 @@ def derive_status(score: str) -> str:
         return '試合不実施'
     if '中止' in score_text:
         return '試合中止'
-    return 'ＶＳ'
+
+    try:
+        played_on = datetime.strptime((match_date or '').strip(),
+                                      config.standard_date_format).date()
+    except (ValueError, TypeError):
+        return 'ＶＳ'  # Undecided or unparseable date -> still scheduled
+
+    if today is None:
+        today = datetime.now().astimezone(config.timezone).date()
+    margin = timedelta(days=config.datasite.cancel_margin_days)
+    return '試合中止' if played_on + margin < today else 'ＶＳ'
 
 
 def convert_datasite_date(match_date: str) -> str:
