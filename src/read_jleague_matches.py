@@ -1,12 +1,12 @@
 """Read match information of J-League and save as CSV"""
 import argparse
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 import logging
 import os
 from pathlib import Path
 import re
-from typing import Any
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -59,108 +59,200 @@ def read_teams_from_web(soup: BeautifulSoup, competition: str) -> list[str]:
     Raises:
         KeyError: If the key 'urls.standing_url_format' is not found in the config file
     """
-    standings = soup.find('table', class_=f'{competition}table')
-    if not standings:
-        logger.warning("Can't find %s teams", competition)
-        return []
-    td_teams = standings.find_all('td', class_='tdTeam')
-    return [list(_td.stripped_strings)[1] for _td in td_teams]
+    # The per-competition modifier ("o-table o-table--standing o-table--j1") sits on
+    # a wrapper element, not on <table> itself.  The page also renders a loading
+    # skeleton carrying the same modifier, so pick the first wrapper that actually
+    # holds club links.
+    for wrapper in soup.find_all(class_=f'o-table--{competition.lower()}'):
+        links = wrapper.find_all('a', class_='o-table__club-link')
+        if links:
+            return [_a.get_text(strip=True) for _a in links]
+    logger.warning("Can't find %s teams", competition)
+    return []
 
 
-def read_match(competition: str, sec: int, url_category: str = None) -> pd.DataFrame:
-    """Read match data for a specified competition and section from the web.
+# Column order of the SFMS01 search result table.
+DATASITE_COLUMNS = ['season', 'competition', 'section', 'match_date', 'start_time',
+                    'home_team', 'score', 'away_team', 'stadium', 'attendance', 'broadcast']
+
+# Output column order of the generated CSV.
+CSV_COLUMNS = ['match_date', 'section_no', 'match_index_in_section', 'start_time', 'stadium',
+               'home_team', 'home_goal', 'away_goal', 'away_team', 'status',
+               'home_pk_score', 'away_pk_score', 'broadcast', 'attendance']
+
+# SFMS01 renders full-width digits in the 節 column (e.g. 第１０節第２日).
+FULLWIDTH_DIGITS = str.maketrans('０１２３４５６７８９', '0123456789')
+
+# SFMS01 marks an undecided venue with decorative markers.
+UNDECIDED_STADIUM = '●未定●'
+
+
+def datasite_year(season: str) -> int:
+    """Derive the SFMS01 ``competition_years`` value from a season string.
+
+    Both the single-year form ('2025') and the cross-year form ('26-27') are
+    accepted; the cross-year form resolves to its starting year.
+
+    Args:
+        season (str): Season string from the config file.
+
+    Returns:
+        int: Four-digit year to query.
+    """
+    head = str(season).split('-')[0]
+    year = int(head)
+    return year + 2000 if year < 100 else year
+
+
+def read_match(competition: str) -> pd.DataFrame:
+    """Read every match of the configured season from the J-League Data Site.
+
+    A single request returns all sections of the season, so unlike the old
+    per-section reader this takes no section argument.
 
     Args:
         competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-        sec (int): Section number
-        url_category (str, optional): Override category value for URL construction.
-            The source_url_format '{}/{}/' normally uses the lowercased
-            competition key, e.g. 'j1/1/'. When url_category='j2j3', it
-            becomes 'j2j3/1/' instead.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
 
     Raises:
-        KeyError: If the key 'urls.source_url_format' is not found in the config file
+        KeyError: If the competition has no 'datasite.frame_ids' entry
+        ValueError: If the result table cannot be found in the response
     """
-    cat_for_url = url_category if url_category else competition.lower()
-    _url = config.get_format_str('urls.source_url_format', cat_for_url, sec)
+    frame_id = config.datasite.frame_ids[competition]
+    if frame_id is None:
+        raise KeyError(f"No datasite.frame_ids entry for {competition}")
+    _url = config.get_format_str('urls.datasite_url_format',
+                                 datasite_year(config.season), frame_id)
     logger.info("Access %s", _url)
     soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
-    return read_match_from_web(soup)
+    return read_match_from_web(soup, competition)
 
 
-def read_match_from_web(soup: BeautifulSoup) -> list[dict[str, Any]]:
-    """Read and return match information from J-League match list.
+def read_match_from_web(soup: BeautifulSoup, competition: str) -> pd.DataFrame:
+    """Parse the SFMS01 search result table into the published CSV shape.
 
     Args:
         soup (BeautifulSoup): BeautifulSoup object containing the web data
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
 
     Returns:
-        list[dict[str, Any]]: List of dictionaries containing match information
+        pd.DataFrame: DataFrame containing match data, ordered by section
+
+    Raises:
+        ValueError: If the result table cannot be found in the response
     """
-    result_list = []
+    table = soup.find('table', class_='search-table')
+    if table is None:
+        raise ValueError('Could not find the SFMS01 result table in the response')
 
-    match_sections = soup.find_all('section', class_='matchlistWrap')
-    section_no = None
-    _index = 1
-    for _section in match_sections:
-        match_div = _section.find('div', class_='timeStamp')
-        if match_div:
-            match_date = match_div.find('h4').text.strip()
-            match_date = convert_jleague_date(match_date)
-        else:
-            match_date = None
-        section_no_text = _section.find('div', class_='leagAccTit').find('h5').text.strip()
-        section_no_match = re.search('第(.+)節', section_no_text)
-        if section_no_match is None:
-            # Check if there are actual match rows on the page
-            if _section.find('td', class_='clubName leftside'):
-                raise ValueError(
-                    f'Could not parse section_no from "{section_no_text}" '
-                    'but match data exists on the page')
-            logger.warning("No match data in section \"%s\", skipping", section_no_text)
-            continue
-        section_no = section_no_match[1]
-        group = None  # Track current group from groupHead headers (e.g., EAST, WEST)
-        for _tr in _section.find_all('tr'):
-            # Track group headers
-            group_th = _tr.find('th', class_='groupHead')
-            if group_th:
-                group = group_th.text.strip()
-                continue
+    rows = []
+    for _tr in table.find_all('tr'):
+        cells = [_td.get_text(strip=True) for _td in _tr.find_all('td')]
+        if not cells:
+            continue  # header row
+        # The broadcast column is omitted entirely on some rows; pad to a fixed width.
+        cells = (cells + [''] * len(DATASITE_COLUMNS))[:len(DATASITE_COLUMNS)]
+        rows.append(cells)
 
-            match_dict = {}
-            match_dict['match_date'] = match_date
-            match_dict['section_no'] = int(section_no)
-            match_dict['match_index_in_section'] = _index
-            if group:
-                match_dict['group'] = group
-            stadium_td = _tr.find('td', class_='stadium')
-            if not stadium_td:
-                continue
-            _match = re.search(r'([^\>]+)\<br', str(stadium_td))
-            match_dict['start_time'] = _match[1] if _match else ""
-            _match = re.search(r'([^\>]+)\<\/a', str(stadium_td))
-            match_dict['stadium'] = _match[1] if _match else ""
-            match_dict['home_team'] = _tr.find('td', class_='clubName leftside').text.strip()
-            match_dict['home_goal'] = _tr.find('td', class_='point leftside').text.strip()
-            match_dict['away_goal'] = _tr.find('td', class_='point rightside').text.strip()
-            match_dict['away_team'] = _tr.find('td', class_='clubName rightside').text.strip()
+    matches = pd.DataFrame(rows, columns=DATASITE_COLUMNS)
+    # One frame_id may serve several competitions over the years; keep only ours.
+    names = config.datasite.competition_names[competition]
+    matches = matches[matches['competition'].isin(names)].reset_index(drop=True)
+    if matches.empty:
+        logger.warning("No %s matches found on the Data Site", competition)
+        return pd.DataFrame(columns=CSV_COLUMNS)
 
-            _status = _tr.find('td', class_='status')
-            match_dict['status'] = \
-                _status.text.strip().replace('\n', '') if _status is not None else '不明'
-            pk_match = re.search(r'試合終了\((\d+) PK (\d+)\)', match_dict['status'])
-            match_dict['home_pk_score'] = str(int(pk_match[1])) if pk_match else ''
-            match_dict['away_pk_score'] = str(int(pk_match[2])) if pk_match else ''
+    return build_match_frame(matches)
 
-            logger.debug("%s", match_dict)
-            result_list.append(match_dict)
-            _index += 1
-    logger.info("Read %d matches in section %s", len(result_list), section_no)
-    return result_list
+
+def build_match_frame(matches: pd.DataFrame) -> pd.DataFrame:
+    """Derive the published CSV columns from raw SFMS01 rows.
+
+    Args:
+        matches (pd.DataFrame): Raw rows named after DATASITE_COLUMNS.
+
+    Returns:
+        pd.DataFrame: DataFrame holding CSV_COLUMNS, sorted by section.
+    """
+    matches = matches.copy()
+    matches['section_no'] = matches['section'].str.translate(FULLWIDTH_DIGITS) \
+                                              .str.extract(r'第(\d+)節', expand=False).astype(int)
+    matches['match_date'] = matches['match_date'].str.replace(r'\(.+\)', '', regex=True) \
+                                                 .apply(convert_datasite_date)
+    matches['stadium'] = matches['stadium'].replace(UNDECIDED_STADIUM, '未定')
+    matches['attendance'] = matches['attendance'].str.replace(',', '', regex=False)
+
+    # Score is '3-4' when played, '1-1(PK4-2)' for a shootout, and vs / blank otherwise.
+    goals = matches['score'].str.extract(r'^(\d+)-(\d+)')
+    matches['home_goal'] = goals[0].fillna('')
+    matches['away_goal'] = goals[1].fillna('')
+    pks = matches['score'].str.extract(r'PK\s*(\d+)-(\d+)')
+    matches['home_pk_score'] = pks[0].fillna('')
+    matches['away_pk_score'] = pks[1].fillna('')
+
+    matches['status'] = matches.apply(
+        lambda row: derive_status(row['score'], row['match_date']), axis=1)
+
+    # Number matches in the order the Data Site lists them, which is how the
+    # historical CSVs were built; a stable sort keeps that order within a section.
+    matches = matches.sort_values('section_no', kind='stable')
+    matches['match_index_in_section'] = matches.groupby('section_no').cumcount() + 1
+    return matches[CSV_COLUMNS].reset_index(drop=True)
+
+
+def derive_status(score: str, match_date: str = '', today: date = None) -> str:
+    """Map an SFMS01 score cell to the published CSV status vocabulary.
+
+    A cancellation stated by the Data Site itself ('中止' / '不実施' in the score
+    cell) is taken at face value.  Otherwise a match with no result is only
+    reported as called off once it is more than 'datasite.cancel_margin_days'
+    past its match date: the Data Site publishes results with a noticeable lag,
+    so without that grace period a match that has merely kicked off would be
+    marked cancelled and then flip back on the next run.
+
+    Args:
+        score (str): Raw text of the スコア column.
+        match_date (str): Match date in the standard 'YYYY/MM/DD' format.
+        today (date, optional): Reference date; defaults to today in config.timezone.
+
+    Returns:
+        str: One of '試合終了', '試合不実施', '試合中止', 'ＶＳ'.
+    """
+    score_text = (score or '').strip()
+    if re.match(r'^\d+-\d+', score_text):
+        return '試合終了'
+    if '不実施' in score_text:
+        return '試合不実施'
+    if '中止' in score_text:
+        return '試合中止'
+
+    try:
+        played_on = datetime.strptime((match_date or '').strip(),
+                                      config.standard_date_format).date()
+    except (ValueError, TypeError):
+        return 'ＶＳ'  # Undecided or unparseable date -> still scheduled
+
+    if today is None:
+        today = datetime.now().astimezone(config.timezone).date()
+    margin = timedelta(days=config.datasite.cancel_margin_days)
+    return '試合中止' if played_on + margin < today else 'ＶＳ'
+
+
+def convert_datasite_date(match_date: str) -> str:
+    """Convert an SFMS01 date ('26/08/07') to the standard format ('2026/08/07').
+
+    Args:
+        match_date (str): Date text with the weekday suffix already removed.
+
+    Returns:
+        str: Converted date string, or the input unchanged if unparseable.
+    """
+    text = (match_date or '').strip()
+    if re.match(r'^\d{2}/\d{2}/\d{2}$', text):
+        return f'20{text}'
+    return text
 
 
 def convert_jleague_date(match_date: str) -> str:
@@ -200,24 +292,23 @@ def read_matches(competition: str, sections: list[int] = None,
                  url_category: str = None) -> pd.DataFrame:
     """Read match data for specified competition from the web.
 
-    When sections is None, fetches all sections (derived from team count).
+    One Data Site request returns the whole season, so `sections` only narrows
+    down the already-fetched rows; it does not reduce the number of requests.
 
     Args:
         competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
-        sections (list[int], optional): Section numbers to fetch. Defaults to all.
-        url_category (str, optional): Override category value for URL construction.
+        sections (list[int], optional): Section numbers to keep. Defaults to all.
+        url_category (str, optional): Unused; kept for call-site compatibility.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
     """
-    _matches = pd.DataFrame()
-    if not sections:
-        teams_count = len(read_teams(competition))
-        sections = _team_count_to_section_range(teams_count)
-
-    for _i in sections:
-        result_list = read_match(competition, _i, url_category=url_category)
-        _matches = pd.concat([_matches, pd.DataFrame(result_list)])
+    if url_category:
+        logger.warning("url_category=%s is ignored: the Data Site serves each competition"
+                       " separately", url_category)
+    _matches = read_match(competition)
+    if sections:
+        _matches = _matches[_matches['section_no'].isin(set(sections))]
     # A common mistake is not saving the result of sort or reset_index operations
     _matches = _matches.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
     return _matches
@@ -399,6 +490,10 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
         sub_seasons (list[dict]): Sub-season info from get_sub_seasons().
         force_update (bool): If True, re-fetch all sections regardless of timestamps.
         need_update (set[int]): If given, fetch only these sections (differential update).
+
+    Raises:
+        NotImplementedError: If a group_display filter is needed but the fetched
+            data carries no 'group' column (the Data Site does not publish one).
     """
     # Attach competition to each sub for _get_sections_for_sub_group
     for sub in sub_seasons:
@@ -432,6 +527,16 @@ def update_sub_season_matches(competition: str, sub_seasons: list[dict],
 
         logger.info("Fetching sections %s for url_category=%s", list(fetch_range), url_cat)
         fetched = read_matches(competition, fetch_range, url_category=url_cat)
+
+        # Grouped sub-seasons need to know which group each match belongs to.
+        # The Data Site does not publish that, so fail loudly rather than
+        # silently writing every group's matches into every CSV.
+        grouped = [sub['name'] for sub in subs if sub.get('group_display')]
+        if grouped and 'group' not in fetched.columns:
+            raise NotImplementedError(
+                f"Cannot split sub-seasons {grouped} of {competition}: the fetched data "
+                "has no 'group' column. The Data Site does not expose one, so a grouped "
+                "season needs a different source.")
 
         # Distribute fetched data to each sub-season CSV
         for sub in subs:

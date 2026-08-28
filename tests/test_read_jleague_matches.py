@@ -1,4 +1,5 @@
 """Tests for read_jleague_matches.py"""
+from datetime import date
 from datetime import datetime
 from datetime import timezone
 from pathlib import Path
@@ -8,6 +9,10 @@ from bs4 import BeautifulSoup
 import pandas as pd
 
 from match_utils import drop_duplicated_indexes
+from read_jleague_matches import CSV_COLUMNS
+from read_jleague_matches import convert_datasite_date
+from read_jleague_matches import datasite_year
+from read_jleague_matches import derive_status
 from read_jleague_matches import read_match_from_web
 from read_jleague_matches import read_teams_from_web
 
@@ -106,202 +111,174 @@ class HtmlLoadingTestCase(unittest.TestCase):
             content = f.read()
             return BeautifulSoup(content.decode('utf-8', errors='ignore'), 'lxml')
 
-
 class TestReadTeamsFromWeb(HtmlLoadingTestCase):
-    """Test for read_teams_from_web function"""
+    """Test for read_teams_from_web function (jleague.jp standings page)"""
 
     def setUp(self):
-        """Read HTML files for each competition"""
+        """Read the standings HTML fixture"""
         self.test_data_dir = Path(__file__).parent / 'test_data'
-        # Read HTML files for each competition and create BeautifulSoup objects
-        self.j1_soup = self._load_html_file('j1_standing.html')
-        self.j2_soup = self._load_html_file('j2_standing.html')
-        self.j3_soup = self._load_html_file('j3_standing.html')
+        self.j1_soup = self._load_html_file('j1_standing_2026.html')
 
     def test_read_j1_teams(self):
-        """Test for reading J1 teams"""
+        """All 20 J1 clubs are read from the standings table"""
         teams = read_teams_from_web(self.j1_soup, 'J1')
 
         self.assertIsInstance(teams, list)
-        self.assertTrue(len(teams) > 0)  # Should check the length of the list
-
-        expected_teams = ['アビスパ福岡', '京都サンガF.C.', '川崎フロンターレ', 'ＦＣ町田ゼルビア', 'ファジアーノ岡山',
-                          '柏レイソル', 'サンフレッチェ広島', '鹿島アントラーズ', '湘南ベルマーレ', 'ガンバ大阪',
-                          '清水エスパルス', 'セレッソ大阪', 'ヴィッセル神戸', '横浜ＦＣ', '浦和レッズ', '東京ヴェルディ',
-                          'ＦＣ東京', '横浜Ｆ・マリノス', '名古屋グランパス', 'アルビレックス新潟']
-        for team in expected_teams:
+        self.assertEqual(len(teams), 20)
+        for team in ['鹿島アントラーズ', '浦和レッズ', '横浜Ｆ・マリノス', 'ＦＣ町田ゼルビア']:
             self.assertIn(team, teams, f"{team} is not in the J1 team list")
 
-    def test_read_j2_teams(self):
-        """Test for reading J2 teams"""
-        teams = read_teams_from_web(self.j2_soup, 'J2')
-
-        self.assertIsInstance(teams, list)
-        self.assertTrue(len(teams) > 0)
-
-        expected_teams = ['ジェフユナイテッド千葉', 'ＦＣ今治', 'ＲＢ大宮アルディージャ', 'ジュビロ磐田', 'ベガルタ仙台',
-                          'Ｖ・ファーレン長崎', '水戸ホーリーホック', 'モンテディオ山形', '徳島ヴォルティス', '藤枝ＭＹＦＣ',
-                          '大分トリニータ', 'カターレ富山', 'ロアッソ熊本', 'ヴァンフォーレ甲府', 'サガン鳥栖',
-                          'ブラウブリッツ秋田', '北海道コンサドーレ札幌', 'レノファ山口ＦＣ', 'いわきＦＣ', '愛媛ＦＣ']
-        for team in expected_teams:
-            self.assertIn(team, teams, f"{team} is not in the J2 team list")
-
-    def test_read_j3_teams(self):
-        """Test for reading J3 teams"""
-        teams = read_teams_from_web(self.j3_soup, 'J3')
-
-        self.assertIsInstance(teams, list)
-        self.assertTrue(len(teams) > 0)
-
-        expected_teams = ['ＦＣ大阪', '鹿児島ユナイテッドＦＣ', 'ギラヴァンツ北九州', 'テゲバジャーロ宮崎',
-                          '栃木シティ', '福島ユナイテッドＦＣ', '奈良クラブ', 'ツエーゲン金沢', 'ヴァンラーレ八戸',
-                          'カマタマーレ讃岐', '高知ユナイテッドＳＣ', 'ＡＣ長野パルセイロ', 'ＦＣ琉球', '栃木ＳＣ',
-                          'ザスパ群馬', 'ＳＣ相模原', 'アスルクラロ沼津', '松本山雅ＦＣ', 'ＦＣ岐阜', 'ガイナーレ鳥取']
-        for team in expected_teams:
-            self.assertIn(team, teams, f"{team} is not in the J3 team list")
+    def test_skips_skeleton_table(self):
+        """The loading skeleton carries the same modifier class but holds no clubs"""
+        # Only the wrapper that actually contains club links must be used.
+        self.assertNotIn('', read_teams_from_web(self.j1_soup, 'J1'))
 
     def test_invalid_competition(self):
         """Test for non-existing competition"""
-        # Call the function with a non-existing competition (e.g., J4)
         teams = read_teams_from_web(self.j1_soup, 'J4')
 
-        # Check that an empty list is returned
         self.assertEqual(teams, [])
 
 
 class TestReadMatchFromWeb(HtmlLoadingTestCase):
-    """Test for read_match_from_web function"""
+    """Test for read_match_from_web function (data.j-league.or.jp SFMS01)"""
 
     def setUp(self):
-        """Read HTML files for each competition"""
+        """Read the Data Site search result fixture"""
         self.test_data_dir = Path(__file__).parent / 'test_data'
-        self.j1_soup = self._load_html_file('j1_section1.html')
-        self.j2_soup = self._load_html_file('j2_section2.html')
-        self.j3_soup = self._load_html_file('j3_section3.html')
+        self.soup = self._load_html_file('jleague_datasite_j1.html')
+        self.matches = read_match_from_web(self.soup, 'J1')
 
-    def test_read_match_from_j1_data(self):
-        """Test for reading match information from valid HTML data for J1"""
-        matches = read_match_from_web(self.j1_soup)
+    def test_returns_dataframe_with_csv_columns(self):
+        """The parsed result carries exactly the published CSV columns"""
+        self.assertIsInstance(self.matches, pd.DataFrame)
+        self.assertEqual(list(self.matches.columns), CSV_COLUMNS)
 
-        self.assertIsInstance(matches, list)
+    def test_played_match_is_parsed(self):
+        """A finished match yields goals, status and attendance"""
+        row = self.matches.iloc[0]
 
-        assert len(matches) == 10
-        assert matches[0]['match_date'] == '2025/02/14'
-        assert matches[0]['start_time'] == '19:03'
-        assert matches[0]['section_no'] == 1
-        assert matches[0]['match_index_in_section'] == 1
-        assert matches[0]['stadium'] == 'パナスタ'
-        assert matches[0]['home_team'] == 'Ｇ大阪'
-        assert matches[0]['home_goal'] == '2'
-        assert matches[0]['away_goal'] == '5'
-        assert matches[0]['away_team'] == 'Ｃ大阪'
-        assert matches[0]['status'] == '試合終了'
+        self.assertEqual(row['match_date'], '2026/08/07')
+        self.assertEqual(row['section_no'], 1)
+        self.assertEqual(row['match_index_in_section'], 1)
+        self.assertEqual(row['start_time'], '19:26')
+        self.assertEqual(row['stadium'], 'MUFG国立')
+        self.assertEqual(row['home_team'], '横浜FM')
+        self.assertEqual(row['home_goal'], '3')
+        self.assertEqual(row['away_goal'], '4')
+        self.assertEqual(row['away_team'], '鹿島')
+        self.assertEqual(row['status'], '試合終了')
+        self.assertEqual(row['attendance'], '63960')
+        self.assertEqual(row['broadcast'], 'ＤＡＺＮ／フジテレビ系列全国ネット')
 
-        assert matches[9]['match_date'] == '2025/02/16'
-        assert matches[9]['start_time'] == '14:03'
-        assert matches[9]['section_no'] == 1
-        assert matches[9]['match_index_in_section'] == 10
-        assert matches[9]['stadium'] == 'Ｇスタ'
-        assert matches[9]['home_team'] == '町田'
-        assert matches[9]['home_goal'] == '1'
-        assert matches[9]['away_goal'] == '2'
-        assert matches[9]['away_team'] == '広島'
-        assert matches[9]['status'] == '試合終了'
+    def test_scheduled_match_has_no_score(self):
+        """An unplayed match keeps empty goals and the ＶＳ status"""
+        row = self.matches[self.matches['section_no'] == 38].iloc[0]
 
-    def test_read_match_from_j2_data(self):
-        """Test for reading match information from valid HTML data for J2"""
-        matches = read_match_from_web(self.j2_soup)
+        self.assertEqual(row['home_goal'], '')
+        self.assertEqual(row['away_goal'], '')
+        self.assertEqual(row['status'], 'ＶＳ')
+        self.assertEqual(row['attendance'], '')
 
-        self.assertIsInstance(matches, list)
+    def test_section_no_parsed_from_fullwidth_digits(self):
+        """節 is rendered with full-width digits (第２１節第１日)"""
+        self.assertIn(21, set(self.matches['section_no']))
+        self.assertIn(38, set(self.matches['section_no']))
 
-        assert len(matches) == 10
-        assert matches[0]['match_date'] == '2025/02/22'
-        assert matches[0]['start_time'] == '14:03'
-        assert matches[0]['section_no'] == 2
-        assert matches[0]['match_index_in_section'] == 1
-        assert matches[0]['stadium'] == 'ＮＡＣＫ'
-        assert matches[0]['home_team'] == '大宮'
-        assert matches[0]['home_goal'] == '1'
-        assert matches[0]['away_goal'] == '0'
-        assert matches[0]['away_team'] == '甲府'
-        assert matches[0]['status'] == '試合終了'
-        assert matches[9]['match_date'] == '2025/02/23'
-        assert matches[9]['start_time'] == '15:03'
-        assert matches[9]['section_no'] == 2
-        assert matches[9]['match_index_in_section'] == 10
-        assert matches[9]['stadium'] == 'ニンスタ'
-        assert matches[9]['home_team'] == '愛媛'
-        assert matches[9]['home_goal'] == '1'
-        assert matches[9]['away_goal'] == '2'
-        assert matches[9]['away_team'] == '秋田'
-        assert matches[9]['status'] == '試合終了'
+    def test_undecided_stadium_is_normalized(self):
+        """The Data Site marks an undecided venue as ●未定●"""
+        row = self.matches[self.matches['section_no'] == 21].iloc[0]
 
-    def test_read_match_from_j3_data(self):
-        """Test for reading match information from valid HTML data for J3"""
-        matches = read_match_from_web(self.j3_soup)
+        self.assertEqual(row['stadium'], '未定')
 
-        self.assertIsInstance(matches, list)
+    def test_match_index_restarts_each_section(self):
+        """match_index_in_section is a 1-based counter within each section"""
+        for _, group in self.matches.groupby('section_no'):
+            expected = list(range(1, len(group) + 1))
+            self.assertEqual(list(group['match_index_in_section']), expected)
 
-        assert len(matches) == 10
-        assert matches[0]['match_date'] == '2025/03/01'
-        assert matches[0]['start_time'] == '14:03'
-        assert matches[0]['section_no'] == 3
-        assert matches[0]['match_index_in_section'] == 1
-        assert matches[0]['stadium'] == 'ＣＦＳ'
-        assert matches[0]['home_team'] == '栃木Ｃ'
-        assert matches[0]['home_goal'] == '0'
-        assert matches[0]['away_goal'] == '0'
-        assert matches[0]['away_team'] == '沼津'
-        assert matches[0]['status'] == '試合終了'
-        assert matches[9]['match_date'] == '2025/03/02'
-        assert matches[9]['start_time'] == '14:03'
-        assert matches[9]['section_no'] == 3
-        assert matches[9]['match_index_in_section'] == 10
-        assert matches[9]['stadium'] == '春野陸'
-        assert matches[9]['home_team'] == '高知'
-        assert matches[9]['home_goal'] == '1'
-        assert matches[9]['away_goal'] == '2'
-        assert matches[9]['away_team'] == 'FC大阪'
-        assert matches[9]['status'] == '試合終了'
+    def test_pk_columns_empty_for_league_match(self):
+        """League matches never go to a shootout, so the PK columns stay empty"""
+        self.assertTrue((self.matches['home_pk_score'] == '').all())
+        self.assertTrue((self.matches['away_pk_score'] == '').all())
 
-    def test_read_match_from_web_no_matches(self):
-        """Test for no match information - check that an empty list is returned"""
+    def test_other_competition_rows_are_filtered_out(self):
+        """Only rows whose 大会 matches the requested competition are kept"""
+        matches = read_match_from_web(self.soup, 'J2')
+
+        self.assertTrue(matches.empty)
+        self.assertEqual(list(matches.columns), CSV_COLUMNS)
+
+    def test_missing_result_table_raises(self):
+        """A response without the result table is an error, not an empty result"""
         empty_soup = BeautifulSoup('<html></html>', 'lxml')
-        matches = read_match_from_web(empty_soup)
 
-        # 空のリストが返されることを確認
-        self.assertEqual(matches, [])
+        with self.assertRaises(ValueError):
+            read_match_from_web(empty_soup, 'J1')
 
-    def test_read_match_from_web_partial_data(self):
-        """Test for partial data - check that the function can handle missing data"""
-        partial_soup = BeautifulSoup("""
-        <section class="matchlistWrap">
-            <div class="timeStamp">
-                <h4>2023年3月1日(水)</h4>
-            </div>
-            <div class="leagAccTit">
-                <h5>第1節</h5>
-            </div>
-            <tr>
-                <td class="stadium"></td>
-                <td class="clubName leftside">ホームチーム</td>
-                <td class="point leftside">2</td>
-                <td class="point rightside">1</td>
-                <td class="clubName rightside">アウェイチーム</td>
-                <td class="status">終了</td>
-            </tr>
-        </section>
-        """, 'lxml')
-        matches = read_match_from_web(partial_soup)
 
-        # Check if the function can continue processing even if the data is partially missing
-        self.assertEqual(len(matches), 1)
-        self.assertEqual(matches[0]['stadium'], "")
-        self.assertEqual(matches[0]['home_team'], "ホームチーム")
-        self.assertEqual(matches[0]['home_goal'], "2")
-        self.assertEqual(matches[0]['away_goal'], "1")
-        self.assertEqual(matches[0]['away_team'], "アウェイチーム")
-        self.assertEqual(matches[0]['status'], "終了")
+class TestDeriveStatus(unittest.TestCase):
+    """Test for derive_status function"""
+
+    TODAY = date(2026, 8, 29)
+
+    def test_score_means_finished(self):
+        self.assertEqual(derive_status('3-4', '2026/08/07'), '試合終了')
+
+    def test_shootout_score_means_finished(self):
+        self.assertEqual(derive_status('1-1(PK4-2)', '2026/08/07'), '試合終了')
+
+    def test_blank_future_match_is_scheduled(self):
+        self.assertEqual(derive_status('', '2026/09/20', self.TODAY), 'ＶＳ')
+
+    def test_vs_means_scheduled(self):
+        self.assertEqual(derive_status('vs', '2026/09/20', self.TODAY), 'ＶＳ')
+
+    def test_cancelled_is_detected(self):
+        """A cancellation stated by the Data Site needs no grace period."""
+        self.assertEqual(derive_status('中止', '2026/08/28', self.TODAY), '試合中止')
+
+    def test_not_held_is_detected(self):
+        self.assertEqual(derive_status('不実施', '2026/08/28', self.TODAY), '試合不実施')
+
+    def test_just_played_match_is_not_called_off(self):
+        """The Data Site lags: yesterday's match has no result yet, not a cancellation."""
+        self.assertEqual(derive_status('', '2026/08/28', self.TODAY), 'ＶＳ')
+
+    def test_match_inside_grace_period_is_not_called_off(self):
+        """cancel_margin_days is 7, so a 7-day-old blank result still waits."""
+        self.assertEqual(derive_status('', '2026/08/22', self.TODAY), 'ＶＳ')
+
+    def test_match_past_grace_period_is_called_off(self):
+        """Beyond the grace period a still-empty result means the match was called off."""
+        self.assertEqual(derive_status('', '2026/08/21', self.TODAY), '試合中止')
+
+    def test_undecided_date_stays_scheduled(self):
+        """A match with no fixed date can never be judged by age."""
+        self.assertEqual(derive_status('', '未定', self.TODAY), 'ＶＳ')
+
+    def test_missing_date_stays_scheduled(self):
+        self.assertEqual(derive_status('', '', self.TODAY), 'ＶＳ')
+
+
+class TestConvertDatasiteDate(unittest.TestCase):
+    """Test for convert_datasite_date function"""
+
+    def test_two_digit_year_is_expanded(self):
+        self.assertEqual(convert_datasite_date('26/08/07'), '2026/08/07')
+
+    def test_unparseable_value_is_returned_unchanged(self):
+        self.assertEqual(convert_datasite_date('未定'), '未定')
+
+
+class TestDatasiteYear(unittest.TestCase):
+    """Test for datasite_year function"""
+
+    def test_cross_year_season_uses_start_year(self):
+        self.assertEqual(datasite_year('26-27'), 2026)
+
+    def test_single_year_season(self):
+        self.assertEqual(datasite_year('2025'), 2025)
 
 
 if __name__ == '__main__':
