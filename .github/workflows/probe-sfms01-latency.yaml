@@ -1,0 +1,76 @@
+# Temporary investigation (Issue #290 follow-up): measure how quickly
+# data.j-league.or.jp (SFMS01) publishes match results.
+#
+# Answers two questions from the probe log uploaded as an artifact:
+#   - does the score move DURING a match (near real-time), or
+#   - does it only appear after full time (and how long after)?
+#
+# Delete this workflow once the measurement is done.
+name: Probe SFMS01 latency
+
+on:
+  # 08:45 UTC = 17:45 JST, ~15 min before the 18:00 kick-offs.
+  schedule:
+    - cron: '45 8 29 8 *'
+    - cron: '45 8 30 8 *'
+  workflow_dispatch:
+    inputs:
+      until:
+        description: 'Stop time (HH:MM JST)'
+        required: false
+        default: '22:00'
+      interval:
+        description: 'Seconds between polls'
+        required: false
+        default: '60'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    # Hosted runners cap a job at 6h; the window below is ~4h15m.
+    timeout-minutes: 330
+
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Probe SFMS01 during the match window
+        run: |
+          uv run python scripts/probe_sfms01_latency.py \
+            --until "${{ github.event.inputs.until || '22:00' }}" \
+            --interval "${{ github.event.inputs.interval || '60' }}" \
+            --out sfms01_latency.jsonl \
+            J1 J2 J3
+
+      - name: Summarise
+        if: always()
+        run: |
+          if [ ! -s sfms01_latency.jsonl ]; then
+            echo "no probe log was produced" | tee summary.txt
+            exit 0
+          fi
+          uv run python scripts/summarize_sfms01_latency.py sfms01_latency.jsonl > summary.txt
+          {
+            echo '```text'
+            cat summary.txt
+            echo '```'
+          } >> $GITHUB_STEP_SUMMARY
+          cat summary.txt
+
+      - name: Upload probe log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfms01-latency-${{ github.run_id }}
+          path: |
+            sfms01_latency.jsonl
+            summary.txt
+          retention-days: 30
