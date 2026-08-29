@@ -84,6 +84,8 @@ MATCH_LINK_RE = re.compile(r'^/match/([a-z0-9]+)/(\d{4})/(\d{2})(\d{2})(\d+)/')
 SECTION_RE = re.compile(r'第([0-9０-９]+)節')
 HEADER_DATE_RE = re.compile(r'(\d{4})/(\d{1,2})/(\d{1,2})')
 TIME_RE = re.compile(r'^\d{1,2}:\d{2}$')
+# The detail page keeps the kick-off in its header: '2026/8/22 (土) 18:00 KO'.
+DETAIL_KICKOFF_RE = re.compile(r'(\d{1,2}:\d{2})\s*KO')
 
 # Status vocabulary of the published CSV.  'ＶＳ' means not played yet; a status
 # containing '速報中' marks a match in progress (the front-end strips the marker
@@ -109,17 +111,22 @@ def read_match(competition: str, periods: list[tuple[str, str]] = None) -> pd.Da
         KeyError: If the key 'urls.match_url_format' is not found in the config file
     """
     frames = []
+    links: dict[tuple, str] = {}
     for (start, end) in periods or season_periods():
         _url = config.get_format_str('urls.match_url_format',
                                      competition.lower(), start, end)
         logger.info("Access %s", _url)
         soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
         frames.append(read_match_from_web(soup, competition))
+        links.update(read_detail_links(soup, competition))
 
     matches = pd.concat(frames) if frames else pd.DataFrame(columns=CSV_COLUMNS)
     # The same match can appear in two adjacent periods; the link is unique per match.
     matches = matches.drop_duplicates(subset=['match_date', 'home_team', 'away_team'])
-    return renumber_matches(matches)
+    matches = renumber_matches(matches)
+    # Carried alongside the frame so a caller can look a kick-off time up later.
+    matches.attrs['detail_links'] = links
+    return matches
 
 
 def season_periods(months: int = 12, start_month: int = None) -> list[tuple[str, str]]:
@@ -330,6 +337,103 @@ def renumber_matches(matches: pd.DataFrame) -> pd.DataFrame:
     return matches.reindex(columns=CSV_COLUMNS)
 
 
+def read_detail_links(soup: BeautifulSoup, competition: str) -> dict[tuple, str]:
+    """Map each match on the page to its detail-page path.
+
+    Args:
+        soup (BeautifulSoup): BeautifulSoup object containing the web data
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
+
+    Returns:
+        dict[tuple, str]: {(match_date, home_team, away_team): '/match/j3/2026/082225/'}
+    """
+    category = competition.lower()
+    links = {}
+    for link in soup.find_all('a', href=MATCH_LINK_RE):
+        card = link.find(class_='m-schedule__match')
+        if card is None:
+            continue
+        _match = MATCH_LINK_RE.match(link['href'])
+        if _match.group(1) != category:
+            continue
+        names = [_e.get_text(strip=True)
+                 for _e in card.find_all(class_='m-schedule__team-name',
+                                         attrs={'data-media': 'sp'})]
+        if len(names) != 2:
+            continue
+        match_date = f'{_match.group(2)}/{_match.group(3)}/{_match.group(4)}'
+        links.setdefault((match_date, names[0], names[1]), _match.group(0))
+    return links
+
+
+def read_kickoff_from_detail(path: str) -> str:
+    """Read the kick-off time from a match's own page.
+
+    The schedule page drops the time on kick-off, so a match that was still
+    undated when it was last recorded has no time anywhere else.  Its own page
+    keeps it ("2026/8/22 (土) 18:00 KO") long after the final whistle.
+
+    Args:
+        path (str): Site-relative detail path, e.g. '/match/j3/2026/082225/'.
+
+    Returns:
+        str: 'HH:MM', or '' when the page does not state one.
+    """
+    url = f'https://www.jleague.jp{path}'
+    logger.info("Access %s", url)
+    try:
+        text = requests.get(url, timeout=config.http_timeout).text
+    except requests.RequestException as exc:
+        logger.warning("Could not read %s: %s", url, exc)
+        return ''
+    found = DETAIL_KICKOFF_RE.search(BeautifulSoup(text, 'lxml').get_text(' ', strip=True))
+    return found.group(1) if found else ''
+
+
+def fill_start_times_from_detail(matches: pd.DataFrame, links: dict[tuple, str],
+                                 limit: int = 20) -> pd.DataFrame:
+    """Look up kick-off times that are missing everywhere else, one page each.
+
+    Only matches that have already been played are looked up: a fixture later in
+    the season legitimately has no time yet, and asking for hundreds of those
+    would be pointless.  What remains is the rare case of a match played before
+    its kick-off time was ever recorded.  The number of extra requests is capped
+    so an unexpected gap cannot turn into hundreds of fetches.
+
+    Args:
+        matches (pd.DataFrame): Matches whose start_time may still be blank.
+        links (dict[tuple, str]): Detail paths from read_detail_links().
+        limit (int): Most detail pages to fetch in one run.
+
+    Returns:
+        pd.DataFrame: `matches` with any recovered kick-off times filled in.
+    """
+    if matches.empty:
+        return matches
+    status = matches['status'].fillna('').astype(str)
+    played = status.str.contains(STATUS_LIVE_MARKER) | status.isin(
+        [STATUS_FINISHED, STATUS_CANCELLED])
+    blank = (matches['start_time'].fillna('').astype(str).str.strip() == '') & played
+    if not blank.any():
+        return matches
+
+    matches = matches.copy()
+    fetched = 0
+    for index, row in matches[blank].iterrows():
+        if fetched >= limit:
+            logger.warning("Stopped after %d detail lookups; %d still without a time",
+                           limit, int(blank.sum()) - fetched)
+            break
+        path = links.get((row['match_date'], row['home_team'], row['away_team']))
+        if not path:
+            continue
+        fetched += 1
+        kickoff = read_kickoff_from_detail(path)
+        if kickoff:
+            matches.at[index, 'start_time'] = kickoff
+    return matches
+
+
 def keep_known_start_times(fetched: pd.DataFrame, current: pd.DataFrame) -> pd.DataFrame:
     """Restore kick-off times the schedule page stops showing once a match starts.
 
@@ -469,7 +573,9 @@ def read_matches(competition: str, sections: list[int] = None,
     if sections:
         _matches = _matches[_matches['section_no'].isin(set(sections))]
     # A common mistake is not saving the result of sort or reset_index operations
+    links = _matches.attrs.get('detail_links', {})
     _matches = _matches.sort_values(['section_no', 'match_index_in_section']).reset_index(drop=True)
+    _matches.attrs['detail_links'] = links
     return _matches
 
 
@@ -764,7 +870,9 @@ def update_all_matches(competition: str, force_update: bool = False,
         all_matches = read_matches(competition, url_category=url_category)
         if Path(latest_file).exists():
             known = mu.read_allmatches_csv(latest_file)
+            links = all_matches.attrs.get('detail_links', {})
             all_matches = keep_known_start_times(all_matches, known)
+            all_matches = fill_start_times_from_detail(all_matches, links)
             all_matches = keep_unlisted_matches(all_matches, known)
         mu.update_if_diff(all_matches, latest_file)
         return all_matches
@@ -780,7 +888,9 @@ def update_all_matches(competition: str, force_update: bool = False,
             return current
 
     diff_matches = read_matches(competition, need_update, url_category=url_category)
+    diff_links = diff_matches.attrs.get('detail_links', {})
     diff_matches = keep_known_start_times(diff_matches, current)
+    diff_matches = fill_start_times_from_detail(diff_matches, diff_links)
     diff_matches = keep_unlisted_matches(diff_matches, current, set(need_update))
     old_matches = current[current['section_no'].isin(need_update)]
     if mu.matches_differ(diff_matches, old_matches):

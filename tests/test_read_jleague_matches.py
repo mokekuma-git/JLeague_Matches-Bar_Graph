@@ -5,6 +5,7 @@ from datetime import timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -12,8 +13,10 @@ import pandas as pd
 from match_utils import drop_duplicated_indexes
 from read_jleague_matches import CSV_COLUMNS
 from read_jleague_matches import derive_status
+from read_jleague_matches import fill_start_times_from_detail
 from read_jleague_matches import keep_known_start_times
 from read_jleague_matches import keep_unlisted_matches
+from read_jleague_matches import read_kickoff_from_detail
 from read_jleague_matches import read_sections_from_web
 from read_jleague_matches import season_periods
 from read_jleague_matches import get_match_dates_of_section
@@ -317,6 +320,73 @@ class TestKeepKnownStartTimes(unittest.TestCase):
         fetched = pd.DataFrame([self._row('水戸', '町田', '')])
 
         self.assertTrue(keep_known_start_times(fetched, pd.DataFrame()).equals(fetched))
+
+
+class TestFillStartTimesFromDetail(unittest.TestCase):
+    """Test for fill_start_times_from_detail function"""
+
+    def _row(self, home, away, start_time, status):
+        return {'match_date': '2026/08/22', 'section_no': 3, 'match_index_in_section': 1,
+                'start_time': start_time, 'stadium': 'X', 'home_team': home,
+                'home_goal': '2', 'away_goal': '2', 'away_team': away, 'status': status,
+                'home_pk_score': '', 'away_pk_score': '', 'broadcast': ''}
+
+    def test_played_match_without_a_time_is_looked_up(self):
+        frame = pd.DataFrame([self._row('FC大阪', '琉球', '', '試合終了')])
+        links = {('2026/08/22', 'FC大阪', '琉球'): '/match/j3/2026/082225/'}
+
+        with patch('read_jleague_matches.read_kickoff_from_detail',
+                   return_value='18:00') as lookup:
+            result = fill_start_times_from_detail(frame, links)
+
+        lookup.assert_called_once_with('/match/j3/2026/082225/')
+        self.assertEqual(result.iloc[0]['start_time'], '18:00')
+
+    def test_unplayed_match_is_not_looked_up(self):
+        """A fixture later in the season has no time yet; asking is pointless."""
+        frame = pd.DataFrame([self._row('FC大阪', '琉球', '', 'ＶＳ')])
+        links = {('2026/08/22', 'FC大阪', '琉球'): '/match/j3/2026/082225/'}
+
+        with patch('read_jleague_matches.read_kickoff_from_detail') as lookup:
+            result = fill_start_times_from_detail(frame, links)
+
+        lookup.assert_not_called()
+        self.assertEqual(result.iloc[0]['start_time'], '')
+
+    def test_match_with_a_time_is_not_looked_up(self):
+        frame = pd.DataFrame([self._row('FC大阪', '琉球', '18:00', '試合終了')])
+
+        with patch('read_jleague_matches.read_kickoff_from_detail') as lookup:
+            fill_start_times_from_detail(frame, {})
+
+        lookup.assert_not_called()
+
+    def test_lookups_are_capped(self):
+        rows = [self._row(f'H{i}', f'A{i}', '', '試合終了') for i in range(5)]
+        links = {('2026/08/22', f'H{i}', f'A{i}'): f'/match/j3/2026/08220{i}/'
+                 for i in range(5)}
+
+        with patch('read_jleague_matches.read_kickoff_from_detail',
+                   return_value='18:00') as lookup:
+            fill_start_times_from_detail(pd.DataFrame(rows), links, limit=2)
+
+        self.assertEqual(lookup.call_count, 2)
+
+
+class TestReadKickoffFromDetail(unittest.TestCase):
+    """Test for read_kickoff_from_detail function"""
+
+    def test_reads_the_header_kickoff(self):
+        html = '<html><body><p>2026/8/22 (土) 18:00 KO</p></body></html>'
+
+        with patch('read_jleague_matches.requests.get') as get:
+            get.return_value.text = html
+            self.assertEqual(read_kickoff_from_detail('/match/j3/2026/082225/'), '18:00')
+
+    def test_missing_kickoff_returns_blank(self):
+        with patch('read_jleague_matches.requests.get') as get:
+            get.return_value.text = '<html><body><p>2026/8/22 (土)</p></body></html>'
+            self.assertEqual(read_kickoff_from_detail('/match/j3/2026/082225/'), '')
 
 
 class TestSectionStaysUpdatableAfterKickoff(unittest.TestCase):
