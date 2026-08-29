@@ -776,7 +776,8 @@ export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): Leag
       loadAndRender();
     },
     deactivate() {
-      // League view currently has no transient UI state to clean up.
+      // Discard any load still in flight so it cannot render into the hidden view.
+      state.renderVersion++;
     },
   };
 }
