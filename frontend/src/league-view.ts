@@ -219,7 +219,6 @@ interface LeagueViewRefs {
 }
 
 let refs: LeagueViewRefs;
-let viewContext: LeagueViewContext;
 
 function requireElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -589,7 +588,7 @@ function loadAndRender(): void {
   const { competition, season } = activeSelection;
   const csvKey      = `${competition}/${season}`;
 
-  const targetDate = normalizeTargetDate(viewContext.shared.targetDate) ?? dateFormat(new Date(), '/');
+  const targetDate = normalizeTargetDate(controlState.viewer.targetDate) ?? dateFormat(new Date(), '/');
 
   const sortKey      = controlState.league.teamSortKey;
   const matchSortKey = getMatchSortKey(controlState.league.matchSortKey);
@@ -666,7 +665,6 @@ function loadAndRender(): void {
 
 export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): LeagueViewHandle {
   refs = resolveRefs(ids);
-  viewContext = ctx;
   const prefs = loadPrefs();
   controlState = createControlStateFromPrefs(prefs, ctx.shared);
   state.heightUnit = getHeightUnit();
