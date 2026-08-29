@@ -330,6 +330,51 @@ def renumber_matches(matches: pd.DataFrame) -> pd.DataFrame:
     return matches.reindex(columns=CSV_COLUMNS)
 
 
+def keep_known_start_times(fetched: pd.DataFrame, current: pd.DataFrame) -> pd.DataFrame:
+    """Restore kick-off times the schedule page stops showing once a match starts.
+
+    The card replaces the kick-off time with the score and the elapsed time the
+    moment a match is under way, so a fetch alone would blank `start_time` for
+    every match already played.  That is not just a display loss: kick-off times
+    are what decide which sections are due for a refresh, so once every match in
+    a section had started the section would drop out of the update window and
+    stop being polled.  The scheduled time is therefore carried over from what is
+    already known.
+
+    Args:
+        fetched (pd.DataFrame): Matches just read from the web.
+        current (pd.DataFrame): Matches already stored in the CSV.
+
+    Returns:
+        pd.DataFrame: `fetched` with previously known kick-off times filled back in.
+    """
+    if current is None or current.empty or fetched.empty:
+        return fetched
+    if 'start_time' not in current.columns:
+        return fetched
+
+    keys = ['section_no', 'home_team', 'away_team']
+    known = {}
+    for row in current[keys + ['start_time']].itertuples(index=False):
+        time_text = '' if pd.isna(row.start_time) else str(row.start_time).strip()
+        if time_text:
+            known[(row.section_no, row.home_team, row.away_team)] = time_text
+
+    fetched = fetched.copy()
+    restored = 0
+    for index, row in fetched.iterrows():
+        text = '' if pd.isna(row['start_time']) else str(row['start_time']).strip()
+        if text:
+            continue
+        previous = known.get((row['section_no'], row['home_team'], row['away_team']))
+        if previous:
+            fetched.at[index, 'start_time'] = previous
+            restored += 1
+    if restored:
+        logger.info("Kept %d kick-off time(s) the schedule page no longer shows", restored)
+    return fetched
+
+
 def keep_unlisted_matches(fetched: pd.DataFrame, current: pd.DataFrame,
                           sections: set[int] = None) -> pd.DataFrame:
     """Carry over fixtures the schedule pages cannot show.
@@ -718,8 +763,9 @@ def update_all_matches(competition: str, force_update: bool = False,
     if (not Path(latest_file).exists()) or force_update:
         all_matches = read_matches(competition, url_category=url_category)
         if Path(latest_file).exists():
-            all_matches = keep_unlisted_matches(all_matches,
-                                                mu.read_allmatches_csv(latest_file))
+            known = mu.read_allmatches_csv(latest_file)
+            all_matches = keep_known_start_times(all_matches, known)
+            all_matches = keep_unlisted_matches(all_matches, known)
         mu.update_if_diff(all_matches, latest_file)
         return all_matches
 
@@ -734,6 +780,7 @@ def update_all_matches(competition: str, force_update: bool = False,
             return current
 
     diff_matches = read_matches(competition, need_update, url_category=url_category)
+    diff_matches = keep_known_start_times(diff_matches, current)
     diff_matches = keep_unlisted_matches(diff_matches, current, set(need_update))
     old_matches = current[current['section_no'].isin(need_update)]
     if mu.matches_differ(diff_matches, old_matches):
