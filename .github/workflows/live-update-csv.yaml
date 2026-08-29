@@ -1,0 +1,62 @@
+# Watches J-League matches while they are being played.
+#
+# Replaces the per-match cron entries that used to start one runner per fixture:
+# the setup cost of a run dwarfed the update itself, and every schedule change
+# meant hand-editing the workflow.  These few daily runs work out from the CSVs
+# whether anything is on today and exit straight away when there is not.
+name: Live update matches csv
+
+on:
+  # JST 11:00 / 16:00 / 20:00 -- between them these cover the range J-League
+  # kick-offs fall in, and each job's window fits inside the 6h runner cap.
+  schedule:
+    - cron: '0 2 * * *'
+    - cron: '0 7 * * *'
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+    inputs:
+      interval:
+        description: 'Minutes between polls'
+        required: false
+        default: '5'
+
+# One watcher at a time; a queued run picks up where the previous one stopped.
+concurrency:
+  group: live-update-csv
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    # Must stay under the 6h runner cap and above the driver's own budget.
+    timeout-minutes: 330
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Set git config
+        run: |
+          git config --global user.name "mokekuma-git"
+          git config --global user.email "mokekuma.git@gmail.com"
+
+      # Pushing to main triggers deploy-pages.yaml on its own, so each committed
+      # poll reaches the site without this workflow dispatching a deploy.
+      - name: Watch today's matches
+        run: |
+          uv run python scripts/watch_live_matches.py \
+            --interval "${{ github.event.inputs.interval || '5' }}" \
+            --budget-minutes 300

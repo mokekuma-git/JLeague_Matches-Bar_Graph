@@ -29,6 +29,7 @@ from read_jleague_matches import (
 
 TEST_DATA_DIR = Path(__file__).parent / 'test_data'
 SEASON_MAP_PATH = Path(__file__).resolve().parent.parent / 'docs' / 'yaml' / 'season_map.yaml'
+CONFIG_PATH = Path(__file__).resolve().parent.parent / 'config' / 'jleague.yaml'
 
 
 class TestGetSubSeasons(unittest.TestCase):
@@ -37,6 +38,13 @@ class TestGetSubSeasons(unittest.TestCase):
     def setUp(self):
         with open(SEASON_MAP_PATH, 'r', encoding='utf-8') as f:
             self.raw_season_map = yaml.safe_load(f)
+        # These assertions are about the 2026 season, so the season has to be
+        # pinned here rather than inherited from whichever config another test
+        # happened to load first.
+        mu.init_config(CONFIG_PATH)
+        season_patch = patch.object(mu.config, 'season', '2026')
+        season_patch.start()
+        self.addCleanup(season_patch.stop)
 
     def test_j1_sub_seasons(self):
         with patch.object(mu, 'load_season_map_raw', return_value=self.raw_season_map):
