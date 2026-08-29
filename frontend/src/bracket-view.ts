@@ -19,7 +19,6 @@ import {
 import {
   PRESEASON_SENTINEL,
   formatSliderDate,
-  getLastMatchDate,
   getSliderDate,
   resolveTargetDate,
   syncSliderToTargetDate,
@@ -55,6 +54,13 @@ type ViewerControlState = SharedViewerControlState;
 interface BracketControlState {
   layout: 'horizontal' | 'vertical';
   roundStart: string | null;
+  /**
+   * Slider parked on the "before any match" position. Kept here rather than in
+   * `viewer.targetDate` because the sentinel date is a bracket-only display
+   * concept — writing it to the shared state would pin League to a preseason
+   * view too, and persist that. Deliberately not persisted (see #298).
+   */
+  preseason: boolean;
 }
 
 interface ControlState {
@@ -93,6 +99,7 @@ let controlState: ControlState = {
   bracket: {
     layout: 'horizontal',
     roundStart: null,
+    preseason: false,
   },
 };
 
@@ -105,6 +112,7 @@ function createControlStateFromPrefs(
     bracket: {
       layout: 'horizontal',
       roundStart: prefs.roundStart ?? null,
+      preseason: false,
     },
   };
 }
@@ -519,8 +527,14 @@ function resolveInclusiveBracketOrder(
 
 // ---- Bracket rendering with date filter ------------------------------------
 
+/**
+ * Effective date this view renders at. `preseason` is bracket-local, so it is
+ * folded in here rather than being written back into the shared target date.
+ */
 function getTargetDate(): string | null {
-  return controlState.viewer.targetDate;
+  return controlState.bracket.preseason
+    ? PRESEASON_SENTINEL
+    : controlState.viewer.targetDate;
 }
 
 /** Check whether the selection should render bracket sections independently. */
@@ -686,18 +700,28 @@ function renderWithDateFilter(): void {
 
 }
 
-/** Sync viewer control targetDate from slider position. */
+/**
+ * Sync the target date from the slider position.
+ * The preseason position stays bracket-local: it must not reach the shared
+ * target date, which League also reads (#298).
+ */
 function syncTargetDateFromSlider(): void {
   if (!currentState) return;
   const slider = refs.dateSlider;
-  controlState.viewer.targetDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10));
+  const date = getSliderDate(currentState.matchDates, parseInt(slider.value, 10));
+  if (date === PRESEASON_SENTINEL) {
+    controlState.bracket.preseason = true;
+    return;
+  }
+  controlState.bracket.preseason = false;
+  controlState.viewer.targetDate = date;
 }
 
 /** Align slider position to the kept target date without overwriting the target itself. */
 function syncSliderFromTargetDate(): void {
   if (!currentState) return;
   const slider = refs.dateSlider;
-  syncSliderToTargetDate(slider, currentState.matchDates, controlState.viewer.targetDate);
+  syncSliderToTargetDate(slider, currentState.matchDates, getTargetDate());
 }
 
 /** Update display label from current slider position + kept target date. */
@@ -706,7 +730,7 @@ function updateSliderDisplay(): void {
   const slider = refs.dateSlider;
   const display = refs.postDateSlider;
   const sliderDate = getSliderDate(currentState.matchDates, parseInt(slider.value, 10)) ?? '';
-  const targetDate = resolveTargetDate(currentState.matchDates, controlState.viewer.targetDate) ?? sliderDate;
+  const targetDate = resolveTargetDate(currentState.matchDates, getTargetDate()) ?? sliderDate;
   display.textContent = formatSliderDate(sliderDate, targetDate);
 }
 
@@ -863,9 +887,9 @@ function loadAndRender(seasonMap: SeasonMap): void {
       const slider = refs.dateSlider;
       if (matchDates.length > 0) {
         slider.min = '0';
-        if (!controlState.viewer.targetDate) {
-          controlState.viewer.targetDate = getLastMatchDate(matchDates);
-        }
+        // No target date means "latest"; resolveTargetDate() already falls back
+        // to the last match date for the slider, the label and the render mask,
+        // so there is nothing to write into the shared state here (#298).
         syncSliderFromTargetDate();
       }
 
@@ -942,7 +966,10 @@ export function initBracketView(
   });
   refs.dateSliderReset.addEventListener('click', () => {
     if (!currentState) return;
-    controlState.viewer.targetDate = getLastMatchDate(currentState.matchDates);
+    // null is the canonical "show latest"; writing the last match date would
+    // pin League to this competition's end date on the next view switch.
+    controlState.bracket.preseason = false;
+    controlState.viewer.targetDate = null;
     syncSliderFromTargetDate();
     updateSliderDisplay();
     renderWithDateFilter();
@@ -976,6 +1003,8 @@ export function initBracketView(
   return {
     activate(seasonMap, selection) {
       activeSelection = selection;
+      // Preseason is a transient slider position, not a restored preference.
+      controlState.bracket.preseason = false;
       refs.competition.value = selection.competition;
       refs.season.value = selection.season;
       refs.futureOpacity.value = String(controlState.viewer.futureOpacity);

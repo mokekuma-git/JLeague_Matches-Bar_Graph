@@ -57,6 +57,21 @@ export function normalizeTargetDate(value: string | null | undefined): string | 
   return value.replace(/-/g, '/');
 }
 
+/**
+ * The bracket slider's "before any match" sentinel. Older builds wrote it into
+ * the shared target date, which pinned League to a preseason view on reload.
+ * Writing it is fixed (#298); this drops the value for anyone who already has
+ * it saved. Kept as a literal rather than importing PRESEASON_SENTINEL so this
+ * module stays free of view-layer imports.
+ */
+const PERSISTED_PRESEASON_SENTINEL = '1970/01/01';
+
+/** Restore a persisted target date, discarding values that were never user-chosen. */
+export function restoreTargetDate(value: string | null | undefined): string | null {
+  const normalized = normalizeTargetDate(value);
+  return normalized === PERSISTED_PRESEASON_SENTINEL ? null : normalized;
+}
+
 export function toInputDate(value: string | null | undefined): string {
   return normalizeTargetDate(value)?.replace(/\//g, '-') ?? '';
 }
@@ -75,6 +90,6 @@ export function createSharedViewerControlState(
   return {
     scale: prefs.scale ? parseFloat(prefs.scale) : (defaults.scale ?? 1),
     futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : (defaults.futureOpacity ?? 0.1),
-    targetDate: normalizeTargetDate(prefs.targetDate),
+    targetDate: restoreTargetDate(prefs.targetDate),
   };
 }

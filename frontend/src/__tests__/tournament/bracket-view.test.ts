@@ -187,6 +187,7 @@ describe('bracket-view helpers', () => {
       expect(state.bracket).toEqual({
         layout: 'horizontal',
         roundStart: '準決勝',
+        preseason: false,
       });
     });
 
@@ -201,6 +202,7 @@ describe('bracket-view helpers', () => {
       expect(state.bracket).toEqual({
         layout: 'horizontal',
         roundStart: null,
+        preseason: false,
       });
     });
   });
