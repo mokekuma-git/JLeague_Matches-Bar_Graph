@@ -409,6 +409,8 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
 
 export const __testables = {
   createControlStateFromPrefs,
+  effectiveTargetDate,
+  resolveSliderSelection,
   resolveMainBlockOrder,
   resolveSeasonBracketOrder,
   filterRowsByRounds,
@@ -528,13 +530,15 @@ function resolveInclusiveBracketOrder(
 // ---- Bracket rendering with date filter ------------------------------------
 
 /**
- * Effective date this view renders at. `preseason` is bracket-local, so it is
- * folded in here rather than being written back into the shared target date.
+ * Effective date this view renders at, folding in the bracket-local preseason
+ * flag. Pure so the shared-state boundary stays testable.
  */
+function effectiveTargetDate(preseason: boolean, targetDate: string | null): string | null {
+  return preseason ? PRESEASON_SENTINEL : targetDate;
+}
+
 function getTargetDate(): string | null {
-  return controlState.bracket.preseason
-    ? PRESEASON_SENTINEL
-    : controlState.viewer.targetDate;
+  return effectiveTargetDate(controlState.bracket.preseason, controlState.viewer.targetDate);
 }
 
 /** Check whether the selection should render bracket sections independently. */
@@ -701,20 +705,32 @@ function renderWithDateFilter(): void {
 }
 
 /**
- * Sync the target date from the slider position.
- * The preseason position stays bracket-local: it must not reach the shared
- * target date, which League also reads (#298).
+ * Decide what a slider position means for bracket-local and shared state.
+ *
+ * `writesShared: false` is the important case: the preseason position must
+ * leave the shared target date untouched, because League reads it too and a
+ * 1970 sentinel there reads as "before the season started" (#298).
  */
+function resolveSliderSelection(
+  matchDates: string[],
+  sliderIndex: number,
+): { preseason: boolean; writesShared: boolean; targetDate: string | null } {
+  const date = getSliderDate(matchDates, sliderIndex);
+  if (date === PRESEASON_SENTINEL) {
+    return { preseason: true, writesShared: false, targetDate: null };
+  }
+  return { preseason: false, writesShared: true, targetDate: date };
+}
+
+/** Sync the target date from the slider position. */
 function syncTargetDateFromSlider(): void {
   if (!currentState) return;
   const slider = refs.dateSlider;
-  const date = getSliderDate(currentState.matchDates, parseInt(slider.value, 10));
-  if (date === PRESEASON_SENTINEL) {
-    controlState.bracket.preseason = true;
-    return;
-  }
-  controlState.bracket.preseason = false;
-  controlState.viewer.targetDate = date;
+  const selection = resolveSliderSelection(
+    currentState.matchDates, parseInt(slider.value, 10),
+  );
+  controlState.bracket.preseason = selection.preseason;
+  if (selection.writesShared) controlState.viewer.targetDate = selection.targetDate;
 }
 
 /** Align slider position to the kept target date without overwriting the target itself. */

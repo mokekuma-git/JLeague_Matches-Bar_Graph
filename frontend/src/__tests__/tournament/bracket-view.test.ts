@@ -207,6 +207,40 @@ describe('bracket-view helpers', () => {
     });
   });
 
+  describe('shared target date boundary (#298)', () => {
+    // matchDates always starts with the preseason sentinel (collectMatchDates
+    // prepends it), so index 0 is the "before any match" slider position.
+    const matchDates = ['1970/01/01', '2025/03/15', '2025/03/22', '2025/03/29'];
+
+    test('preseason position never writes to the shared target date', () => {
+      const selection = __testables.resolveSliderSelection(matchDates, 0);
+
+      expect(selection.preseason).toBe(true);
+      expect(selection.writesShared).toBe(false);
+    });
+
+    test('a real match date is written to the shared target date', () => {
+      const selection = __testables.resolveSliderSelection(matchDates, 2);
+
+      expect(selection.preseason).toBe(false);
+      expect(selection.writesShared).toBe(true);
+      expect(selection.targetDate).toBe('2025/03/22');
+    });
+
+    test('leaving the preseason position clears the flag', () => {
+      expect(__testables.resolveSliderSelection(matchDates, 1).preseason).toBe(false);
+    });
+
+    test('preseason renders at the sentinel without the shared date holding it', () => {
+      expect(__testables.effectiveTargetDate(true, null)).toBe('1970/01/01');
+      expect(__testables.effectiveTargetDate(true, '2025/03/22')).toBe('1970/01/01');
+    });
+
+    test('a null shared date stays null, so resolveTargetDate can fall back to latest', () => {
+      expect(__testables.effectiveTargetDate(false, null)).toBeNull();
+    });
+  });
+
   test('filterRowsByRounds matches both raw and normalized round labels', () => {
     const rows = [
       makeRow({ round: '準決勝 第1戦' }),

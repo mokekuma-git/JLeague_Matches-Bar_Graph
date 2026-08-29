@@ -57,4 +57,48 @@ test.describe('Unified league and bracket viewer', () => {
     expect(prefs.scale).toBe('0.6');
     expect(prefs.futureOpacity).toBe('0.3');
   });
+
+  // #298: the bracket view used to write values the user never picked into the
+  // shared target date, which League then displayed (and persisted).
+  test('bracket view does not pin the shared target date to its own last match day', async ({ page }) => {
+    const today = await page.evaluate(() => {
+      const d = new Date();
+      const pad = (n: number): string => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    });
+
+    await page.selectOption('#competition_key', 'JLeagueCup');
+    await waitForBracketRender(page);
+
+    await page.selectOption('#competition_key', 'J1');
+    await waitForRender(page);
+
+    // The user picked no date, so League falls back to today. Before the fix
+    // the bracket had filled the shared date with the cup's final match day
+    // and League opened on that instead.
+    await expect(page.locator('#target_date')).toHaveValue(today);
+  });
+
+  test('bracket preseason slider position does not leak into the shared target date', async ({ page }) => {
+    await page.locator('#target_date').fill('2024-05-03');
+    await page.locator('#target_date').dispatchEvent('change');
+    await waitForRender(page);
+
+    await page.selectOption('#competition_key', 'JLeagueCup');
+    await waitForBracketRender(page);
+
+    await page.locator('#bracket_date_slider').fill('0');
+    await page.locator('#bracket_date_slider').dispatchEvent('change');
+    await expect(page.locator('#bracket_post_date_slider')).not.toHaveText('');
+
+    const prefs = await page.evaluate(() => JSON.parse(
+      localStorage.getItem('jleague_viewer_prefs') ?? '{}',
+    ) as Record<string, string>);
+    expect(prefs.targetDate).toBe('2024/05/03');
+
+    // Returning to League must not show a preseason (all-future) board.
+    await page.selectOption('#competition_key', 'J1');
+    await waitForRender(page);
+    await expect(page.locator('#target_date')).toHaveValue('2024-05-03');
+  });
 });
