@@ -243,16 +243,21 @@ def derive_status(score: str, match_date: str = '', today: date = None) -> str:
 def convert_datasite_date(match_date: str) -> str:
     """Convert an SFMS01 date ('26/08/07') to the standard format ('2026/08/07').
 
+    A fixture whose date is not settled yet is published as '未定'.  That is
+    returned as an empty string, because downstream code identifies an undecided
+    date by an empty cell (`dropna(subset=['match_date'])`); passing the literal
+    '未定' through would reach `pd.to_datetime` and raise.
+
     Args:
         match_date (str): Date text with the weekday suffix already removed.
 
     Returns:
-        str: Converted date string, or the input unchanged if unparseable.
+        str: Converted date string, or '' if the date is not settled.
     """
     text = (match_date or '').strip()
     if re.match(r'^\d{2}/\d{2}/\d{2}$', text):
         return f'20{text}'
-    return text
+    return ''
 
 
 def convert_jleague_date(match_date: str) -> str:

@@ -1,7 +1,9 @@
 """Tests for read_jleague_matches.py"""
 from datetime import date
 from datetime import datetime
+from datetime import timedelta
 from datetime import timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 import unittest
 
@@ -13,6 +15,8 @@ from read_jleague_matches import CSV_COLUMNS
 from read_jleague_matches import convert_datasite_date
 from read_jleague_matches import datasite_year
 from read_jleague_matches import derive_status
+from read_jleague_matches import get_match_dates_of_section
+from read_jleague_matches import get_sections_to_update
 from read_jleague_matches import read_match_from_web
 from read_jleague_matches import read_teams_from_web
 
@@ -267,8 +271,48 @@ class TestConvertDatasiteDate(unittest.TestCase):
     def test_two_digit_year_is_expanded(self):
         self.assertEqual(convert_datasite_date('26/08/07'), '2026/08/07')
 
-    def test_unparseable_value_is_returned_unchanged(self):
-        self.assertEqual(convert_datasite_date('未定'), '未定')
+    def test_undecided_date_becomes_empty(self):
+        """'未定' must not survive: downstream code detects it by an empty cell."""
+        self.assertEqual(convert_datasite_date('未定'), '')
+
+    def test_blank_stays_blank(self):
+        self.assertEqual(convert_datasite_date(''), '')
+
+
+class TestUndecidedDateIsUsableDownstream(unittest.TestCase):
+    """A fixture with no settled date must not break the incremental update path.
+
+    get_match_dates_of_section() drops undecided rows via dropna(); a literal
+    '未定' would instead reach pd.to_datetime and raise ValueError, which is what
+    broke the scheduled CSV update after the Data Site migration.
+    """
+
+    def _frame(self, match_date, start_time):
+        return pd.DataFrame([{
+            'match_date': match_date, 'section_no': 20, 'match_index_in_section': 1,
+            'start_time': start_time, 'home_team': '京都', 'away_team': '岡山',
+        }])
+
+    def test_undecided_date_row_yields_no_section(self):
+        """An undecided fixture must be ignored, not raise."""
+        frame = self._frame(None, '')
+        now = datetime(2026, 8, 29, 18, 0, tzinfo=ZoneInfo('Asia/Tokyo'))
+
+        sections = get_sections_to_update(frame, now - timedelta(days=1), now)
+
+        self.assertEqual(sections, set())
+
+    def test_settled_date_without_kickoff_time_is_kept(self):
+        """SFMS01 leaves K/O時刻 blank until it is fixed, but the date may be set."""
+        result = get_match_dates_of_section(self._frame('2027/02/13', ''))
+
+        self.assertEqual(list(result), [20])
+        self.assertEqual(result[20][0].strftime('%Y/%m/%d %H:%M'), '2027/02/13 00:00')
+
+    def test_settled_date_and_time(self):
+        result = get_match_dates_of_section(self._frame('2026/08/29', '18:00'))
+
+        self.assertEqual(result[20][0].strftime('%Y/%m/%d %H:%M'), '2026/08/29 18:00')
 
 
 class TestDatasiteYear(unittest.TestCase):
