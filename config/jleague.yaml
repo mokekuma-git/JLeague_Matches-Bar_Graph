@@ -13,27 +13,9 @@ paths:
   season_map_file: "../docs/yaml/season_map.yaml"
 
 urls:
-  # J.League official Data Site (SFMS01) search results.
-  # Args: competition_years, competition_frame_ids
-  # One request returns every section of the season for one competition.
-  datasite_url_format: "https://data.j-league.or.jp/SFMS01/search?competition_years={}&competition_frame_ids={}"
+  # Schedule / result pages.  Args: category, start date, end date (ISO).
+  # A single request is capped at roughly 200 matches, so the season is fetched
+  # one month at a time.  The page mixes in cup and continental fixtures; each
+  # card's /match/{category}/... link identifies which competition it belongs to.
+  match_url_format: "https://www.jleague.jp/{}/match/?startdate={}&enddate={}&period=custom"
   standing_url_format: "https://www.jleague.jp/standings/{}/"
-
-# SFMS01 query/filter values per competition.
-# frame_ids -> competition_frame_ids query parameter
-# competition_names -> accepted values of the 大会 column (full-width)
-datasite:
-  # Days to wait after the match date before treating a result-less match as
-  # called off.  The Data Site publishes results with a lag, so a match that has
-  # merely kicked off must not be reported as cancelled; only one still empty
-  # after this grace period is.  Genuine cancellations that the Data Site states
-  # in the score cell ("中止" / "不実施") are detected immediately regardless.
-  cancel_margin_days: 7
-  frame_ids:
-    J1: 1
-    J2: 2
-    J3: 3
-  competition_names:
-    J1: ["Ｊ１"]
-    J2: ["Ｊ２"]
-    J3: ["Ｊ３"]

@@ -1,6 +1,5 @@
 """Read match information of J-League and save as CSV"""
 import argparse
-from datetime import date
 from datetime import datetime
 from datetime import timedelta
 import logging
@@ -71,193 +70,303 @@ def read_teams_from_web(soup: BeautifulSoup, competition: str) -> list[str]:
     return []
 
 
-# Column order of the SFMS01 search result table.
-DATASITE_COLUMNS = ['season', 'competition', 'section', 'match_date', 'start_time',
-                    'home_team', 'score', 'away_team', 'stadium', 'attendance', 'broadcast']
-
 # Output column order of the generated CSV.
 CSV_COLUMNS = ['match_date', 'section_no', 'match_index_in_section', 'start_time', 'stadium',
                'home_team', 'home_goal', 'away_goal', 'away_team', 'status',
-               'home_pk_score', 'away_pk_score', 'broadcast', 'attendance']
+               'home_pk_score', 'away_pk_score', 'broadcast']
 
-# SFMS01 renders full-width digits in the 節 column (e.g. 第１０節第２日).
+# Section headers render their number with full-width digits on some pages.
 FULLWIDTH_DIGITS = str.maketrans('０１２３４５６７８９', '0123456789')
 
-# SFMS01 marks an undecided venue with decorative markers.
-UNDECIDED_STADIUM = '●未定●'
+# Match links look like /match/j1/2026/082901/ -- category, year, month, day, index.
+MATCH_LINK_RE = re.compile(r'^/match/([a-z0-9]+)/(\d{4})/(\d{2})(\d{2})(\d+)/')
+
+SECTION_RE = re.compile(r'第([0-9０-９]+)節')
+HEADER_DATE_RE = re.compile(r'(\d{4})/(\d{1,2})/(\d{1,2})')
+TIME_RE = re.compile(r'^\d{1,2}:\d{2}$')
+
+# Status vocabulary of the published CSV.  'ＶＳ' means not played yet; a status
+# containing '速報中' marks a match in progress (the front-end strips the marker
+# before display and uses it to flag the row as live).
+STATUS_FINISHED = '試合終了'
+STATUS_SCHEDULED = 'ＶＳ'
+STATUS_CANCELLED = '試合中止'
+STATUS_LIVE_MARKER = '速報中'
 
 
-def datasite_year(season: str) -> int:
-    """Derive the SFMS01 ``competition_years`` value from a season string.
-
-    Both the single-year form ('2025') and the cross-year form ('26-27') are
-    accepted; the cross-year form resolves to its starting year.
-
-    Args:
-        season (str): Season string from the config file.
-
-    Returns:
-        int: Four-digit year to query.
-    """
-    head = str(season).split('-')[0]
-    year = int(head)
-    return year + 2000 if year < 100 else year
-
-
-def read_match(competition: str) -> pd.DataFrame:
-    """Read every match of the configured season from the J-League Data Site.
-
-    A single request returns all sections of the season, so unlike the old
-    per-section reader this takes no section argument.
+def read_match(competition: str, periods: list[tuple[str, str]] = None) -> pd.DataFrame:
+    """Read matches of the configured season from the J-League schedule pages.
 
     Args:
         competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
+        periods (list[tuple[str, str]], optional): (start, end) ISO dates to fetch.
+            Defaults to every month of the configured season.
 
     Returns:
         pd.DataFrame: DataFrame containing match data
 
     Raises:
-        KeyError: If the competition has no 'datasite.frame_ids' entry
-        ValueError: If the result table cannot be found in the response
+        KeyError: If the key 'urls.match_url_format' is not found in the config file
     """
-    frame_id = config.datasite.frame_ids[competition]
-    if frame_id is None:
-        raise KeyError(f"No datasite.frame_ids entry for {competition}")
-    _url = config.get_format_str('urls.datasite_url_format',
-                                 datasite_year(config.season), frame_id)
-    logger.info("Access %s", _url)
-    soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
-    return read_match_from_web(soup, competition)
+    frames = []
+    for (start, end) in periods or season_periods():
+        _url = config.get_format_str('urls.match_url_format',
+                                     competition.lower(), start, end)
+        logger.info("Access %s", _url)
+        soup = BeautifulSoup(requests.get(_url, timeout=config.http_timeout).text, 'lxml')
+        frames.append(read_match_from_web(soup, competition))
+
+    matches = pd.concat(frames) if frames else pd.DataFrame(columns=CSV_COLUMNS)
+    # The same match can appear in two adjacent periods; the link is unique per match.
+    matches = matches.drop_duplicates(subset=['match_date', 'home_team', 'away_team'])
+    return renumber_matches(matches)
+
+
+def season_periods(months: int = 12, start_month: int = None) -> list[tuple[str, str]]:
+    """Return month-long (start, end) ISO date pairs covering the season.
+
+    One request is capped at roughly 200 matches, so the season has to be
+    fetched in chunks; a calendar month is comfortably below that limit.
+
+    Args:
+        months (int): Number of months to cover from the season start.
+        start_month (int, optional): Month the season opens in.  Resolved from
+            season_map when omitted.
+
+    Returns:
+        list[tuple[str, str]]: (start, end) pairs in 'YYYY-MM-DD' form.
+    """
+    if start_month is None:
+        start_month = mu.resolve_season_start_month()
+    head = str(config.season).split('-')[0]
+    year = int(head)
+    year = year + 2000 if year < 100 else year
+
+    periods = []
+    cursor = datetime(year, start_month, 1)
+    for _ in range(months):
+        if cursor.month == 12:
+            nxt = cursor.replace(year=cursor.year + 1, month=1)
+        else:
+            nxt = cursor.replace(month=cursor.month + 1)
+        periods.append((cursor.strftime('%Y-%m-%d'),
+                        (nxt - timedelta(days=1)).strftime('%Y-%m-%d')))
+        cursor = nxt
+    return periods
 
 
 def read_match_from_web(soup: BeautifulSoup, competition: str) -> pd.DataFrame:
-    """Parse the SFMS01 search result table into the published CSV shape.
+    """Parse one schedule page into the published CSV shape.
 
     Args:
         soup (BeautifulSoup): BeautifulSoup object containing the web data
         competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
 
     Returns:
-        pd.DataFrame: DataFrame containing match data, ordered by section
-
-    Raises:
-        ValueError: If the result table cannot be found in the response
+        pd.DataFrame: DataFrame holding CSV_COLUMNS (unnumbered).
     """
-    table = soup.find('table', class_='search-table')
-    if table is None:
-        raise ValueError('Could not find the SFMS01 result table in the response')
+    sections = read_sections_from_web(soup)
+    category = competition.lower()
 
     rows = []
-    for _tr in table.find_all('tr'):
-        cells = [_td.get_text(strip=True) for _td in _tr.find_all('td')]
-        if not cells:
-            continue  # header row
-        # The broadcast column is omitted entirely on some rows; pad to a fixed width.
-        cells = (cells + [''] * len(DATASITE_COLUMNS))[:len(DATASITE_COLUMNS)]
-        rows.append(cells)
+    seen = set()
+    for link in soup.find_all('a', href=MATCH_LINK_RE):
+        card = link.find(class_='m-schedule__match')
+        if card is None:
+            continue  # a bare overlay link, not the match card itself
+        _match = MATCH_LINK_RE.match(link['href'])
+        if _match.group(1) != category:
+            continue  # cup / continental / friendly fixture on the same page
+        match_date = f'{_match.group(2)}/{_match.group(3)}/{_match.group(4)}'
+        key = (match_date, _match.group(5))
+        if key in seen:
+            continue  # the card is linked more than once (#review, #lineup)
+        seen.add(key)
 
-    matches = pd.DataFrame(rows, columns=DATASITE_COLUMNS)
-    # One frame_id may serve several competitions over the years; keep only ours.
-    names = config.datasite.competition_names[competition]
-    matches = matches[matches['competition'].isin(names)].reset_index(drop=True)
-    if matches.empty:
-        logger.warning("No %s matches found on the Data Site", competition)
+        row = read_card(link, card)
+        row['match_date'] = match_date
+        row['section_no'] = sections.get(match_date)
+        rows.append(row)
+
+    if not rows:
         return pd.DataFrame(columns=CSV_COLUMNS)
 
-    return build_match_frame(matches)
+    matches = pd.DataFrame(rows)
+    unknown = matches['section_no'].isna()
+    if unknown.any():
+        logger.warning("No section header for %d %s match(es) on %s",
+                       int(unknown.sum()), competition,
+                       sorted(set(matches.loc[unknown, 'match_date'])))
+        matches = matches[~unknown]
+    matches['section_no'] = matches['section_no'].astype(int)
+    return matches.reindex(columns=CSV_COLUMNS)
 
 
-def build_match_frame(matches: pd.DataFrame) -> pd.DataFrame:
-    """Derive the published CSV columns from raw SFMS01 rows.
+def read_sections_from_web(soup: BeautifulSoup) -> dict[str, int]:
+    """Map match dates to section numbers using the page's group headers.
 
-    Args:
-        matches (pd.DataFrame): Raw rows named after DATASITE_COLUMNS.
-
-    Returns:
-        pd.DataFrame: DataFrame holding CSV_COLUMNS, sorted by section.
-    """
-    matches = matches.copy()
-    matches['section_no'] = matches['section'].str.translate(FULLWIDTH_DIGITS) \
-                                              .str.extract(r'第(\d+)節', expand=False).astype(int)
-    matches['match_date'] = matches['match_date'].str.replace(r'\(.+\)', '', regex=True) \
-                                                 .apply(convert_datasite_date)
-    matches['stadium'] = matches['stadium'].replace(UNDECIDED_STADIUM, '未定')
-    matches['attendance'] = matches['attendance'].str.replace(',', '', regex=False)
-
-    # Score is '3-4' when played, '1-1(PK4-2)' for a shootout, and vs / blank otherwise.
-    goals = matches['score'].str.extract(r'^(\d+)-(\d+)')
-    matches['home_goal'] = goals[0].fillna('')
-    matches['away_goal'] = goals[1].fillna('')
-    pks = matches['score'].str.extract(r'PK\s*(\d+)-(\d+)')
-    matches['home_pk_score'] = pks[0].fillna('')
-    matches['away_pk_score'] = pks[1].fillna('')
-
-    matches['status'] = matches.apply(
-        lambda row: derive_status(row['score'], row['match_date']), axis=1)
-
-    # Number matches in the order the Data Site lists them, which is how the
-    # historical CSVs were built; a stable sort keeps that order within a section.
-    matches = matches.sort_values('section_no', kind='stable')
-    matches['match_index_in_section'] = matches.groupby('section_no').cumcount() + 1
-    return matches[CSV_COLUMNS].reset_index(drop=True)
-
-
-def derive_status(score: str, match_date: str = '', today: date = None) -> str:
-    """Map an SFMS01 score cell to the published CSV status vocabulary.
-
-    A cancellation stated by the Data Site itself ('中止' / '不実施' in the score
-    cell) is taken at face value.  Otherwise a match with no result is only
-    reported as called off once it is more than 'datasite.cancel_margin_days'
-    past its match date: the Data Site publishes results with a noticeable lag,
-    so without that grace period a match that has merely kicked off would be
-    marked cancelled and then flip back on the next run.
+    Headers read like '2026/9/12 (土) 第7節'.  Only league headers carry a
+    section number, so cup and continental fixtures drop out here.  Headers are
+    not interleaved with the cards they label, which is why the date is used as
+    the join key rather than document order.
 
     Args:
-        score (str): Raw text of the スコア column.
-        match_date (str): Match date in the standard 'YYYY/MM/DD' format.
-        today (date, optional): Reference date; defaults to today in config.timezone.
+        soup (BeautifulSoup): BeautifulSoup object containing the web data
 
     Returns:
-        str: One of '試合終了', '試合不実施', '試合中止', 'ＶＳ'.
+        dict[str, int]: {'2026/09/12': 7, ...}
     """
-    score_text = (score or '').strip()
-    if re.match(r'^\d+-\d+', score_text):
-        return '試合終了'
-    if '不実施' in score_text:
-        return '試合不実施'
-    if '中止' in score_text:
-        return '試合中止'
-
-    try:
-        played_on = datetime.strptime((match_date or '').strip(),
-                                      config.standard_date_format).date()
-    except (ValueError, TypeError):
-        return 'ＶＳ'  # Undecided or unparseable date -> still scheduled
-
-    if today is None:
-        today = datetime.now().astimezone(config.timezone).date()
-    margin = timedelta(days=config.datasite.cancel_margin_days)
-    return '試合中止' if played_on + margin < today else 'ＶＳ'
+    sections = {}
+    for header in soup.find_all(class_='m-section-header'):
+        text = header.get_text(' ', strip=True)
+        _date = HEADER_DATE_RE.search(text)
+        _section = SECTION_RE.search(text)
+        if not (_date and _section):
+            continue
+        key = f'{_date.group(1)}/{int(_date.group(2)):02d}/{int(_date.group(3)):02d}'
+        section_no = int(_section.group(1).translate(FULLWIDTH_DIGITS))
+        if sections.setdefault(key, section_no) != section_no:
+            logger.warning("Date %s carries sections %s and %s; keeping %s",
+                           key, sections[key], section_no, sections[key])
+    return sections
 
 
-def convert_datasite_date(match_date: str) -> str:
-    """Convert an SFMS01 date ('26/08/07') to the standard format ('2026/08/07').
-
-    A fixture whose date is not settled yet is published as '未定'.  That is
-    returned as an empty string, because downstream code identifies an undecided
-    date by an empty cell (`dropna(subset=['match_date'])`); passing the literal
-    '未定' through would reach `pd.to_datetime` and raise.
+def read_card(link: BeautifulSoup, card: BeautifulSoup) -> dict[str, str]:
+    """Extract one match from its schedule card.
 
     Args:
-        match_date (str): Date text with the weekday suffix already removed.
+        link (BeautifulSoup): The <a> wrapping the card (holds venue / broadcast).
+        card (BeautifulSoup): The 'm-schedule__match' element itself.
 
     Returns:
-        str: Converted date string, or '' if the date is not settled.
+        dict[str, str]: Match fields other than match_date / section_no.
     """
-    text = (match_date or '').strip()
-    if re.match(r'^\d{2}/\d{2}/\d{2}$', text):
-        return f'20{text}'
+    names = [_e.get_text(strip=True)
+             for _e in card.find_all(class_='m-schedule__team-name',
+                                     attrs={'data-media': 'sp'})]
+    goals = [_e.get_text(strip=True) for _e in card.find_all(class_='m-schedule__score')]
+    live = card.find(class_='m-schedule__live-text')
+    over = card.find(class_='m-schedule__game-over-text')
+
+    stadium = link.find(class_='m-schedule__info-stadium', attrs={'data-media': 'sp'})
+    platform = link.find(class_='m-schedule__info-platform')
+
+    return {
+        'start_time': read_start_time(card),
+        'stadium': stadium.get_text(strip=True) if stadium else '',
+        'home_team': names[0] if len(names) == 2 else '',
+        'away_team': names[1] if len(names) == 2 else '',
+        'home_goal': goals[0] if len(goals) == 2 else '',
+        'away_goal': goals[1] if len(goals) == 2 else '',
+        'status': derive_status(goals,
+                                live.get_text(' ', strip=True) if live else '',
+                                over.get_text(' ', strip=True) if over else ''),
+        'home_pk_score': '',
+        'away_pk_score': '',
+        'broadcast': platform.get_text(' ', strip=True).lstrip('・') if platform else '',
+    }
+
+
+def read_start_time(card: BeautifulSoup) -> str:
+    """Return the scheduled kick-off time, which is only shown before kick-off.
+
+    Once a match starts the slot is replaced by the score and the elapsed time,
+    so an empty result here means the match is under way or already over.
+
+    Args:
+        card (BeautifulSoup): The 'm-schedule__match' element.
+
+    Returns:
+        str: 'HH:MM', or '' when the card no longer shows one.
+    """
+    info = card.find(class_='m-schedule__match-info')
+    if info is None:
+        return ''
+    for _p in info.find_all('p'):
+        text = _p.get_text(strip=True)
+        if TIME_RE.match(text):
+            return text
     return ''
+
+
+def derive_status(goals: list[str], live_text: str, over_text: str) -> str:
+    """Map the card's own wording to the published CSV status vocabulary.
+
+    Only what the page states is used; nothing is inferred from the clock.
+
+    Args:
+        goals (list[str]): Score texts found on the card (empty before kick-off).
+        live_text (str): Elapsed-time text shown while the match is in progress.
+        over_text (str): Text shown once the match has finished.
+
+    Returns:
+        str: '試合終了', '試合中止', '速報中…' or 'ＶＳ'.
+    """
+    for text in (over_text, live_text):
+        if '中止' in text:
+            return STATUS_CANCELLED
+    if over_text:
+        return STATUS_FINISHED
+    if live_text:
+        # Keep the elapsed time; the front-end strips the marker before display.
+        return f'{STATUS_LIVE_MARKER}{live_text}'
+    return STATUS_SCHEDULED if len(goals) != 2 else STATUS_FINISHED
+
+
+def renumber_matches(matches: pd.DataFrame) -> pd.DataFrame:
+    """Sort by section and assign the 1-based index used inside each section.
+
+    Args:
+        matches (pd.DataFrame): Parsed matches.
+
+    Returns:
+        pd.DataFrame: Sorted frame holding CSV_COLUMNS.
+    """
+    if matches.empty:
+        return pd.DataFrame(columns=CSV_COLUMNS)
+    matches = matches.sort_values(['section_no', 'match_date', 'home_team'],
+                                  kind='stable').reset_index(drop=True)
+    matches['match_index_in_section'] = matches.groupby('section_no').cumcount() + 1
+    return matches.reindex(columns=CSV_COLUMNS)
+
+
+def keep_unlisted_matches(fetched: pd.DataFrame, current: pd.DataFrame,
+                          sections: set[int] = None) -> pd.DataFrame:
+    """Carry over fixtures the schedule pages cannot show.
+
+    A fixture whose date is not settled yet has no place on a calendar, so the
+    date-ranged schedule pages omit it entirely (e.g. a section left open until
+    an AFC draw).  Dropping it would shrink the section and lose a match the
+    site itself still counts, so any row already known from the CSV but absent
+    from the fetch is kept, with its date and kick-off time left blank.
+
+    Args:
+        fetched (pd.DataFrame): Matches just read from the web.
+        current (pd.DataFrame): Matches already stored in the CSV.
+        sections (set[int], optional): Restrict to these sections.
+
+    Returns:
+        pd.DataFrame: `fetched` plus the carried-over rows.
+    """
+    if current is None or current.empty:
+        return fetched
+
+    known = current if sections is None else current[current['section_no'].isin(sections)]
+    if known.empty:
+        return fetched
+
+    keys = ['section_no', 'home_team', 'away_team']
+    seen = set(map(tuple, fetched[keys].values)) if not fetched.empty else set()
+    missing = known[[tuple(row) not in seen for row in known[keys].values]]
+    if missing.empty:
+        return fetched
+
+    logger.warning("Keeping %d fixture(s) the schedule page does not list: %s",
+                   len(missing),
+                   [f"sec{r.section_no} {r.home_team}-{r.away_team}"
+                    for r in missing.itertuples()])
+    combined = pd.concat([fetched, missing.reindex(columns=fetched.columns)])
+    return renumber_matches(combined)
 
 
 def convert_jleague_date(match_date: str) -> str:
@@ -297,8 +406,8 @@ def read_matches(competition: str, sections: list[int] = None,
                  url_category: str = None) -> pd.DataFrame:
     """Read match data for specified competition from the web.
 
-    One Data Site request returns the whole season, so `sections` only narrows
-    down the already-fetched rows; it does not reduce the number of requests.
+    The season is fetched month by month, so `sections` only narrows down the
+    already-fetched rows; it does not reduce the number of requests.
 
     Args:
         competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
@@ -309,8 +418,8 @@ def read_matches(competition: str, sections: list[int] = None,
         pd.DataFrame: DataFrame containing match data
     """
     if url_category:
-        logger.warning("url_category=%s is ignored: the Data Site serves each competition"
-                       " separately", url_category)
+        logger.warning("url_category=%s is ignored: each competition has its own"
+                       " schedule page", url_category)
     _matches = read_match(competition)
     if sections:
         _matches = _matches[_matches['section_no'].isin(set(sections))]
@@ -608,6 +717,9 @@ def update_all_matches(competition: str, force_update: bool = False,
     # If the file does not exist, read all matches and save them
     if (not Path(latest_file).exists()) or force_update:
         all_matches = read_matches(competition, url_category=url_category)
+        if Path(latest_file).exists():
+            all_matches = keep_unlisted_matches(all_matches,
+                                                mu.read_allmatches_csv(latest_file))
         mu.update_if_diff(all_matches, latest_file)
         return all_matches
 
@@ -622,6 +734,7 @@ def update_all_matches(competition: str, force_update: bool = False,
             return current
 
     diff_matches = read_matches(competition, need_update, url_category=url_category)
+    diff_matches = keep_unlisted_matches(diff_matches, current, set(need_update))
     old_matches = current[current['section_no'].isin(need_update)]
     if mu.matches_differ(diff_matches, old_matches):
         new_matches = pd.concat([current[~current['section_no'].isin(need_update)], diff_matches]) \

@@ -1,5 +1,4 @@
 """Tests for read_jleague_matches.py"""
-from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -12,9 +11,10 @@ import pandas as pd
 
 from match_utils import drop_duplicated_indexes
 from read_jleague_matches import CSV_COLUMNS
-from read_jleague_matches import convert_datasite_date
-from read_jleague_matches import datasite_year
 from read_jleague_matches import derive_status
+from read_jleague_matches import keep_unlisted_matches
+from read_jleague_matches import read_sections_from_web
+from read_jleague_matches import season_periods
 from read_jleague_matches import get_match_dates_of_section
 from read_jleague_matches import get_sections_to_update
 from read_jleague_matches import read_match_from_web
@@ -145,138 +145,173 @@ class TestReadTeamsFromWeb(HtmlLoadingTestCase):
 
 
 class TestReadMatchFromWeb(HtmlLoadingTestCase):
-    """Test for read_match_from_web function (data.j-league.or.jp SFMS01)"""
+    """Test for read_match_from_web function (jleague.jp schedule pages)"""
 
     def setUp(self):
-        """Read the Data Site search result fixture"""
         self.test_data_dir = Path(__file__).parent / 'test_data'
-        self.soup = self._load_html_file('jleague_datasite_j1.html')
-        self.matches = read_match_from_web(self.soup, 'J1')
+        self.live = read_match_from_web(self._load_html_file('jleague_match_live.html'), 'J1')
+        self.finished = read_match_from_web(
+            self._load_html_file('jleague_match_finished.html'), 'J1')
+        self.mixed = read_match_from_web(self._load_html_file('jleague_match_mixed.html'), 'J1')
 
     def test_returns_dataframe_with_csv_columns(self):
-        """The parsed result carries exactly the published CSV columns"""
-        self.assertIsInstance(self.matches, pd.DataFrame)
-        self.assertEqual(list(self.matches.columns), CSV_COLUMNS)
+        self.assertIsInstance(self.live, pd.DataFrame)
+        self.assertEqual(list(self.live.columns), CSV_COLUMNS)
 
-    def test_played_match_is_parsed(self):
-        """A finished match yields goals, status and attendance"""
-        row = self.matches.iloc[0]
+    def test_finished_match_is_parsed(self):
+        row = self.finished.iloc[0]
 
         self.assertEqual(row['match_date'], '2026/08/07')
         self.assertEqual(row['section_no'], 1)
-        self.assertEqual(row['match_index_in_section'], 1)
-        self.assertEqual(row['start_time'], '19:26')
-        self.assertEqual(row['stadium'], 'MUFG国立')
         self.assertEqual(row['home_team'], '横浜FM')
+        self.assertEqual(row['away_team'], '鹿島')
         self.assertEqual(row['home_goal'], '3')
         self.assertEqual(row['away_goal'], '4')
-        self.assertEqual(row['away_team'], '鹿島')
         self.assertEqual(row['status'], '試合終了')
-        self.assertEqual(row['attendance'], '63960')
-        self.assertEqual(row['broadcast'], 'ＤＡＺＮ／フジテレビ系列全国ネット')
+        self.assertEqual(row['stadium'], 'MUFG国立')
 
-    def test_scheduled_match_has_no_score(self):
-        """An unplayed match keeps empty goals and the ＶＳ status"""
-        row = self.matches[self.matches['section_no'] == 38].iloc[0]
+    def test_live_match_keeps_running_score_and_elapsed_time(self):
+        """A match in progress carries the live marker plus the elapsed time."""
+        row = self.live.iloc[0]
 
+        self.assertEqual(row['home_team'], '水戸')
+        self.assertEqual(row['home_goal'], '1')
+        self.assertEqual(row['away_goal'], '0')
+        self.assertTrue(row['status'].startswith('速報中'))
+        self.assertIn('前半', row['status'])
+
+    def test_scheduled_match_keeps_kickoff_time(self):
+        """Before kick-off the card shows the time instead of a score."""
+        row = self.live[self.live['home_team'] == '浦和'].iloc[0]
+
+        self.assertEqual(row['start_time'], '19:00')
         self.assertEqual(row['home_goal'], '')
         self.assertEqual(row['away_goal'], '')
         self.assertEqual(row['status'], 'ＶＳ')
-        self.assertEqual(row['attendance'], '')
 
-    def test_section_no_parsed_from_fullwidth_digits(self):
-        """節 is rendered with full-width digits (第２１節第１日)"""
-        self.assertIn(21, set(self.matches['section_no']))
-        self.assertIn(38, set(self.matches['section_no']))
+    def test_started_match_has_no_kickoff_time_left(self):
+        """Once a match starts the slot is replaced by the score."""
+        self.assertEqual(self.live.iloc[0]['start_time'], '')
 
-    def test_undecided_stadium_is_normalized(self):
-        """The Data Site marks an undecided venue as ●未定●"""
-        row = self.matches[self.matches['section_no'] == 21].iloc[0]
+    def test_team_names_use_the_short_form(self):
+        """The CSV vocabulary is the short name, not the full club name."""
+        self.assertIn('Ｇ大阪', set(self.live['home_team']))
+        self.assertNotIn('ガンバ大阪', set(self.live['home_team']))
 
-        self.assertEqual(row['stadium'], '未定')
+    def test_section_is_joined_by_date(self):
+        """Headers are not interleaved with cards, so the date is the join key."""
+        self.assertEqual(set(self.mixed['section_no']), {5, 6, 7})
 
-    def test_match_index_restarts_each_section(self):
-        """match_index_in_section is a 1-based counter within each section"""
-        for _, group in self.matches.groupby('section_no'):
-            expected = list(range(1, len(group) + 1))
-            self.assertEqual(list(group['match_index_in_section']), expected)
+    def test_other_competitions_are_filtered_out(self):
+        """Cup and continental fixtures share the page and must be dropped."""
+        as_j2 = read_match_from_web(self._load_html_file('jleague_match_mixed.html'), 'J2')
 
-    def test_pk_columns_empty_for_league_match(self):
-        """League matches never go to a shootout, so the PK columns stay empty"""
-        self.assertTrue((self.matches['home_pk_score'] == '').all())
-        self.assertTrue((self.matches['away_pk_score'] == '').all())
+        self.assertTrue(as_j2.empty)
+        # The mixed fixture holds one non-J1 fixture among its cards.
+        self.assertEqual(len(self.mixed), 9)
 
-    def test_other_competition_rows_are_filtered_out(self):
-        """Only rows whose 大会 matches the requested competition are kept"""
-        matches = read_match_from_web(self.soup, 'J2')
+    def test_broadcast_is_captured(self):
+        self.assertEqual(self.finished.iloc[0]['broadcast'], 'DAZN・フジテレビ系列')
 
-        self.assertTrue(matches.empty)
-        self.assertEqual(list(matches.columns), CSV_COLUMNS)
+    def test_page_without_matches_returns_empty_frame(self):
+        empty = read_match_from_web(BeautifulSoup('<html></html>', 'lxml'), 'J1')
 
-    def test_missing_result_table_raises(self):
-        """A response without the result table is an error, not an empty result"""
-        empty_soup = BeautifulSoup('<html></html>', 'lxml')
+        self.assertTrue(empty.empty)
+        self.assertEqual(list(empty.columns), CSV_COLUMNS)
 
-        with self.assertRaises(ValueError):
-            read_match_from_web(empty_soup, 'J1')
+
+class TestReadSectionsFromWeb(HtmlLoadingTestCase):
+    """Test for read_sections_from_web function"""
+
+    def setUp(self):
+        self.test_data_dir = Path(__file__).parent / 'test_data'
+
+    def test_only_league_headers_are_kept(self):
+        """Cup rounds ('1回戦') carry no section number and must not appear."""
+        sections = read_sections_from_web(self._load_html_file('jleague_match_mixed.html'))
+
+        self.assertEqual(sections['2026/09/02'], 5)
+        self.assertEqual(sections['2026/09/12'], 7)
+        self.assertTrue(all(isinstance(v, int) for v in sections.values()))
 
 
 class TestDeriveStatus(unittest.TestCase):
     """Test for derive_status function"""
 
-    TODAY = date(2026, 8, 29)
+    def test_finished_match(self):
+        self.assertEqual(derive_status(['3', '4'], '', '試合終了'), '試合終了')
 
-    def test_score_means_finished(self):
-        self.assertEqual(derive_status('3-4', '2026/08/07'), '試合終了')
+    def test_live_match_keeps_elapsed_time(self):
+        status = derive_status(['1', '0'], '前半 30分', '')
 
-    def test_shootout_score_means_finished(self):
-        self.assertEqual(derive_status('1-1(PK4-2)', '2026/08/07'), '試合終了')
+        self.assertTrue(status.startswith('速報中'))
+        self.assertIn('前半 30分', status)
 
-    def test_blank_future_match_is_scheduled(self):
-        self.assertEqual(derive_status('', '2026/09/20', self.TODAY), 'ＶＳ')
+    def test_scheduled_match(self):
+        self.assertEqual(derive_status([], '', ''), 'ＶＳ')
 
-    def test_vs_means_scheduled(self):
-        self.assertEqual(derive_status('vs', '2026/09/20', self.TODAY), 'ＶＳ')
+    def test_cancelled_match(self):
+        self.assertEqual(derive_status([], '', '試合中止'), '試合中止')
 
-    def test_cancelled_is_detected(self):
-        """A cancellation stated by the Data Site needs no grace period."""
-        self.assertEqual(derive_status('中止', '2026/08/28', self.TODAY), '試合中止')
-
-    def test_not_held_is_detected(self):
-        self.assertEqual(derive_status('不実施', '2026/08/28', self.TODAY), '試合不実施')
-
-    def test_just_played_match_is_not_called_off(self):
-        """The Data Site lags: yesterday's match has no result yet, not a cancellation."""
-        self.assertEqual(derive_status('', '2026/08/28', self.TODAY), 'ＶＳ')
-
-    def test_match_inside_grace_period_is_not_called_off(self):
-        """cancel_margin_days is 7, so a 7-day-old blank result still waits."""
-        self.assertEqual(derive_status('', '2026/08/22', self.TODAY), 'ＶＳ')
-
-    def test_match_past_grace_period_is_called_off(self):
-        """Beyond the grace period a still-empty result means the match was called off."""
-        self.assertEqual(derive_status('', '2026/08/21', self.TODAY), '試合中止')
-
-    def test_undecided_date_stays_scheduled(self):
-        """A match with no fixed date can never be judged by age."""
-        self.assertEqual(derive_status('', '未定', self.TODAY), 'ＶＳ')
-
-    def test_missing_date_stays_scheduled(self):
-        self.assertEqual(derive_status('', '', self.TODAY), 'ＶＳ')
+    def test_score_without_wording_counts_as_finished(self):
+        self.assertEqual(derive_status(['2', '1'], '', ''), '試合終了')
 
 
-class TestConvertDatasiteDate(unittest.TestCase):
-    """Test for convert_datasite_date function"""
+class TestSeasonPeriods(unittest.TestCase):
+    """Test for season_periods function"""
 
-    def test_two_digit_year_is_expanded(self):
-        self.assertEqual(convert_datasite_date('26/08/07'), '2026/08/07')
+    def test_covers_twelve_months_from_season_start(self):
+        periods = season_periods(start_month=7)
 
-    def test_undecided_date_becomes_empty(self):
-        """'未定' must not survive: downstream code detects it by an empty cell."""
-        self.assertEqual(convert_datasite_date('未定'), '')
+        self.assertEqual(len(periods), 12)
+        for (start, end) in periods:
+            self.assertLess(start, end)
 
-    def test_blank_stays_blank(self):
-        self.assertEqual(convert_datasite_date(''), '')
+    def test_periods_are_contiguous(self):
+        periods = season_periods(start_month=7)
+
+        for (_, end), (start, _) in zip(periods, periods[1:]):
+            gap = (datetime.strptime(start, '%Y-%m-%d')
+                   - datetime.strptime(end, '%Y-%m-%d')).days
+            self.assertEqual(gap, 1)
+
+
+class TestKeepUnlistedMatches(unittest.TestCase):
+    """Test for keep_unlisted_matches function"""
+
+    def _row(self, section, home, away, **kw):
+        base = {'match_date': '2026/12/19', 'section_no': section,
+                'match_index_in_section': 1, 'start_time': '14:00', 'stadium': 'X',
+                'home_team': home, 'home_goal': '', 'away_goal': '', 'away_team': away,
+                'status': 'ＶＳ', 'home_pk_score': '', 'away_pk_score': '', 'broadcast': ''}
+        base.update(kw)
+        return base
+
+    def test_undated_fixture_is_carried_over(self):
+        """A fixture with no settled date is missing from the schedule page."""
+        fetched = pd.DataFrame([self._row(20, 'A', 'B')])
+        current = pd.DataFrame([self._row(20, 'A', 'B'),
+                                self._row(20, '京都', '岡山', match_date=None)])
+
+        result = keep_unlisted_matches(fetched, current)
+
+        self.assertEqual(len(result), 2)
+        self.assertIn('京都', set(result['home_team']))
+
+    def test_nothing_added_when_the_page_is_complete(self):
+        fetched = pd.DataFrame([self._row(20, 'A', 'B')])
+
+        result = keep_unlisted_matches(fetched, pd.DataFrame([self._row(20, 'A', 'B')]))
+
+        self.assertEqual(len(result), 1)
+
+    def test_only_the_named_sections_are_considered(self):
+        fetched = pd.DataFrame([self._row(20, 'A', 'B')])
+        current = pd.DataFrame([self._row(20, 'A', 'B'), self._row(21, 'C', 'D')])
+
+        result = keep_unlisted_matches(fetched, current, sections={20})
+
+        self.assertEqual(len(result), 1)
 
 
 class TestUndecidedDateIsUsableDownstream(unittest.TestCase):
@@ -313,16 +348,6 @@ class TestUndecidedDateIsUsableDownstream(unittest.TestCase):
         result = get_match_dates_of_section(self._frame('2026/08/29', '18:00'))
 
         self.assertEqual(result[20][0].strftime('%Y/%m/%d %H:%M'), '2026/08/29 18:00')
-
-
-class TestDatasiteYear(unittest.TestCase):
-    """Test for datasite_year function"""
-
-    def test_cross_year_season_uses_start_year(self):
-        self.assertEqual(datasite_year('26-27'), 2026)
-
-    def test_single_year_season(self):
-        self.assertEqual(datasite_year('2025'), 2025)
 
 
 if __name__ == '__main__':
