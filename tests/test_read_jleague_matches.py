@@ -5,6 +5,7 @@ from datetime import timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -12,7 +13,10 @@ import pandas as pd
 from match_utils import drop_duplicated_indexes
 from read_jleague_matches import CSV_COLUMNS
 from read_jleague_matches import derive_status
+from read_jleague_matches import fill_start_times_from_detail
+from read_jleague_matches import keep_known_start_times
 from read_jleague_matches import keep_unlisted_matches
+from read_jleague_matches import read_kickoff_from_detail
 from read_jleague_matches import read_sections_from_web
 from read_jleague_matches import season_periods
 from read_jleague_matches import get_match_dates_of_section
@@ -274,6 +278,148 @@ class TestSeasonPeriods(unittest.TestCase):
             gap = (datetime.strptime(start, '%Y-%m-%d')
                    - datetime.strptime(end, '%Y-%m-%d')).days
             self.assertEqual(gap, 1)
+
+
+class TestKeepKnownStartTimes(unittest.TestCase):
+    """Test for keep_known_start_times function"""
+
+    def _row(self, home, away, start_time, **kw):
+        base = {'match_date': '2026/08/29', 'section_no': 4, 'match_index_in_section': 1,
+                'start_time': start_time, 'stadium': 'X', 'home_team': home,
+                'home_goal': '', 'away_goal': '', 'away_team': away, 'status': 'ＶＳ',
+                'home_pk_score': '', 'away_pk_score': '', 'broadcast': ''}
+        base.update(kw)
+        return base
+
+    def test_started_match_keeps_its_scheduled_time(self):
+        """The card drops the kick-off time as soon as a match is under way."""
+        fetched = pd.DataFrame([self._row('水戸', '町田', '', status='速報中前半 30分')])
+        current = pd.DataFrame([self._row('水戸', '町田', '18:00')])
+
+        result = keep_known_start_times(fetched, current)
+
+        self.assertEqual(result.iloc[0]['start_time'], '18:00')
+
+    def test_a_time_on_the_page_wins(self):
+        fetched = pd.DataFrame([self._row('水戸', '町田', '18:30')])
+        current = pd.DataFrame([self._row('水戸', '町田', '18:00')])
+
+        result = keep_known_start_times(fetched, current)
+
+        self.assertEqual(result.iloc[0]['start_time'], '18:30')
+
+    def test_unknown_match_is_left_alone(self):
+        fetched = pd.DataFrame([self._row('水戸', '町田', '')])
+        current = pd.DataFrame([self._row('鹿島', '浦和', '19:00')])
+
+        result = keep_known_start_times(fetched, current)
+
+        self.assertEqual(result.iloc[0]['start_time'], '')
+
+    def test_no_current_data(self):
+        fetched = pd.DataFrame([self._row('水戸', '町田', '')])
+
+        self.assertTrue(keep_known_start_times(fetched, pd.DataFrame()).equals(fetched))
+
+
+class TestFillStartTimesFromDetail(unittest.TestCase):
+    """Test for fill_start_times_from_detail function"""
+
+    def _row(self, home, away, start_time, status):
+        return {'match_date': '2026/08/22', 'section_no': 3, 'match_index_in_section': 1,
+                'start_time': start_time, 'stadium': 'X', 'home_team': home,
+                'home_goal': '2', 'away_goal': '2', 'away_team': away, 'status': status,
+                'home_pk_score': '', 'away_pk_score': '', 'broadcast': ''}
+
+    def test_played_match_without_a_time_is_looked_up(self):
+        frame = pd.DataFrame([self._row('FC大阪', '琉球', '', '試合終了')])
+        links = {('2026/08/22', 'FC大阪', '琉球'): '/match/j3/2026/082225/'}
+
+        with patch('read_jleague_matches.read_kickoff_from_detail',
+                   return_value='18:00') as lookup:
+            result = fill_start_times_from_detail(frame, links)
+
+        lookup.assert_called_once_with('/match/j3/2026/082225/')
+        self.assertEqual(result.iloc[0]['start_time'], '18:00')
+
+    def test_unplayed_match_is_not_looked_up(self):
+        """A fixture later in the season has no time yet; asking is pointless."""
+        frame = pd.DataFrame([self._row('FC大阪', '琉球', '', 'ＶＳ')])
+        links = {('2026/08/22', 'FC大阪', '琉球'): '/match/j3/2026/082225/'}
+
+        with patch('read_jleague_matches.read_kickoff_from_detail') as lookup:
+            result = fill_start_times_from_detail(frame, links)
+
+        lookup.assert_not_called()
+        self.assertEqual(result.iloc[0]['start_time'], '')
+
+    def test_match_with_a_time_is_not_looked_up(self):
+        frame = pd.DataFrame([self._row('FC大阪', '琉球', '18:00', '試合終了')])
+
+        with patch('read_jleague_matches.read_kickoff_from_detail') as lookup:
+            fill_start_times_from_detail(frame, {})
+
+        lookup.assert_not_called()
+
+    def test_lookups_are_capped(self):
+        rows = [self._row(f'H{i}', f'A{i}', '', '試合終了') for i in range(5)]
+        links = {('2026/08/22', f'H{i}', f'A{i}'): f'/match/j3/2026/08220{i}/'
+                 for i in range(5)}
+
+        with patch('read_jleague_matches.read_kickoff_from_detail',
+                   return_value='18:00') as lookup:
+            fill_start_times_from_detail(pd.DataFrame(rows), links, limit=2)
+
+        self.assertEqual(lookup.call_count, 2)
+
+
+class TestReadKickoffFromDetail(unittest.TestCase):
+    """Test for read_kickoff_from_detail function"""
+
+    def test_reads_the_header_kickoff(self):
+        html = '<html><body><p>2026/8/22 (土) 18:00 KO</p></body></html>'
+
+        with patch('read_jleague_matches.requests.get') as get:
+            get.return_value.text = html
+            self.assertEqual(read_kickoff_from_detail('/match/j3/2026/082225/'), '18:00')
+
+    def test_missing_kickoff_returns_blank(self):
+        with patch('read_jleague_matches.requests.get') as get:
+            get.return_value.text = '<html><body><p>2026/8/22 (土)</p></body></html>'
+            self.assertEqual(read_kickoff_from_detail('/match/j3/2026/082225/'), '')
+
+
+class TestSectionStaysUpdatableAfterKickoff(unittest.TestCase):
+    """Every match of a section having started must not hide it from updates.
+
+    Kick-off times decide which sections are due for a refresh.  When the page
+    blanked them on kick-off the whole section fell out of the update window,
+    so live polling fetched nothing for the rest of the match.
+    """
+
+    def _frame(self, start_times):
+        return pd.DataFrame([
+            {'match_date': '2026/08/29', 'section_no': 4, 'match_index_in_section': i,
+             'start_time': t, 'home_team': f'H{i}', 'away_team': f'A{i}',
+             'status': '速報中前半 30分'}
+            for i, t in enumerate(start_times, start=1)])
+
+    def test_section_is_due_while_its_matches_run(self):
+        frame = self._frame(['18:00', '18:30'])
+        now = datetime(2026, 8, 29, 19, 30, tzinfo=ZoneInfo('Asia/Tokyo'))
+
+        sections = get_sections_to_update(frame, now - timedelta(minutes=10), now)
+
+        self.assertEqual(sections, {4})
+
+    def test_blank_times_would_hide_the_section(self):
+        """Guards the regression: without a kick-off time the window is midnight."""
+        frame = self._frame(['', ''])
+        now = datetime(2026, 8, 29, 19, 30, tzinfo=ZoneInfo('Asia/Tokyo'))
+
+        sections = get_sections_to_update(frame, now - timedelta(minutes=10), now)
+
+        self.assertEqual(sections, set())
 
 
 class TestKeepUnlistedMatches(unittest.TestCase):
