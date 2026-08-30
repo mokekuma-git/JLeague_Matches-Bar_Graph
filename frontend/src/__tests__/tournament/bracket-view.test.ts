@@ -224,6 +224,39 @@ describe('bracket-view helpers', () => {
     });
   });
 
+  // #304: keying the build cache on bracket_order alone collided when two
+  // sections shared an order but filtered different rounds, so the second
+  // section rendered the first section's tree.
+  describe('bracket build cache key', () => {
+    const state = {
+      csvRows: [makeRow()],
+      seasonInfo: { aggregateTiebreakOrder: [], cssFiles: [] },
+      matchDates: ['2025/03/15', '2025/03/22'],
+    } as unknown as Parameters<typeof __testables.createSingleBracketRenderInput>[0];
+    const order = ['TeamA', 'TeamB'];
+
+    test('the same order in different sections gets different cache keys', () => {
+      const first = __testables.createSingleBracketRenderInput(state, order, '準決勝');
+      const second = __testables.createSingleBracketRenderInput(state, order, '３位決定戦');
+
+      expect(first?.cacheKey).not.toBe(second?.cacheKey);
+    });
+
+    test('the same order in the same section reuses one cache key', () => {
+      const first = __testables.createSingleBracketRenderInput(state, order, '準決勝');
+      const second = __testables.createSingleBracketRenderInput(state, order, '準決勝');
+
+      expect(first?.cacheKey).toBe(second?.cacheKey);
+    });
+
+    test('different orders in the same section stay distinct', () => {
+      const first = __testables.createSingleBracketRenderInput(state, order, 'S');
+      const second = __testables.createSingleBracketRenderInput(state, ['TeamC', 'TeamD'], 'S');
+
+      expect(first?.cacheKey).not.toBe(second?.cacheKey);
+    });
+  });
+
   describe('shared target date boundary (#298)', () => {
     // matchDates always starts with the preseason sentinel (collectMatchDates
     // prepends it), so index 0 is the "before any match" slider position.

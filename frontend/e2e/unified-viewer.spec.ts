@@ -90,6 +90,45 @@ test.describe('Unified league and bracket viewer', () => {
     await expect(page.locator('#league_current_opacity')).toHaveText('0.45');
   });
 
+  // #304: the saved season belongs to the competition it was viewed in.
+  test('switching competition selects that competition latest season', async ({ page }) => {
+    await page.selectOption('#season_key', '2024');
+    await waitForRender(page);
+
+    await page.selectOption('#competition_key', 'J2');
+    await waitForRender(page);
+    await page.selectOption('#competition_key', 'J1');
+    await waitForRender(page);
+
+    const seasons = await page.locator('#season_key option').evaluateAll(
+      (options) => options.map((o) => (o as HTMLOptionElement).value),
+    );
+    expect(await page.locator('#season_key').inputValue()).toBe(seasons[0]);
+  });
+
+  test('a season given in the URL is still restored', async ({ page }) => {
+    await page.goto('/matches.html?competition=J1&season=2024');
+    await waitForRender(page);
+
+    expect(await page.locator('#season_key').inputValue()).toBe('2024');
+  });
+
+  // #304: the bracket view now hides the timezone selector itself, and League
+  // re-shows it from its own data.
+  test('timezone selector visibility follows the active view', async ({ page }) => {
+    await page.goto('/matches.html?competition=WC_GS&season=2026');
+    await waitForRender(page);
+    await expect(page.locator('#display_timezone_label')).toBeVisible();
+
+    await page.selectOption('#competition_key', 'JLeagueCup');
+    await waitForBracketRender(page);
+    await expect(page.locator('#display_timezone_label')).toBeHidden();
+
+    await page.selectOption('#competition_key', 'WC_GS');
+    await waitForRender(page);
+    await expect(page.locator('#display_timezone_label')).toBeVisible();
+  });
+
   // #298: the bracket view used to write values the user never picked into the
   // shared target date, which League then displayed (and persisted).
   test('bracket view does not pin the shared target date to its own last match day', async ({ page }) => {
