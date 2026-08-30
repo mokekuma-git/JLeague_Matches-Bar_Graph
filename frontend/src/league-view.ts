@@ -35,9 +35,9 @@ import { loadPrefs, savePrefs } from './storage/local-storage';
 import type { ViewerPrefs } from './storage/local-storage';
 import { t } from './i18n';
 import {
-  clampToSlider, normalizeTargetDate, toInputDate,
+  clampToSlider, normalizeTargetDate, readViewNumberPref, toInputDate,
 } from './view-bootstrap';
-import type { SharedViewerControlState } from './view-bootstrap';
+import type { SharedDateState } from './view-bootstrap';
 
 // ---- Application state ------------------------------------------------
 
@@ -69,12 +69,17 @@ const state: AppState = {
 
 // ---- Control state (symmetric with bracket-view.ts) --------------------
 
+const DEFAULT_LEAGUE_SCALE = 1;
+const DEFAULT_LEAGUE_FUTURE_OPACITY = 0.1;
+
 interface LeagueControlState {
   teamSortKey: string;
   matchSortKey: string;
   spaceColor: string;
   displayTimezone: string;  // '' = browser default; otherwise an IANA TZ name
   hiddenColumns: Set<string>;  // rank table column data-ids hidden by the user
+  scale: number;           // league-owned: its slider range starts at 0.1
+  futureOpacity: number;   // league-owned: default differs from the bracket's
 }
 
 interface ControlState {
@@ -84,13 +89,13 @@ interface ControlState {
    * it (see bracket-view for the symmetric arrangement). League-specific prefs
    * live in `league` below.
    */
-  viewer: SharedViewerControlState;
+  viewer: SharedDateState;
   league: LeagueControlState;
 }
 
 function createControlStateFromPrefs(
   prefs: ViewerPrefs,
-  shared: SharedViewerControlState,
+  shared: SharedDateState,
 ): ControlState {
   return {
     viewer: shared,
@@ -100,6 +105,10 @@ function createControlStateFromPrefs(
       spaceColor: prefs.spaceColor ?? '#cccccc',
       displayTimezone: prefs.displayTimezone ?? '',
       hiddenColumns: new Set(prefs.hiddenColumns ?? []),
+      scale: readViewNumberPref(prefs.leagueScale, prefs.scale, DEFAULT_LEAGUE_SCALE),
+      futureOpacity: readViewNumberPref(
+        prefs.leagueFutureOpacity, prefs.futureOpacity, DEFAULT_LEAGUE_FUTURE_OPACITY,
+      ),
     },
   };
 }
@@ -119,7 +128,7 @@ export interface LeagueViewSelection {
 }
 
 export interface LeagueViewContext {
-  shared: SharedViewerControlState;
+  shared: SharedDateState;
   onViewerChange(): void;
 }
 
@@ -142,7 +151,9 @@ export interface LeagueViewIds {
   postDateSlider: string;
   targetDate: string;
   scaleSlider: string;
+  currentScale: string;
   futureOpacity: string;
+  currentOpacity: string;
   spaceColor: string;
   columnToggleList: string;
   status: string;
@@ -168,7 +179,9 @@ export const LEAGUE_STANDALONE_IDS: LeagueViewIds = {
   postDateSlider: 'post_date_slider',
   targetDate: 'target_date',
   scaleSlider: 'scale_slider',
+  currentScale: 'current_scale',
   futureOpacity: 'future_opacity',
+  currentOpacity: 'current_opacity',
   spaceColor: 'space_color',
   columnToggleList: 'column_toggle_list',
   status: 'status_msg',
@@ -187,7 +200,9 @@ export const LEAGUE_NAMESPACED_IDS: LeagueViewIds = {
   dateSliderUp: 'league_date_slider_up',
   postDateSlider: 'league_post_date_slider',
   scaleSlider: 'league_scale_slider',
+  currentScale: 'league_current_scale',
   futureOpacity: 'league_future_opacity',
+  currentOpacity: 'league_current_opacity',
   status: 'league_status_msg',
   seasonNotes: 'league_season_notes',
 };
@@ -206,7 +221,9 @@ interface LeagueViewRefs {
   postDateSlider: HTMLElement;
   targetDate: HTMLInputElement;
   scaleSlider: HTMLInputElement;
+  currentScale: HTMLElement;
   futureOpacity: HTMLInputElement;
+  currentOpacity: HTMLElement;
   spaceColor: HTMLInputElement;
   columnToggleList: HTMLElement;
   status: HTMLElement;
@@ -244,7 +261,9 @@ function resolveRefs(ids: LeagueViewIds): LeagueViewRefs {
     postDateSlider: requireElement(ids.postDateSlider),
     targetDate: requireElement(ids.targetDate),
     scaleSlider: requireElement(ids.scaleSlider),
+    currentScale: requireElement(ids.currentScale),
     futureOpacity: requireElement(ids.futureOpacity),
+    currentOpacity: requireElement(ids.currentOpacity),
     spaceColor: requireElement(ids.spaceColor),
     columnToggleList: requireElement(ids.columnToggleList),
     status: requireElement(ids.status),
@@ -661,6 +680,24 @@ function loadAndRender(): void {
   });
 }
 
+// ---- Appearance application -------------------------------------------
+
+/** Apply the league-owned scale to the graph and its display. */
+function applyScale(): void {
+  const value = String(controlState.league.scale);
+  refs.scaleSlider.value = value;
+  refs.currentScale.textContent = value;
+  setScale(refs.boxContainer, value);
+}
+
+/** Apply the league-owned future opacity to the CSS rule and its display. */
+function applyFutureOpacity(): void {
+  const value = String(controlState.league.futureOpacity);
+  refs.futureOpacity.value = value;
+  refs.currentOpacity.textContent = value;
+  setFutureOpacity(value);
+}
+
 // ---- Initialization & event wiring ------------------------------------
 
 export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): LeagueViewHandle {
@@ -736,14 +773,14 @@ export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): Leag
   });
 
   refs.scaleSlider.addEventListener('input', () => {
-    controlState.viewer.scale = parseFloat(refs.scaleSlider.value);
-    setScale(refs.boxContainer, refs.scaleSlider.value);
-    ctx.onViewerChange();
+    controlState.league.scale = parseFloat(refs.scaleSlider.value);
+    applyScale();
+    savePrefs({ leagueScale: refs.scaleSlider.value });
   });
   refs.futureOpacity.addEventListener('input', () => {
-    controlState.viewer.futureOpacity = parseFloat(refs.futureOpacity.value);
-    setFutureOpacity(refs.futureOpacity.value);
-    ctx.onViewerChange();
+    controlState.league.futureOpacity = parseFloat(refs.futureOpacity.value);
+    applyFutureOpacity();
+    savePrefs({ leagueFutureOpacity: refs.futureOpacity.value });
   });
   refs.spaceColor.addEventListener('input', () => {
     controlState.league.spaceColor = refs.spaceColor.value;
@@ -764,15 +801,14 @@ export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): Leag
       activeSelection = selection;
       if (selectionChanged) state.teamMapCache = null;
 
-      const previousScale = controlState.viewer.scale;
-      const clampedScale = clampToSlider(previousScale, refs.scaleSlider);
-      refs.scaleSlider.value = String(clampedScale);
-      controlState.viewer.scale = parseFloat(refs.scaleSlider.value);
-      if (controlState.viewer.scale !== previousScale) ctx.onViewerChange();
-      refs.futureOpacity.value = String(controlState.viewer.futureOpacity);
+      // Clamp for display only: the stored value stays as the user set it, so
+      // visiting a view with a narrower slider range cannot ratchet it (#302).
+      controlState.league.scale = clampToSlider(controlState.league.scale, refs.scaleSlider);
+      applyScale();
+      applyFutureOpacity();
       refs.targetDate.value = toInputDate(controlState.viewer.targetDate) || dateFormat(new Date(), '-');
-      setFutureOpacity(refs.futureOpacity.value, false);
-      if (prefs.spaceColor) setSpace(controlState.league.spaceColor, false);
+      refs.spaceColor.value = controlState.league.spaceColor;
+      setSpace(controlState.league.spaceColor);
       loadAndRender();
     },
     deactivate() {

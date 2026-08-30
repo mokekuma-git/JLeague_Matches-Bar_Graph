@@ -171,39 +171,56 @@ describe('bracket-view helpers', () => {
   });
 
   describe('createControlStateFromPrefs', () => {
-    test('separates viewer-common prefs from bracket-specific prefs', () => {
+    test('separates the shared date from bracket-owned appearance', () => {
       const state = __testables.createControlStateFromPrefs({
-        scale: '1.5',
-        futureOpacity: '0.35',
+        bracketScale: '1.5',
+        bracketFutureOpacity: '0.35',
         targetDate: '2025/03/20',
         roundStart: '準決勝',
       });
 
-      expect(state.viewer).toEqual({
-        scale: 1.5,
-        futureOpacity: 0.35,
-        targetDate: '2025/03/20',
-      });
+      expect(state.viewer).toEqual({ targetDate: '2025/03/20' });
       expect(state.bracket).toEqual({
         layout: 'horizontal',
         roundStart: '準決勝',
         preseason: false,
+        scale: 1.5,
+        futureOpacity: 0.35,
       });
     });
 
     test('falls back to current defaults when prefs are absent', () => {
       const state = __testables.createControlStateFromPrefs({});
 
-      expect(state.viewer).toEqual({
-        scale: 1,
-        futureOpacity: 0.2,
-        targetDate: null,
-      });
+      expect(state.viewer).toEqual({ targetDate: null });
       expect(state.bracket).toEqual({
         layout: 'horizontal',
         roundStart: null,
         preseason: false,
+        scale: 1,
+        // The bracket's own default, which the shared state used to override
+        // with the league's 0.1 (#302).
+        futureOpacity: 0.2,
       });
+    });
+
+    test('migrates legacy shared keys into the bracket-owned values', () => {
+      const state = __testables.createControlStateFromPrefs({
+        scale: '0.5',
+        futureOpacity: '0.4',
+      });
+
+      expect(state.bracket.scale).toBe(0.5);
+      expect(state.bracket.futureOpacity).toBe(0.4);
+    });
+
+    test('prefers the bracket key over the legacy shared key', () => {
+      const state = __testables.createControlStateFromPrefs({
+        scale: '0.5',
+        bracketScale: '0.9',
+      });
+
+      expect(state.bracket.scale).toBe(0.9);
     });
   });
 

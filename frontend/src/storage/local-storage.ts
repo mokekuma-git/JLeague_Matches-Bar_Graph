@@ -11,9 +11,18 @@ export interface ViewerPrefs {
   targetDate?: string;   // Canonical YYYY/MM/DD (CSV date format)
   teamSortKey?: string;
   matchSortKey?: string;
+  /** @deprecated Legacy shared value; read as a fallback for the per-view keys below. */
   futureOpacity?: string;
   spaceColor?: string;
+  /** @deprecated Legacy shared value; read as a fallback for the per-view keys below. */
   scale?: string;
+  // Per-view appearance. scale ranges and opacity defaults differ between the
+  // views, so sharing one value let the bracket's clamp destroy the league's
+  // setting (#302). Legacy keys above seed these on first load only.
+  leagueScale?: string;
+  bracketScale?: string;
+  leagueFutureOpacity?: string;
+  bracketFutureOpacity?: string;
   locale?: string;
   displayTimezone?: string;  // display IANA TZ name ('' or absent = browser default)
   roundStart?: string;   // bracket round start selection (or '__multi_section__')

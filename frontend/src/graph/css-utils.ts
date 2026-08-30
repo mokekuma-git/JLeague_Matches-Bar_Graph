@@ -63,35 +63,26 @@ export function getHeightUnit(): number {
 
 /**
  * Sets the opacity of the `.future` CSS class.
- * updateSlider=true (default) → also updates #future_opacity slider value and
- * writes current value to #current_opacity display span.
+ * Control and display elements are the caller's responsibility: this module
+ * used to update them by hardcoded id, which silently did nothing once the
+ * unified page namespaced them (#302).
  */
-export function setFutureOpacity(value: string, updateSlider = true): void {
+export function setFutureOpacity(value: string): void {
   const rule = getCssRule('.future');
   if (!rule) return;
   rule.style.opacity = value;
-  const display = document.getElementById('current_opacity');
-  if (display) display.textContent = value;
-  if (updateSlider) {
-    const slider = document.getElementById('future_opacity') as HTMLInputElement | null;
-    if (slider) slider.value = value;
-  }
 }
 
 /**
  * Sets the background color of the `.space` CSS class.
  * Automatically chooses black or white text based on perceived brightness.
- * updateColorPicker=true (default) → also updates #space_color picker value.
+ * The colour picker is the caller's responsibility (see setFutureOpacity).
  */
-export function setSpace(value: string, updateColorPicker = true): void {
+export function setSpace(value: string): void {
   const rule = getCssRule('.space');
   if (!rule) return;
   rule.style.backgroundColor = value;
   rule.style.color = getBright(value, RGB_MOD) > 0.5 ? 'black' : 'white';
-  if (updateColorPicker) {
-    const picker = document.getElementById('space_color') as HTMLInputElement | null;
-    if (picker) picker.value = value;
-  }
 }
 
 // Vertical gap below each block row; keep in sync with the
@@ -112,9 +103,9 @@ function maxPointColumnHeight(root: ParentNode): number {
  * Height is set to the unscaled content height × scale to prevent overflow.
  * Single row → max .point_column height. Multi-group block rows (.group_block_row)
  * → sum of each row's max height plus the inter-row gaps.
- * updateSlider=true (default) → also updates #scale_slider value and #current_scale display.
+ * The slider and its display are the caller's responsibility (see setFutureOpacity).
  */
-export function setScale(boxCon: HTMLElement, value: string, updateSlider = true): void {
+export function setScale(boxCon: HTMLElement, value: string): void {
   boxCon.style.transform = `scale(${value})`;
   const blockRows = Array.from(boxCon.querySelectorAll('.group_block_row'));
   let contentHeight = 0;
@@ -127,11 +118,5 @@ export function setScale(boxCon: HTMLElement, value: string, updateSlider = true
   }
   if (contentHeight > 0) {
     boxCon.style.height = `${contentHeight * parseFloat(value)}px`;
-  }
-  if (updateSlider) {
-    const slider = document.getElementById('scale_slider') as HTMLInputElement | null;
-    if (slider) slider.value = value;
-    const display = document.getElementById('current_scale');
-    if (display) display.textContent = value;
   }
 }
