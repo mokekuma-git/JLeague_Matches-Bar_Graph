@@ -180,42 +180,63 @@ def build_topology(indexed, leaf_order=None):
     topology = [list(leaf_order)]
     current = list(leaf_order)
     for level in levels[1:]:
-        remaining = list(level)
-        parents = []
-        for i in range(0, len(current), 2):
-            pair = (current[i], current[i + 1])
-            # Pass 1: the parent still carries "No.Xの勝者" for both slots.
-            parent = parent_by_pair.get(tuple(sorted(pair)))
-            if parent is not None and parent in remaining:
-                parents.append(parent)
-                remaining.remove(parent)
-                continue
-            # Pass 2: the reference is gone, so match real names against winners.
-            winners = {winner_of(indexed[pair[0]]), winner_of(indexed[pair[1]])}
-            if None in winners:
-                raise ValueError(
-                    f'matches {pair[0]} and {pair[1]} carry no feeder reference and '
-                    'are not both played; cannot link the round above')
-            hits = [
-                n for n in remaining
-                if {indexed[n]['home_team'], indexed[n]['away_team']} == winners
-            ]
-            if len(hits) != 1:
-                raise ValueError(
-                    f'winners {sorted(w for w in winners)} of matches '
-                    f'{pair[0]}/{pair[1]} matched {len(hits)} rows in '
-                    f'round {indexed[level[0]]["round"]}; expected exactly 1')
-            parents.append(hits[0])
-            remaining.remove(hits[0])
+        if len(current) == 1:
+            break
+        parents, remaining, error = link_round(indexed, parent_by_pair, current, level)
+        if error is not None:
+            # A section that cannot supply a parent for every pair is not a
+            # round of this tree -- a third-place playoff sits between the
+            # semi-finals and the final, for instance.
+            notes.append(
+                f'round {indexed[level[0]]["round"]}: skipped, not a round of '
+                f'this tree ({error})')
+            continue
         if remaining:
             notes.append(
                 f'round {indexed[level[0]]["round"]}: {remaining} not part of this '
                 'tree (likely a separate block such as a third-place playoff)')
         topology.append(parents)
         current = parents
-        if len(current) == 1:
-            break
+    if len(current) != 1:
+        raise ValueError(
+            f'the tree does not converge to a single final: {current} remain. '
+            'Check that every round of this block is present in the CSV.')
     return topology, notes
+
+
+def link_round(indexed, parent_by_pair, current, level):
+    """Link one round to the round below it.
+
+    Returns (parents, unused_match_numbers, error). error is a message when this
+    round cannot supply a parent for every pair, in which case parents is None.
+    """
+    remaining = list(level)
+    parents = []
+    for i in range(0, len(current), 2):
+        pair = (current[i], current[i + 1])
+        # Pass 1: the parent still carries "No.Xの勝者" for both slots.
+        parent = parent_by_pair.get(tuple(sorted(pair)))
+        if parent is not None and parent in remaining:
+            parents.append(parent)
+            remaining.remove(parent)
+            continue
+        # Pass 2: the reference is gone, so match real names against winners.
+        winners = {winner_of(indexed[pair[0]]), winner_of(indexed[pair[1]])}
+        if None in winners:
+            return None, remaining, (
+                f'matches {pair[0]} and {pair[1]} carry no feeder reference and '
+                'are not both played')
+        hits = [
+            n for n in remaining
+            if {indexed[n]['home_team'], indexed[n]['away_team']} == winners
+        ]
+        if len(hits) != 1:
+            return None, remaining, (
+                f'winners {sorted(winners)} of matches {pair[0]}/{pair[1]} '
+                f'matched {len(hits)} rows')
+        parents.append(hits[0])
+        remaining.remove(hits[0])
+    return parents, remaining, None
 
 
 def resolve_block_rows(indexed, block):
