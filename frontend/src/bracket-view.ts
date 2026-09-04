@@ -87,6 +87,13 @@ const EMPTY_BRACKET_ROOT: BracketNode = {
 
 let currentState: BracketState | null = null;
 
+/**
+ * Incremented on every load and on deactivate, so a CSV response that arrives
+ * after the user switched competition or left the view is discarded instead of
+ * overwriting the current state (mirrors league-view's AppState.renderVersion).
+ */
+let renderVersion = 0;
+
 /** Cache buildBracket results to avoid redundant rebuilds on slider/layout changes. */
 let bracketCache = new Map<string, BracketNode>();
 
@@ -808,6 +815,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
 
   const filename = getCsvFilename(competition, season);
   const cachebuster = Math.floor(Date.now() / 1000 / CACHE_BUST_WINDOW_SEC);
+  const version = ++renderVersion;
   setStatus(t('status.loading'));
 
   Papa.parse<RawMatchRow>(filename + '?_=' + cachebuster, {
@@ -815,6 +823,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
     skipEmptyLines: 'greedy',
     download: true,
     complete: (results) => {
+      if (version !== renderVersion) return;
       const inferredOrder = inferBracketOrderFromRows(results.data);
       const rawSections = entry.bracket_blocks;
       const tournamentSeasonInfo = resolveTournamentSeasonInfo(
@@ -935,6 +944,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
       }));
     },
     error: (err: unknown) => {
+      if (version !== renderVersion) return;
       setStatus(t('status.error', { detail: String(err) }));
     },
   });
@@ -1031,6 +1041,9 @@ export function initBracketView(
       loadAndRender(seasonMap);
     },
     deactivate() {
+      // Discard any load still in flight: its response would render into the
+      // now-hidden DOM and clobber roundStart for the next activate.
+      renderVersion++;
       unpinTooltip();
     },
   };
