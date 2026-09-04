@@ -11,6 +11,7 @@ import type {
   BracketBlock,
   AggregateTiebreakCriterion,
   RawSeasonEntry,
+  TopologySource,
   TournamentSeasonInfo,
 } from './types/season';
 import {
@@ -80,6 +81,10 @@ interface SingleBracketRenderInput {
   targetDate: string | null;
   lastDate: string;
   cssFiles: string[];
+  /** season_map bracket_topology of the block this tree belongs to, if any. */
+  bracketTopology?: number[][];
+  /** season_map topology_source of that block, used when nothing is pinned. */
+  topologySource?: TopologySource;
   /**
    * Identifies the tree being built. The bracket_order alone is not unique:
    * two sections can share an order but filter different rounds out of the
@@ -277,15 +282,20 @@ function collectMatchDates(rows: RawMatchRow[]): string[] {
  * block is implicitly main; among several, `inclusive_tree: true` marks it.
  * Returns undefined when no main block resolves (multi-section-only seasons).
  */
+function resolveMainBlock(
+  blocks: BracketBlock[] | undefined,
+): BracketBlock | undefined {
+  if (!blocks || blocks.length === 0) return undefined;
+  const candidates = blocks.filter((block) => !block.matchup_pairs);
+  return candidates.length === 1
+    ? candidates[0]
+    : candidates.find((block) => block.inclusive_tree);
+}
+
 function resolveMainBlockOrder(
   blocks: BracketBlock[] | undefined,
 ): (string | null)[] | undefined {
-  if (!blocks || blocks.length === 0) return undefined;
-  const candidates = blocks.filter((block) => !block.matchup_pairs);
-  const main = candidates.length === 1
-    ? candidates[0]
-    : candidates.find((block) => block.inclusive_tree);
-  const order = main?.bracket_order;
+  const order = resolveMainBlock(blocks)?.bracket_order;
   return order != null && order.length > 0 ? order : undefined;
 }
 
@@ -577,11 +587,16 @@ function buildAndRenderBracket(
   container: HTMLElement,
   input: SingleBracketRenderInput,
 ): void {
-  const { rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles, cacheKey } = input;
+  const {
+    rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles,
+    bracketTopology, topologySource, cacheKey,
+  } = input;
   if (order.length < 2) return;
   let fullRoot = bracketCache.get(cacheKey);
   if (!fullRoot) {
-    fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
+    fullRoot = buildBracket(
+      rows, order, aggregateTiebreakOrder, undefined, bracketTopology, topologySource,
+    );
     bracketCache.set(cacheKey, fullRoot);
   }
   const root = (targetDate && targetDate < lastDate)
@@ -593,6 +608,8 @@ function createSingleBracketRenderInput(
   state: Pick<BracketState, 'csvRows' | 'seasonInfo' | 'matchDates'>,
   order: (string | null)[],
   scope = '',
+  bracketTopology?: number[][],
+  topologySource?: TopologySource,
 ): SingleBracketRenderInput | null {
   if (order.length < 2 || state.matchDates.length === 0) return null;
   return {
@@ -602,6 +619,8 @@ function createSingleBracketRenderInput(
     targetDate: getTargetDate(),
     lastDate: state.matchDates[state.matchDates.length - 1],
     cssFiles: state.seasonInfo.cssFiles,
+    bracketTopology,
+    topologySource,
     cacheKey: `${scope}\u0000${JSON.stringify(order)}`,
   };
 }
@@ -610,11 +629,14 @@ function createInclusiveBracketRenderInput(
   state: Pick<
   BracketState,
   'csvRows' | 'seasonInfo' | 'matchDates' |
-  'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds'
+  'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds' | 'bracketBlocks'
   >,
 ): SingleBracketRenderInput | null {
   const order = resolveInclusiveBracketOrder(state, controlState.bracket.roundStart);
-  return createSingleBracketRenderInput(state, order);
+  const main = resolveMainBlock(state.bracketBlocks);
+  return createSingleBracketRenderInput(
+    state, order, '', main?.bracket_topology, main?.topology_source,
+  );
 }
 
 /**
@@ -695,6 +717,8 @@ function renderMultiSections(): void {
         { ...currentState, csvRows: rows },
         sectionOrder,
         section.label,
+        section.bracket_topology,
+        section.topology_source,
       );
       if (input) buildAndRenderBracket(sectionWrapper, input);
     }
@@ -872,12 +896,16 @@ function loadAndRender(seasonMap: SeasonMap): void {
         tournamentSeasonInfo.roundStartOptions?.length === 1 &&
         tournamentSeasonInfo.roundStartOptions[0] === MULTI_SECTION_VALUE
       );
+      const mainBlock = resolveMainBlock(bracketBlocks);
       const fullRoot = multiSectionOnly
         ? EMPTY_BRACKET_ROOT
         : buildBracket(
           bracketRows,
           bracketOrder,
           tournamentSeasonInfo.aggregateTiebreakOrder,
+          undefined,
+          mainBlock?.bracket_topology,
+          mainBlock?.topology_source,
         );
       bracketCache = new Map();
       // Don't cache the placeholder root: a section sharing the same order as

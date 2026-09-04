@@ -143,7 +143,12 @@ class SeasonEntry:
     BRACKET_BLOCK_KEYS: set[str] = {
         'label', 'bracket_order', 'round_filter', 'bracket_round_start',
         'matchup_pairs', 'bracket_pairing_orders', 'inclusive_tree',
+        'bracket_topology', 'topology_source',
     }
+
+    # How a block's topology may be derived when bracket_topology is absent.
+    # 'feeder_reference' = the CSV encodes it as "No.Xの勝者" slot text.
+    TOPOLOGY_SOURCES: set[str] = {'feeder_reference'}
 
     KNOWN_KEYS: set[str] = REQUIRED_KEYS | COMPETITION_DEFAULTABLE_KEYS | OPTIONAL_KEYS
 
@@ -283,6 +288,7 @@ class SeasonEntry:
                 logger.warning(
                     "Season '%s': bracket_blocks[%d] (%s): unknown keys: %s",
                     season_key, i, block['label'], unknown)
+            self._validate_bracket_topology(season_key, i, block)
             if block.get('inclusive_tree'):
                 if block.get('matchup_pairs'):
                     logger.warning(
@@ -295,6 +301,64 @@ class SeasonEntry:
             logger.warning(
                 "Season '%s': multiple bracket_blocks marked inclusive_tree; "
                 "only one main tree block is allowed", season_key)
+
+    def _validate_bracket_topology(self, season_key: str, index: int, block: dict) -> None:
+        """Validate a block's bracket_topology shape.
+
+        bracket_topology lists match_number per round, from the entry round up to
+        the final, each round in bracket position order. The bracket is a binary
+        tree, so each round must be half the length of the one below it, and the
+        entry round must have one match per bracket_order pair.
+        """
+        where = f"Season '{season_key}': bracket_blocks[{index}] ({block['label']})"
+        source = block.get('topology_source')
+        if source is not None and source not in self.TOPOLOGY_SOURCES:
+            raise ValueError(
+                f"{where}: unknown topology_source {source!r}; "
+                f"expected one of {sorted(self.TOPOLOGY_SOURCES)}")
+        topology = block.get('bracket_topology')
+        if topology is None:
+            return
+        if not isinstance(topology, list) or not topology:
+            raise TypeError(f"{where}: bracket_topology must be a non-empty list")
+        for level, numbers in enumerate(topology):
+            if not isinstance(numbers, list) or not numbers:
+                raise TypeError(
+                    f"{where}: bracket_topology[{level}] must be a non-empty list")
+            if not all(isinstance(n, int) and not isinstance(n, bool) for n in numbers):
+                raise TypeError(
+                    f"{where}: bracket_topology[{level}] must contain only int match numbers")
+            if level and len(topology[level - 1]) != len(numbers) * 2:
+                raise ValueError(
+                    f"{where}: bracket_topology[{level}] has {len(numbers)} matches; "
+                    f"expected {len(topology[level - 1]) // 2} "
+                    f"(half of round {level - 1})")
+        if len(topology[-1]) != 1:
+            raise ValueError(
+                f"{where}: bracket_topology must end with a single match, "
+                f"got {len(topology[-1])}")
+        duplicates = self._duplicated_match_numbers(topology)
+        if duplicates:
+            raise ValueError(
+                f"{where}: bracket_topology repeats match numbers: {sorted(duplicates)}")
+        order = block.get('bracket_order')
+        if isinstance(order, list) and len(topology[0]) != len(order) // 2:
+            raise ValueError(
+                f"{where}: bracket_topology entry round has {len(topology[0])} matches "
+                f"but bracket_order has {len(order)} slots "
+                f"({len(order) // 2} expected)")
+
+    @staticmethod
+    def _duplicated_match_numbers(topology: list[list[int]]) -> set[int]:
+        """Return match numbers appearing more than once across all rounds."""
+        seen: set[int] = set()
+        repeated: set[int] = set()
+        for numbers in topology:
+            for number in numbers:
+                if number in seen:
+                    repeated.add(number)
+                seen.add(number)
+        return repeated
 
 
 class MatchUtils:

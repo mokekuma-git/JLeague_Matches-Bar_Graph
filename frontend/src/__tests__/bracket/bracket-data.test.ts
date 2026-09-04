@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { buildBracket } from '../../bracket/bracket-data';
 import type { RawMatchRow } from '../../types/match';
 import { readFileSync } from 'node:fs';
@@ -420,6 +420,30 @@ describe('buildBracket — H&A aggregate', () => {
   });
 });
 
+// season_map's bracket_topology for WC2026: match_number per round, entry round
+// first, each round in bracket position order.
+const WC_TOPOLOGY = [
+  [74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87],
+  [89, 90, 93, 94, 91, 92, 95, 96],
+  [97, 98, 99, 100],
+  [101, 102],
+  [104],
+];
+
+const WC_BRACKET_ORDER = [
+  'ドイツ', 'A/B/C/D/F3位', 'グループI1位', 'C/D/F/G/H3位', 'グループA2位', 'グループB2位', 'グループF1位', 'グループC2位',
+  'グループK2位', 'グループL2位', 'グループH1位', 'グループJ2位', 'アメリカ', 'B/E/F/I/J3位', 'グループG1位', 'A/E/H/I/J3位',
+  'グループC1位', 'グループF2位', 'グループE2位', 'グループI2位', 'メキシコ', 'C/E/F/H/I3位', 'グループL1位', 'E/H/I/J/K3位',
+  'グループJ1位', 'グループH2位', 'グループD2位', 'グループG2位', 'グループB1位', 'E/F/G/I/J3位', 'グループK1位', 'D/E/I/J/L3位',
+] as (string | null)[];
+
+function loadWcRows(path: string): RawMatchRow[] {
+  return Papa.parse<RawMatchRow>(readFileSync(resolve(__dirname, path), 'utf-8'), {
+    header: true,
+    skipEmptyLines: 'greedy',
+  }).data;
+}
+
 describe('buildBracket — real tournament fixtures', () => {
   function assertNoUndefinedChildren(node: BracketNode | null): void {
     if (!node) return;
@@ -499,7 +523,7 @@ describe('buildBracket — real tournament fixtures', () => {
 
     // Main draw: 32 placeholder entrants resolve into a 5-deep single-elim tree.
     expect(main.bracket_order).toHaveLength(32);
-    const mainRoot = buildBracket(rows, main.bracket_order);
+    const mainRoot = buildBracket(rows, main.bracket_order, undefined, undefined, WC_TOPOLOGY);
     assertNoUndefinedChildren(mainRoot);
 
     // Round of 32 leaf is linked to its CSV row by match_number (#258), not by
@@ -523,7 +547,7 @@ describe('buildBracket — real tournament fixtures', () => {
     expect(r16Node?.awayTeam).toBe('No.77の勝者');
 
     // Third-place match is a standalone 2-team block.
-    const thirdRoot = buildBracket(rows, third.bracket_order);
+    const thirdRoot = buildBracket(rows, third.bracket_order, undefined, undefined, [[103]]);
     expect(thirdRoot.round).toBe('３位決定戦');
     expect(thirdRoot.homeTeam).toBe('No.101の敗者');
     expect(thirdRoot.awayTeam).toBe('No.102の敗者');
@@ -555,7 +579,7 @@ describe('buildBracket — real tournament fixtures', () => {
       ] as (string | null)[],
     };
 
-    const mainRoot = buildBracket(rows, main.bracket_order);
+    const mainRoot = buildBracket(rows, main.bracket_order, undefined, undefined, WC_TOPOLOGY);
     assertNoUndefinedChildren(mainRoot);
 
     // Round of 32 leaves still link by position/match_number.
@@ -573,5 +597,117 @@ describe('buildBracket — real tournament fixtures', () => {
     expect(r16Node?.stadium).toBe('フィラデルフィア(アメリカ)／フィラデルフィアスタジアム');
     expect(r16Node?.homeTeam).toBe('ドイツ');
     expect(r16Node?.awayTeam).toBe('フランス');
+  });
+
+  it('links every node of a fully played tournament (#307)', () => {
+    // The failure this guards against: once every match is played, the CSV's
+    // "No.Xの勝者" feeder text is overwritten with real team names, so nothing
+    // is left to derive the tree from. bracket_order still holds pre-draw
+    // placeholders ("グループI1位" ...) that match no real team, so name
+    // matching cannot rescue it either — the whole bracket collapsed to
+    // unlinked placeholder slots with a null final.
+    const csvText = readFileSync(
+      resolve(__dirname, '../fixtures/csv/2026_wc_ko_complete.csv'),
+      'utf-8',
+    );
+    const rows = Papa.parse<RawMatchRow>(csvText, {
+      header: true,
+      skipEmptyLines: 'greedy',
+    }).data;
+    expect(csvText).not.toContain('の勝者');
+
+    const bracketOrder = [
+      'ドイツ', 'A/B/C/D/F3位', 'グループI1位', 'C/D/F/G/H3位', 'グループA2位', 'グループB2位', 'グループF1位', 'グループC2位',
+      'グループK2位', 'グループL2位', 'グループH1位', 'グループJ2位', 'アメリカ', 'B/E/F/I/J3位', 'グループG1位', 'A/E/H/I/J3位',
+      'グループC1位', 'グループF2位', 'グループE2位', 'グループI2位', 'メキシコ', 'C/E/F/H/I3位', 'グループL1位', 'E/H/I/J/K3位',
+      'グループJ1位', 'グループH2位', 'グループD2位', 'グループG2位', 'グループB1位', 'E/F/G/I/J3位', 'グループK1位', 'D/E/I/J/L3位',
+    ] as (string | null)[];
+    const root = buildBracket(rows, bracketOrder, undefined, undefined, WC_TOPOLOGY);
+
+    // The final resolves to the real match and a real champion.
+    expect(root.matchNumber).toBe(104);
+    expect(root.homeTeam).toBe('スペイン');
+    expect(root.awayTeam).toBe('アルゼンチン');
+    expect(root.winner).toBe('スペイン');
+
+    // Every entry-round leaf is linked to a CSV row by match_number.
+    const leaves: BracketNode[] = [];
+    const collect = (node: BracketNode | null): void => {
+      if (!node) return;
+      if (!node.children[0] && !node.children[1]) leaves.push(node);
+      else node.children.forEach(collect);
+    };
+    collect(root);
+    expect(leaves).toHaveLength(16);
+    expect(leaves.map(l => l.matchNumber)).toEqual(WC_TOPOLOGY[0]);
+    expect(leaves.every(l => l.homeTeam !== null && l.awayTeam !== null)).toBe(true);
+
+    // The first leaf follows the CSV, not the stale pre-draw placeholder.
+    expect(bracketOrder[1]).toBe('A/B/C/D/F3位');
+    expect(leaves[0].homeTeam).toBe('ドイツ');
+    expect(leaves[0].awayTeam).toBe('パラグアイ');
+  });
+
+  it('links a fully played third-place block (#307)', () => {
+    const csvText = readFileSync(
+      resolve(__dirname, '../fixtures/csv/2026_wc_ko_complete.csv'),
+      'utf-8',
+    );
+    const rows = Papa.parse<RawMatchRow>(csvText, {
+      header: true,
+      skipEmptyLines: 'greedy',
+    }).data;
+
+    const root = buildBracket(
+      rows, ['No.101の敗者', 'No.102の敗者'], undefined, undefined, [[103]],
+    );
+    expect(root.matchNumber).toBe(103);
+    expect(root.homeTeam).toBe('フランス');
+    expect(root.awayTeam).toBe('イングランド');
+    expect(root.winner).toBe('イングランド');
+  });
+
+  it('derives the topology from feeder references when nothing is pinned (#307)', () => {
+    // An in-progress competition that declares the convention but has not had
+    // its topology pinned yet still links by position.
+    const rows = loadWcRows('../fixtures/csv/2026_wc_ko_snapshot.csv');
+    const bracketOrder = WC_BRACKET_ORDER;
+
+    const root = buildBracket(
+      rows, bracketOrder, undefined, undefined, undefined, 'feeder_reference',
+    );
+
+    const r32Leaf = root.children[0]?.children[0]?.children[0]?.children[0];
+    expect(r32Leaf?.matchNumber).toBe(74);
+    expect(r32Leaf?.awayTeam).toBe('パラグアイ');
+  });
+
+  it('prefers a pinned topology over the declared source (#307)', () => {
+    // Once pinned, the fixed data wins: it keeps working after the references
+    // it was derived from are gone.
+    const rows = loadWcRows('../fixtures/csv/2026_wc_ko_complete.csv');
+    const root = buildBracket(
+      rows, WC_BRACKET_ORDER, undefined, undefined, WC_TOPOLOGY, 'feeder_reference',
+    );
+    expect(root.matchNumber).toBe(104);
+    expect(root.winner).toBe('スペイン');
+  });
+
+  it('falls back to name matching when the declared source finds nothing', () => {
+    // Same finished CSV, source declared but nothing pinned: derivation cannot
+    // succeed, and the bracket must degrade rather than throw.
+    const rows = loadWcRows('../fixtures/csv/2026_wc_ko_complete.csv');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const root = buildBracket(
+        rows, WC_BRACKET_ORDER, undefined, undefined, undefined, 'feeder_reference',
+      );
+      expect(root.matchNumber).toBeUndefined();
+      // The failure is reported instead of collapsing silently — that silence
+      // is what let an entire tournament stop rendering unnoticed.
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('feeder_reference'));
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

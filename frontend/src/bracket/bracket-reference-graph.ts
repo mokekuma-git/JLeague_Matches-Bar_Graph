@@ -1,7 +1,12 @@
-// Reconstruct the result-reference graph from KO CSV rows that encode bracket
-// structure via feeder placeholders (e.g. "No.74の勝者" / "No.101の敗者").
-// This lets nodes be linked to CSV rows by match_number (position) instead of
-// by team name, so the link survives placeholder -> real-name updates.
+// Link bracket nodes to CSV rows by match_number (position) rather than by team
+// name, so the link survives placeholder -> real-name updates.
+//
+// The topology itself is authored in season_map (`bracket_topology`) because it
+// is a competition rule fixed before the draw. It used to be derived here from
+// the CSV's "No.Xの勝者" feeder text, but that text is overwritten as matches
+// are played, so a fully played tournament lost its structure entirely (#307).
+// Feeder references are still read for one narrow purpose: deciding a parent
+// row's home/away orientation while its entrant text is still a placeholder.
 
 import type { RawMatchRow } from '../types/match';
 import { parseMatchNumber } from './bracket-order-inference';
@@ -62,11 +67,57 @@ export function determineWinner(row: RawMatchRow): string | null {
 }
 
 /**
- * Reconstruct the winner-reference tree from KO CSV rows.
- * Returns null when rows have no "No.X の勝者" feeder references (historical
- * competitions where bracket_order pairs are still matched by team name).
+ * Build the position-linking topology from a season_map `bracket_topology`.
+ *
+ * @param rounds - match_number per round, entry round first, each round in
+ *   bracket position order (as authored in season_map).
+ * @param rows - Parsed CSV rows for the KO stage.
+ * @param pairingOrders - Per level reorder applied before pairing, mirroring
+ *   what buildNode() does, so authored rounds stay in plain position order.
+ * @returns Topology, or null when the rounds are unusable.
  */
-export function buildReferenceTopology(rows: RawMatchRow[]): ReferenceTopology | null {
+export function buildTopologyFromRounds(
+  rounds: number[][],
+  rows: RawMatchRow[],
+  pairingOrders?: number[][],
+): ReferenceTopology | null {
+  if (!rounds.length || !rounds[0].length) return null;
+
+  const rowsByMatchNumber = new Map<number, RawMatchRow>();
+  for (const row of rows) {
+    const matchNumber = parseMatchNumber(row);
+    if (matchNumber !== undefined) rowsByMatchNumber.set(matchNumber, row);
+  }
+  if (rowsByMatchNumber.size === 0) return null;
+
+  const parentByChildPair = new Map<string, number>();
+  for (let level = 1; level < rounds.length; level += 1) {
+    const below = rounds[level - 1];
+    const above = rounds[level];
+    if (below.length !== above.length * 2) return null;
+    const pairingOrder = pairingOrders?.[level - 1];
+    const ordered = (pairingOrder && pairingOrder.length === below.length)
+      ? pairingOrder.map(index => below[index])
+      : below;
+    for (let i = 0; i < above.length; i += 1) {
+      parentByChildPair.set(childPairKey(ordered[i * 2], ordered[i * 2 + 1]), above[i]);
+    }
+  }
+
+  return { leafMatchNumbers: [...rounds[0]], parentByChildPair, rowsByMatchNumber };
+}
+
+/**
+ * Derive the topology from the CSV's "No.Xの勝者" feeder references.
+ *
+ * Only for blocks that declare `topology_source: feeder_reference`. Returns
+ * null when the references are no longer there to read, which happens once
+ * enough of the tournament has been played -- pin the result with
+ * scripts/generate_bracket_topology.py before that point.
+ */
+export function deriveTopologyFromFeederReferences(
+  rows: RawMatchRow[],
+): ReferenceTopology | null {
   const rowsByMatchNumber = new Map<number, RawMatchRow>();
   for (const row of rows) {
     const matchNumber = parseMatchNumber(row);
@@ -75,10 +126,10 @@ export function buildReferenceTopology(rows: RawMatchRow[]): ReferenceTopology |
   if (rowsByMatchNumber.size === 0) return null;
 
   // Pass 1: a match is an "internal" node when BOTH slots still carry a
-  // "No.Xの勝者" feeder reference. This is the only signal available before
-  // any result overwrites the placeholders, and finding at least one such
-  // reference anywhere is what confirms this competition uses the No.X
-  // convention at all (guards the historical name-matched competitions below).
+  // "No.Xの勝者" feeder reference. Before any result overwrites the
+  // placeholders this is the only signal available. Finding none no longer
+  // means "not this convention" -- the block declared the convention -- it
+  // means derivation failed, and the caller says so out loud (#307).
   const childrenByParent = new Map<number, [number, number]>();
   for (const [matchNumber, row] of rowsByMatchNumber) {
     const homeRef = parseSlotReference(row.home_team);
