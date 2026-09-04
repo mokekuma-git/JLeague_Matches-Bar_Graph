@@ -1,5 +1,6 @@
 # 設計上の決定事項
 
+**最終更新**: 2026-09-04
 **目的**: プロジェクト全体に関わる設計判断を一覧として記録する。個別大会・機能の詳細設計は他のガイド (`season_map_design.md`, `tournament_view_design.md` 等) を正本とする。
 
 ---
@@ -21,7 +22,7 @@
   - `'graduated-win'` (1997–98): 90分勝3/延長勝2/PK勝1/負0
   - `'ex-win-2'` (1999–2002): 90分勝3/延長勝2/分1/負0
   - `'pk-win2-loss1'` (2026特別大会): 勝3/PK勝2/PK負1/負0
-- **ルール説明ノート自動生成** (`config/rule-notes.ts`): `pointSystem` が `'standard'` 以外、または `tiebreakOrder` がデフォルト (`['goal_diff', 'goal_get']`) と異なる場合、`resolveSeasonInfo()` が note 配列末尾にルール説明を自動追加。メッセージは辞書オブジェクトで管理し、将来の多言語化に備える (locale 引数 + `Record<Locale, ...>` への拡張で対応可能)
+- **ルール説明ノート自動生成** (`config/rule-notes.ts`): `pointSystem` が `'standard'` 以外、または `tiebreakOrder` がデフォルト (`['goal_diff', 'goal_get']`) と異なる場合、`resolveLeagueSeasonInfo()` が note 配列末尾にルール説明を自動追加。メッセージは辞書オブジェクトで管理し、将来の多言語化に備える (locale 引数 + `Record<Locale, ...>` への拡張で対応可能)
 
 ## season_map.yaml / Tournament 設定
 

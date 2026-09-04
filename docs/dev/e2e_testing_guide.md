@@ -8,7 +8,7 @@
 
 ## このガイドの役割
 
-この文書は UI 変更時の E2E 正本とする。Issue の進め方は `issue_workflow.md`、実装分割と検証ゲートは `development_process.md`、文書配置は `document_hierarchy.md` を参照する。
+この文書は UI 変更時の E2E 正本とする。View の不変条件そのものの定義は [design_decisions.md](./design_decisions.md) を参照する。
 
 ---
 
@@ -60,7 +60,7 @@ export const test = base.extend<{ pageErrors: string[] }>({
 
 ### invariants.ts
 
-CLAUDE.md で定義された **View Invariants** を検証するヘルパー関数群。
+[design_decisions.md](./design_decisions.md#描画の不変条件-view-invariants) で定義された **View Invariants** を検証するヘルパー関数群。
 
 | 関数 | 検証内容 | 対応する不変条件 |
 | ---- | -------- | ---------------- |
@@ -232,7 +232,7 @@ npx playwright show-report
 
 ## View Invariants の定義
 
-CLAUDE.md の不変条件との対応:
+[design_decisions.md](./design_decisions.md#描画の不変条件-view-invariants) の不変条件との対応:
 
 | 不変条件 | 内容 | E2E 検証方法 |
 | -------- | ---- | ------------ |

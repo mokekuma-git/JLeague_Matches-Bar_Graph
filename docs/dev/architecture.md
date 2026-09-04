@@ -1,5 +1,6 @@
 # アーキテクチャ概要
 
+**最終更新**: 2026-09-04
 **目的**: リポジトリのディレクトリ構造とデプロイモデルのリファレンス。
 
 ---
@@ -14,6 +15,10 @@ JLeague_Matches-Bar_Graph/
 │   │   ├── matches.html            #   HTMLテンプレート (Vite input)
 │   │   ├── league-view.ts          #   リーグView lifecycle
 │   │   ├── bracket-view.ts         #   トーナメントView lifecycle
+│   │   ├── view-bootstrap.ts       #   両View共通の初期化ヘルパ (URL/locale/共有状態)
+│   │   ├── matches-orchestration.ts #  初期の大会・シーズン選択の解決
+│   │   ├── bracket/                #   ブラケット構築・描画・トポロジー推定
+│   │   ├── i18n/                   #   多言語メッセージ
 │   │   ├── config/season-map.ts    #   season_map.yaml 読み込み・ユーティリティ
 │   │   ├── config/rule-notes.ts   #   ルール説明ノート自動生成 (i18n準備済)
 │   │   ├── core/                   #   CSV解析, 勝ち点計算, ソート, 日付ユーティリティ

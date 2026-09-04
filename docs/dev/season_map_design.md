@@ -1,7 +1,8 @@
 # `season_map.yaml` 設計ガイド
 
 **作成日**: 2026-03-15
-**目的**: `season_map.yaml` を安全に拡張・更新するために、責務、設計規則、編集手順を内部向けに明文化する
+**最終更新**: 2026-09-04
+**目的**: `season_map.yaml` を安全に拡張・更新するために、責務、設計規則、編集手順を開発者向けに明文化する
 
 ---
 
@@ -68,7 +69,7 @@ Season entry object の count / team 系フィールドは、次の規則で解�
 
 ## 4. カスケード規則 (実装準拠)
 
-フロントエンドでは `frontend/src/config/season-map.ts` の `resolveSeasonInfo()` が CompetitionFamily → Competition → SeasonEntry の順で解決する。
+フロントエンドでは `frontend/src/config/season-map.ts` が CompetitionFamily → Competition → SeasonEntry の順で解決する。共通のカスケードは `resolveBaseFields()` が担い、View 種別ごとに `resolveLeagueSeasonInfo()` / `resolveTournamentSeasonInfo()` が必要なフィールドを組み立てる。
 
 ### 4.1 スカラ値
 
@@ -234,7 +235,7 @@ Candidate C を採用)。1 ブロック season でも `bracket_blocks` で書き
 
 - `src/match_utils.py` の `SeasonEntry.KNOWN_OPTION_KEYS`
 - `frontend/src/types/season.ts` の `SeasonEntryOptions`
-- 必要に応じて `resolveSeasonInfo()` / Tournament View 側ロジック
+- 必要に応じて `resolveBaseFields()` / `resolveLeagueSeasonInfo()` / `resolveTournamentSeasonInfo()` / Tournament View 側ロジック
 
 ---
 
