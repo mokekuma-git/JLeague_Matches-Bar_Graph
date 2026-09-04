@@ -1,13 +1,14 @@
 # Tournament View 設計ガイド
 
 **作成日**: 2026-03-15
+**最終更新**: 2026-09-04 (統合 View 構成への追従)
 **目的**: Tournament View の設計意図、データ構造、拡張方針を明文化する
 
 ---
 
 ## 1. スコープ
 
-本書は `frontend/src/tournament-app.ts` と `frontend/src/bracket/` を対象に、次を定義する。
+本書は `frontend/src/bracket-view.ts` と `frontend/src/bracket/` を対象に、次を定義する。
 
 - 画面の責務分離
 - `season_map.yaml` metadata の使い方
@@ -22,7 +23,7 @@
 
 1. 年度差分はコード分岐ではなく metadata 差分で吸収する
 2. データ構築 (`bracket-data.ts`) と描画 (`bracket-renderer.ts`) を分離する
-3. UI 制御 (`tournament-app.ts`) は状態管理とパイプライン接続に集中する
+3. UI 制御 (`bracket-view.ts`) は状態管理とパイプライン接続に集中する
 4. 同一ロジックを block ごとに複製しない (共通 build → mask → render 経路)
 5. H&A 判定は `aggregate_tiebreak_order` を唯一の入力として解決する
 
@@ -30,24 +31,31 @@
 
 ## 3. 主要モジュールの責務
 
+League View と Tournament View は単一エントリポイント `matches-app.ts` (+ `matches.html`) に統合されている。大会選択に応じて表示する View を切り替えるのは `matches-app.ts` の責務で、Tournament View 自体の lifecycle は `bracket-view.ts` が持つ。
+
 | モジュール | 責務 |
 | --- | --- |
-| `tournament-app.ts` | 入力選択、状態管理、CSV 読込、各処理のオーケストレーション |
+| `matches-app.ts` | 大会/シーズン選択、View 種別の判定と切替、URL パラメータ同期、View 間で共有する状態の保持 |
+| `bracket-view.ts` | Tournament View の lifecycle。CSV 読込、bracket 固有の状態管理、各処理のオーケストレーション |
+| `view-bootstrap.ts` | 両 View が共有する初期化ヘルパ (URL パラメータ、locale、共有 `targetDate`、View 別 pref の読み出し) |
 | `bracket-data.ts` | CSV 行から `BracketNode` ツリーを構築し、勝者判定・日付マスクを行う |
 | `bracket-renderer.ts` | `BracketNode` を DOM + SVG へ描画し、ツールチップとレイアウト補正を担当 |
 | `round-filter-inference.ts` | `bracket_order` と CSV 時系列から `round_filter` を自動推定 |
+| `bracket-order-inference.ts` | CSV 行から `bracket_order` と `match_number` を推定 |
+| `bracket-reference-graph.ts` | CSV の勝者参照 (`No.Xの勝者`) からブラケットのトポロジーを再構成 |
 | `round-label.ts` | round 名の正規化 |
 | `types/season.ts` | `bracket_blocks` など metadata の型定義 |
-| `types/bracket-types.ts` | 描画・判定に使う中間表現 (`BracketNode`, `DecidedBy`) の定義 |
+| `bracket/bracket-types.ts` | 描画・判定に使う中間表現 (`BracketNode`, `DecidedBy`) の定義 |
 
 ---
 
 ## 4. データフロー
 
 ```text
-season_map 読込
-  → Competition/Season 選択
-  → CSV 読込
+season_map 読込                          (matches-app.ts)
+  → Competition/Season 選択               (matches-app.ts)
+  → View 種別判定 → bracket-view へ委譲   (matches-app.ts)
+  → CSV 読込                              (以降 bracket-view.ts)
   → KO 対象行抽出 (block/round_filter 反映)
   → buildBracket() で full tree 構築
   → round 候補計算 (round_start 用)
@@ -55,13 +63,16 @@ season_map 読込
   → renderBracket() + adjustBracketPositions() + drawBracketConnectors()
 ```
 
-`controlState` は次を保持する。
+`bracket-view.ts` の `controlState` は次を保持する。
 
 - `layout`
-- `scale`
-- `futureOpacity`
-- `selectedDate`
+- `scale` (永続化キーは `bracketScale`)
+- `futureOpacity` (永続化キーは `bracketFutureOpacity`)
 - `roundStart`
+
+日付 (`targetDate`) だけは View 間で共有する。同一大会の Group Stage と KO を同じ時点で見るためで、共有状態に書き込むのはユーザーが明示的に選んだ値に限る。View 固有のデフォルト解決・開幕前センチネル・activate 時のクランプ結果は `bracket-view.ts` のローカル状態に留める。
+
+`scale` / `futureOpacity` は可動レンジとデフォルトが View ごとに異なるため共有しない。旧共有キー `scale` / `futureOpacity` は初回読み出し時の fallback としてのみ参照する。
 
 状態は `localStorage` に保存し、再訪時に復元する。
 
@@ -155,7 +166,7 @@ H&A 判定の入力順は `aggregate_tiebreak_order` を尊重する。
 - 子ノードが未確定になった場合、親の対戦カードも `TBD` へ伝播
 - H&A は leg 日付を使って部分マスクを適用
 
-UI 側は `futureOpacity` で未来カードの視認性を調整する。
+UI 側は `bracketFutureOpacity` で未来カードの視認性を調整する。
 
 ---
 
