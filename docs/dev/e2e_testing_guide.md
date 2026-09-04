@@ -1,14 +1,14 @@
 # E2E テストガイド
 
 **作成日**: 2026-03-07
-**最終更新**: 2026-07-01 (統合Viewer移行)
+**最終更新**: 2026-09-04 (View 別 viewer state と stale レスポンス検証を反映)
 **目的**: Playwright E2E テストの構成・実行方法・拡張手順のリファレンス
 
 ---
 
 ## このガイドの役割
 
-この文書は UI 変更時の E2E 正本とする。Issue の進め方は `issue_workflow.md`、実装分割と検証ゲートは `development_process.md`、文書配置は `document_hierarchy.md` を参照する。
+この文書は UI 変更時の E2E 正本とする。View の不変条件そのものの定義は [design_decisions.md](./design_decisions.md) を参照する。
 
 ---
 
@@ -30,6 +30,7 @@ frontend/
 │   ├── bracket-render.spec.ts    # ブラケット描画・レイアウト
 │   ├── bracket-tooltip.spec.ts   # ブラケットtooltip操作
 │   ├── unified-viewer.spec.ts    # リーグ/ブラケットView切替・共有状態
+│   ├── view-stale-response.spec.ts # 遅延CSVレスポンスの破棄
 │   └── full-render.spec.ts       # 全シーズン巡回 (@full-render)
 └── playwright.config.ts
 ```
@@ -59,7 +60,7 @@ export const test = base.extend<{ pageErrors: string[] }>({
 
 ### invariants.ts
 
-CLAUDE.md で定義された **View Invariants** を検証するヘルパー関数群。
+[design_decisions.md](./design_decisions.md#描画の不変条件-view-invariants) で定義された **View Invariants** を検証するヘルパー関数群。
 
 | 関数 | 検証内容 | 対応する不変条件 |
 | ---- | -------- | ---------------- |
@@ -177,7 +178,14 @@ URL ↔ UI の双方向同期を検証。
 - 全specは `matches.html?competition=...&season=...` を開く
 - League View固有controlは `#league_*`、Bracket View固有controlは `#bracket_*` を使う
 - `unified-viewer.spec.ts` は、ページ遷移なしのView往復、`data-active`、URL同期、
-  `scale` / `futureOpacity` / canonical `targetDate` の共有を検証する
+  および **View 間で共有するのは canonical `targetDate` のみ**という不変条件を検証する。
+  `scale` / `futureOpacity` は View 別 pref なので、往復しても互いに上書きしないこと
+  (League の scale が Bracket の最小値を下回っていても保たれること、Bracket の
+  開幕前センチネルや最終試合日が共有 `targetDate` に漏れないこと) を確認する。
+  あわせて大会切替時の最新シーズン選択、URL 指定シーズンの復元、
+  timezone セレクタの表示切替も検証する
+- `view-stale-response.spec.ts` は、遅延した CSV レスポンスが後から選ばれた大会の表示を
+  上書きしないこと、View を離れた後に届いたレスポンスが描画されないことを検証する
 - `bracket-render.spec.ts` はconnector、縦横layout、multi-sectionを検証する
 - `bracket-tooltip.spec.ts` はpin/unpin、Escape、再描画時の解除を検証する
 
@@ -224,7 +232,7 @@ npx playwright show-report
 
 ## View Invariants の定義
 
-CLAUDE.md の不変条件との対応:
+[design_decisions.md](./design_decisions.md#描画の不変条件-view-invariants) の不変条件との対応:
 
 | 不変条件 | 内容 | E2E 検証方法 |
 | -------- | ---- | ------------ |
@@ -261,6 +269,7 @@ Bracket Viewは統合 `matches.html` 上でE2E対象になっている。
 
 - connector・layout・multi-section・WC KO構造: `bracket-render.spec.ts`
 - tooltip操作と日付変更時の解除: `bracket-tooltip.spec.ts`
-- League Viewとの切替と共有viewer state: `unified-viewer.spec.ts`
+- League Viewとの切替、共有 `targetDate` と View 別 appearance の分離: `unified-viewer.spec.ts`
+- View / 大会切替時の遅延CSVレスポンス破棄: `view-stale-response.spec.ts`
 - 全大会・全シーズンの網羅巡回はLeague View用 `full-render.spec.ts` と分け、
   大規模なBracketケースは `bracket-render.spec.ts` の `@full-render` testで扱う
