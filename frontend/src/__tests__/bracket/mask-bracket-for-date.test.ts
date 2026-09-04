@@ -94,7 +94,9 @@ describe('maskBracketForDate', () => {
         match_date: '2024/12/22', round: '決勝',
       }),
     ];
-    const root = buildBracket(rows, ['A', 'B', 'C', 'D']);
+    // The final links to its CSV row through the authored topology, so it can
+    // show that row's own pending feeder text (#307).
+    const root = buildBracket(rows, ['A', 'B', 'C', 'D'], undefined, undefined, [[1, 2], [3]]);
     const masked = maskBracketForDate(root, '2024/12/10');
 
     // SFs are future → winners unknown
@@ -123,7 +125,9 @@ describe('maskBracketForDate', () => {
         match_date: '2024/12/22', round: '決勝',
       }),
     ];
-    const root = buildBracket(rows, ['A', 'B', 'C', 'D']);
+    // The final links to its CSV row through the authored topology, so it can
+    // show that row's own pending feeder text (#307).
+    const root = buildBracket(rows, ['A', 'B', 'C', 'D'], undefined, undefined, [[1, 2], [3]]);
     const masked = maskBracketForDate(root, '2024/12/10');
 
     // SFs completed → winners known
@@ -154,7 +158,9 @@ describe('maskBracketForDate', () => {
         match_date: '2024/12/22', round: '決勝', match_number: '3',
       }),
     ];
-    const root = buildBracket(rows, ['A', 'B', 'C', 'D']);
+    // The final links to its CSV row through the authored topology, so it can
+    // show that row's own pending feeder text (#307).
+    const root = buildBracket(rows, ['A', 'B', 'C', 'D'], undefined, undefined, [[1, 2], [3]]);
     const masked = maskBracketForDate(root, '2024/12/10');
 
     // SF1 completed → winner known. SF2 still pending.

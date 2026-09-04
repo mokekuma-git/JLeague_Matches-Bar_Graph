@@ -8,7 +8,8 @@ import type { AggregateTiebreakCriterion } from '../types/season';
 import type { BracketNode, DecidedBy, LegDetail } from './bracket-types';
 import { normalizeBracketRoundLabel } from './round-label';
 import {
-  buildReferenceTopology, childPairKey, determineWinner, parseSlotReference, type ReferenceTopology,
+  buildTopologyFromRounds, childPairKey, determineWinner, parseSlotReference,
+  type ReferenceTopology,
 } from './bracket-reference-graph';
 
 /**
@@ -68,7 +69,11 @@ function nodeFromMatch(
   // needsSwapOverride is used for position-linked nodes, where orientation is
   // known from the CSV's own feeder reference rather than by name comparison
   // (the row's text may still be an unresolved "No.Xの勝者" placeholder).
-  const needsSwap = needsSwapOverride ?? (upperTeam != null && row.home_team !== upperTeam);
+  // Swap only when the upper slot's team is explicitly the CSV's away team.
+  // Testing "home_team !== upperTeam" instead would also fire when upperTeam is
+  // a pre-draw placeholder matching neither side, flipping a position-linked
+  // row for no reason (#307).
+  const needsSwap = needsSwapOverride ?? (upperTeam != null && row.away_team === upperTeam);
   const parse = (v: string | undefined): number | undefined =>
     v ? parseInt(v, 10) : undefined;
 
@@ -410,6 +415,11 @@ function buildNode(
  *
  * @param rows - Parsed CSV rows for the KO stage.
  * @param bracketOrder - Teams in bracket position order (top to bottom).
+ * @param aggregateTiebreakOrder - Criteria order for deciding H&A ties.
+ * @param pairingOrders - Per level reorder of child matches before pairing.
+ * @param bracketTopology - season_map `bracket_topology`: match_number per
+ *   round, entry round first. When given, nodes link to CSV rows by position
+ *   instead of by team name.
  * @returns Root BracketNode of the tournament tree.
  */
 export function buildBracket(
@@ -417,11 +427,16 @@ export function buildBracket(
   bracketOrder: (string | null)[],
   aggregateTiebreakOrder: AggregateTiebreakCriterion[] = ['penalties'],
   pairingOrders?: number[][],
+  bracketTopology?: number[][],
 ): BracketNode {
   if (bracketOrder.length < 2) {
     throw new Error(`bracket_order must have at least 2 teams, got ${bracketOrder.length}`);
   }
-  const topology = buildReferenceTopology(rows) ?? undefined;
+  // Competitions without an authored topology (historical cups whose
+  // bracket_order holds real team names) keep resolving by name.
+  const topology = bracketTopology
+    ? buildTopologyFromRounds(bracketTopology, rows, pairingOrders) ?? undefined
+    : undefined;
   return buildNode(rows, bracketOrder, aggregateTiebreakOrder, pairingOrders, topology);
 }
 

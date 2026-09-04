@@ -80,6 +80,8 @@ interface SingleBracketRenderInput {
   targetDate: string | null;
   lastDate: string;
   cssFiles: string[];
+  /** season_map bracket_topology of the block this tree belongs to, if any. */
+  bracketTopology?: number[][];
   /**
    * Identifies the tree being built. The bracket_order alone is not unique:
    * two sections can share an order but filter different rounds out of the
@@ -277,15 +279,20 @@ function collectMatchDates(rows: RawMatchRow[]): string[] {
  * block is implicitly main; among several, `inclusive_tree: true` marks it.
  * Returns undefined when no main block resolves (multi-section-only seasons).
  */
+function resolveMainBlock(
+  blocks: BracketBlock[] | undefined,
+): BracketBlock | undefined {
+  if (!blocks || blocks.length === 0) return undefined;
+  const candidates = blocks.filter((block) => !block.matchup_pairs);
+  return candidates.length === 1
+    ? candidates[0]
+    : candidates.find((block) => block.inclusive_tree);
+}
+
 function resolveMainBlockOrder(
   blocks: BracketBlock[] | undefined,
 ): (string | null)[] | undefined {
-  if (!blocks || blocks.length === 0) return undefined;
-  const candidates = blocks.filter((block) => !block.matchup_pairs);
-  const main = candidates.length === 1
-    ? candidates[0]
-    : candidates.find((block) => block.inclusive_tree);
-  const order = main?.bracket_order;
+  const order = resolveMainBlock(blocks)?.bracket_order;
   return order != null && order.length > 0 ? order : undefined;
 }
 
@@ -577,11 +584,14 @@ function buildAndRenderBracket(
   container: HTMLElement,
   input: SingleBracketRenderInput,
 ): void {
-  const { rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles, cacheKey } = input;
+  const {
+    rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles,
+    bracketTopology, cacheKey,
+  } = input;
   if (order.length < 2) return;
   let fullRoot = bracketCache.get(cacheKey);
   if (!fullRoot) {
-    fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
+    fullRoot = buildBracket(rows, order, aggregateTiebreakOrder, undefined, bracketTopology);
     bracketCache.set(cacheKey, fullRoot);
   }
   const root = (targetDate && targetDate < lastDate)
@@ -593,6 +603,7 @@ function createSingleBracketRenderInput(
   state: Pick<BracketState, 'csvRows' | 'seasonInfo' | 'matchDates'>,
   order: (string | null)[],
   scope = '',
+  bracketTopology?: number[][],
 ): SingleBracketRenderInput | null {
   if (order.length < 2 || state.matchDates.length === 0) return null;
   return {
@@ -602,6 +613,7 @@ function createSingleBracketRenderInput(
     targetDate: getTargetDate(),
     lastDate: state.matchDates[state.matchDates.length - 1],
     cssFiles: state.seasonInfo.cssFiles,
+    bracketTopology,
     cacheKey: `${scope}\u0000${JSON.stringify(order)}`,
   };
 }
@@ -610,11 +622,13 @@ function createInclusiveBracketRenderInput(
   state: Pick<
   BracketState,
   'csvRows' | 'seasonInfo' | 'matchDates' |
-  'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds'
+  'fullRoot' | 'bracketOrder' | 'roundsByDepth' | 'allRounds' | 'bracketBlocks'
   >,
 ): SingleBracketRenderInput | null {
   const order = resolveInclusiveBracketOrder(state, controlState.bracket.roundStart);
-  return createSingleBracketRenderInput(state, order);
+  return createSingleBracketRenderInput(
+    state, order, '', resolveMainBlock(state.bracketBlocks)?.bracket_topology,
+  );
 }
 
 /**
@@ -695,6 +709,7 @@ function renderMultiSections(): void {
         { ...currentState, csvRows: rows },
         sectionOrder,
         section.label,
+        section.bracket_topology,
       );
       if (input) buildAndRenderBracket(sectionWrapper, input);
     }
@@ -878,6 +893,8 @@ function loadAndRender(seasonMap: SeasonMap): void {
           bracketRows,
           bracketOrder,
           tournamentSeasonInfo.aggregateTiebreakOrder,
+          undefined,
+          resolveMainBlock(bracketBlocks)?.bracket_topology,
         );
       bracketCache = new Map();
       // Don't cache the placeholder root: a section sharing the same order as
