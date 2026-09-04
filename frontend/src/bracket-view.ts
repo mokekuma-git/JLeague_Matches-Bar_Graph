@@ -896,6 +896,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
         tournamentSeasonInfo.roundStartOptions?.length === 1 &&
         tournamentSeasonInfo.roundStartOptions[0] === MULTI_SECTION_VALUE
       );
+      const mainBlock = resolveMainBlock(bracketBlocks);
       const fullRoot = multiSectionOnly
         ? EMPTY_BRACKET_ROOT
         : buildBracket(
@@ -903,8 +904,8 @@ function loadAndRender(seasonMap: SeasonMap): void {
           bracketOrder,
           tournamentSeasonInfo.aggregateTiebreakOrder,
           undefined,
-          resolveMainBlock(bracketBlocks)?.bracket_topology,
-          resolveMainBlock(bracketBlocks)?.topology_source,
+          mainBlock?.bracket_topology,
+          mainBlock?.topology_source,
         );
       bracketCache = new Map();
       // Don't cache the placeholder root: a section sharing the same order as

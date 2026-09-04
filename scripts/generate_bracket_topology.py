@@ -74,14 +74,6 @@ def winner_of(row):
     return None
 
 
-def loser_of(row):
-    """Loser team name of a played KO row, or None when undecided."""
-    winner = winner_of(row)
-    if winner is None:
-        return None
-    return row['away_team'] if winner == row['home_team'] else row['home_team']
-
-
 def load_rows(csv_path, rounds=None):
     """Read KO rows indexed by match_number, optionally filtered to given rounds."""
     with open(csv_path, encoding='utf-8') as handle:
