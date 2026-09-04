@@ -69,19 +69,22 @@ const state: AppState = {
 
 // ---- Control state (symmetric with bracket-view.ts) --------------------
 
-interface LeagueViewerControlState extends SharedViewerControlState {
-  displayTimezone: string;  // '' = browser default; otherwise an IANA TZ name
-  hiddenColumns: Set<string>;  // rank table column data-ids hidden by the user
-}
-
 interface LeagueControlState {
   teamSortKey: string;
   matchSortKey: string;
   spaceColor: string;
+  displayTimezone: string;  // '' = browser default; otherwise an IANA TZ name
+  hiddenColumns: Set<string>;  // rank table column data-ids hidden by the user
 }
 
 interface ControlState {
-  viewer: LeagueViewerControlState;
+  /**
+   * Alias of the orchestrator's shared viewer state — NOT a copy. Writing here
+   * writes the value both views observe, so only user-chosen values belong in
+   * it (see bracket-view for the symmetric arrangement). League-specific prefs
+   * live in `league` below.
+   */
+  viewer: SharedViewerControlState;
   league: LeagueControlState;
 }
 
@@ -90,15 +93,13 @@ function createControlStateFromPrefs(
   shared: SharedViewerControlState,
 ): ControlState {
   return {
-    viewer: {
-      ...shared,
-      displayTimezone: prefs.displayTimezone ?? '',
-      hiddenColumns: new Set(prefs.hiddenColumns ?? []),
-    },
+    viewer: shared,
     league: {
       teamSortKey: prefs.teamSortKey ?? 'disp_point',
       matchSortKey: prefs.matchSortKey ?? 'old_bottom',
       spaceColor: prefs.spaceColor ?? '#cccccc',
+      displayTimezone: prefs.displayTimezone ?? '',
+      hiddenColumns: new Set(prefs.hiddenColumns ?? []),
     },
   };
 }
@@ -218,7 +219,6 @@ interface LeagueViewRefs {
 }
 
 let refs: LeagueViewRefs;
-let viewContext: LeagueViewContext;
 
 function requireElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -485,7 +485,7 @@ function renderFromCache(
       const { fragment, matchDates } = renderBarGraph(
         groupData, sortedTeams, perGroupInfo,
         targetDate, disp, bottomFirst, state.heightUnit, hasPk, hasEx,
-        controlState.viewer.displayTimezone || undefined,
+        controlState.league.displayTimezone || undefined,
       );
       for (const d of matchDates) globalMatchDateSet.add(d);
 
@@ -530,7 +530,7 @@ function renderFromCache(
       table.appendChild(document.createElement('thead'));
       sortableDiv.appendChild(table);
       const rankData = makeRankData(groupData, sortedTeams, perGroupInfo, disp, hasPk, hasEx);
-      makeRankTable(table, rankData, hasPk, hasEx, perGroupInfo.promotionLabel, controlState.viewer.hiddenColumns);
+      makeRankTable(table, rankData, hasPk, hasEx, perGroupInfo.promotionLabel, controlState.league.hiddenColumns);
     }
 
     // Collect for cross-group comparison.
@@ -546,7 +546,7 @@ function renderFromCache(
     const rows = buildCrossGroupRows(allGroupResults, cgs, disp, targetDate, maxPt);
     if (rows.length > 0) {
       sortableDiv.appendChild(document.createElement('hr'));
-      sortableDiv.appendChild(makeCrossGroupTable(rows, cgs, controlState.viewer.hiddenColumns));
+      sortableDiv.appendChild(makeCrossGroupTable(rows, cgs, controlState.league.hiddenColumns));
     }
   }
 
@@ -588,7 +588,7 @@ function loadAndRender(): void {
   const { competition, season } = activeSelection;
   const csvKey      = `${competition}/${season}`;
 
-  const targetDate = normalizeTargetDate(viewContext.shared.targetDate) ?? dateFormat(new Date(), '/');
+  const targetDate = normalizeTargetDate(controlState.viewer.targetDate) ?? dateFormat(new Date(), '/');
 
   const sortKey      = controlState.league.teamSortKey;
   const matchSortKey = getMatchSortKey(controlState.league.matchSortKey);
@@ -665,7 +665,6 @@ function loadAndRender(): void {
 
 export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): LeagueViewHandle {
   refs = resolveRefs(ids);
-  viewContext = ctx;
   const prefs = loadPrefs();
   controlState = createControlStateFromPrefs(prefs, ctx.shared);
   state.heightUnit = getHeightUnit();
@@ -681,18 +680,18 @@ export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): Leag
   populateFixedSelect(refs.displayTimezone, getDisplayTzOptions());
   refs.teamSort.value = controlState.league.teamSortKey;
   refs.matchSort.value = controlState.league.matchSortKey;
-  refs.displayTimezone.value = controlState.viewer.displayTimezone;
+  refs.displayTimezone.value = controlState.league.displayTimezone;
   refs.spaceColor.value = controlState.league.spaceColor;
 
-  populateColumnToggleList(controlState.viewer.hiddenColumns, (columnId, checked) => {
-    if (checked) controlState.viewer.hiddenColumns.delete(columnId);
-    else controlState.viewer.hiddenColumns.add(columnId);
-    savePrefs({ hiddenColumns: [...controlState.viewer.hiddenColumns] });
+  populateColumnToggleList(controlState.league.hiddenColumns, (columnId, checked) => {
+    if (checked) controlState.league.hiddenColumns.delete(columnId);
+    else controlState.league.hiddenColumns.add(columnId);
+    savePrefs({ hiddenColumns: [...controlState.league.hiddenColumns] });
     loadAndRender();
   });
 
   refs.targetDate.addEventListener('change', () => {
-    ctx.shared.targetDate = normalizeTargetDate(refs.targetDate.value);
+    controlState.viewer.targetDate = normalizeTargetDate(refs.targetDate.value);
     ctx.onViewerChange();
     loadAndRender();
   });
@@ -709,7 +708,7 @@ export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): Leag
     const date = getSliderDate(state.currentMatchDates, parseInt(refs.dateSlider.value, 10));
     if (!date) return;
     refs.targetDate.value = toInputDate(date);
-    ctx.shared.targetDate = normalizeTargetDate(date);
+    controlState.viewer.targetDate = normalizeTargetDate(date);
     ctx.onViewerChange();
     loadAndRender();
   };
@@ -731,18 +730,18 @@ export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): Leag
   refs.dateSliderReset.addEventListener('click', () => {
     const today = dateFormat(new Date(), '/');
     refs.targetDate.value = toInputDate(today);
-    ctx.shared.targetDate = today;
+    controlState.viewer.targetDate = today;
     ctx.onViewerChange();
     loadAndRender();
   });
 
   refs.scaleSlider.addEventListener('input', () => {
-    ctx.shared.scale = parseFloat(refs.scaleSlider.value);
+    controlState.viewer.scale = parseFloat(refs.scaleSlider.value);
     setScale(refs.boxContainer, refs.scaleSlider.value);
     ctx.onViewerChange();
   });
   refs.futureOpacity.addEventListener('input', () => {
-    ctx.shared.futureOpacity = parseFloat(refs.futureOpacity.value);
+    controlState.viewer.futureOpacity = parseFloat(refs.futureOpacity.value);
     setFutureOpacity(refs.futureOpacity.value);
     ctx.onViewerChange();
   });
@@ -752,7 +751,7 @@ export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): Leag
     savePrefs({ spaceColor: refs.spaceColor.value });
   });
   refs.displayTimezone.addEventListener('change', () => {
-    controlState.viewer.displayTimezone = refs.displayTimezone.value;
+    controlState.league.displayTimezone = refs.displayTimezone.value;
     savePrefs({ displayTimezone: refs.displayTimezone.value });
     loadAndRender();
   });
@@ -765,16 +764,13 @@ export function initLeagueView(ids: LeagueViewIds, ctx: LeagueViewContext): Leag
       activeSelection = selection;
       if (selectionChanged) state.teamMapCache = null;
 
-      const previousScale = ctx.shared.scale;
+      const previousScale = controlState.viewer.scale;
       const clampedScale = clampToSlider(previousScale, refs.scaleSlider);
       refs.scaleSlider.value = String(clampedScale);
-      ctx.shared.scale = parseFloat(refs.scaleSlider.value);
-      if (ctx.shared.scale !== previousScale) ctx.onViewerChange();
-      controlState.viewer.scale = ctx.shared.scale;
-      refs.futureOpacity.value = String(ctx.shared.futureOpacity);
-      controlState.viewer.futureOpacity = ctx.shared.futureOpacity;
-      controlState.viewer.targetDate = ctx.shared.targetDate;
-      refs.targetDate.value = toInputDate(ctx.shared.targetDate) || dateFormat(new Date(), '-');
+      controlState.viewer.scale = parseFloat(refs.scaleSlider.value);
+      if (controlState.viewer.scale !== previousScale) ctx.onViewerChange();
+      refs.futureOpacity.value = String(controlState.viewer.futureOpacity);
+      refs.targetDate.value = toInputDate(controlState.viewer.targetDate) || dateFormat(new Date(), '-');
       setFutureOpacity(refs.futureOpacity.value, false);
       if (prefs.spaceColor) setSpace(controlState.league.spaceColor, false);
       loadAndRender();
