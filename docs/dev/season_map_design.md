@@ -161,6 +161,9 @@ Candidate C を採用)。1 ブロック season でも `bracket_blocks` で書き
   チーム名で照合する (`bracket_order` に実チーム名が並ぶ歴史大会)。
   `scripts/generate_bracket_topology.py` で生成する。詳細と設計理由は
   [tournament_view_design.md](./tournament_view_design.md) を参照 (#307)
+- `bracket_blocks[].topology_source` — `bracket_topology` 未設定時の導出方法。
+  現在の値は `feeder_reference` のみ (CSV が `No.Xの勝者` でツリーを表現する
+  FIFA / JFA 系の記法)。未知の値はエラー
 - `bracket_round_start` (エントリレベル) — 包括表示の開始ラウンド UI 既定
 - `round_start_options`
 - `bracket_pairing_orders`
@@ -169,8 +172,8 @@ Candidate C を採用)。1 ブロック season でも `bracket_blocks` で書き
 設計指針:
 
 - 並び順や表示分割は `bracket_blocks` で表現する
-- トポロジーは CSV から実行時に推定せず `bracket_topology` に固定する
-  (CSV のフィーダー参照は試合消化とともに消えるため)
+- トポロジーの正本は `bracket_topology` (固定値)。実行時導出は
+  `topology_source` を宣言した場合の補助であり、大会が進むと使えなくなる
 - 勝者判定差分は `aggregate_tiebreak_order` の順序で表現する
 - 年度固有の例外を renderer の分岐に入れず、可能な限り metadata 差分で吸収する
 

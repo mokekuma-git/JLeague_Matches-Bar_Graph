@@ -143,8 +143,12 @@ class SeasonEntry:
     BRACKET_BLOCK_KEYS: set[str] = {
         'label', 'bracket_order', 'round_filter', 'bracket_round_start',
         'matchup_pairs', 'bracket_pairing_orders', 'inclusive_tree',
-        'bracket_topology',
+        'bracket_topology', 'topology_source',
     }
+
+    # How a block's topology may be derived when bracket_topology is absent.
+    # 'feeder_reference' = the CSV encodes it as "No.Xの勝者" slot text.
+    TOPOLOGY_SOURCES: set[str] = {'feeder_reference'}
 
     KNOWN_KEYS: set[str] = REQUIRED_KEYS | COMPETITION_DEFAULTABLE_KEYS | OPTIONAL_KEYS
 
@@ -306,10 +310,15 @@ class SeasonEntry:
         tree, so each round must be half the length of the one below it, and the
         entry round must have one match per bracket_order pair.
         """
+        where = f"Season '{season_key}': bracket_blocks[{index}] ({block['label']})"
+        source = block.get('topology_source')
+        if source is not None and source not in self.TOPOLOGY_SOURCES:
+            raise ValueError(
+                f"{where}: unknown topology_source {source!r}; "
+                f"expected one of {sorted(self.TOPOLOGY_SOURCES)}")
         topology = block.get('bracket_topology')
         if topology is None:
             return
-        where = f"Season '{season_key}': bracket_blocks[{index}] ({block['label']})"
         if not isinstance(topology, list) or not topology:
             raise TypeError(f"{where}: bracket_topology must be a non-empty list")
         for level, numbers in enumerate(topology):

@@ -11,6 +11,7 @@ import type {
   BracketBlock,
   AggregateTiebreakCriterion,
   RawSeasonEntry,
+  TopologySource,
   TournamentSeasonInfo,
 } from './types/season';
 import {
@@ -82,6 +83,8 @@ interface SingleBracketRenderInput {
   cssFiles: string[];
   /** season_map bracket_topology of the block this tree belongs to, if any. */
   bracketTopology?: number[][];
+  /** season_map topology_source of that block, used when nothing is pinned. */
+  topologySource?: TopologySource;
   /**
    * Identifies the tree being built. The bracket_order alone is not unique:
    * two sections can share an order but filter different rounds out of the
@@ -586,12 +589,14 @@ function buildAndRenderBracket(
 ): void {
   const {
     rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles,
-    bracketTopology, cacheKey,
+    bracketTopology, topologySource, cacheKey,
   } = input;
   if (order.length < 2) return;
   let fullRoot = bracketCache.get(cacheKey);
   if (!fullRoot) {
-    fullRoot = buildBracket(rows, order, aggregateTiebreakOrder, undefined, bracketTopology);
+    fullRoot = buildBracket(
+      rows, order, aggregateTiebreakOrder, undefined, bracketTopology, topologySource,
+    );
     bracketCache.set(cacheKey, fullRoot);
   }
   const root = (targetDate && targetDate < lastDate)
@@ -604,6 +609,7 @@ function createSingleBracketRenderInput(
   order: (string | null)[],
   scope = '',
   bracketTopology?: number[][],
+  topologySource?: TopologySource,
 ): SingleBracketRenderInput | null {
   if (order.length < 2 || state.matchDates.length === 0) return null;
   return {
@@ -614,6 +620,7 @@ function createSingleBracketRenderInput(
     lastDate: state.matchDates[state.matchDates.length - 1],
     cssFiles: state.seasonInfo.cssFiles,
     bracketTopology,
+    topologySource,
     cacheKey: `${scope}\u0000${JSON.stringify(order)}`,
   };
 }
@@ -626,8 +633,9 @@ function createInclusiveBracketRenderInput(
   >,
 ): SingleBracketRenderInput | null {
   const order = resolveInclusiveBracketOrder(state, controlState.bracket.roundStart);
+  const main = resolveMainBlock(state.bracketBlocks);
   return createSingleBracketRenderInput(
-    state, order, '', resolveMainBlock(state.bracketBlocks)?.bracket_topology,
+    state, order, '', main?.bracket_topology, main?.topology_source,
   );
 }
 
@@ -710,6 +718,7 @@ function renderMultiSections(): void {
         sectionOrder,
         section.label,
         section.bracket_topology,
+        section.topology_source,
       );
       if (input) buildAndRenderBracket(sectionWrapper, input);
     }
@@ -895,6 +904,7 @@ function loadAndRender(seasonMap: SeasonMap): void {
           tournamentSeasonInfo.aggregateTiebreakOrder,
           undefined,
           resolveMainBlock(bracketBlocks)?.bracket_topology,
+          resolveMainBlock(bracketBlocks)?.topology_source,
         );
       bracketCache = new Map();
       // Don't cache the placeholder root: a section sharing the same order as

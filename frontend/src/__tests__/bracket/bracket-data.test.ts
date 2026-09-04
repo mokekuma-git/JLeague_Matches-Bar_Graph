@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { buildBracket } from '../../bracket/bracket-data';
 import type { RawMatchRow } from '../../types/match';
 import { readFileSync } from 'node:fs';
@@ -430,6 +430,20 @@ const WC_TOPOLOGY = [
   [104],
 ];
 
+const WC_BRACKET_ORDER = [
+  'ドイツ', 'A/B/C/D/F3位', 'グループI1位', 'C/D/F/G/H3位', 'グループA2位', 'グループB2位', 'グループF1位', 'グループC2位',
+  'グループK2位', 'グループL2位', 'グループH1位', 'グループJ2位', 'アメリカ', 'B/E/F/I/J3位', 'グループG1位', 'A/E/H/I/J3位',
+  'グループC1位', 'グループF2位', 'グループE2位', 'グループI2位', 'メキシコ', 'C/E/F/H/I3位', 'グループL1位', 'E/H/I/J/K3位',
+  'グループJ1位', 'グループH2位', 'グループD2位', 'グループG2位', 'グループB1位', 'E/F/G/I/J3位', 'グループK1位', 'D/E/I/J/L3位',
+] as (string | null)[];
+
+function loadWcRows(path: string): RawMatchRow[] {
+  return Papa.parse<RawMatchRow>(readFileSync(resolve(__dirname, path), 'utf-8'), {
+    header: true,
+    skipEmptyLines: 'greedy',
+  }).data;
+}
+
 describe('buildBracket — real tournament fixtures', () => {
   function assertNoUndefinedChildren(node: BracketNode | null): void {
     if (!node) return;
@@ -651,5 +665,49 @@ describe('buildBracket — real tournament fixtures', () => {
     expect(root.homeTeam).toBe('フランス');
     expect(root.awayTeam).toBe('イングランド');
     expect(root.winner).toBe('イングランド');
+  });
+
+  it('derives the topology from feeder references when nothing is pinned (#307)', () => {
+    // An in-progress competition that declares the convention but has not had
+    // its topology pinned yet still links by position.
+    const rows = loadWcRows('../fixtures/csv/2026_wc_ko_snapshot.csv');
+    const bracketOrder = WC_BRACKET_ORDER;
+
+    const root = buildBracket(
+      rows, bracketOrder, undefined, undefined, undefined, 'feeder_reference',
+    );
+
+    const r32Leaf = root.children[0]?.children[0]?.children[0]?.children[0];
+    expect(r32Leaf?.matchNumber).toBe(74);
+    expect(r32Leaf?.awayTeam).toBe('パラグアイ');
+  });
+
+  it('prefers a pinned topology over the declared source (#307)', () => {
+    // Once pinned, the fixed data wins: it keeps working after the references
+    // it was derived from are gone.
+    const rows = loadWcRows('../fixtures/csv/2026_wc_ko_complete.csv');
+    const root = buildBracket(
+      rows, WC_BRACKET_ORDER, undefined, undefined, WC_TOPOLOGY, 'feeder_reference',
+    );
+    expect(root.matchNumber).toBe(104);
+    expect(root.winner).toBe('スペイン');
+  });
+
+  it('falls back to name matching when the declared source finds nothing', () => {
+    // Same finished CSV, source declared but nothing pinned: derivation cannot
+    // succeed, and the bracket must degrade rather than throw.
+    const rows = loadWcRows('../fixtures/csv/2026_wc_ko_complete.csv');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const root = buildBracket(
+        rows, WC_BRACKET_ORDER, undefined, undefined, undefined, 'feeder_reference',
+      );
+      expect(root.matchNumber).toBeUndefined();
+      // The failure is reported instead of collapsing silently — that silence
+      // is what let an entire tournament stop rendering unnoticed.
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('feeder_reference'));
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

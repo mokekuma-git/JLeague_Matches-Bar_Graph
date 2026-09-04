@@ -43,6 +43,9 @@ export type AggregateTiebreakCriterion = 'wins' | 'away_goals' | 'penalties';
 
 // An independent bracket block within a multi-block tournament.
 // Each block is rendered as a separate bracket tree on the same page.
+/** Ways a bracket topology can be derived from CSV when it is not pinned. */
+export type TopologySource = 'feeder_reference';
+
 export interface BracketBlock {
   label: string;                    // Section heading (e.g. "1st Round Group A")
   bracket_order?: (string | null)[];  // Bracket position order (null = bye slot)
@@ -55,6 +58,11 @@ export interface BracketBlock {
   // competition rule fixed before the draw, while the CSV's "No.Xの勝者" feeder
   // references vanish as matches are played (#307).
   bracket_topology?: number[][];
+  // How this block's topology can be derived when bracket_topology is absent.
+  // 'feeder_reference' = the CSV encodes it as "No.Xの勝者" slot text (FIFA /
+  // JFA style). Declaring it makes a failed derivation visible instead of
+  // silently collapsing the bracket (#307).
+  topology_source?: TopologySource;
   // Marks the block whose bracket_order is the season-wide inclusive tree order.
   // Needed only when multiple non-matchup blocks exist (e.g. feeder blocks +
   // final tournament); a sole non-matchup block is implicitly the main tree.

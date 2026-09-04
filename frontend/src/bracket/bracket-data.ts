@@ -4,12 +4,12 @@
 // For 4 teams: [0] vs [1] → SF1, [2] vs [3] → SF2, winners → Final.
 
 import type { RawMatchRow } from '../types/match';
-import type { AggregateTiebreakCriterion } from '../types/season';
+import type { AggregateTiebreakCriterion, TopologySource } from '../types/season';
 import type { BracketNode, DecidedBy, LegDetail } from './bracket-types';
 import { normalizeBracketRoundLabel } from './round-label';
 import {
-  buildTopologyFromRounds, childPairKey, determineWinner, parseSlotReference,
-  type ReferenceTopology,
+  buildTopologyFromRounds, childPairKey, deriveTopologyFromFeederReferences,
+  determineWinner, parseSlotReference, type ReferenceTopology,
 } from './bracket-reference-graph';
 
 /**
@@ -420,6 +420,8 @@ function buildNode(
  * @param bracketTopology - season_map `bracket_topology`: match_number per
  *   round, entry round first. When given, nodes link to CSV rows by position
  *   instead of by team name.
+ * @param topologySource - season_map `topology_source`: how to derive the
+ *   topology from CSV when it is not pinned.
  * @returns Root BracketNode of the tournament tree.
  */
 export function buildBracket(
@@ -428,16 +430,54 @@ export function buildBracket(
   aggregateTiebreakOrder: AggregateTiebreakCriterion[] = ['penalties'],
   pairingOrders?: number[][],
   bracketTopology?: number[][],
+  topologySource?: TopologySource,
 ): BracketNode {
   if (bracketOrder.length < 2) {
     throw new Error(`bracket_order must have at least 2 teams, got ${bracketOrder.length}`);
   }
-  // Competitions without an authored topology (historical cups whose
-  // bracket_order holds real team names) keep resolving by name.
-  const topology = bracketTopology
-    ? buildTopologyFromRounds(bracketTopology, rows, pairingOrders) ?? undefined
-    : undefined;
-  return buildNode(rows, bracketOrder, aggregateTiebreakOrder, pairingOrders, topology);
+  return buildNode(
+    rows, bracketOrder, aggregateTiebreakOrder, pairingOrders,
+    resolveTopology(rows, pairingOrders, bracketTopology, topologySource),
+  );
+}
+
+/**
+ * Pick the topology to link nodes with, in order of authority:
+ *
+ * 1. A pinned `bracket_topology` -- fixed data, cannot rot.
+ * 2. A declared `topology_source` -- derived from CSV, covers a competition
+ *    whose topology has not been pinned yet.
+ * 3. Neither -- fall back to matching entrants by team name, which is how
+ *    historical cups with real names in bracket_order have always worked.
+ *
+ * A declared source that fails to derive is reported: that is the failure the
+ * silent version of this hid until an entire tournament stopped rendering.
+ */
+function resolveTopology(
+  rows: RawMatchRow[],
+  pairingOrders: number[][] | undefined,
+  bracketTopology: number[][] | undefined,
+  topologySource: TopologySource | undefined,
+): ReferenceTopology | undefined {
+  if (bracketTopology) {
+    const pinned = buildTopologyFromRounds(bracketTopology, rows, pairingOrders);
+    if (pinned) return pinned;
+    console.warn(
+      '[bracket] bracket_topology does not fit these CSV rows; '
+      + 'falling back to team-name matching',
+    );
+    return undefined;
+  }
+  if (topologySource === 'feeder_reference') {
+    const derived = deriveTopologyFromFeederReferences(rows);
+    if (derived) return derived;
+    console.warn(
+      '[bracket] topology_source "feeder_reference" found no usable references. '
+      + 'They are overwritten as matches are played — pin the topology with '
+      + 'scripts/generate_bracket_topology.py',
+    );
+  }
+  return undefined;
 }
 
 /**

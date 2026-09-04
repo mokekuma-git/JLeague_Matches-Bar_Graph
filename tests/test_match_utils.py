@@ -229,3 +229,19 @@ def test_season_entry_rejects_empty_bracket_topology():
         _bracket_entry({'bracket_blocks': [
             {'label': 'X', 'bracket_topology': []},
         ]})
+
+
+def test_season_entry_accepts_known_topology_source(caplog):
+    with caplog.at_level(logging.WARNING, logger='match_utils'):
+        _bracket_entry({'bracket_blocks': [
+            {'label': 'X', 'bracket_order': ['A', 'B'],
+             'topology_source': 'feeder_reference'},
+        ]})
+    assert caplog.text == ''
+
+
+def test_season_entry_rejects_unknown_topology_source():
+    with pytest.raises(ValueError, match='unknown topology_source'):
+        _bracket_entry({'bracket_blocks': [
+            {'label': 'X', 'topology_source': 'wc_ko'},
+        ]})
