@@ -50,6 +50,11 @@ export interface BracketBlock {
   bracket_round_start?: string;     // Override start round for this section
   matchup_pairs?: boolean;          // Render as independent matchup pairs (no elimination tree)
   bracket_pairing_orders?: number[][]; // Per level reorder of child matches before pairing
+  // match_number per round, from the entry round up to the final, each round in
+  // bracket position order. Authored in season_map because bracket topology is a
+  // competition rule fixed before the draw, while the CSV's "No.Xの勝者" feeder
+  // references vanish as matches are played (#307).
+  bracket_topology?: number[][];
   // Marks the block whose bracket_order is the season-wide inclusive tree order.
   // Needed only when multiple non-matchup blocks exist (e.g. feeder blocks +
   // final tournament); a sole non-matchup block is implicitly the main tree.

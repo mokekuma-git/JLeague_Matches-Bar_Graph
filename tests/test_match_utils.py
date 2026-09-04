@@ -173,3 +173,59 @@ def test_season_entry_rejects_non_list_bracket_blocks():
 def test_season_entry_rejects_block_without_label():
     with pytest.raises(TypeError, match="dict with a str 'label'"):
         _bracket_entry({'bracket_blocks': [{'bracket_order': ['A', 'B']}]})
+
+
+# ---- SeasonEntry bracket_topology validation --------------------------------
+
+def test_season_entry_accepts_valid_bracket_topology(caplog):
+    with caplog.at_level(logging.WARNING, logger='match_utils'):
+        _bracket_entry({'bracket_blocks': [
+            {'label': '決勝トーナメント',
+             'bracket_order': ['A', 'B', 'C', 'D'],
+             'bracket_topology': [[73, 74], [89]]},
+        ]})
+    assert caplog.text == ''
+
+
+def test_season_entry_rejects_bracket_topology_round_not_halving():
+    with pytest.raises(ValueError, match='expected 1'):
+        _bracket_entry({'bracket_blocks': [
+            {'label': 'X', 'bracket_topology': [[73, 74], [89, 90]]},
+        ]})
+
+
+def test_season_entry_rejects_bracket_topology_without_single_final():
+    with pytest.raises(ValueError, match='must end with a single match'):
+        _bracket_entry({'bracket_blocks': [
+            {'label': 'X', 'bracket_topology': [[73, 74, 75, 76], [89, 90]]},
+        ]})
+
+
+def test_season_entry_rejects_duplicated_match_numbers():
+    with pytest.raises(ValueError, match='repeats match numbers'):
+        _bracket_entry({'bracket_blocks': [
+            {'label': 'X', 'bracket_topology': [[73, 74], [73]]},
+        ]})
+
+
+def test_season_entry_rejects_bracket_topology_mismatching_bracket_order():
+    with pytest.raises(ValueError, match='entry round has 2 matches'):
+        _bracket_entry({'bracket_blocks': [
+            {'label': 'X',
+             'bracket_order': ['A', 'B'],
+             'bracket_topology': [[73, 74], [89]]},
+        ]})
+
+
+def test_season_entry_rejects_non_int_match_numbers():
+    with pytest.raises(TypeError, match='only int match numbers'):
+        _bracket_entry({'bracket_blocks': [
+            {'label': 'X', 'bracket_topology': [['73', '74'], [89]]},
+        ]})
+
+
+def test_season_entry_rejects_empty_bracket_topology():
+    with pytest.raises(TypeError, match='non-empty list'):
+        _bracket_entry({'bracket_blocks': [
+            {'label': 'X', 'bracket_topology': []},
+        ]})
