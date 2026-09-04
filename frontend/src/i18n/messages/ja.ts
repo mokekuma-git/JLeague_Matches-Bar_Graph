@@ -34,6 +34,7 @@ export const ja = {
   'status.cached': '{league} {season} (cached)',
   'status.error': 'CSV読み込みエラー: {detail}',
   'status.noSeason': 'シーズン情報なし: {competition}/{season}',
+  'status.noDisplayableSeason': '表示可能なシーズンがありません: {competition}',
   'status.seasonMapError': 'season_map.yaml の読み込みに失敗しました',
   'status.dataSource': 'データ参照元: ',
 

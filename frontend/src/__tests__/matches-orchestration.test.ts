@@ -3,7 +3,6 @@ import type { SeasonMap } from '../types/season';
 import {
   resolveInitialCompetition,
   resolveInitialSeason,
-  shouldShowTimezone,
 } from '../matches-orchestration';
 
 const seasonMap: SeasonMap = {
@@ -85,16 +84,17 @@ describe('resolveInitialSeason', () => {
   it('returns empty for an unknown competition', () => {
     expect(resolveInitialSeason(seasonMap, 'unknown', {}, {})).toBe('');
   });
-});
 
-describe('shouldShowTimezone', () => {
-  it('follows season timezone availability for league view', () => {
-    expect(shouldShowTimezone('league', true)).toBe(true);
-    expect(shouldShowTimezone('league', false)).toBe(false);
+  // #304: a competition switch passes no prefs, so the latest season wins.
+  // The saved season belongs to whichever competition was last viewed and
+  // must not follow the user into a different one.
+  it('selects the latest season when neither URL nor prefs supply one', () => {
+    expect(resolveInitialSeason(seasonMap, 'J1', {}, {}, ['2026', '2025'])).toBe('2026');
   });
 
-  it('always hides timezone control for bracket view', () => {
-    expect(shouldShowTimezone('bracket', true)).toBe(false);
-    expect(shouldShowTimezone('bracket', false)).toBe(false);
+  it('still honours a season supplied by the URL', () => {
+    expect(resolveInitialSeason(seasonMap, 'J1', { season: '2025' }, {}, ['2026', '2025']))
+      .toBe('2025');
   });
 });
+

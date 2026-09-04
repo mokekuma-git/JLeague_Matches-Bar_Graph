@@ -1,5 +1,5 @@
 import { findCompetition } from './config/season-map';
-import type { SeasonMap, ViewType } from './types/season';
+import type { SeasonMap } from './types/season';
 
 export interface InitialSelectionSource {
   competition?: string;
@@ -36,8 +36,4 @@ export function resolveInitialSeason(
   return availableSeasons?.[0]
     ?? Object.keys(found.competition.seasons).sort().reverse()[0]
     ?? '';
-}
-
-export function shouldShowTimezone(viewType: ViewType, hasTimezone: boolean): boolean {
-  return viewType === 'league' && hasTimezone;
 }

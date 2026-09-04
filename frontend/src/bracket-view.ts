@@ -80,6 +80,13 @@ interface SingleBracketRenderInput {
   targetDate: string | null;
   lastDate: string;
   cssFiles: string[];
+  /**
+   * Identifies the tree being built. The bracket_order alone is not unique:
+   * two sections can share an order but filter different rounds out of the
+   * CSV, and keying on the order alone would serve the first section's tree
+   * to the second (#304).
+   */
+  cacheKey: string;
 }
 
 const MULTI_SECTION_VALUE = '__multi_section__';
@@ -149,9 +156,8 @@ export interface BracketViewHandle {
 }
 
 export interface BracketViewIds {
-  competition: string;
-  season: string;
   roundStart: string;
+  displayTimezoneLabel: string;
   dateSlider: string;
   dateSliderDown: string;
   dateSliderUp: string;
@@ -168,9 +174,8 @@ export interface BracketViewIds {
 }
 
 export const BRACKET_STANDALONE_IDS: BracketViewIds = {
-  competition: 'competition_key',
-  season: 'season_key',
   roundStart: 'round_start_key',
+  displayTimezoneLabel: 'display_timezone_label',
   dateSlider: 'date_slider',
   dateSliderDown: 'date_slider_down',
   dateSliderUp: 'date_slider_up',
@@ -201,9 +206,8 @@ export const BRACKET_NAMESPACED_IDS: BracketViewIds = {
 };
 
 interface BracketViewRefs {
-  competition: HTMLSelectElement;
-  season: HTMLSelectElement;
   roundStart: HTMLSelectElement;
+  displayTimezoneLabel: HTMLElement;
   dateSlider: HTMLInputElement;
   dateSliderDown: HTMLElement;
   dateSliderUp: HTMLElement;
@@ -231,9 +235,8 @@ function requireElement<T extends HTMLElement>(id: string): T {
 
 function resolveRefs(ids: BracketViewIds): BracketViewRefs {
   return {
-    competition: requireElement(ids.competition),
-    season: requireElement(ids.season),
     roundStart: requireElement(ids.roundStart),
+    displayTimezoneLabel: requireElement(ids.displayTimezoneLabel),
     dateSlider: requireElement(ids.dateSlider),
     dateSliderDown: requireElement(ids.dateSliderDown),
     dateSliderUp: requireElement(ids.dateSliderUp),
@@ -303,7 +306,7 @@ function hasBracketMetadata(entry: RawSeasonEntry): boolean {
 export function populateBracketSeasonPulldown(
   seasonMap: SeasonMap,
   competition: string,
-  select: HTMLSelectElement = refs.season,
+  select: HTMLSelectElement,
 ): void {
   select.replaceChildren();
   const found = findCompetition(seasonMap, competition);
@@ -425,6 +428,7 @@ function collectRoundsFromCsv(rows: RawMatchRow[]): string[] {
 
 export const __testables = {
   createControlStateFromPrefs,
+  createSingleBracketRenderInput,
   effectiveTargetDate,
   resolveSliderSelection,
   resolveMainBlockOrder,
@@ -573,9 +577,8 @@ function buildAndRenderBracket(
   container: HTMLElement,
   input: SingleBracketRenderInput,
 ): void {
-  const { rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles } = input;
+  const { rows, order, aggregateTiebreakOrder, targetDate, lastDate, cssFiles, cacheKey } = input;
   if (order.length < 2) return;
-  const cacheKey = JSON.stringify(order);
   let fullRoot = bracketCache.get(cacheKey);
   if (!fullRoot) {
     fullRoot = buildBracket(rows, order, aggregateTiebreakOrder);
@@ -589,6 +592,7 @@ function buildAndRenderBracket(
 function createSingleBracketRenderInput(
   state: Pick<BracketState, 'csvRows' | 'seasonInfo' | 'matchDates'>,
   order: (string | null)[],
+  scope = '',
 ): SingleBracketRenderInput | null {
   if (order.length < 2 || state.matchDates.length === 0) return null;
   return {
@@ -598,6 +602,7 @@ function createSingleBracketRenderInput(
     targetDate: getTargetDate(),
     lastDate: state.matchDates[state.matchDates.length - 1],
     cssFiles: state.seasonInfo.cssFiles,
+    cacheKey: `${scope}\u0000${JSON.stringify(order)}`,
   };
 }
 
@@ -681,6 +686,7 @@ function renderMultiSections(): void {
         const input = createSingleBracketRenderInput(
           { ...currentState, csvRows: rows },
           pair,
+          `${section.label}#${i}`,
         );
         if (input) buildAndRenderBracket(sectionWrapper, input);
       }
@@ -688,6 +694,7 @@ function renderMultiSections(): void {
       const input = createSingleBracketRenderInput(
         { ...currentState, csvRows: rows },
         sectionOrder,
+        section.label,
       );
       if (input) buildAndRenderBracket(sectionWrapper, input);
     }
@@ -1039,11 +1046,12 @@ export function initBracketView(
 
   return {
     activate(seasonMap, selection) {
+      // Bracket rows never carry a source timezone, so the selector stays
+      // hidden here; League re-shows it when its own data has one (#304).
+      refs.displayTimezoneLabel.hidden = true;
       activeSelection = selection;
       // Preseason is a transient slider position, not a restored preference.
       controlState.bracket.preseason = false;
-      refs.competition.value = selection.competition;
-      refs.season.value = selection.season;
       // Clamp for display only: the stored value stays as the user set it, so
       // visiting a view with a narrower slider range cannot ratchet it (#302).
       controlState.bracket.scale = clampToSlider(controlState.bracket.scale, refs.scaleSlider);

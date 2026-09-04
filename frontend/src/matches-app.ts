@@ -31,7 +31,6 @@ import { t } from './i18n';
 import {
   resolveInitialCompetition,
   resolveInitialSeason,
-  shouldShowTimezone,
 } from './matches-orchestration';
 
 interface CompetitionOption {
@@ -131,7 +130,6 @@ async function main(): Promise<void> {
   const viewRoot = document.getElementById('view_root');
   const competitionSelect = document.getElementById('competition_key') as HTMLSelectElement | null;
   const seasonSelect = document.getElementById('season_key') as HTMLSelectElement | null;
-  const timezoneLabel = document.getElementById('display_timezone_label');
   if (!viewRoot || !competitionSelect || !seasonSelect) {
     throw new Error('Unified viewer shell is incomplete');
   }
@@ -176,11 +174,21 @@ async function main(): Promise<void> {
     }
     if (activeViewType !== viewType) {
       viewRoot.dataset.active = viewType;
-      if (timezoneLabel && viewType === 'bracket') {
-        timezoneLabel.hidden = !shouldShowTimezone(viewType, false);
-      }
     }
     activeViewType = viewType;
+
+    // #11: a competition with no displayable season would otherwise persist an
+    // empty season and leave the previous view's status on screen.
+    if (!selection.season) {
+      const status = document.getElementById(`${viewType}_status_msg`);
+      if (status) {
+        status.textContent = t('status.noDisplayableSeason', {
+          competition: selection.competition,
+        });
+      }
+      return;
+    }
+
     writeUrlParams(selection.competition, selection.season);
     savePrefs(selection);
     handles[viewType].activate(seasonMap, selection);
@@ -201,11 +209,14 @@ async function main(): Promise<void> {
     const viewType = selectedViewType(competitionSelect);
     if (!viewType) return;
     populateSeasons(viewType);
+    // Switching competition selects that competition's latest season. The
+    // saved season belongs to whichever competition the user last viewed, so
+    // carrying it across meant J1 could open on J2's year (#304).
     seasonSelect.value = resolveInitialSeason(
       seasonMap,
       competitionSelect.value,
       {},
-      loadPrefs(),
+      {},
       Array.from(seasonSelect.options).map(option => option.value),
     );
     activate(viewType);
