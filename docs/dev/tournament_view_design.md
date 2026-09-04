@@ -1,7 +1,7 @@
 # Tournament View 設計ガイド
 
 **作成日**: 2026-03-15
-**最終更新**: 2026-09-04 (統合 View 構成への追従)
+**最終更新**: 2026-09-05 (bracket_topology の追加)
 **目的**: Tournament View の設計意図、データ構造、拡張方針を明文化する
 
 ---
@@ -42,10 +42,37 @@ League View と Tournament View は単一エントリポイント `matches-app.t
 | `bracket-renderer.ts` | `BracketNode` を DOM + SVG へ描画し、ツールチップとレイアウト補正を担当 |
 | `round-filter-inference.ts` | `bracket_order` と CSV 時系列から `round_filter` を自動推定 |
 | `bracket-order-inference.ts` | CSV 行から `bracket_order` と `match_number` を推定 |
-| `bracket-reference-graph.ts` | CSV の勝者参照 (`No.Xの勝者`) からブラケットのトポロジーを再構成 |
+| `bracket-reference-graph.ts` | `bracket_topology` をノード↔CSV 行の連結表に変換。勝者判定と、参照テキストからの home/away 向き判定も担う |
 | `round-label.ts` | round 名の正規化 |
 | `types/season.ts` | `bracket_blocks` など metadata の型定義 |
 | `bracket/bracket-types.ts` | 描画・判定に使う中間表現 (`BracketNode`, `DecidedBy`) の定義 |
+
+---
+
+## 3.1 ブラケットのトポロジー
+
+**トポロジー (どの試合がどの試合に進むか) の正本は `season_map.yaml` の `bracket_topology`** とする。ラウンドごとの `match_number` 配列で、エントリラウンドから決勝へ向かう順、各ラウンドはブラケット位置順に並べる。
+
+```yaml
+bracket_topology:
+- [74, 77, 73, 75, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87]  # ラウンド32
+- [89, 90, 93, 94, 91, 92, 95, 96]                                  # ラウンド16
+- [97, 98, 99, 100]                                                 # 準々決勝
+- [101, 102]                                                        # 準決勝
+- [104]                                                             # 決勝
+```
+
+これがあるブロックはノードを `match_number` (位置) で CSV 行に連結する。無いブロック (`bracket_order` に実チーム名が並ぶ歴史大会) は従来どおりチーム名で照合する。
+
+**なぜ設定に持つか**: トポロジーは大会規定であり抽選前に確定して二度と変わらない。以前は CSV の `No.Xの勝者` というフィーダー参照から実行時に導出していたが、この参照テキストは試合が消化されると実チーム名で上書きされて消えるため、**全消化後の大会はトポロジーを完全に失った** (#307)。不変な構造を可変なデータから導出していたことが原因で、依存の向きが逆だった。
+
+**生成方法**: `scripts/generate_bracket_topology.py` が CSV から生成する。参照テキストが残っていればそこから、消えていれば各ラウンドの実チーム名を下位ラウンドの勝者と照合して導出する。両経路は同じ結果を返す (WC2026 で確認済み)。
+
+```bash
+uv run python scripts/generate_bracket_topology.py --competition WC_KO --season 2026
+```
+
+参照が全滅している場合はエントリラウンドの並びを決められないため、`--leaf-order` で与える。
 
 ---
 
@@ -57,7 +84,7 @@ season_map 読込                          (matches-app.ts)
   → View 種別判定 → bracket-view へ委譲   (matches-app.ts)
   → CSV 読込                              (以降 bracket-view.ts)
   → KO 対象行抽出 (block/round_filter 反映)
-  → buildBracket() で full tree 構築
+  → buildBracket() で full tree 構築 (bracket_topology があれば位置連結)
   → round 候補計算 (round_start 用)
   → targetDate に応じて maskBracketForDate()
   → renderBracket() + adjustBracketPositions() + drawBracketConnectors()

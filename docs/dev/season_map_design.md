@@ -1,7 +1,7 @@
 # `season_map.yaml` 設計ガイド
 
 **作成日**: 2026-03-15
-**最終更新**: 2026-09-04
+**最終更新**: 2026-09-05 (bracket_topology を追加)
 **目的**: `season_map.yaml` を安全に拡張・更新するために、責務、設計規則、編集手順を開発者向けに明文化する
 
 ---
@@ -155,6 +155,12 @@ Candidate C を採用)。1 ブロック season でも `bracket_blocks` で書き
 - `bracket_blocks` — 構造の正本。各 block は `label` (必須) と `bracket_order` を持つ
 - `bracket_blocks[].inclusive_tree` — 包括ツリー (single-tree 表示) の主 block を指す
   マーカー。非 matchup block が複数あるときのみ必要 (単独なら暗黙的に主 block)
+- `bracket_blocks[].bracket_topology` — その block のトポロジー。ラウンドごとの
+  `match_number` 配列で、エントリラウンドから決勝へ向かう順、各ラウンドはブラケット
+  位置順。ノードを CSV 行に位置で連結するために使う。省略した block は従来どおり
+  チーム名で照合する (`bracket_order` に実チーム名が並ぶ歴史大会)。
+  `scripts/generate_bracket_topology.py` で生成する。詳細と設計理由は
+  [tournament_view_design.md](./tournament_view_design.md) を参照 (#307)
 - `bracket_round_start` (エントリレベル) — 包括表示の開始ラウンド UI 既定
 - `round_start_options`
 - `bracket_pairing_orders`
@@ -163,6 +169,8 @@ Candidate C を採用)。1 ブロック season でも `bracket_blocks` で書き
 設計指針:
 
 - 並び順や表示分割は `bracket_blocks` で表現する
+- トポロジーは CSV から実行時に推定せず `bracket_topology` に固定する
+  (CSV のフィーダー参照は試合消化とともに消えるため)
 - 勝者判定差分は `aggregate_tiebreak_order` の順序で表現する
 - 年度固有の例外を renderer の分岐に入れず、可能な限り metadata 差分で吸収する
 
