@@ -38,18 +38,17 @@ export function restoreLocaleAndApplyI18n(savedLocale: string | undefined): Loca
   return locale;
 }
 
-// ---- Shared viewer control state -----------------------------------------
+// ---- Shared viewer state --------------------------------------------------
 
-export interface SharedViewerControlState {
-  scale: number;
-  futureOpacity: number;
+/**
+ * The only viewer state both views share. Scale and future opacity used to
+ * live here too, but their ranges and defaults differ per view, so sharing
+ * them let one view's clamp overwrite the other's setting (#302). The target
+ * date stays shared so a competition's group and knockout stages can be read
+ * at the same point in time.
+ */
+export interface SharedDateState {
   targetDate: string | null;
-}
-
-/** Defaults differ slightly between views (e.g. bracket's default futureOpacity is 0.2). */
-export interface SharedViewerControlDefaults {
-  scale?: number;
-  futureOpacity?: number;
 }
 
 export function normalizeTargetDate(value: string | null | undefined): string | null {
@@ -83,13 +82,22 @@ export function clampToSlider(value: number, slider: HTMLInputElement): number {
   return Math.min(max, Math.max(min, finiteValue));
 }
 
-export function createSharedViewerControlState(
-  prefs: ViewerPrefs,
-  defaults: SharedViewerControlDefaults = {},
-): SharedViewerControlState {
-  return {
-    scale: prefs.scale ? parseFloat(prefs.scale) : (defaults.scale ?? 1),
-    futureOpacity: prefs.futureOpacity ? parseFloat(prefs.futureOpacity) : (defaults.futureOpacity ?? 0.1),
-    targetDate: restoreTargetDate(prefs.targetDate),
-  };
+export function createSharedDateState(prefs: ViewerPrefs): SharedDateState {
+  return { targetDate: restoreTargetDate(prefs.targetDate) };
+}
+
+/**
+ * Read a per-view numeric pref, falling back to the legacy shared key and then
+ * to the view's own default. The legacy key is only ever read: once the user
+ * touches a control, the per-view key is written and takes over from then on.
+ */
+export function readViewNumberPref(
+  value: string | undefined,
+  legacyValue: string | undefined,
+  fallback: number,
+): number {
+  const raw = value ?? legacyValue;
+  if (raw == null || raw === '') return fallback;
+  const parsed = parseFloat(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }

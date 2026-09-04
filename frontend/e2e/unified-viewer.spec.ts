@@ -36,7 +36,10 @@ test.describe('Unified league and bracket viewer', () => {
     await expect(page.locator('#bracket_view')).toBeHidden();
   });
 
-  test('shares viewer controls and canonical target date across views', async ({ page }) => {
+  // #302: the target date is shared so a competition's stages can be read at
+  // the same point in time; scale and opacity are per-view because their
+  // ranges and defaults differ.
+  test('shares the target date across views but keeps appearance per view', async ({ page }) => {
     await page.locator('#league_scale_slider').fill('0.6');
     await page.locator('#league_scale_slider').dispatchEvent('input');
     await page.locator('#league_future_opacity').fill('0.3');
@@ -48,14 +51,43 @@ test.describe('Unified league and bracket viewer', () => {
     await page.selectOption('#competition_key', 'JLeagueCup');
     await waitForBracketRender(page);
 
-    await expect(page.locator('#bracket_scale_slider')).toHaveValue('0.6');
-    await expect(page.locator('#bracket_future_opacity')).toHaveValue('0.3');
+    // The bracket keeps its own appearance rather than inheriting League's.
+    await expect(page.locator('#bracket_future_opacity')).toHaveValue('0.2');
+
     const prefs = await page.evaluate(() => JSON.parse(
       localStorage.getItem('jleague_viewer_prefs') ?? '{}',
     ) as Record<string, string>);
     expect(prefs.targetDate).toBe('2024/05/03');
-    expect(prefs.scale).toBe('0.6');
-    expect(prefs.futureOpacity).toBe('0.3');
+    expect(prefs.leagueScale).toBe('0.6');
+    expect(prefs.leagueFutureOpacity).toBe('0.3');
+  });
+
+  test('league scale below the bracket minimum survives a round trip', async ({ page }) => {
+    await page.locator('#league_scale_slider').fill('0.2');
+    await page.locator('#league_scale_slider').dispatchEvent('input');
+    await waitForRender(page);
+
+    // The bracket slider starts at 0.3, so a shared value used to be clamped
+    // up and persisted, silently destroying the league's setting (#302).
+    await page.selectOption('#competition_key', 'JLeagueCup');
+    await waitForBracketRender(page);
+    await page.selectOption('#competition_key', 'J1');
+    await waitForRender(page);
+
+    await expect(page.locator('#league_scale_slider')).toHaveValue('0.2');
+    await expect(page.locator('#league_current_scale')).toHaveText('0.2');
+  });
+
+  test('league scale and opacity displays track their sliders', async ({ page }) => {
+    // css-utils updated these by hardcoded id, which resolved to nothing once
+    // the unified page namespaced them, so both displays were frozen (#302).
+    await page.locator('#league_scale_slider').fill('0.7');
+    await page.locator('#league_scale_slider').dispatchEvent('input');
+    await expect(page.locator('#league_current_scale')).toHaveText('0.7');
+
+    await page.locator('#league_future_opacity').fill('0.45');
+    await page.locator('#league_future_opacity').dispatchEvent('input');
+    await expect(page.locator('#league_current_opacity')).toHaveText('0.45');
   });
 
   // #298: the bracket view used to write values the user never picked into the

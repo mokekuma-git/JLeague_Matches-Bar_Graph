@@ -31,8 +31,8 @@ import { renderBracketInto, unpinTooltip } from './bracket/bracket-renderer';
 import { loadPrefs, savePrefs } from './storage/local-storage';
 import type { ViewerPrefs } from './storage/local-storage';
 import { t } from './i18n';
-import { clampToSlider, createSharedViewerControlState } from './view-bootstrap';
-import type { SharedViewerControlState } from './view-bootstrap';
+import { clampToSlider, createSharedDateState, readViewNumberPref } from './view-bootstrap';
+import type { SharedDateState } from './view-bootstrap';
 import type { BracketNode } from './bracket/bracket-types';
 
 // ---- State ------------------------------------------------------------------
@@ -49,11 +49,16 @@ interface BracketState {
   season: string;
 }
 
-type ViewerControlState = SharedViewerControlState;
+type ViewerControlState = SharedDateState;
+
+const DEFAULT_BRACKET_SCALE = 1;
+const DEFAULT_BRACKET_FUTURE_OPACITY = 0.2;
 
 interface BracketControlState {
   layout: 'horizontal' | 'vertical';
   roundStart: string | null;
+  scale: number;           // bracket-owned: its slider range starts at 0.3
+  futureOpacity: number;   // bracket-owned: default is lighter than the league's
   /**
    * Slider parked on the "before any match" position. Kept here rather than in
    * `viewer.targetDate` because the sentinel date is a bracket-only display
@@ -99,20 +104,20 @@ let bracketCache = new Map<string, BracketNode>();
 
 let controlState: ControlState = {
   viewer: {
-    scale: 1,
-    futureOpacity: 0.2,
     targetDate: null,
   },
   bracket: {
     layout: 'horizontal',
     roundStart: null,
     preseason: false,
+    scale: DEFAULT_BRACKET_SCALE,
+    futureOpacity: DEFAULT_BRACKET_FUTURE_OPACITY,
   },
 };
 
 function createControlStateFromPrefs(
   prefs: ViewerPrefs,
-  shared = createSharedViewerControlState(prefs, { futureOpacity: 0.2 }),
+  shared = createSharedDateState(prefs),
 ): ControlState {
   return {
     viewer: shared,
@@ -120,6 +125,10 @@ function createControlStateFromPrefs(
       layout: 'horizontal',
       roundStart: prefs.roundStart ?? null,
       preseason: false,
+      scale: readViewNumberPref(prefs.bracketScale, prefs.scale, DEFAULT_BRACKET_SCALE),
+      futureOpacity: readViewNumberPref(
+        prefs.bracketFutureOpacity, prefs.futureOpacity, DEFAULT_BRACKET_FUTURE_OPACITY,
+      ),
     },
   };
 }
@@ -130,7 +139,7 @@ export interface BracketViewSelection {
 }
 
 export interface BracketViewContext {
-  shared: SharedViewerControlState;
+  shared: SharedDateState;
   onViewerChange(): void;
 }
 
@@ -762,10 +771,11 @@ function updateSliderDisplay(): void {
 /** Apply futureOpacity from controlState to all .bracket-future elements. */
 function applyFutureOpacity(): void {
   const container = refs.container;
-  const value = String(controlState.viewer.futureOpacity);
+  const value = String(controlState.bracket.futureOpacity);
   for (const el of Array.from(container.querySelectorAll('.bracket-future'))) {
     (el as HTMLElement).style.opacity = value;
   }
+  refs.futureOpacity.value = value;
   refs.currentOpacity.textContent = value;
 }
 
@@ -789,10 +799,11 @@ function syncBracketContainerHeight(container: HTMLElement): void {
 /** Apply scale from controlState to bracket container. */
 function applyScale(): void {
   const container = refs.container;
-  const value = String(controlState.viewer.scale);
+  const value = String(controlState.bracket.scale);
   container.style.transform = `scale(${value})`;
   container.style.transformOrigin = 'top left';
   syncBracketContainerHeight(container);
+  refs.scaleSlider.value = value;
   refs.currentScale.textContent = value;
 }
 
@@ -1003,14 +1014,14 @@ export function initBracketView(
     viewContext.onViewerChange();
   });
   refs.futureOpacity.addEventListener('input', () => {
-    controlState.viewer.futureOpacity = parseFloat(refs.futureOpacity.value);
+    controlState.bracket.futureOpacity = parseFloat(refs.futureOpacity.value);
     applyFutureOpacity();
-    viewContext.onViewerChange();
+    savePrefs({ bracketFutureOpacity: refs.futureOpacity.value });
   });
   refs.scaleSlider.addEventListener('input', () => {
-    controlState.viewer.scale = parseFloat(refs.scaleSlider.value);
+    controlState.bracket.scale = parseFloat(refs.scaleSlider.value);
     applyScale();
-    viewContext.onViewerChange();
+    savePrefs({ bracketScale: refs.scaleSlider.value });
   });
   refs.layout.addEventListener('change', () => {
     controlState.bracket.layout = refs.layout.value as 'horizontal' | 'vertical';
@@ -1033,11 +1044,9 @@ export function initBracketView(
       controlState.bracket.preseason = false;
       refs.competition.value = selection.competition;
       refs.season.value = selection.season;
-      refs.futureOpacity.value = String(controlState.viewer.futureOpacity);
-      const previousScale = controlState.viewer.scale;
-      controlState.viewer.scale = clampToSlider(previousScale, refs.scaleSlider);
-      refs.scaleSlider.value = String(controlState.viewer.scale);
-      if (controlState.viewer.scale !== previousScale) viewContext.onViewerChange();
+      // Clamp for display only: the stored value stays as the user set it, so
+      // visiting a view with a narrower slider range cannot ratchet it (#302).
+      controlState.bracket.scale = clampToSlider(controlState.bracket.scale, refs.scaleSlider);
       loadAndRender(seasonMap);
     },
     deactivate() {

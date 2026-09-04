@@ -20,12 +20,13 @@ import type {
   ViewType,
 } from './types/season';
 import {
-  createSharedViewerControlState,
+  createSharedDateState,
   normalizeTargetDate,
   readUrlParams,
   restoreLocaleAndApplyI18n,
   writeUrlParams,
 } from './view-bootstrap';
+import type { SharedDateState } from './view-bootstrap';
 import { t } from './i18n';
 import {
   resolveInitialCompetition,
@@ -104,15 +105,13 @@ function selectedViewType(select: HTMLSelectElement): ViewType | undefined {
   return select.selectedOptions[0]?.dataset.viewType as ViewType | undefined;
 }
 
-function persistSharedViewerState(
-  shared: ReturnType<typeof createSharedViewerControlState>,
-): void {
+/**
+ * Persist the one piece of viewer state both views share. Scale and future
+ * opacity are owned and saved by each view under its own key (#302).
+ */
+function persistSharedDateState(shared: SharedDateState): void {
   shared.targetDate = normalizeTargetDate(shared.targetDate);
-  savePrefs({
-    scale: String(shared.scale),
-    futureOpacity: String(shared.futureOpacity),
-    targetDate: shared.targetDate ?? undefined,
-  });
+  savePrefs({ targetDate: shared.targetDate ?? undefined });
 }
 
 async function main(): Promise<void> {
@@ -137,13 +136,13 @@ async function main(): Promise<void> {
     throw new Error('Unified viewer shell is incomplete');
   }
 
-  const shared = createSharedViewerControlState(prefs);
+  const shared = createSharedDateState(prefs);
   if (prefs.targetDate && prefs.targetDate !== shared.targetDate) {
     savePrefs({ targetDate: shared.targetDate ?? undefined });
   }
   const context = {
     shared,
-    onViewerChange: () => persistSharedViewerState(shared),
+    onViewerChange: () => persistSharedDateState(shared),
   };
   const leagueView = initLeagueView(LEAGUE_NAMESPACED_IDS, context);
   const bracketView = initBracketView(BRACKET_NAMESPACED_IDS, context);
