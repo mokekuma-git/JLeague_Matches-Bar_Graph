@@ -1,20 +1,24 @@
 """Tests for scripts/watch_live_matches.py"""
 from datetime import date, datetime, timedelta
 from pathlib import Path
+import subprocess
 import sys
 import unittest
+from unittest import mock
 
 import pandas as pd
 import pytz
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'scripts'))
 
+import watch_live_matches as wlm  # noqa: E402
 from watch_live_matches import (  # noqa: E402
     LEAD_IN,
     RUN_OUT,
     all_settled,
     is_live,
     match_window,
+    trigger_pages_deploy,
 )
 
 JST = pytz.timezone('Asia/Tokyo')
@@ -101,6 +105,28 @@ class TestIsLive(unittest.TestCase):
 
     def test_empty_frame(self):
         self.assertFalse(is_live(pd.DataFrame()))
+
+
+def _completed(returncode: int, stderr: str = '') -> subprocess.CompletedProcess:
+    """Build a finished process for the deploy dispatch to inspect."""
+    return subprocess.CompletedProcess(args=[], returncode=returncode,
+                                       stdout='', stderr=stderr)
+
+
+class TestPagesDeploy(unittest.TestCase):
+    """A push made with GITHUB_TOKEN does not start a workflow of its own."""
+
+    def test_dispatches_the_deploy_workflow(self):
+        with mock.patch.object(wlm, 'run', return_value=_completed(0)) as run:
+            self.assertTrue(trigger_pages_deploy())
+        run.assert_called_once()
+        self.assertEqual(run.call_args.args[0],
+                         ['gh', 'workflow', 'run', 'deploy-pages.yaml'])
+
+    def test_a_failed_dispatch_does_not_end_the_watch(self):
+        """The next poll pushes the same data and dispatches again."""
+        with mock.patch.object(wlm, 'run', return_value=_completed(1, 'boom')):
+            self.assertFalse(trigger_pages_deploy())
 
 
 class TestWindowBounds(unittest.TestCase):
