@@ -412,14 +412,58 @@ class TestSectionStaysUpdatableAfterKickoff(unittest.TestCase):
 
         self.assertEqual(sections, {4})
 
-    def test_blank_times_would_hide_the_section(self):
-        """Guards the regression: without a kick-off time the window is midnight."""
+    def test_blank_times_no_longer_hide_the_section(self):
+        """Without a kick-off time the window is midnight, so it has closed by now.
+
+        The section is still due, because the CSV shows its matches as unfinished
+        (#311); before that check existed the blank times hid it entirely.
+        """
         frame = self._frame(['', ''])
         now = datetime(2026, 8, 29, 19, 30, tzinfo=ZoneInfo('Asia/Tokyo'))
 
         sections = get_sections_to_update(frame, now - timedelta(minutes=10), now)
 
-        self.assertEqual(sections, set())
+        self.assertEqual(sections, {4})
+
+
+class TestSectionOutlivesTheFixedWindow(unittest.TestCase):
+    """A match running past kick-off+2h must not drop out of the fetch set.
+
+    Reproduces 2026-09-06: J1 FC東京-京都 kicked off at 19:30 and was still
+    '速報中後半 49分' at 21:31.  The fixed window closed at 21:30, so every later
+    poll skipped the section and the CSV kept the live status until the next
+    day's full update (#311).
+    """
+
+    JST = ZoneInfo('Asia/Tokyo')
+
+    def _frame(self, status, match_date='2026/09/06'):
+        return pd.DataFrame([
+            {'match_date': match_date, 'section_no': 6, 'match_index_in_section': 1,
+             'start_time': '19:30', 'home_team': 'FC東京', 'away_team': '京都',
+             'status': status}])
+
+    def _sections(self, frame, hour, minute):
+        """Ask which sections are due, with lastupdate five minutes before now."""
+        now = datetime(2026, 9, 6, hour, minute, tzinfo=self.JST)
+        return get_sections_to_update(frame, now - timedelta(minutes=5), now)
+
+    def test_unfinished_match_is_still_fetched(self):
+        self.assertEqual(self._sections(self._frame('速報中後半 49分'), 21, 36), {6})
+
+    def test_a_settled_match_drops_out(self):
+        self.assertEqual(self._sections(self._frame('試合終了'), 21, 36), set())
+
+    def test_a_cancelled_match_drops_out(self):
+        self.assertEqual(self._sections(self._frame('試合中止'), 21, 36), set())
+
+    def test_a_match_that_has_not_kicked_off_is_not_fetched(self):
+        frame = self._frame('ＶＳ', match_date='2026/09/13')
+        self.assertEqual(self._sections(frame, 21, 36), set())
+
+    def test_the_fixed_window_still_applies(self):
+        """A settled match inside the window is due, as it always was."""
+        self.assertEqual(self._sections(self._frame('試合終了'), 20, 30), {6})
 
 
 class TestKeepUnlistedMatches(unittest.TestCase):
