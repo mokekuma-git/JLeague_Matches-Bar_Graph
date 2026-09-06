@@ -7,29 +7,49 @@
 # reader is remembered and the script exits non-zero if any of them failed, so a
 # broken source surfaces as a red CI run instead of passing silently.
 
-echo Called by schedule $1
+SCHEDULE="${1:-}"
+echo "Called by schedule: ${SCHEDULE:-<manual run>}"
 DAILY=Daily
 ONGAME=OnGame
-TRIGGER=$(echo $1 | awk '{if($3 == "*" && $4 == "*") {print "'$DAILY'"} else {print "'$ONGAME'"}}')
 
-RUNNING_HOUR=`TZ=Asia/Tokyo date "+%H"`
+# `github.event.schedule` carries the cron line that started this run, so it says
+# what the run is *for* no matter how late GitHub gets around to starting it.
+# Picking the branch by wall-clock hour instead let every delayed run fall through
+# to the per-match path, and the daily readers went unrun for weeks (#309).
+#
+# Only the daily full update leaves both day-of-month and month as `*`; the
+# WC2026 entries pin a date and stay on the per-match path.  A manual run carries
+# no schedule at all and is taken as a full update -- that is what it is for.
+#
+# `$SCHEDULE` must stay quoted: unquoted, the `*`s glob into repository file
+# names and no cron line can ever match.
+if [ -z "$SCHEDULE" ]; then
+  TRIGGER=$DAILY
+else
+  TRIGGER=$(echo "$SCHEDULE" | awk -v daily="$DAILY" -v ongame="$ONGAME" \
+    '{print ($3 == "*" && $4 == "*") ? daily : ongame}')
+fi
+
 TZ=Asia/Tokyo date
-echo $RUNNING_HOUR
-echo $TRIGGER
+echo "Trigger: $TRIGGER"
 
 FAILED=()
 
 # Run one reader, recording its name if it fails.
 run_reader() {
   echo "--- Running: $* ---"
+  # Set UPDATE_CSV_DRY_RUN to check which readers a schedule selects without
+  # reaching the network; the branch tests rely on it.
+  if [ -n "${UPDATE_CSV_DRY_RUN:-}" ]; then
+    return
+  fi
   if ! "$@"; then
     echo "::error::Reader failed: $*"
     FAILED+=("$*")
   fi
 }
 
-if [ $RUNNING_HOUR -eq 1 ]; then
-# if [ $TRIGGER = $DAILY]; then
+if [ "$TRIGGER" = "$DAILY" ]; then
   # 日ごと深夜自動実行 ⇒ 全CSVのアップデートを実行
   run_reader uv run python src/read_jleague_matches.py -f
   run_reader uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto WC2026 WC2026KO
