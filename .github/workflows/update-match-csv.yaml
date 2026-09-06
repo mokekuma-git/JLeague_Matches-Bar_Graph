@@ -1,6 +1,9 @@
 name: Update matches csv
 
 on:
+  # A manual run carries no schedule, which call_update_csv.sh reads as a full
+  # update -- the way to make every reader catch up outside the nightly slot.
+  workflow_dispatch:
   schedule:
     - cron: '0 16 * * *'
     # WC2026 group/knockout updates after the final match of each JST day.

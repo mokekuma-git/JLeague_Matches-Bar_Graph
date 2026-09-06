@@ -33,6 +33,7 @@ jobs:
 
     permissions:
       contents: write
+      actions: write
 
     steps:
       - name: git checkout
@@ -53,9 +54,12 @@ jobs:
           git config --global user.name "mokekuma-git"
           git config --global user.email "mokekuma.git@gmail.com"
 
-      # Pushing to main triggers deploy-pages.yaml on its own, so each committed
-      # poll reaches the site without this workflow dispatching a deploy.
+      # A push made with GITHUB_TOKEN does not start a workflow, so these commits
+      # never reach the site on their own: the driver dispatches deploy-pages.yaml
+      # itself after every push it lands.  That needs actions:write and a token.
       - name: Watch today's matches
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           uv run python scripts/watch_live_matches.py \
             --interval "${{ github.event.inputs.interval || '5' }}" \

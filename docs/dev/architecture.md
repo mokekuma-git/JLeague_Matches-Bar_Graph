@@ -60,6 +60,10 @@ JLeague_Matches-Bar_Graph/
 ## デプロイモデル
 
 - **GitHub Pages は GitHub Actions 経由** (`deploy-pages.yaml`): main push 時に TS ビルド → `docs/` を artifact としてアップロード → デプロイ
+- **ワークフローが push する場合はデプロイを明示起動する**: GITHUB_TOKEN による push は
+  再帰防止のため他のワークフローを起動しない。CSV を自動更新する `update-match-csv.yaml` /
+  `live-update-csv.yaml` は `gh workflow run deploy-pages.yaml` を自分で呼ぶ必要があり、
+  これを怠ると CSV は main に載るがサイトには反映されない (#309)
 - **ビルド生成物 (`docs/matches.html`, `docs/assets/`) は git 管理外** (`.gitignore` に記載)
 - `docs/` 内の CSV, YAML, CSS, `docs/dev/` の設計文書はそのまま git 管理 (直接更新)
 - `check-build-artifacts.yaml` が PR 時にビルド生成物の誤コミットを検出

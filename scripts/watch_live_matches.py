@@ -202,6 +202,26 @@ def commit_and_push(retries: int = 3) -> bool:
     return False
 
 
+def trigger_pages_deploy() -> bool:
+    """Ask GitHub to rebuild the site after a push.
+
+    A push made with GITHUB_TOKEN does not start a workflow, so the commits this
+    driver makes never reach the site on their own -- deploy-pages.yaml has to be
+    dispatched explicitly.  A failure here is not worth ending the watch for: the
+    next poll pushes the same data and dispatches again.
+
+    Returns:
+        bool: True if the deploy was dispatched.
+    """
+    dispatched = run(['gh', 'workflow', 'run', 'deploy-pages.yaml'], cwd=_REPO_ROOT)
+    if dispatched.returncode != 0:
+        logger.warning("Could not dispatch the Pages deploy: %s",
+                       dispatched.stderr.strip()[:200])
+        return False
+    logger.info("Dispatched the Pages deploy")
+    return True
+
+
 def poll_once() -> None:
     """Fetch the J-League CSVs once."""
     result = run([sys.executable, 'read_jleague_matches.py'], cwd=_REPO_ROOT / 'src')
@@ -226,6 +246,8 @@ def main() -> int:
                         help='report the window and exit without polling')
     parser.add_argument('--no-push', action='store_true',
                         help='poll and update the CSVs but leave them uncommitted')
+    parser.add_argument('--no-deploy', action='store_true',
+                        help='commit and push but do not dispatch the Pages deploy')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO,
@@ -272,8 +294,8 @@ def main() -> int:
         poll_once()
         if args.no_push:
             logger.info("--no-push: leaving any change uncommitted")
-        else:
-            commit_and_push()
+        elif commit_and_push() and not args.no_deploy:
+            trigger_pages_deploy()
 
         today = load_todays_matches(datetime.now(tzinfo).date())
         if all_settled(today):
