@@ -16,8 +16,10 @@ from watch_live_matches import (  # noqa: E402
     LEAD_IN,
     RUN_OUT,
     all_settled,
+    has_started_unfinished,
     is_live,
     match_window,
+    stop_reason,
     trigger_pages_deploy,
 )
 
@@ -107,6 +109,59 @@ class TestIsLive(unittest.TestCase):
         self.assertFalse(is_live(pd.DataFrame()))
 
 
+class TestHasStartedUnfinished(unittest.TestCase):
+    """Tells a genuine stall apart from the ordinary wait between fixtures."""
+
+    def _check(self, matches, hour, minute=0):
+        return has_started_unfinished(matches, TODAY, _at(hour, minute), tzinfo=JST)
+
+    def test_a_live_match_counts(self):
+        self.assertTrue(self._check(_matches(('18:00', '速報中後半 20分')), 19))
+
+    def test_a_kicked_off_match_counts_even_without_the_live_marker(self):
+        """The source can stall before it ever marks the match live."""
+        self.assertTrue(self._check(_matches(('18:00', 'ＶＳ')), 19))
+
+    def test_an_upcoming_match_does_not_count(self):
+        """Waiting for the evening kick-off is not a stall."""
+        self.assertFalse(self._check(_matches(('19:30', 'ＶＳ')), 16))
+
+    def test_settled_matches_do_not_count(self):
+        self.assertFalse(self._check(_matches(('18:00', '試合終了'),
+                                              ('18:00', '試合中止')), 21))
+
+    def test_an_undecided_kick_off_does_not_count(self):
+        """A blank time says nothing about whether the match has started."""
+        self.assertFalse(self._check(_matches(('未定', 'ＶＳ')), 21))
+
+    def test_the_gap_between_two_fixtures_is_not_a_stall(self):
+        """14:00 finished, 19:30 still to come -- nothing is under way at 16:00."""
+        self.assertFalse(self._check(_matches(('14:00', '試合終了'),
+                                              ('19:30', 'ＶＳ')), 16))
+
+
+class TestStopReason(unittest.TestCase):
+    """What ends the watch, now that the window's end no longer does."""
+
+    LIVE = _matches(('18:00', '速報中後半 20分'))
+    DONE = _matches(('18:00', '試合終了'))
+
+    def test_every_match_final_stops_the_watch(self):
+        self.assertIsNotNone(stop_reason(self.DONE, stale_polls=0, max_stale=12))
+
+    def test_a_live_match_keeps_the_watch_going(self):
+        self.assertIsNone(stop_reason(self.LIVE, stale_polls=0, max_stale=12))
+
+    def test_a_stalled_source_gives_up(self):
+        """An unexpected record must not hold the job open to its budget."""
+        reason = stop_reason(self.LIVE, stale_polls=12, max_stale=12)
+        self.assertIsNotNone(reason)
+        self.assertIn('not moving', reason)
+
+    def test_a_stall_short_of_the_limit_keeps_going(self):
+        self.assertIsNone(stop_reason(self.LIVE, stale_polls=11, max_stale=12))
+
+
 def _completed(returncode: int, stderr: str = '') -> subprocess.CompletedProcess:
     """Build a finished process for the deploy dispatch to inspect."""
     return subprocess.CompletedProcess(args=[], returncode=returncode,
@@ -127,6 +182,54 @@ class TestPagesDeploy(unittest.TestCase):
         """The next poll pushes the same data and dispatches again."""
         with mock.patch.object(wlm, 'run', return_value=_completed(1, 'boom')):
             self.assertFalse(trigger_pages_deploy())
+
+
+class _StopLoop(Exception):
+    """Raised from the patched sleep to end the watch loop under test."""
+
+
+class TestWatchDayIsFixed(unittest.TestCase):
+    """The loop must re-read the day it started on, not whatever day it is now.
+
+    Re-reading the current date emptied the frame at midnight, and an empty
+    frame reads as "everything has finished" -- so a match still being played
+    was abandoned the moment the date rolled (#311).
+    """
+
+    def test_the_watch_survives_midnight(self):
+        """Reaching sleep means the loop went round again past midnight.
+
+        Before the fix the loop reloaded 09/07, got nothing, and returned 0
+        without ever sleeping.
+        """
+        before = JST.localize(datetime(2026, 9, 6, 23, 50))
+        after = JST.localize(datetime(2026, 9, 7, 0, 5))
+        live = _matches(('18:00', '速報中後半 20分'))
+
+        class _Clock(datetime):
+            """A clock that steps past midnight between the two now() calls."""
+
+            _times = iter([before, after])
+
+            @classmethod
+            def now(cls, tz=None):
+                # Never run dry: the loop must fail on the day it reads, not on
+                # how many times it looks at the clock.
+                return next(cls._times, after)
+
+        def _load(day):
+            return live if day == before.date() else pd.DataFrame()
+
+        window = (before - timedelta(hours=1), before + timedelta(hours=2))
+
+        with mock.patch.object(wlm, 'datetime', _Clock), \
+                mock.patch.object(wlm, 'load_todays_matches', side_effect=_load), \
+                mock.patch.object(wlm, 'match_window', return_value=window), \
+                mock.patch.object(wlm, 'poll_once'), \
+                mock.patch.object(wlm.time, 'sleep', side_effect=_StopLoop), \
+                mock.patch.object(sys, 'argv', ['watch', '--no-push']):
+            with self.assertRaises(_StopLoop):
+                wlm.main()
 
 
 class TestWindowBounds(unittest.TestCase):

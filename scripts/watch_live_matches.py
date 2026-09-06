@@ -141,6 +141,12 @@ def is_live(matches: pd.DataFrame) -> bool:
 def all_settled(matches: pd.DataFrame) -> bool:
     """Return True when no match of the day can still change.
 
+    An empty frame counts as settled, which is right for the day-has-no-matches
+    check made before the watch starts.  Inside the loop the day being watched
+    is held fixed for exactly this reason: re-reading today's date emptied the
+    frame at midnight and read as "everything finished" while a match was still
+    being played (#311).
+
     Args:
         matches (pd.DataFrame): Today's matches.
 
@@ -150,6 +156,65 @@ def all_settled(matches: pd.DataFrame) -> bool:
     if matches.empty:
         return True
     return matches['status'].fillna('').isin(SETTLED).all()
+
+
+def has_started_unfinished(matches: pd.DataFrame, today: datetime.date,
+                           now: datetime, tzinfo=None) -> bool:
+    """Return True when a match has kicked off and has not settled.
+
+    Tells a genuine stall apart from an ordinary wait.  On a day with a 14:00 and
+    a 19:30 kick-off nothing changes for hours in between, and counting that
+    towards giving up would end the watch before the evening match (#311).
+
+    Args:
+        matches (pd.DataFrame): Today's matches.
+        today (date): The day being watched.
+        now (datetime): Current time.
+        tzinfo: Timezone to attach to the parsed kick-off times.
+
+    Returns:
+        bool: True if some match is under way or overdue.
+    """
+    if matches.empty:
+        return False
+    unsettled = matches[~matches['status'].fillna('').isin(SETTLED)]
+    if unsettled.empty:
+        return False
+    if is_live(unsettled):
+        return True
+    for value in unsettled['start_time'].fillna(''):
+        text = str(value).strip()
+        try:
+            clock = datetime.strptime(text, '%H:%M').time()
+        except ValueError:
+            continue  # '未定' or blank -- cannot say whether it has started
+        if datetime.combine(today, clock, tzinfo=tzinfo) <= now:
+            return True
+    return False
+
+
+def stop_reason(matches: pd.DataFrame, stale_polls: int, max_stale: int) -> str | None:
+    """Say why the watch should end, or None to keep going.
+
+    The watch runs until every match is actually final rather than until a clock
+    runs out, so an unexpected record -- a status the readers never resolve -- is
+    caught by the stall count instead of running out the whole job budget.
+
+    Args:
+        matches (pd.DataFrame): Today's matches, as the CSVs now have them.
+        stale_polls (int): Consecutive polls that changed nothing while a match
+            was under way.
+        max_stale (int): How many such polls to accept before giving up.
+
+    Returns:
+        str | None: The reason to stop, or None to keep watching.
+    """
+    if all_settled(matches):
+        return "every match has finished"
+    if stale_polls >= max_stale:
+        return (f"a match has been unfinished for {stale_polls} polls with no "
+                "change; the source is not moving")
+    return None
 
 
 def run(command: list[str], cwd: Path = None) -> subprocess.CompletedProcess:
@@ -248,6 +313,9 @@ def main() -> int:
                         help='poll and update the CSVs but leave them uncommitted')
     parser.add_argument('--no-deploy', action='store_true',
                         help='commit and push but do not dispatch the Pages deploy')
+    parser.add_argument('--max-stale-polls', type=int, default=12,
+                        help='give up after this many unchanged polls while a '
+                             'match is under way (default: 12)')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO,
@@ -258,8 +326,11 @@ def main() -> int:
     now = datetime.now(tzinfo)
     deadline = now + timedelta(minutes=args.budget_minutes)
 
-    matches = load_todays_matches(now.date())
-    window = match_window(matches, now.date(), now, tzinfo=now.tzinfo)
+    # The day under watch is fixed here and never re-read from the clock: a
+    # match still being played must not be abandoned when the date rolls (#311).
+    watch_date = now.date()
+    matches = load_todays_matches(watch_date)
+    window = match_window(matches, watch_date, now, tzinfo=now.tzinfo)
     if window is None:
         logger.info("No match with a known kick-off today; nothing to watch")
         return 0
@@ -268,20 +339,21 @@ def main() -> int:
     logger.info("Today's window: %s - %s (%d matches)",
                 start.strftime('%H:%M'), end.strftime('%H:%M'), len(matches))
 
-    if now >= end:
+    if all_settled(matches):
+        logger.info("Every match today is already settled; nothing to watch")
+        return 0
+    if now >= end and not has_started_unfinished(matches, watch_date, now,
+                                                 tzinfo=now.tzinfo):
         logger.info("Today's matches are already over; nothing to watch")
         return 0
     if start > deadline:
         logger.info("Window starts after this job's budget (%s); a later run takes it",
                     deadline.strftime('%H:%M'))
         return 0
-    if all_settled(matches):
-        logger.info("Every match today is already settled; nothing to watch")
-        return 0
 
     if args.dry_run:
-        logger.info("Dry run: would poll every %d min until %s",
-                    args.interval, min(end, deadline).strftime('%H:%M'))
+        logger.info("Dry run: would poll every %d min until %s at the latest",
+                    args.interval, deadline.strftime('%H:%M'))
         return 0
 
     if now < start:
@@ -289,22 +361,37 @@ def main() -> int:
         logger.info("Waiting %.0f min until kick-off", wait / 60)
         time.sleep(wait)
 
-    stop_at = min(end, deadline)
+    # The window's end no longer stops the loop: a match that runs past it is
+    # exactly the case this watch exists for.  What ends the watch is every match
+    # being final, the source going quiet, or the job budget.
+    stale_polls = 0
     while True:
         poll_once()
+        changed = False
         if args.no_push:
             logger.info("--no-push: leaving any change uncommitted")
-        elif commit_and_push() and not args.no_deploy:
-            trigger_pages_deploy()
+        else:
+            changed = commit_and_push()
+            if changed and not args.no_deploy:
+                trigger_pages_deploy()
 
-        today = load_todays_matches(datetime.now(tzinfo).date())
-        if all_settled(today):
-            logger.info("All of today's matches have finished; stopping")
+        today = load_todays_matches(watch_date)
+        now = datetime.now(tzinfo)
+        # Only an unchanged poll with a match actually under way counts as a
+        # stall; --no-push never reports a change, so it never accumulates one.
+        if args.no_push or changed or not has_started_unfinished(
+                today, watch_date, now, tzinfo=now.tzinfo):
+            stale_polls = 0
+        else:
+            stale_polls += 1
+
+        reason = stop_reason(today, stale_polls, args.max_stale_polls)
+        if reason:
+            logger.info("Stopping: %s", reason)
             return 0
 
-        now = datetime.now(tzinfo)
-        if now + timedelta(minutes=args.interval) >= stop_at:
-            logger.info("Reached the end of this job's window")
+        if now + timedelta(minutes=args.interval) >= deadline:
+            logger.info("Reached the end of this job's budget")
             return 0
         time.sleep(args.interval * 60)
 
