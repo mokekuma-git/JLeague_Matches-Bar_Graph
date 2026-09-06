@@ -35,17 +35,42 @@ echo "Trigger: $TRIGGER"
 
 FAILED=()
 
+# The daily branch went unrun for three weeks and nobody noticed: a skipped run
+# is indistinguishable from a quiet one unless you open the log.  Report the
+# branch and every reader's outcome to the job summary, so which readers ran is
+# visible from the run list itself (#309).
+summary() {
+  if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+    printf '%s\n' "$*" >> "$GITHUB_STEP_SUMMARY"
+  else
+    printf '%s\n' "$*"
+  fi
+}
+
+summary_row() {
+  summary "| \`$1\` | $2 |"
+}
+
+summary "### CSV update: $TRIGGER"
+summary ""
+summary "| Reader | Result |"
+summary "| --- | --- |"
+
 # Run one reader, recording its name if it fails.
 run_reader() {
   echo "--- Running: $* ---"
   # Set UPDATE_CSV_DRY_RUN to check which readers a schedule selects without
   # reaching the network; the branch tests rely on it.
   if [ -n "${UPDATE_CSV_DRY_RUN:-}" ]; then
+    summary_row "$*" "skipped (dry run)"
     return
   fi
-  if ! "$@"; then
+  if "$@"; then
+    summary_row "$*" "ok"
+  else
     echo "::error::Reader failed: $*"
     FAILED+=("$*")
+    summary_row "$*" "**failed**"
   fi
 }
 
@@ -70,6 +95,8 @@ if [ ${#FAILED[@]} -gt 0 ]; then
   for reader in "${FAILED[@]}"; do
     echo "  - $reader"
   done
+  summary ""
+  summary "${#FAILED[@]} reader(s) failed."
   exit 1
 fi
 

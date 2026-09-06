@@ -1,6 +1,7 @@
 """Tests for scripts/call_update_csv.sh"""
 import os
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -16,16 +17,19 @@ DATED_CRON = '30 5 27 6 *'
 _PREFIX = '--- Running: '
 
 
-def _run(*args) -> subprocess.CompletedProcess:
+def _run(*args, summary_path: Path = None) -> subprocess.CompletedProcess:
     """Run the dispatcher with the readers stubbed out.
 
     Runs from the repository root so that an unquoted argument would glob into
     real file names, which is what the glob test looks for.
     """
+    env = {**os.environ, 'UPDATE_CSV_DRY_RUN': '1'}
+    env.pop('GITHUB_STEP_SUMMARY', None)
+    if summary_path is not None:
+        env['GITHUB_STEP_SUMMARY'] = str(summary_path)
     return subprocess.run(
         ['bash', str(_SCRIPT), *args],
-        cwd=_REPO_ROOT, capture_output=True, text=True, check=False,
-        env={**os.environ, 'UPDATE_CSV_DRY_RUN': '1'})
+        cwd=_REPO_ROOT, capture_output=True, text=True, check=False, env=env)
 
 
 def _readers(output: str) -> list[str]:
@@ -81,6 +85,29 @@ class TestReaderSelection(unittest.TestCase):
         for skipped in ('PrincePremierE', 'PrincePremierW', 'PrinceKanto',
                         'read_we_league.py'):
             self.assertNotIn(skipped, joined)
+
+
+class TestJobSummary(unittest.TestCase):
+    """Which readers ran has to be visible without opening the log (#309)."""
+
+    def test_summary_names_the_branch_and_its_readers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'summary.md'
+            _run(DAILY_CRON, summary_path=path)
+            written = path.read_text()
+        self.assertIn('### CSV update: Daily', written)
+        self.assertIn('read_we_league.py', written)
+
+    def test_a_per_match_run_says_so(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'summary.md'
+            _run(DATED_CRON, summary_path=path)
+            written = path.read_text()
+        self.assertIn('### CSV update: OnGame', written)
+        self.assertNotIn('read_we_league.py', written)
+
+    def test_summary_falls_back_to_stdout_off_ci(self):
+        self.assertIn('### CSV update: Daily', _run(DAILY_CRON).stdout)
 
 
 if __name__ == '__main__':
