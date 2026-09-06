@@ -94,6 +94,10 @@ STATUS_FINISHED = '試合終了'
 STATUS_SCHEDULED = 'ＶＳ'
 STATUS_CANCELLED = '試合中止'
 STATUS_LIVE_MARKER = '速報中'
+# A match carrying one of these will not change again.  '試合不実施' is written by
+# read_jfamatch rather than this reader, but a CSV can hold rows from either.
+STATUS_NOT_HELD = '試合不実施'
+SETTLED_STATUSES = frozenset({STATUS_FINISHED, STATUS_CANCELLED, STATUS_NOT_HELD})
 
 
 def read_match(competition: str, periods: list[tuple[str, str]] = None) -> pd.DataFrame:
@@ -670,6 +674,40 @@ def get_sections_to_update(all_matches: pd.DataFrame,
                 logger.info("Add section \"%s\" (match at %s-%s) between %s - %s",
                             _sec, _start, _end, lastupdate, current_time)
                 target_sec.add(_sec)
+    return target_sec | get_unsettled_sections(all_matches, current_time)
+
+
+def get_unsettled_sections(all_matches: pd.DataFrame,
+                           current_time: pd.Timestamp) -> set[str]:
+    """Return sections holding a match that has kicked off but is not settled yet.
+
+    The window above closes two hours after kick-off, and `lastupdate` moves past
+    that on the very next poll -- so a match running long (stoppage, VAR, a late
+    kick-off) drops out of the fetch set while still live and keeps whatever
+    status it had at the two hour mark for good (#311).  What the CSV says about
+    the match is the sounder test: as long as it shows a started match that has
+    not finished, ask for its section again.
+
+    Args:
+        all_matches (pd.DataFrame): All match data.
+        current_time (pd.Timestamp): Current time.
+
+    Returns:
+        set[str]: Sections still holding an unfinished match.
+    """
+    if all_matches.empty or 'status' not in all_matches.columns:
+        return set()
+    unsettled = all_matches[~all_matches['status'].fillna('').isin(SETTLED_STATUSES)]
+    if unsettled.empty:
+        return set()
+
+    target_sec = set()
+    for (_sec, _dates) in get_match_dates_of_section(unsettled).items():
+        for _start in _dates:
+            if _start <= current_time:
+                logger.info("Add section \"%s\" (unfinished match from %s)", _sec, _start)
+                target_sec.add(_sec)
+                break
     return target_sec
 
 
