@@ -202,8 +202,8 @@ def stop_reason(matches: pd.DataFrame, stale_polls: int, max_stale: int) -> str 
 
     Args:
         matches (pd.DataFrame): Today's matches, as the CSVs now have them.
-        stale_polls (int): Consecutive polls that changed nothing while a match
-            was under way.
+        stale_polls (int): Consecutive polls that left today's matches unchanged
+            while one of them was under way.
         max_stale (int): How many such polls to accept before giving up.
 
     Returns:
@@ -365,29 +365,35 @@ def main() -> int:
     # exactly the case this watch exists for.  What ends the watch is every match
     # being final, the source going quiet, or the job budget.
     stale_polls = 0
+    previous = matches
     while True:
         poll_once()
-        changed = False
         if args.no_push:
             logger.info("--no-push: leaving any change uncommitted")
         else:
-            changed = commit_and_push()
-            if changed and not args.no_deploy:
+            pushed = commit_and_push()
+            if pushed and not args.no_deploy:
                 trigger_pages_deploy()
 
         today = load_todays_matches(watch_date)
         now = datetime.now(tzinfo)
-        # Only an unchanged poll with a match actually under way counts as a
-        # stall; --no-push never reports a change, so it never accumulates one.
-        if args.no_push or changed or not has_started_unfinished(
+        # Only a poll that left today's matches as they were, with one of them
+        # under way, counts as a stall.  Whether there was anything to push says
+        # nothing about that: every fetch rewrites csv_timestamp.csv (#313).
+        if not today.equals(previous) or not has_started_unfinished(
                 today, watch_date, now, tzinfo=now.tzinfo):
             stale_polls = 0
         else:
             stale_polls += 1
+        previous = today
 
         reason = stop_reason(today, stale_polls, args.max_stale_polls)
         if reason:
             logger.info("Stopping: %s", reason)
+            if not all_settled(today):
+                # A result stays missing until the nightly update, so make the
+                # stall visible from the run list and not only in the log.
+                print(f"::warning::Live watch gave up: {reason}")
             return 0
 
         if now + timedelta(minutes=args.interval) >= deadline:

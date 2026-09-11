@@ -1,5 +1,7 @@
 """Tests for scripts/watch_live_matches.py"""
+import contextlib
 from datetime import date, datetime, timedelta
+import io
 from pathlib import Path
 import subprocess
 import sys
@@ -230,6 +232,102 @@ class TestWatchDayIsFixed(unittest.TestCase):
                 mock.patch.object(sys, 'argv', ['watch', '--no-push']):
             with self.assertRaises(_StopLoop):
                 wlm.main()
+
+
+class TestStallIsJudgedOnMatchData(unittest.TestCase):
+    """A stall is today's matches not moving, not a clean working tree.
+
+    The reader rewrites csv_timestamp.csv on every fetch, so each poll found
+    something to push and the count was reset every time: a match stuck on its
+    live status held the job open to its budget, pushing and deploying every
+    five minutes (#313).
+    """
+
+    NOW = JST.localize(datetime(2026, 9, 9, 20, 30))
+    MAX_STALE = 3
+    SLEEPS = 10
+
+    def _watch(self, reads, pushed):
+        """Run the loop until it stops on its own or has slept SLEEPS times.
+
+        Args:
+            reads (list[pd.DataFrame]): What each read of today's matches returns,
+                starting with the read made before the loop; the last one repeats.
+            pushed (bool): What every commit_and_push() reports.
+
+        Returns:
+            tuple[int | None, int, str]: Exit code (None if the loop had to be cut
+            off), how many times it slept, and what it printed.
+        """
+        now = self.NOW
+
+        class _Clock(datetime):
+            """A clock that stands still, so the job budget never runs out."""
+
+            @classmethod
+            def now(cls, tz=None):
+                return now
+
+        frames = iter(reads)
+        sleep = mock.Mock(side_effect=[None] * self.SLEEPS + [_StopLoop()])
+        window = (now - timedelta(hours=1), now + timedelta(hours=2))
+        argv = ['watch', '--no-deploy', '--max-stale-polls', str(self.MAX_STALE)]
+        out = io.StringIO()
+
+        with mock.patch.object(wlm, 'datetime', _Clock), \
+                mock.patch.object(wlm, 'load_todays_matches',
+                                  side_effect=lambda day: next(frames, reads[-1])), \
+                mock.patch.object(wlm, 'match_window', return_value=window), \
+                mock.patch.object(wlm, 'poll_once'), \
+                mock.patch.object(wlm, 'commit_and_push', return_value=pushed), \
+                mock.patch.object(wlm.time, 'sleep', sleep), \
+                mock.patch.object(sys, 'argv', argv), \
+                contextlib.redirect_stdout(out):
+            try:
+                code = wlm.main()
+            except _StopLoop:
+                code = None
+        return code, sleep.call_count, out.getvalue()
+
+    def test_timestamp_only_polls_count_towards_a_stall(self):
+        """Every push succeeds, yet the live match never moves: give up and say so."""
+        stuck = _matches(('19:00', '速報中後半 49分'))
+
+        code, sleeps, out = self._watch([stuck], pushed=True)
+
+        self.assertIsNotNone(code, "kept polling a match that never moved, because "
+                                   "each poll had a timestamp to push")
+        self.assertEqual(sleeps, self.MAX_STALE - 1)
+        self.assertIn('::warning::', out)
+
+    def test_a_moving_match_is_not_a_stall_even_when_the_push_fails(self):
+        """A lost push says nothing about the source; the next poll carries the data."""
+        moving = [_matches(('19:00', f'速報中後半 {minute}分')) for minute in range(0, 60, 4)]
+
+        code, _, _ = self._watch(moving, pushed=False)
+
+        self.assertIsNone(code, "gave up on a match that was still moving")
+
+    def test_the_count_restarts_when_the_match_moves(self):
+        """Half time holds the status for a few polls; the second half resets the count."""
+        half_time = _matches(('19:00', '速報中前半終了'))
+        second_half = _matches(('19:00', '速報中後半 0分'))
+
+        code, sleeps, _ = self._watch([half_time, half_time, half_time, second_half],
+                                      pushed=True)
+
+        # Two quiet polls, one that moves, then three quiet ones to give up.
+        self.assertEqual(code, 0)
+        self.assertEqual(sleeps, 5)
+
+    def test_every_match_final_stops_without_a_warning(self):
+        live = _matches(('19:00', '速報中後半 45分'))
+        done = _matches(('19:00', '試合終了'))
+
+        code, sleeps, out = self._watch([live, done], pushed=True)
+
+        self.assertEqual((code, sleeps), (0, 0))
+        self.assertNotIn('::warning::', out)
 
 
 class TestWindowBounds(unittest.TestCase):
