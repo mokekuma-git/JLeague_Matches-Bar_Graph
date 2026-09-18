@@ -82,6 +82,33 @@ def load_todays_matches(today: datetime.date, csv_dir: Path = None) -> pd.DataFr
     return pd.concat(frames, ignore_index=True)
 
 
+def resolve_watch_date(now: datetime) -> datetime.date:
+    """Work out which day to watch from the CSVs rather than from the clock.
+
+    A run starts hours after the slot that asked for it often enough that the
+    schedule cannot say what the run is for (#315).  Taking the current date
+    meant a run landing past midnight looked for fixtures on the new day, found
+    none and quit, while the evening's matches were still unsettled.
+
+    Yesterday wins whenever its CSVs still show a match that kicked off and has
+    not finished.  The look-back stops at one day, so a fixture the site never
+    settles cannot pin the watch to it for good.
+
+    Args:
+        now (datetime): Current time, in the league's timezone.
+
+    Returns:
+        date: The day whose matches this run should watch.
+    """
+    today = now.date()
+    yesterday = today - timedelta(days=1)
+    left_over = load_todays_matches(yesterday)
+    if has_started_unfinished(left_over, yesterday, now, tzinfo=now.tzinfo):
+        logger.info("Yesterday (%s) still has a match under way; watching that day", yesterday)
+        return yesterday
+    return today
+
+
 def match_window(matches: pd.DataFrame, today: datetime.date, now: datetime,
                  tzinfo=None) -> tuple[datetime, datetime] | None:
     """Return the (start, end) of the period worth polling, or None.
@@ -345,9 +372,9 @@ def main() -> int:
     now = datetime.now(tzinfo)
     deadline = now + timedelta(minutes=args.budget_minutes)
 
-    # The day under watch is fixed here and never re-read from the clock: a
+    # The day under watch is settled here and never re-read from the clock: a
     # match still being played must not be abandoned when the date rolls (#311).
-    watch_date = now.date()
+    watch_date = resolve_watch_date(now)
     matches = load_todays_matches(watch_date)
     window = match_window(matches, watch_date, now, tzinfo=now.tzinfo)
     if window is None:
