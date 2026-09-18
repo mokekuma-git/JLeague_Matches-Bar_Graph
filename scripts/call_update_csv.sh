@@ -11,27 +11,40 @@ SCHEDULE="${1:-}"
 echo "Called by schedule: ${SCHEDULE:-<manual run>}"
 DAILY=Daily
 ONGAME=OnGame
+SKIP=Skip
 
-# `github.event.schedule` carries the cron line that started this run, so it says
-# what the run is *for* no matter how late GitHub gets around to starting it.
-# Picking the branch by wall-clock hour instead let every delayed run fall through
-# to the per-match path, and the daily readers went unrun for weeks (#309).
+# Whether today's full update has already been done (JST day).  The workflow
+# looks this up before calling the script; anything but "true" -- a local run, a
+# failed lookup -- counts as not done, which errs towards doing the work.
+DAILY_DONE="${DAILY_DONE:-false}"
+
+# The full update runs once per JST day, on whichever run gets there first.
+# Neither the hour a run starts nor the cron line that fired it can say that:
+# GitHub starts scheduled runs hours late, and picking the branch by the hour
+# let every delayed run skip the daily readers for weeks (#309).  Several slots
+# may ask for the day's update; only the first one does it (#315).
 #
-# Only the daily full update leaves both day-of-month and month as `*`; the
-# WC2026 entries pin a date and stay on the per-match path.  A manual run carries
-# no schedule at all and is taken as a full update -- that is what it is for.
+# A manual run is always a full update -- that is what the button is for.  Once
+# the day's update is done, a WC2026 entry pinned to a date still takes the
+# per-match path, and any other slot has nothing left to do.
 #
 # `$SCHEDULE` must stay quoted: unquoted, the `*`s glob into repository file
 # names and no cron line can ever match.
 if [ -z "$SCHEDULE" ]; then
   TRIGGER=$DAILY
+elif [ "$DAILY_DONE" != "true" ]; then
+  TRIGGER=$DAILY
 else
-  TRIGGER=$(echo "$SCHEDULE" | awk -v daily="$DAILY" -v ongame="$ONGAME" \
-    '{print ($3 == "*" && $4 == "*") ? daily : ongame}')
+  TRIGGER=$(echo "$SCHEDULE" | awk -v skip="$SKIP" -v ongame="$ONGAME" \
+    '{print ($3 == "*" && $4 == "*") ? skip : ongame}')
 fi
 
 TZ=Asia/Tokyo date
 echo "Trigger: $TRIGGER"
+# The workflow records the day as done only after a full update that succeeded.
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  echo "trigger=$TRIGGER" >> "$GITHUB_OUTPUT"
+fi
 
 FAILED=()
 
@@ -53,6 +66,11 @@ summary_row() {
 
 summary "### CSV update: $TRIGGER"
 summary ""
+if [ "$TRIGGER" = "$SKIP" ]; then
+  echo "Today's full update is already done; nothing to do"
+  summary "Today's full update is already done; no reader was run."
+  exit 0
+fi
 summary "| Reader | Result |"
 summary "| --- | --- |"
 
@@ -75,7 +93,7 @@ run_reader() {
 }
 
 if [ "$TRIGGER" = "$DAILY" ]; then
-  # 日ごと深夜自動実行 ⇒ 全CSVのアップデートを実行
+  # 1日の最初の実行 ⇒ 全CSVのアップデートを実行
   run_reader uv run python src/read_jleague_matches.py -f
   run_reader uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto WC2026 WC2026KO
   # JFAでスケジュール生成後、openfootballで日次スコアを上書き (JFA反映遅延の補完)
