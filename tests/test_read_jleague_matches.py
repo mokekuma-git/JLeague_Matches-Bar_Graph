@@ -466,6 +466,53 @@ class TestSectionOutlivesTheFixedWindow(unittest.TestCase):
         self.assertEqual(self._sections(self._frame('試合終了'), 20, 30), {6})
 
 
+class TestTeamLessCardIsDropped(unittest.TestCase):
+    """A match link whose card names no teams must not become a CSV row (#317).
+
+    The schedule page sometimes carries a card with a match link but no team
+    names on it.  Read as a row it reached the CSV as a team-less placeholder,
+    and from there it was re-read and kept on every later fetch.
+    """
+
+    HEADER = ('<div class="m-section-header">2026/8/7 (金) 第1節</div>')
+
+    def _card(self, match_id, teams):
+        names = ''.join(
+            f'<span class="m-schedule__team-name" data-media="sp">{name}</span>'
+            for name in teams)
+        return (f'<a href="/match/j1/2026/0807{match_id}/">'
+                f'<div class="m-schedule__match">{names}</div></a>')
+
+    def _page(self, *cards):
+        return BeautifulSoup(f'<html><body>{self.HEADER}{"".join(cards)}</body></html>',
+                             'html.parser')
+
+    def test_named_card_is_kept(self):
+        page = self._page(self._card('01', ['横浜FM', '町田']))
+
+        matches = read_match_from_web(page, 'J1')
+
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches.iloc[0]['home_team'], '横浜FM')
+
+    def test_team_less_card_is_dropped(self):
+        page = self._page(self._card('01', ['横浜FM', '町田']),
+                          self._card('02', []))
+
+        matches = read_match_from_web(page, 'J1')
+
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches.iloc[0]['home_team'], '横浜FM')
+
+    def test_page_of_team_less_cards_yields_no_rows(self):
+        page = self._page(self._card('01', []), self._card('02', []))
+
+        matches = read_match_from_web(page, 'J1')
+
+        self.assertTrue(matches.empty)
+        self.assertEqual(list(matches.columns), CSV_COLUMNS)
+
+
 class TestKeepUnlistedMatches(unittest.TestCase):
     """Test for keep_unlisted_matches function"""
 
@@ -502,6 +549,42 @@ class TestKeepUnlistedMatches(unittest.TestCase):
         result = keep_unlisted_matches(fetched, current, sections={20})
 
         self.assertEqual(len(result), 1)
+
+    def test_team_less_row_is_not_carried_over(self):
+        """A row naming no teams is a stray placeholder, not a fixture to keep."""
+        fetched = pd.DataFrame([self._row(20, 'A', 'B')])
+        current = pd.DataFrame([self._row(20, 'A', 'B'), self._row(20, '', '')])
+
+        result = keep_unlisted_matches(fetched, current)
+
+        self.assertEqual(len(result), 1)
+
+    def test_team_less_row_read_back_from_csv_is_not_carried_over(self):
+        """The CSV round trip turns a blank name into NaN, not ''."""
+        fetched = pd.DataFrame([self._row(20, 'A', 'B')])
+        current = pd.DataFrame([self._row(20, 'A', 'B'),
+                                self._row(20, float('nan'), float('nan'))])
+
+        result = keep_unlisted_matches(fetched, current)
+
+        self.assertEqual(len(result), 1)
+
+    def test_repeated_fetches_do_not_grow_the_section(self):
+        """Polling a section every few minutes must not make it longer (#317).
+
+        A team-less row used to match nothing in the fetch, so each pass carried
+        every earlier one over and added the newly fetched one on top.
+        """
+        fetched = pd.DataFrame([self._row(20, 'A', 'B')])
+        current = pd.DataFrame([self._row(20, 'A', 'B'), self._row(20, '', '')])
+
+        for _ in range(3):
+            current = keep_unlisted_matches(fetched, current)
+            # The reader writes the frame out and reads it back next poll, which
+            # is where '' becomes NaN.
+            current = current.replace('', float('nan'))
+
+        self.assertEqual(len(current), 1)
 
 
 class TestUndecidedDateIsUsableDownstream(unittest.TestCase):
