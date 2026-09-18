@@ -441,24 +441,33 @@ jobs:
       id: update_csv
       env:
         DAILY_DONE: ${{ steps.daily_state.outputs.cache-hit == 'true' }}
+      # The dispatcher runs every reader even when one fails, so a broken source
+      # cannot hold the healthy ones back -- but under the default `bash -e` its
+      # exit status used to end the step before the commit, throwing their work
+      # away too (#322).  Commit what changed first, then fail the step, so the
+      # broken source still shows red.
       run: |
         DATE=`TZ=Asia/Tokyo date +'%m/%d %H:%M'`
-        bash scripts/call_update_csv.sh "${{ github.event.schedule }}"
+        STATUS=0
+        bash scripts/call_update_csv.sh "${{ github.event.schedule }}" || STATUS=$?
         if (git diff --shortstat | grep '[0-9]'); then \
           git add docs/csv/; \
           git commit -m "Make new csv (append games on $DATE)"; \
           git push origin HEAD; \
           echo "committed=true" >> $GITHUB_OUTPUT; \
         fi
+        exit $STATUS
 
+    # A push made with GITHUB_TOKEN starts no workflow, so what was pushed only
+    # reaches the site through this dispatch -- even on a run a reader failed.
     - name: Trigger GitHub Pages deploy
-      if: steps.update_csv.outputs.committed == 'true'
+      if: ${{ !cancelled() && steps.update_csv.outputs.committed == 'true' }}
       run: gh workflow run deploy-pages.yaml
       env:
         GH_TOKEN: ${{ github.token }}
 
-    # Only a full update that got this far counts: a failed reader stops the job
-    # above, and the next slot tries the day's update again.
+    # Only a full update with every reader through counts: a failed reader fails
+    # the update step, these steps are skipped, and the next slot tries again.
     - name: Mark today's full update as done
       if: steps.update_csv.outputs.trigger == 'Daily'
       run: echo "${{ steps.today.outputs.day }}" > .daily-update-done
