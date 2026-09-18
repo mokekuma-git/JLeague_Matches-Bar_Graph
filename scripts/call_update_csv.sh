@@ -25,8 +25,9 @@ DAILY_DONE="${DAILY_DONE:-false}"
 # may ask for the day's update; only the first one does it (#315).
 #
 # A manual run is always a full update -- that is what the button is for.  Once
-# the day's update is done, a WC2026 entry pinned to a date still takes the
-# per-match path, and any other slot has nothing left to do.
+# the day's update is done, a slot pinned to a date (none at present; the old
+# per-match slots were retired in #321) takes the per-match path, and any other
+# slot has nothing left to do.
 #
 # `$SCHEDULE` must stay quoted: unquoted, the `*`s glob into repository file
 # names and no cron line can ever match.
@@ -95,17 +96,12 @@ run_reader() {
 if [ "$TRIGGER" = "$DAILY" ]; then
   # 1日の最初の実行 ⇒ 全CSVのアップデートを実行
   run_reader uv run python src/read_jleague_matches.py -f
-  run_reader uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto WC2026 WC2026KO
-  # JFAでスケジュール生成後、openfootballで日次スコアを上書き (JFA反映遅延の補完)
-  run_reader uv run python src/read_openfootball_wc.py
+  run_reader uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto
   run_reader uv run python src/read_we_league.py
   # run_reader uv run python src/read_aclgl_matches.py
 else
-  # 試合時間ごとの自動実行では、Jリーグと開催中のWC2026を更新
+  # 日付固定の枠 (現在は無し) ではJリーグのみ更新。開催中の大会を足す場合はここに加える
   run_reader uv run python src/read_jleague_matches.py
-  run_reader uv run python src/read_jfamatch.py WC2026 WC2026KO
-  # JFAでスケジュール生成後、openfootballで日次スコアを上書き (JFA反映遅延の補完)
-  run_reader uv run python src/read_openfootball_wc.py
 fi
 
 if [ ${#FAILED[@]} -gt 0 ]; then
