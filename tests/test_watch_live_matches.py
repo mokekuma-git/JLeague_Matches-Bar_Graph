@@ -186,6 +186,44 @@ class TestPagesDeploy(unittest.TestCase):
             self.assertFalse(trigger_pages_deploy())
 
 
+class TestReaderWarningsAreForwarded(unittest.TestCase):
+    """A poll that succeeds can still have something to report (#317).
+
+    poll_once() used to log only 'Reader finished', so the reader's own warnings
+    never reached the job log and a growing CSV went unnoticed for a whole watch.
+    """
+
+    READER_LOG = (
+        "07:06:44 [INFO] read_jleague_matches: Reading match file J1.csv\n"
+        "07:06:45 [WARNING] read_jleague_matches: Dropped 1 J1 card(s) naming no teams\n"
+        "07:06:46 [INFO] read_jleague_matches: Done\n"
+    )
+
+    def test_only_the_warnings_are_picked_out(self):
+        self.assertEqual(
+            wlm.reader_warnings(self.READER_LOG),
+            ["07:06:45 [WARNING] read_jleague_matches: "
+             "Dropped 1 J1 card(s) naming no teams"])
+
+    def test_a_quiet_reader_adds_nothing(self):
+        self.assertEqual(wlm.reader_warnings("07:06:44 [INFO] all good\n"), [])
+
+    def test_poll_logs_the_warning(self):
+        with mock.patch.object(wlm, 'run',
+                               return_value=_completed(0, self.READER_LOG)):
+            with self.assertLogs(wlm.logger, level='WARNING') as logged:
+                wlm.poll_once()
+
+        self.assertIn('naming no teams', '\n'.join(logged.output))
+
+    def test_a_failed_poll_still_reports_the_failure(self):
+        with mock.patch.object(wlm, 'run', return_value=_completed(1, 'boom')):
+            with self.assertLogs(wlm.logger, level='ERROR') as logged:
+                wlm.poll_once()
+
+        self.assertIn('boom', '\n'.join(logged.output))
+
+
 class _StopLoop(Exception):
     """Raised from the patched sleep to end the watch loop under test."""
 
