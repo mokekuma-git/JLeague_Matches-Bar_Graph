@@ -245,3 +245,75 @@ def test_season_entry_rejects_unknown_topology_source():
         _bracket_entry({'bracket_blocks': [
             {'label': 'X', 'topology_source': 'wc_ko'},
         ]})
+
+
+# ---------------------------------------------------------------------------
+# matches_differ (#316)
+# ---------------------------------------------------------------------------
+_MATCH_COLUMNS = ['match_date', 'section_no', 'match_index_in_section', 'start_time',
+                  'stadium', 'home_team', 'home_goal', 'away_goal', 'away_team',
+                  'status', 'home_pk_score', 'away_pk_score', 'broadcast']
+
+
+def _match_row(home='横浜FM', away='鹿島', home_goal='1', away_goal='0'):
+    return {'match_date': '2026/08/07', 'section_no': 1, 'match_index_in_section': 1,
+            'start_time': '19:00', 'stadium': '日産ス', 'home_team': home,
+            'home_goal': home_goal, 'away_goal': away_goal, 'away_team': away,
+            'status': '試合終了', 'home_pk_score': '', 'away_pk_score': '',
+            'broadcast': 'DAZN'}
+
+
+def _as_fetched(rows):
+    """Build a frame the way a fetch does: pages with no match return an empty frame.
+
+    Concatenating one of those drops the string columns back to object dtype,
+    which is what used to make every fetch look like a change.
+    """
+    return pd.concat([pd.DataFrame(rows), pd.DataFrame(columns=_MATCH_COLUMNS)])
+
+
+def _as_read_back(rows, tmp_path):
+    """Build a frame the way the CSV round trip does."""
+    path = tmp_path / 'matches.csv'
+    pd.DataFrame(rows).to_csv(path, lineterminator='\n')
+    return pd.read_csv(path, index_col=0, dtype=str, na_values='')
+
+
+def test_matches_differ_ignores_the_dtype_a_fetch_ends_up_with(tmp_path):
+    """Same matches, different dtypes, must not count as a change (#316)."""
+    from match_utils import mu
+
+    rows = [_match_row(), _match_row(home='町田', away='柏')]
+    fetched = _as_fetched(rows)
+    stored = _as_read_back(rows, tmp_path)
+
+    assert fetched['home_team'].dtype != stored['home_team'].dtype
+    assert mu.matches_differ(fetched, stored) is False
+
+
+def test_matches_differ_still_sees_a_changed_score(tmp_path):
+    from match_utils import mu
+
+    stored = _as_read_back([_match_row()], tmp_path)
+    fetched = _as_fetched([_match_row(home_goal='2')])
+
+    assert mu.matches_differ(fetched, stored) is True
+
+
+def test_matches_differ_still_sees_an_added_match(tmp_path):
+    from match_utils import mu
+
+    stored = _as_read_back([_match_row()], tmp_path)
+    fetched = _as_fetched([_match_row(), _match_row(home='町田', away='柏')])
+
+    assert mu.matches_differ(fetched, stored) is True
+
+
+def test_matches_differ_ignores_match_index_and_row_order(tmp_path):
+    from match_utils import mu
+
+    rows = [_match_row(), _match_row(home='町田', away='柏')]
+    stored = _as_read_back(rows, tmp_path)
+    shuffled = [dict(row, match_index_in_section=9) for row in reversed(rows)]
+
+    assert mu.matches_differ(_as_fetched(shuffled), stored) is False
