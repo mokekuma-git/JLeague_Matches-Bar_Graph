@@ -48,6 +48,28 @@ def _sort_match_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df.sort_values(sort_keys).reset_index(drop=True)
 
 
+def _as_stored(df: pd.DataFrame) -> pd.DataFrame:
+    """Reduce a match frame to the text the CSV would hold.
+
+    Two frames holding the same matches never agree on their dtypes: one read
+    back from a CSV carries pandas' string dtype, while one built from a fetch
+    falls back to object as soon as it is concatenated with the empty frame a
+    match-less page returns.  DataFrame.equals() compares dtypes as well as
+    values, so it called every fetch a change and the writer ran every time.
+    Comparing the stored text keeps the question on what reaches the file.
+
+    Args:
+        df (pd.DataFrame): Match DataFrame to reduce.
+
+    Returns:
+        pd.DataFrame: Sorted frame of strings, without 'match_index_in_section'.
+    """
+    stored = df.drop(columns=['match_index_in_section'], errors='ignore').fillna('')
+    stored = _normalize_df_for_csv(stored)
+    stored = stored.reindex(sorted(stored.columns), axis=1).astype(str)
+    return _sort_match_rows(stored)
+
+
 def _ensure_tzinfo(tz: str | tzinfo) -> tzinfo:
     """Convert a timezone string to a tzinfo object if needed."""
     if isinstance(tz, str):
@@ -643,12 +665,8 @@ class MatchUtils:
     # -------------------------------------------------------------------
     def matches_differ(self, foo_df: pd.DataFrame, bar_df: pd.DataFrame) -> bool:
         """Return True if two match DataFrames differ (ignoring 'match_index_in_section' and NaNs)."""
-        _foo = foo_df.drop(columns=['match_index_in_section'], errors='ignore').fillna('')
-        _bar = bar_df.drop(columns=['match_index_in_section'], errors='ignore').fillna('')
-        _foo = _foo.reindex(sorted(_foo.columns), axis=1)
-        _bar = _bar.reindex(sorted(_bar.columns), axis=1)
-        _foo = _sort_match_rows(_foo)
-        _bar = _sort_match_rows(_bar)
+        _foo = _as_stored(foo_df)
+        _bar = _as_stored(bar_df)
 
         if not _foo.equals(_bar):
             if logger.isEnabledFor(logging.DEBUG):
