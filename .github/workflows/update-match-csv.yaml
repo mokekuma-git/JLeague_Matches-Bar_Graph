@@ -5,7 +5,14 @@ on:
   # update -- the way to make every reader catch up outside the nightly slot.
   workflow_dispatch:
   schedule:
+    # The day's full update.  GitHub starts it hours late, which does no harm;
+    # what matters is that it happens once per JST day.  That is decided from a
+    # record of the day being done (see "Look up today's full update"), not from
+    # the hour or the slot, so the spare slots below only step in when the first
+    # one never ran and otherwise exit at once (#315).
     - cron: '0 16 * * *'
+    - cron: '17 20 * * *'   # spare, JST 05:17
+    - cron: '17 0 * * *'    # spare, JST 09:17
     # WC2026 group/knockout updates after the final match of each JST day.
     - cron: '30 5 27 6 *'
     - cron: '30 4 28 6 *'
@@ -381,6 +388,12 @@ on:
     - cron: '0 11 31 8 *'
     - cron: '0 12 31 8 *'
 
+# Runs one at a time, so a spare slot reads the day's record only after the run
+# ahead of it has written it.
+concurrency:
+  group: update-match-csv
+  cancel-in-progress: false
+
 jobs:
   update-csv:
 
@@ -409,8 +422,25 @@ jobs:
         git config --global user.name "mokekuma-git"
         git config --global user.email "mokekuma.git@gmail.com"
 
+    # The record that today's full update is done lives in the Actions cache,
+    # keyed by the JST date, so keeping it adds no commit of its own.  A failed
+    # lookup reads as "not done" and only costs a second full update.
+    - name: Work out today's JST date
+      id: today
+      run: echo "day=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
+
+    - name: Look up today's full update
+      id: daily_state
+      uses: actions/cache/restore@v4
+      with:
+        path: .daily-update-done
+        key: daily-update-${{ steps.today.outputs.day }}
+        lookup-only: true
+
     - name: Update matches csv
       id: update_csv
+      env:
+        DAILY_DONE: ${{ steps.daily_state.outputs.cache-hit == 'true' }}
       run: |
         DATE=`TZ=Asia/Tokyo date +'%m/%d %H:%M'`
         bash scripts/call_update_csv.sh "${{ github.event.schedule }}"
@@ -426,3 +456,16 @@ jobs:
       run: gh workflow run deploy-pages.yaml
       env:
         GH_TOKEN: ${{ github.token }}
+
+    # Only a full update that got this far counts: a failed reader stops the job
+    # above, and the next slot tries the day's update again.
+    - name: Mark today's full update as done
+      if: steps.update_csv.outputs.trigger == 'Daily'
+      run: echo "${{ steps.today.outputs.day }}" > .daily-update-done
+
+    - name: Record today's full update
+      if: steps.update_csv.outputs.trigger == 'Daily'
+      uses: actions/cache/save@v4
+      with:
+        path: .daily-update-done
+        key: daily-update-${{ steps.today.outputs.day }}

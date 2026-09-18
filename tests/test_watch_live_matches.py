@@ -272,6 +272,67 @@ class TestWatchDayIsFixed(unittest.TestCase):
                 wlm.main()
 
 
+class TestWatchDateFollowsTheData(unittest.TestCase):
+    """The day to watch comes from the CSVs, not from when the run started (#315).
+
+    GitHub starts scheduled runs hours late, so the evening slot routinely lands
+    past midnight.  Taking the clock's date there looked for the new day's
+    fixtures, found none and quit with the evening's matches still unsettled.
+    """
+
+    NOW = JST.localize(datetime(2026, 9, 7, 0, 30))
+    YESTERDAY = date(2026, 9, 6)
+
+    def _resolve(self, yesterday_matches):
+        def _load(day):
+            return yesterday_matches if day == self.YESTERDAY else pd.DataFrame()
+
+        with mock.patch.object(wlm, 'load_todays_matches', side_effect=_load):
+            return wlm.resolve_watch_date(self.NOW)
+
+    def test_a_live_match_from_yesterday_keeps_that_day(self):
+        self.assertEqual(self._resolve(_matches(('19:00', '速報中後半 50分'))),
+                         self.YESTERDAY)
+
+    def test_an_overdue_match_from_yesterday_keeps_that_day(self):
+        """Kicked off but never marked live is still unfinished business."""
+        self.assertEqual(self._resolve(_matches(('21:00', 'ＶＳ'))), self.YESTERDAY)
+
+    def test_a_settled_yesterday_hands_over_to_today(self):
+        self.assertEqual(self._resolve(_matches(('19:00', '試合終了'))),
+                         self.NOW.date())
+
+    def test_a_yesterday_without_matches_hands_over_to_today(self):
+        self.assertEqual(self._resolve(pd.DataFrame()), self.NOW.date())
+
+    def test_a_run_landing_past_midnight_still_watches_the_evening(self):
+        """Reaching sleep means the run found yesterday's match and started polling.
+
+        Before the fix it read the new day, found no fixture and returned 0.
+        """
+        now = self.NOW
+        live = _matches(('19:00', '速報中後半 50分'))
+
+        class _Clock(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return now
+
+        def _load(day):
+            return live if day == self.YESTERDAY else pd.DataFrame()
+
+        window = (now - timedelta(hours=1), now + timedelta(hours=2))
+
+        with mock.patch.object(wlm, 'datetime', _Clock), \
+                mock.patch.object(wlm, 'load_todays_matches', side_effect=_load), \
+                mock.patch.object(wlm, 'match_window', return_value=window), \
+                mock.patch.object(wlm, 'poll_once'), \
+                mock.patch.object(wlm.time, 'sleep', side_effect=_StopLoop), \
+                mock.patch.object(sys, 'argv', ['watch', '--no-push']):
+            with self.assertRaises(_StopLoop):
+                wlm.main()
+
+
 class TestStallIsJudgedOnMatchData(unittest.TestCase):
     """A stall is today's matches not moving, not a clean working tree.
 
@@ -314,7 +375,8 @@ class TestStallIsJudgedOnMatchData(unittest.TestCase):
 
         with mock.patch.object(wlm, 'datetime', _Clock), \
                 mock.patch.object(wlm, 'load_todays_matches',
-                                  side_effect=lambda day: next(frames, reads[-1])), \
+                                  side_effect=lambda day: next(frames, reads[-1])
+                                  if day == now.date() else pd.DataFrame()), \
                 mock.patch.object(wlm, 'match_window', return_value=window), \
                 mock.patch.object(wlm, 'poll_once'), \
                 mock.patch.object(wlm, 'commit_and_push', return_value=pushed), \
