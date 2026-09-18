@@ -203,6 +203,17 @@ def read_match_from_web(soup: BeautifulSoup, competition: str) -> pd.DataFrame:
         return pd.DataFrame(columns=CSV_COLUMNS)
 
     matches = pd.DataFrame(rows)
+    # A card that does not name both sides carries no fixture: the page shows one
+    # where a match link exists but the teams are not on it.  Such a row would
+    # reach the CSV as a team-less placeholder and, once there, be re-read on the
+    # next fetch and kept for good, so it never becomes a row in the first place.
+    nameless = matches['home_team'].eq('') | matches['away_team'].eq('')
+    if nameless.any():
+        logger.warning("Dropped %d %s card(s) naming no teams on %s",
+                       int(nameless.sum()), competition,
+                       sorted(set(matches.loc[nameless, 'match_date'])))
+        matches = matches[~nameless]
+
     unknown = matches['section_no'].isna()
     if unknown.any():
         logger.warning("No section header for %d %s match(es) on %s",
@@ -505,6 +516,12 @@ def keep_unlisted_matches(fetched: pd.DataFrame, current: pd.DataFrame,
         return fetched
 
     known = current if sections is None else current[current['section_no'].isin(sections)]
+    # Only a named fixture can be carried over.  A team-less row is not a match
+    # the site still counts, and it could never be matched against the fetch
+    # anyway: a blank name survives the CSV round trip as NaN rather than '',
+    # so such a row used to be "missing" on every pass and pile up unchecked.
+    known = known[known['home_team'].notna() & known['away_team'].notna()
+                  & known['home_team'].ne('') & known['away_team'].ne('')]
     if known.empty:
         return fetched
 

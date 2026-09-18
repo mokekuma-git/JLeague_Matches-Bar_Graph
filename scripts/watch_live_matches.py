@@ -287,13 +287,32 @@ def trigger_pages_deploy() -> bool:
     return True
 
 
+def reader_warnings(stderr: str) -> list[str]:
+    """Pick the reader's warnings out of its log.
+
+    A poll that succeeds still has something to say when the page disagrees with
+    the CSV.  Every line of a 60-poll watch would bury the job log, so only what
+    the reader itself flagged is forwarded.
+
+    Args:
+        stderr (str): The reader's captured stderr.
+
+    Returns:
+        list[str]: The warning and error lines, in order.
+    """
+    return [line for line in stderr.splitlines()
+            if any(f'[{level}]' in line for level in ('WARNING', 'ERROR', 'CRITICAL'))]
+
+
 def poll_once() -> None:
     """Fetch the J-League CSVs once."""
     result = run([sys.executable, 'read_jleague_matches.py'], cwd=_REPO_ROOT / 'src')
     if result.returncode != 0:
         logger.error("Reader failed: %s", result.stderr.strip()[-500:])
-    else:
-        logger.info("Reader finished")
+        return
+    logger.info("Reader finished")
+    for line in reader_warnings(result.stderr):
+        logger.warning("Reader: %s", line.strip())
 
 
 def main() -> int:
