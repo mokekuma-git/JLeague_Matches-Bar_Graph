@@ -12,7 +12,7 @@ _SCRIPT = _REPO_ROOT / 'scripts' / 'call_update_csv.sh'
 DAILY_CRON = '0 16 * * *'
 # A spare slot that only steps in when the day's update has not happened.
 SPARE_CRON = '17 20 * * *'
-# A slot pinned to a date, as the retired per-match entries were (#321).
+# A slot pinned to a date, as the retired per-match entries were (#321, #330).
 DATED_CRON = '30 5 27 6 *'
 
 # Readers of competitions that have finished and left the schedule (#321).
@@ -62,7 +62,7 @@ class TestTriggerSelection(unittest.TestCase):
     """
 
     def test_the_first_run_of_the_day_does_the_full_update(self):
-        for cron in (DAILY_CRON, SPARE_CRON, DATED_CRON):
+        for cron in (DAILY_CRON, SPARE_CRON):
             with self.subTest(cron=cron):
                 self.assertIn('Trigger: Daily', _run(cron, daily_done=False).stdout)
 
@@ -74,9 +74,12 @@ class TestTriggerSelection(unittest.TestCase):
                 self.assertIn('Trigger: Skip', result.stdout)
                 self.assertEqual(_readers(result.stdout), [])
 
-    def test_dated_cron_stays_on_the_per_match_path_once_the_day_is_done(self):
+    def test_no_slot_takes_a_per_match_path(self):
+        """The live watcher owns matches in play; a date-pinned slot, should
+        one come back, is just another slot (#330)."""
         result = _run(DATED_CRON, daily_done=True)
-        self.assertIn('Trigger: OnGame', result.stdout)
+        self.assertIn('Trigger: Skip', result.stdout)
+        self.assertEqual(_readers(result.stdout), [])
 
     def test_an_unknown_state_errs_towards_the_full_update(self):
         """A local run or a failed lookup must not skip the day's readers."""
@@ -115,23 +118,12 @@ class TestReaderSelection(unittest.TestCase):
             self.assertIn(competition, joined)
         self.assertIn('read_we_league.py', joined)
 
-    def test_per_match_runs_only_the_live_sources(self):
-        readers = _readers(_run(DATED_CRON, daily_done=True).stdout)
-        joined = '\n'.join(readers)
-        self.assertIn('read_jleague_matches.py', joined)
-        self.assertNotIn('-f', joined)
-        for skipped in ('PrincePremierE', 'PrincePremierW', 'PrinceKanto',
-                        'read_we_league.py'):
-            self.assertNotIn(skipped, joined)
-
     def test_finished_competitions_are_not_fetched(self):
         """WC2026 closed on 2026-07-19; running its readers daily only made the
         JFA and openfootball readers rewrite each other's columns (#321)."""
-        for cron, done in ((DAILY_CRON, False), (DATED_CRON, True)):
-            with self.subTest(cron=cron):
-                joined = '\n'.join(_readers(_run(cron, daily_done=done).stdout))
-                for reader in FINISHED:
-                    self.assertNotIn(reader, joined)
+        joined = '\n'.join(_readers(_run(DAILY_CRON, daily_done=False).stdout))
+        for reader in FINISHED:
+            self.assertNotIn(reader, joined)
 
 
 class TestJobSummary(unittest.TestCase):
@@ -144,14 +136,6 @@ class TestJobSummary(unittest.TestCase):
             written = path.read_text()
         self.assertIn('### CSV update: Daily', written)
         self.assertIn('read_we_league.py', written)
-
-    def test_a_per_match_run_says_so(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / 'summary.md'
-            _run(DATED_CRON, summary_path=path, daily_done=True)
-            written = path.read_text()
-        self.assertIn('### CSV update: OnGame', written)
-        self.assertNotIn('read_we_league.py', written)
 
     def test_summary_falls_back_to_stdout_off_ci(self):
         self.assertIn('### CSV update: Daily', _run(DAILY_CRON).stdout)
