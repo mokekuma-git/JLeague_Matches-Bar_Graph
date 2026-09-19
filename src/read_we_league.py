@@ -31,7 +31,11 @@ from match_utils import mu, get_season_from_date, CSV_COLUMN_SCHEMA
 
 logger = logging.getLogger(__name__)
 
-# Competition detection
+# Competition detection.  The site lists every fixture of its clubs on the same
+# schedule, AFC Women's Champions League included, so only a label naming WE
+# League marks one of ours (#328).  Every season's labels carry it: "2021-22
+# Yogibo WEリーグ", "2025/26 SOMPO WEリーグ", "2025/26 WEリーグ クラシエカップ ...".
+_LEAGUE_KEYWORD = 'WEリーグ'
 _CUP_KEYWORD = 'カップ'
 
 # Section/round parsing
@@ -137,12 +141,13 @@ def _parse_score(point_div: bs4.element.Tag) -> dict[str, str]:
 
 def _read_day(
     season_start_year: int, year: int, month: int, day: int,
-) -> list[tuple[bool, dict[str, Any]]]:
+) -> tuple[list[tuple[bool, dict[str, Any]]], list[str]]:
     """Fetch and parse one day's matches from the AJAX endpoint.
 
     Returns:
-        List of (is_cup, match_dict) tuples.
-        match_dict does not yet contain match_index_in_section.
+        (matches, skipped): WE League matches as (is_cup, match_dict) tuples,
+        match_dict not yet holding match_index_in_section; and the label of
+        each match left out as belonging to another competition.
     """
     url = (
         f"{mu.config.urls.base_url}"
@@ -150,6 +155,7 @@ def _read_day(
     )
     soup = _get(url)
     results: list[tuple[bool, dict[str, Any]]] = []
+    skipped: list[str] = []
 
     for li in soup.find_all('li', class_='matchContainer'):
         inner = li.find('div', class_='match-inner')
@@ -160,6 +166,11 @@ def _read_day(
         date_div = inner.find('div', class_='date')
         p_tag = date_div.find('p') if date_div else None
         p_text = p_tag.text.strip() if p_tag else ''
+        if _LEAGUE_KEYWORD not in p_text:
+            logger.info("Leaving out a match of another competition on %d/%02d/%02d: %s",
+                        year, month, day, p_text or '<no label>')
+            skipped.append(p_text)
+            continue
         section_no, group, is_cup = _parse_section(p_text)
 
         # Start time and stadium
@@ -220,7 +231,7 @@ def _read_day(
 
         results.append((is_cup, record))
 
-    return results
+    return results, skipped
 
 
 def read_season(season_str: str) -> tuple[list[dict], list[dict]]:
@@ -242,6 +253,7 @@ def read_season(season_str: str) -> tuple[list[dict], list[dict]]:
 
     we_matches: list[dict] = []
     cup_matches: list[dict] = []
+    skipped: list[str] = []
     # Track match_index_in_section per section, separately for each competition
     we_section_idx: dict[int | None, int] = {}
     cup_section_idx: dict[int | None, int] = {}
@@ -253,7 +265,9 @@ def read_season(season_str: str) -> tuple[list[dict], list[dict]]:
 
         days = _get_match_days(season_start_year, year, month)
         for day in days:
-            for is_cup, record in _read_day(season_start_year, year, month, day):
+            day_matches, day_skipped = _read_day(season_start_year, year, month, day)
+            skipped += day_skipped
+            for is_cup, record in day_matches:
                 section_idx = cup_section_idx if is_cup else we_section_idx
                 key = record['section_no']
                 section_idx[key] = section_idx.get(key, 0) + 1
@@ -264,9 +278,17 @@ def read_season(season_str: str) -> tuple[list[dict], list[dict]]:
                     we_matches.append(record)
 
     logger.info(
-        "Season %s: %d WEリーグ matches, %d cup matches",
-        season_str, len(we_matches), len(cup_matches),
+        "Season %s: %d WEリーグ matches, %d cup matches, %d of other competitions left out",
+        season_str, len(we_matches), len(cup_matches), len(skipped),
     )
+    # A label change on the site would read every match as someone else's and
+    # empty the CSVs without a word; say so instead of passing it off as quiet.
+    if skipped and not we_matches and not cup_matches:
+        logger.warning(
+            "Every match of season %s was left out as another competition; has the "
+            "site stopped naming WE League as %r? Labels seen: %s",
+            season_str, _LEAGUE_KEYWORD, sorted(set(skipped)),
+        )
     return we_matches, cup_matches
 
 
