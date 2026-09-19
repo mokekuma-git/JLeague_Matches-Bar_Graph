@@ -7,8 +7,6 @@ import bs4
 
 import read_we_league as rw
 
-rw.init()
-
 # Labels as weleague.jp shows them (2026-09 survey).
 LEAGUE = '2025/26 SOMPO WEリーグ 第17節'
 CUP = '2025/26 WEリーグ クラシエカップ グループステージ グループB 第6節'
@@ -33,7 +31,20 @@ def _day(*matches: str) -> bs4.BeautifulSoup:
     return bs4.BeautifulSoup(f'<ul>{"".join(matches)}</ul>', 'lxml')
 
 
-class TestOtherCompetitionsAreLeftOut(unittest.TestCase):
+class _WithWeConfig(unittest.TestCase):
+    """Load the WE League config for each test and put the previous one back.
+
+    `mu` is shared by every reader, so loading it once at import time was undone
+    by whichever reader the test run imported next.
+    """
+
+    def setUp(self):
+        saved = rw.mu.config
+        self.addCleanup(setattr, rw.mu, 'config', saved)
+        rw.init()
+
+
+class TestOtherCompetitionsAreLeftOut(_WithWeConfig):
     """The site lists every fixture of its clubs on one schedule (#328).
 
     An AFC Women's Champions League match carries no "カップ", so it used to be
@@ -69,7 +80,7 @@ class TestOtherCompetitionsAreLeftOut(unittest.TestCase):
                 self.assertEqual(skipped, [])
 
 
-class TestSeasonSummary(unittest.TestCase):
+class TestSeasonSummary(_WithWeConfig):
     """What read_season() says about the matches it left out."""
 
     def _season(self, day_result):
