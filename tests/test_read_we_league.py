@@ -11,6 +11,9 @@ import read_we_league as rw
 LEAGUE = '2025/26 SOMPO WEリーグ 第17節'
 CUP = '2025/26 WEリーグ クラシエカップ グループステージ グループB 第6節'
 AWCL = 'AFC女子チャンピオンズリーグ 2025/26 準々決勝'
+# From 2026/27 the site writes its labels in full-width (#332).
+LEAGUE_FW = '２０２６／２７ＷＥリーグ 第1節'
+CUP_FW = '２０２６／２７ＷＥリーグクラシエカップ リーグステージ 第1節'
 
 
 def _match(label: str, home: str, away: str, score: str = '<span>1</span>－<span>0</span>') -> str:
@@ -70,14 +73,23 @@ class TestOtherCompetitionsAreLeftOut(_WithWeConfig):
         self.assertEqual([is_cup for is_cup, _ in matches], [False, True])
         self.assertEqual(skipped, [])
 
-    def test_every_past_season_label_counts_as_ours(self):
-        """Re-reading an old season must not drop its matches."""
-        for label in ('2021-22 Yogibo WEリーグ 第1節', '2023-24 WEリーグ 第1節',
-                      '2024-25 WEリーグ クラシエカップ グループステージ グループA 第1節'):
+    def test_every_season_label_counts_as_ours(self):
+        """Re-reading an old season must not drop its matches, nor may the
+        current season's full-width labels (#332)."""
+        for label, is_cup in (('2021-22 Yogibo WEリーグ 第1節', False),
+                              ('2023-24 WEリーグ 第1節', False),
+                              ('2024-25 WEリーグ クラシエカップ グループステージ グループA 第1節', True),
+                              (LEAGUE_FW, False),
+                              (CUP_FW, True)):
             with self.subTest(label=label):
-                matches, skipped = self._read(_match(label, '浦和', 'I神戸'))
-                self.assertEqual(len(matches), 1)
+                matches, skipped = self._read(_match(label, '浦和', 'Ⅰ神戸'))
+                self.assertEqual([cup for cup, _ in matches], [is_cup])
                 self.assertEqual(skipped, [])
+
+    def test_a_full_width_label_still_gives_its_section(self):
+        matches, _ = self._read(_match('２０２６／２７ＷＥリーグ 第１２節', '浦和', 'Ⅰ神戸'))
+
+        self.assertEqual(matches[0][1]['section_no'], 12)
 
 
 class TestSeasonSummary(_WithWeConfig):
@@ -95,18 +107,34 @@ class TestSeasonSummary(_WithWeConfig):
         self.assertTrue(all(r['home_team'] == '浦和' for r in we))
         self.assertEqual(cup, [])
 
-    def test_a_season_with_only_left_out_matches_is_flagged(self):
-        """A label change on the site would otherwise empty the CSVs quietly."""
-        with self.assertLogs(rw.logger, level=logging.WARNING) as logged:
-            we, cup = self._season(([], [AWCL]))
-
-        self.assertEqual((we, cup), ([], []))
-        self.assertIn('WEリーグ', '\n'.join(logged.output))
+    def test_a_season_with_only_left_out_matches_fails(self):
+        """A label change on the site reads every match as someone else's;
+        that is a broken reader, so the run must fail rather than log (#332)."""
+        with self.assertRaisesRegex(RuntimeError, 'WEリーグ'):
+            self._season(([], [LEAGUE_FW]))
 
     def test_an_ordinary_season_raises_no_warning(self):
         record = {'section_no': 1, 'home_team': '浦和', 'away_team': 'I神戸'}
         with self.assertNoLogs(rw.logger, level=logging.WARNING):
             self._season(([(False, dict(record))], [AWCL]))
+
+
+class TestEmptySeasonLeavesTheCsvsAlone(_WithWeConfig):
+    """A season with nothing listed must not blank the CSVs already written.
+
+    Writing an empty frame used to fail half-way with a KeyError (#332); it must
+    not be tried at all.
+    """
+
+    def test_nothing_is_written(self):
+        with mock.patch.object(rw.os, 'chdir'), \
+                mock.patch.object(rw, 'make_args',
+                                  return_value=mock.Mock(season='26-27', debug=False)), \
+                mock.patch.object(rw, 'read_season', return_value=([], [])), \
+                mock.patch.object(rw.mu, 'update_if_diff') as write:
+            self.assertEqual(rw.main(), 0)
+
+        write.assert_not_called()
 
 
 if __name__ == '__main__':
