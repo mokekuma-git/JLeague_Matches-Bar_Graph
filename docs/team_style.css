@@ -103,7 +103,7 @@
   background-color: #980323;
 }
 
-.新潟, .新潟L {
+.新潟, .新潟L, .新潟Ｌ {
   color: #014099;
   background-color: #FF7527;;
 }
@@ -173,7 +173,7 @@
   color: #fdd448;
   background-color: #285B99;
 }
-.千葉, .市原, .ジェフユナイテッド市原・千葉U-18, .千葉L {
+.千葉, .市原, .ジェフユナイテッド市原・千葉U-18, .千葉L, .千葉Ｌ {
   color: #d7083b;
   background: -moz-linear-gradient(top left, #ffe100, #ffe100, #009260);
   background: -webkit-linear-gradient(top left, #ffe100, #ffe100, #009260);
@@ -671,11 +671,11 @@
 }
 
 /**************************************************************** WE League team style definition */
-.I神戸 {
+.I神戸, .Ⅰ神戸 {
   color: black;
   background-color: #e60012;
 }
-.N相模原 {
+.N相模原, .Ｎ相模原 {
   color: white;
   background-color: #0039a6;
 }
