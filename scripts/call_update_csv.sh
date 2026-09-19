@@ -10,7 +10,6 @@
 SCHEDULE="${1:-}"
 echo "Called by schedule: ${SCHEDULE:-<manual run>}"
 DAILY=Daily
-ONGAME=OnGame
 SKIP=Skip
 
 # Whether today's full update has already been done (JST day).  The workflow
@@ -24,20 +23,17 @@ DAILY_DONE="${DAILY_DONE:-false}"
 # let every delayed run skip the daily readers for weeks (#309).  Several slots
 # may ask for the day's update; only the first one does it (#315).
 #
-# A manual run is always a full update -- that is what the button is for.  Once
-# the day's update is done, a slot pinned to a date (none at present; the old
-# per-match slots were retired in #321) takes the per-match path, and any other
-# slot has nothing left to do.
+# A manual run is always a full update -- that is what the button is for.
+# Matches in play belong to the live watcher (live-update-csv.yaml), which
+# replaced the per-match slots that used to fetch J-League after each game;
+# their branch here went once nothing reached it any more (#330).
 #
 # `$SCHEDULE` must stay quoted: unquoted, the `*`s glob into repository file
-# names and no cron line can ever match.
-if [ -z "$SCHEDULE" ]; then
-  TRIGGER=$DAILY
-elif [ "$DAILY_DONE" != "true" ]; then
+# names.
+if [ -z "$SCHEDULE" ] || [ "$DAILY_DONE" != "true" ]; then
   TRIGGER=$DAILY
 else
-  TRIGGER=$(echo "$SCHEDULE" | awk -v skip="$SKIP" -v ongame="$ONGAME" \
-    '{print ($3 == "*" && $4 == "*") ? skip : ongame}')
+  TRIGGER=$SKIP
 fi
 
 TZ=Asia/Tokyo date
@@ -93,16 +89,11 @@ run_reader() {
   fi
 }
 
-if [ "$TRIGGER" = "$DAILY" ]; then
-  # 1日の最初の実行 ⇒ 全CSVのアップデートを実行
-  run_reader uv run python src/read_jleague_matches.py -f
-  run_reader uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto
-  run_reader uv run python src/read_we_league.py
-  # run_reader uv run python src/read_aclgl_matches.py
-else
-  # 日付固定の枠 (現在は無し) ではJリーグのみ更新。開催中の大会を足す場合はここに加える
-  run_reader uv run python src/read_jleague_matches.py
-fi
+# 1日の最初の実行 ⇒ 全CSVのアップデートを実行 (Skip は上で終了済み)
+run_reader uv run python src/read_jleague_matches.py -f
+run_reader uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto
+run_reader uv run python src/read_we_league.py
+# run_reader uv run python src/read_aclgl_matches.py
 
 if [ ${#FAILED[@]} -gt 0 ]; then
   echo "::error::${#FAILED[@]} reader(s) failed:"
