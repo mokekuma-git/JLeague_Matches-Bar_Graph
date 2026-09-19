@@ -12,8 +12,11 @@ _SCRIPT = _REPO_ROOT / 'scripts' / 'call_update_csv.sh'
 DAILY_CRON = '0 16 * * *'
 # A spare slot that only steps in when the day's update has not happened.
 SPARE_CRON = '17 20 * * *'
-# One of the WC2026 entries, pinned to a date.
+# A slot pinned to a date, as the retired per-match entries were (#321).
 DATED_CRON = '30 5 27 6 *'
+
+# Readers of competitions that have finished and left the schedule (#321).
+FINISHED = ('WC2026', 'read_openfootball_wc.py')
 
 _PREFIX = '--- Running: '
 
@@ -111,7 +114,6 @@ class TestReaderSelection(unittest.TestCase):
         for competition in ('PrincePremierE', 'PrincePremierW', 'PrinceKanto'):
             self.assertIn(competition, joined)
         self.assertIn('read_we_league.py', joined)
-        self.assertIn('read_openfootball_wc.py', joined)
 
     def test_per_match_runs_only_the_live_sources(self):
         readers = _readers(_run(DATED_CRON, daily_done=True).stdout)
@@ -121,6 +123,15 @@ class TestReaderSelection(unittest.TestCase):
         for skipped in ('PrincePremierE', 'PrincePremierW', 'PrinceKanto',
                         'read_we_league.py'):
             self.assertNotIn(skipped, joined)
+
+    def test_finished_competitions_are_not_fetched(self):
+        """WC2026 closed on 2026-07-19; running its readers daily only made the
+        JFA and openfootball readers rewrite each other's columns (#321)."""
+        for cron, done in ((DAILY_CRON, False), (DATED_CRON, True)):
+            with self.subTest(cron=cron):
+                joined = '\n'.join(_readers(_run(cron, daily_done=done).stdout))
+                for reader in FINISHED:
+                    self.assertNotIn(reader, joined)
 
 
 class TestJobSummary(unittest.TestCase):
