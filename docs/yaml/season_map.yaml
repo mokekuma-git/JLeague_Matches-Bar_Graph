@@ -1420,6 +1420,11 @@ we:
           promotion_count: 0
           relegation_count: 0
           teams: [東京NB, I神戸, 浦和, 新潟L, 広島, EL埼玉, Ｃ大阪, AC長野, 千葉L, N相模原, 大宮, マイ仙台]
+        26-27:
+          team_count: 12
+          promotion_count: 0
+          relegation_count: 0
+          teams: [Ⅰ神戸, 浦和, 東京NB, 広島, マイ仙台, 新潟Ｌ, 大宮, Ｎ相模原, 千葉Ｌ, Ｃ大阪, EL埼玉, AC長野]
     WE_Cup:
       league_display: クラシエカップ
       promotion_label: 決勝T
@@ -1453,6 +1458,18 @@ we:
             position: 2
             advance_count: 1
           point_system: pk-win2-loss1
+        26-27:
+          team_count: 12
+          promotion_count: 2
+          relegation_count: 0
+          teams: []
+          rank_properties:
+            '3': promoted_playoff
+            '4': promoted_playoff
+            '5': promoted_playoff
+            '6': promoted_playoff
+          point_system: pk-win2-loss1
+          note: [リーグステージ (12チームが異なる8チームと対戦)。1・2位は準決勝、3〜6位は準々決勝から決勝トーナメントに進出。, 決勝トーナメントの結果は WE_Cup_KO を参照。]
     WE_Cup_KO:
       league_display: クラシエカップ KO
       view_type: [bracket]
@@ -1471,4 +1488,9 @@ we:
           bracket_blocks:
           - label: 決勝トーナメント
             bracket_order: [S広島R, 浦和, I神戸, 新潟L]
+          bracket_round_start: 準決勝
+        25-26:
+          bracket_blocks:
+          - label: 決勝トーナメント
+            bracket_order: [Ｃ大阪, 大宮, 広島, 東京NB]
           bracket_round_start: 準決勝
