@@ -21,7 +21,9 @@ import logging
 import os
 from pathlib import Path
 import re
+import sys
 from typing import Any
+import unicodedata
 
 import bs4
 import pandas as pd
@@ -33,8 +35,9 @@ logger = logging.getLogger(__name__)
 
 # Competition detection.  The site lists every fixture of its clubs on the same
 # schedule, AFC Women's Champions League included, so only a label naming WE
-# League marks one of ours (#328).  Every season's labels carry it: "2021-22
-# Yogibo WEリーグ", "2025/26 SOMPO WEリーグ", "2025/26 WEリーグ クラシエカップ ...".
+# League marks one of ours (#328).  Every season's labels carry it, in half-width
+# up to 2025/26 ("2025/26 SOMPO WEリーグ") and full-width from 2026/27
+# ("２０２６／２７ＷＥリーグ 第1節"), so labels are NFKC-folded before any match (#332).
 _LEAGUE_KEYWORD = 'WEリーグ'
 _CUP_KEYWORD = 'カップ'
 
@@ -165,7 +168,7 @@ def _read_day(
         # Competition / section info
         date_div = inner.find('div', class_='date')
         p_tag = date_div.find('p') if date_div else None
-        p_text = p_tag.text.strip() if p_tag else ''
+        p_text = unicodedata.normalize('NFKC', p_tag.text).strip() if p_tag else ''
         if _LEAGUE_KEYWORD not in p_text:
             logger.info("Leaving out a match of another competition on %d/%02d/%02d: %s",
                         year, month, day, p_text or '<no label>')
@@ -281,13 +284,13 @@ def read_season(season_str: str) -> tuple[list[dict], list[dict]]:
         "Season %s: %d WEリーグ matches, %d cup matches, %d of other competitions left out",
         season_str, len(we_matches), len(cup_matches), len(skipped),
     )
-    # A label change on the site would read every match as someone else's and
-    # empty the CSVs without a word; say so instead of passing it off as quiet.
+    # A label change on the site reads every match as someone else's.  That is
+    # a broken reader, not a quiet day: fail, so the run shows red (#332).
     if skipped and not we_matches and not cup_matches:
-        logger.warning(
-            "Every match of season %s was left out as another competition; has the "
-            "site stopped naming WE League as %r? Labels seen: %s",
-            season_str, _LEAGUE_KEYWORD, sorted(set(skipped)),
+        raise RuntimeError(
+            f"Every match of season {season_str} was left out as another competition; "
+            f"has the site stopped naming WE League as {_LEAGUE_KEYWORD!r}? "
+            f"Labels seen: {sorted(set(skipped))}"
         )
     return we_matches, cup_matches
 
@@ -314,7 +317,12 @@ def make_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+def main() -> int:
+    """Entry point.
+
+    Returns:
+        int: Process exit code.
+    """
     os.chdir(Path(__file__).parent)
     init()
 
@@ -331,6 +339,10 @@ if __name__ == '__main__':
     logger.info("Processing season %s", _season)
 
     _we, _cup = read_season(_season)
+    # Nothing listed yet (a season not published) must not blank what is there.
+    if not _we and not _cup:
+        logger.warning("No match listed for season %s; leaving its CSVs as they are", _season)
+        return 0
 
     _we_csv = mu.config.get_format_str('paths.csv_format', season=_season)
     mu.update_if_diff(_to_df(_we), _we_csv)
@@ -346,3 +358,8 @@ if __name__ == '__main__':
         if not _cup_ko_df.empty:
             _cup_ko_csv = mu.config.get_format_str('paths.cup_ko_csv_format', season=_season)
             mu.update_if_diff(_cup_ko_df, _cup_ko_csv)
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
