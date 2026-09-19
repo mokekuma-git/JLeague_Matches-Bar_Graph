@@ -1489,3 +1489,8 @@ we:
           - label: 決勝トーナメント
             bracket_order: [S広島R, 浦和, I神戸, 新潟L]
           bracket_round_start: 準決勝
+        25-26:
+          bracket_blocks:
+          - label: 決勝トーナメント
+            bracket_order: [Ｃ大阪, 大宮, 広島, 東京NB]
+          bracket_round_start: 準決勝
