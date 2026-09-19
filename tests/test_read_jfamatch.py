@@ -8,6 +8,7 @@ from read_jfamatch import (
     _resolve_schedule_url,
     _select_target_years,
     _venue_to_timezone,
+    keep_supplemented_scores,
     read_jfa_match,
     read_group,
 )
@@ -341,3 +342,113 @@ def test_venue_to_timezone_unknown_city_returns_empty(caplog) -> None:
     # Non-string / empty inputs fall back to '' without raising.
     assert _venue_to_timezone('') == ''
     assert _venue_to_timezone(None) == ''
+
+
+# ---------------------------------------------------------------------------
+# keep_supplemented_scores (#323)
+# ---------------------------------------------------------------------------
+def _ko_row(home='ベルギー', away='セネガル', home_ex='', away_ex='', **extra) -> dict:
+    row = {'match_date': '2026/07/01', 'home_team': home, 'away_team': away,
+           'home_goal': '3', 'away_goal': '2', 'status': '試合終了',
+           'home_score_ex': home_ex, 'away_score_ex': away_ex}
+    row.update(extra)
+    return row
+
+
+def _frame(*rows) -> 'read_jfamatch_module.pd.DataFrame':
+    return read_jfamatch_module.pd.DataFrame(list(rows))
+
+
+def test_keep_supplemented_scores_restores_what_the_feed_leaves_blank() -> None:
+    """The JFA feed has no extra-time flag for this match; openfootball does."""
+    fetched = _frame(_ko_row())
+    current = _frame(_ko_row(home_ex='1', away_ex='0'))
+
+    result = keep_supplemented_scores(fetched, current)
+
+    assert result.iloc[0]['home_score_ex'] == '1'
+    assert result.iloc[0]['away_score_ex'] == '0'
+
+
+def test_keep_supplemented_scores_restores_a_blank_read_back_as_nan() -> None:
+    fetched = _frame(_ko_row(home_ex=float('nan'), away_ex=float('nan')))
+    current = _frame(_ko_row(home_ex='1', away_ex='0'))
+
+    result = keep_supplemented_scores(fetched, current)
+
+    assert result.iloc[0]['home_score_ex'] == '1'
+
+
+def test_keep_supplemented_scores_lets_the_feed_win() -> None:
+    fetched = _frame(_ko_row(home_ex=2, away_ex=0))
+    current = _frame(_ko_row(home_ex='1', away_ex='0'))
+
+    result = keep_supplemented_scores(fetched, current)
+
+    assert result.iloc[0]['home_score_ex'] == 2
+
+
+def test_keep_supplemented_scores_only_takes_the_same_match() -> None:
+    fetched = _frame(_ko_row(home='フランス', away='パラグアイ'))
+    current = _frame(_ko_row(home_ex='1', away_ex='0'))
+
+    result = keep_supplemented_scores(fetched, current)
+
+    assert result.iloc[0]['home_score_ex'] == ''
+
+
+def test_keep_supplemented_scores_adds_no_empty_columns() -> None:
+    """A competition without extra time must not grow blank columns."""
+    fetched = _frame({'match_date': '2026/05/01', 'home_team': 'A', 'away_team': 'B'})
+    current = _frame({'match_date': '2026/05/01', 'home_team': 'A', 'away_team': 'B',
+                      'home_pk_score': '', 'away_pk_score': ''})
+
+    result = keep_supplemented_scores(fetched, current)
+
+    assert 'home_pk_score' not in result.columns
+
+
+def test_keep_supplemented_scores_adds_a_column_it_has_a_value_for() -> None:
+    fetched = _frame({'match_date': '2026/07/01', 'home_team': 'ベルギー', 'away_team': 'セネガル'})
+    current = _frame(_ko_row(home_ex='1', away_ex='0'))
+
+    result = keep_supplemented_scores(fetched, current)
+
+    assert result.iloc[0]['home_score_ex'] == '1'
+
+
+def test_keep_supplemented_scores_without_a_csv_changes_nothing() -> None:
+    fetched = _frame(_ko_row())
+
+    assert keep_supplemented_scores(fetched, None) is fetched
+
+
+def test_read_group_keeps_the_scores_openfootball_filled(monkeypatch, tmp_path: Path) -> None:
+    """End to end through read_group: the CSV's extra time survives a JFA fetch."""
+    class DummyCompConf(dict):
+        def __getattr__(self, name):
+            return self[name]
+
+    csv_path = tmp_path / 'WC_KO.csv'
+    read_jfamatch_module.pd.DataFrame([{
+        **_ko_row(home_ex='1', away_ex='0'),
+        'section_no': -5, 'match_index_in_section': 1, 'start_time': '13:00',
+        'stadium': 'シアトル', 'group': '',
+    }]).to_csv(csv_path, lineterminator='\n')
+
+    comp_conf = DummyCompConf({'schedule_url': 'https://example.com/{year}.json',
+                               'csv_path': str(csv_path), 'groups': ['']})
+    monkeypatch.setitem(read_jfamatch_module.config.competitions._data, 'WCKOTest', comp_conf)
+    setattr(read_jfamatch_module.config.competitions, 'WCKOTest', comp_conf)
+    monkeypatch.setattr(read_jfamatch_module, '_select_target_years', lambda *a, **k: [])
+    monkeypatch.setattr(read_jfamatch_module, 'read_all_group', lambda conf, year=None: _frame({
+        **_ko_row(), 'section_no': -5, 'match_index_in_section': 1, 'start_time': '13:00',
+        'stadium': 'シアトル', 'group': '',
+    }))
+    written = []
+    monkeypatch.setattr(mu, 'update_if_diff', lambda df, path: written.append(df.copy()))
+
+    read_group('WCKOTest')
+
+    assert written[0].iloc[0]['home_score_ex'] == '1'
+    assert written[0].iloc[0]['away_score_ex'] == '0'

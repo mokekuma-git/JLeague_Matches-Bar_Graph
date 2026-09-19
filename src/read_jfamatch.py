@@ -296,6 +296,68 @@ def read_jfa_match(_url: str, matches_in_section: int = None) -> pd.DataFrame:
     return pd.DataFrame(result_list)
 
 
+# Columns another reader fills in after this one: read_openfootball_wc.py adds
+# extra time and penalties to the World Cup knockouts.  The JFA feed often has
+# no value for them, and writing that blank over the other reader's value made
+# the two rewrite the same rows on every run (#323).
+SUPPLEMENTED_COLUMNS = ('home_score_ex', 'away_score_ex', 'home_pk_score', 'away_pk_score')
+
+
+def keep_supplemented_scores(fetched: pd.DataFrame, current: pd.DataFrame | None) -> pd.DataFrame:
+    """Keep the extra-time and penalty scores the CSV already holds.
+
+    Only blanks are filled, and only from the same match (date and both teams),
+    so whatever the JFA feed does state still wins.  A column the fetch lacks is
+    added only when there is a value to keep, so a competition without extra
+    time does not grow empty columns.
+
+    Args:
+        fetched (pd.DataFrame): Matches just read from the JFA feed.
+        current (pd.DataFrame | None): Matches already stored in the CSV.
+
+    Returns:
+        pd.DataFrame: `fetched` with those blanks filled from `current`.
+    """
+    if current is None or current.empty or fetched.empty:
+        return fetched
+    columns = [col for col in SUPPLEMENTED_COLUMNS if col in current.columns]
+    if not columns:
+        return fetched
+
+    keys = ['match_date', 'home_team', 'away_team']
+    known = {tuple(str(value) for value in row[keys]): row for _, row in current.iterrows()}
+    fills = []
+    for index, row in fetched.iterrows():
+        previous = known.get(tuple(str(value) for value in row[keys]))
+        if previous is None:
+            continue
+        for col in columns:
+            if _is_blank(row.get(col)) and not _is_blank(previous[col]):
+                fills.append((index, col, previous[col]))
+    if not fills:
+        return fetched
+
+    result = fetched.copy()
+    for col in {col for _, col, _ in fills}:
+        # The feed's own values are ints beside NaN, i.e. a float column, which
+        # refuses the CSV's text; object holds both until the CSV normalises them.
+        result[col] = result[col].astype(object) if col in result.columns else ''
+    for index, col, value in fills:
+        result.at[index, col] = value
+    logger.info("Kept %d extra-time / penalty score(s) the JFA feed leaves blank", len(fills))
+    return result
+
+
+def _is_blank(value: Any) -> bool:
+    """True for a missing cell, whether it came back as None, NaN or ''."""
+    return value is None or (not isinstance(value, str) and pd.isna(value)) or str(value).strip() == ''
+
+
+def _read_current(csv_path: str) -> pd.DataFrame | None:
+    """The CSV as it stands, or None before its first write."""
+    return mu.read_allmatches_csv(csv_path) if Path(csv_path).exists() else None
+
+
 def read_group(
     competition: str,
     requested_years: list[int] | None = None,
@@ -323,11 +385,14 @@ def read_group(
                 logger.info("Skip %s %d: no match rows", competition, year)
                 continue
             match_df = _finalize_match_df(match_df, comp_conf, competition)
-            mu.update_if_diff(match_df, comp_conf.csv_path.format(year=year))
+            csv_path = comp_conf.csv_path.format(year=year)
+            match_df = keep_supplemented_scores(match_df, _read_current(csv_path))
+            mu.update_if_diff(match_df, csv_path)
         return
 
     match_df = read_all_group(comp_conf)
     match_df = _finalize_match_df(match_df, comp_conf, competition)
+    match_df = keep_supplemented_scores(match_df, _read_current(comp_conf.csv_path))
     mu.update_if_diff(match_df, comp_conf.csv_path)
 
 
