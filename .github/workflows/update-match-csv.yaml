@@ -80,11 +80,23 @@ jobs:
         DATE=`TZ=Asia/Tokyo date +'%m/%d %H:%M'`
         STATUS=0
         bash scripts/call_update_csv.sh "${{ github.event.schedule }}" || STATUS=$?
-        if (git diff --shortstat | grep '[0-9]'); then \
-          git add docs/csv/; \
-          git commit -m "Make new csv (append games on $DATE)"; \
-          git push origin HEAD; \
-          echo "committed=true" >> $GITHUB_OUTPUT; \
+        if (git diff --shortstat | grep '[0-9]'); then
+          git add docs/csv/
+          git commit -m "Make new csv (append games on $DATE)"
+          # The live watcher commits to main while matches are on, so a push can
+          # lose the race.  Rebase past its commits and try again, as the watcher
+          # does from its side; a real conflict is left for the next slot.
+          for ATTEMPT in 1 2 3; do
+            if git push origin HEAD; then
+              echo "committed=true" >> $GITHUB_OUTPUT
+              break
+            fi
+            if [ "$ATTEMPT" = 3 ] || ! git pull --rebase origin main; then
+              git rebase --abort 2>/dev/null || true
+              echo "::error::Could not push the CSV update"
+              exit 1
+            fi
+          done
         fi
         exit $STATUS
 

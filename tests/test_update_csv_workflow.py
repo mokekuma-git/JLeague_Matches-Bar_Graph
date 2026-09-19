@@ -115,6 +115,43 @@ class TestUpdateStep(unittest.TestCase):
         self.assertNotEqual(status, 0)
         self.assertEqual(self._commits_on_remote(), 1)
 
+    def _push_from_elsewhere(self, path: str, content: str) -> None:
+        """Land a commit on the remote after the step's checkout, as the live
+        watcher does while matches are on."""
+        other = self.work.parent / 'other'
+        _git(self.work.parent, 'clone', '-q', str(self.remote), str(other))
+        _git(other, 'config', 'user.name', 'watcher')
+        _git(other, 'config', 'user.email', 'watcher@example.com')
+        target = other / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content)
+        _git(other, 'add', '.')
+        _git(other, 'commit', '-q', '-m', 'live update')
+        _git(other, 'push', '-q', 'origin', 'main')
+
+    def test_a_push_that_loses_the_race_rebases_and_lands(self):
+        """Another CSV changed on main meanwhile; both updates end up there."""
+        self._push_from_elsewhere('docs/csv/live.csv', 'live\n')
+
+        status, outputs = self._run_step(change=True, exit_status=0)
+
+        self.assertEqual(status, 0)
+        self.assertEqual(self._commits_on_remote(), 3)
+        self.assertIn('committed=true', outputs)
+
+    def test_a_real_conflict_fails_without_claiming_a_commit(self):
+        """The same lines changed on main: leave it to the next slot, and do not
+        tell the deploy step something was pushed."""
+        self._push_from_elsewhere('docs/csv/sample.csv', 'header\nlive\n')
+
+        status, outputs = self._run_step(change=True, exit_status=0)
+
+        self.assertNotEqual(status, 0)
+        self.assertEqual(self._commits_on_remote(), 2)
+        self.assertNotIn('committed=true', outputs)
+        self.assertFalse((self.work / '.git' / 'rebase-merge').exists(),
+                         'the rebase was left half-done')
+
 
 class TestFollowUpSteps(unittest.TestCase):
     """What runs after the update step, given how it ended."""
