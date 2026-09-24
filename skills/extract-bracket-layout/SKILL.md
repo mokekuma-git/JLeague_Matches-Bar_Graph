@@ -7,12 +7,6 @@ description: Extract initial bracket slot order and advancement connections from
 
 Use this skill when a tournament page already shows the official bracket structure, but CSV or schedule data alone cannot tell which match winner advances to which next match.
 
-Typical triggers:
-
-- "天皇杯の PDF トーナメント表から bracket_order を作りたい"
-- "ルヴァンカップの公開ページを見て、試合前の接続定義を起こしたい"
-- "CSV だけでは勝者の接続先が分からないので、公式 HTML/PDF を元に初期配置を定義したい"
-
 This skill is for recovering **structure**, not scores. Treat results shown on the page as incidental. The target output is a stable bracket definition that would still be valid before kickoff.
 
 ## Workflow
@@ -100,7 +94,6 @@ If any ambiguity remains, include an `assumptions` or `unresolved` section inste
 - Read the bracket as a graph from the earliest visible round toward the final.
 - Treat horizontal or vertical alignment as the primary signal for feeder relationships.
 - Record slot order exactly as it appears top-to-bottom or left-to-right in the earliest visible round.
-- When the bracket is visually symmetric, extract one half at a time, then join at the parent round.
 
 ## Output expectations
 

@@ -68,7 +68,7 @@ npx playwright test --grep-invert @full-render
 ```
 
 (run from `frontend/`), plus a manual `npm run dev` check against the four View
-Invariants in CLAUDE.md:
+Invariants in `docs/dev/design_decisions.md`:
 
 - **I1** — bar-graph height: all team columns and the points column have equal height
 - **I2** — future-box ordering: `.future` boxes never appear interleaved with played boxes
