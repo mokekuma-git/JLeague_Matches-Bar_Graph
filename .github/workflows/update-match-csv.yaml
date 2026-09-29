@@ -81,7 +81,9 @@ jobs:
         STATUS=0
         bash scripts/call_update_csv.sh "${{ github.event.schedule }}" || STATUS=$?
         if (git diff --shortstat | grep '[0-9]'); then
-          git add docs/csv/
+          # csv/ holds the Levain Cup's intermediate SFMS01 rows; leaving them
+          # unstaged would also block the rebase below.
+          git add docs/csv/ csv/
           git commit -m "Make new csv (append games on $DATE)"
           # The live watcher commits to main while matches are on, so a push can
           # lose the race.  Rebase past its commits and try again, as the watcher

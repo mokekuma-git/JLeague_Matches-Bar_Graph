@@ -93,6 +93,11 @@ run_reader() {
 run_reader uv run python src/read_jleague_matches.py -f
 run_reader uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto
 run_reader uv run python src/read_we_league.py
+run_reader uv run python src/read_jfamatch.py EmperorsCup
+# Levain Cup: fetch the cup-only SFMS01 rows (csv/2026_frame11.csv), then build
+# the published CSV from them.  Update -y when the next season starts.
+run_reader uv run python scripts/legacy/read_older2020_matches.py -y 2026 --frame 11
+run_reader uv run python scripts/make_old_matches_csv.py --competition JLeagueCup -y 2026
 # run_reader uv run python src/read_aclgl_matches.py
 
 if [ ${#FAILED[@]} -gt 0 ]; then
