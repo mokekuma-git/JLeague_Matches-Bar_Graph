@@ -39,18 +39,32 @@ def read_href(td_tag: bs4.element.Tag) -> str | None:
     return None
 
 
-def store_year_data(year: int) -> None:
+def store_year_data(year: int, frame: int | None = None) -> None:
     """Get J-League match data for the given year and store it in a CSV file.
 
     The result row is linked by a tag, and if the match ID is read, it is added to the column.
 
     Args:
         year: Year to get match data for
+        frame: Optional competition_frame_ids filter (e.g. 11 = Levain Cup). Narrowing
+            by frame keeps a season's query under the site's 1,500-row search limit and
+            writes to a separate intermediate file so the full-year file is never clobbered.
     """
-    logger.info("Read year: %d", year)
+    logger.info("Read year: %d%s", year, f" (frame={frame})" if frame is not None else "")
 
-    _url = config.get_format_str('match_data.url_format', year=year)
+    if frame is not None:
+        _url = config.get_format_str('match_data.url_format_with_frame', year=year, frame=frame)
+    else:
+        _url = config.get_format_str('match_data.url_format', year=year)
     html_text = requests.request('GET', _url, timeout=config.http_timeout).text
+    if config.match_data.too_many_results_text in html_text:
+        logger.error(
+            "Search returned more than 1,500 rows for year %d%s; narrow the query "
+            "(e.g. pass --frame) and retry. URL: %s",
+            year, f" (frame={frame})" if frame is not None else "", _url,
+        )
+        return
+
     html_io = StringIO(html_text)
     df = pd.read_html(html_io)[0]
     soup = BeautifulSoup(html_text, 'lxml')
@@ -60,19 +74,23 @@ def store_year_data(year: int) -> None:
         id_list.append(read_href(_td))
     df['match_card_id'] = id_list
 
-    csv_file = config.get_path('match_data.csv_path_format', year=year)
+    if frame is not None:
+        csv_file = config.get_path('match_data.csv_path_format_with_frame', year=year, frame=frame)
+    else:
+        csv_file = config.get_path('match_data.csv_path_format', year=year)
     df.to_csv(csv_file, lineterminator='\n', encoding=config.match_data.encoding)
     logger.info("Stored: %s", csv_file)
 
 
-def process_years(years: list[int]) -> None:
+def process_years(years: list[int], frame: int | None = None) -> None:
     """Specified years of J-League match data are processed and stored.
 
     Args:
         years: List of years to process
+        frame: Optional competition_frame_ids filter, applied to every year (see store_year_data)
     """
     for year in years:
-        store_year_data(year)
+        store_year_data(year, frame=frame)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -86,21 +104,26 @@ def parse_arguments() -> argparse.Namespace:
                        help='Specify a range of years (e.g., 1993 2020)')
     group.add_argument('-l', '--list', nargs='+', type=int, metavar='YEAR',
                        help='Specify a list of years (e.g., 1993 1994 1995)')
+    parser.add_argument('--frame', type=int, default=None,
+                        help='Optional competition_frame_ids filter (e.g. 11 = Levain Cup). '
+                             'Narrows the search to stay under the site\'s 1,500-row limit; '
+                             'writes to csv/{year}_frame{frame}.csv instead of csv/{year}.csv.')
 
     args = parser.parse_args()
     return args
 
 
-def parse_years() -> list[int]:
-    """Parse years from command-line arguments.
+def _years_from_args(args: argparse.Namespace) -> list[int]:
+    """Derive the list of years to process from parsed command-line arguments.
 
-    If no arguments are provided, default to all years from 1993 to the current year.
+    If no year-selecting argument is provided, default to all years from 1993 to the current year.
+
+    Args:
+        args: Parsed command-line arguments (see parse_arguments).
 
     Returns:
         List[int]: List of years to process.
     """
-    args = parse_arguments()
-
     if not any([args.year, args.range, args.list]):
         current_year = pd.Timestamp.now().year
         years = list(range(1993, current_year + 1))
@@ -121,11 +144,23 @@ def parse_years() -> list[int]:
     return years
 
 
+def parse_years() -> list[int]:
+    """Parse years from command-line arguments.
+
+    If no arguments are provided, default to all years from 1993 to the current year.
+
+    Returns:
+        List[int]: List of years to process.
+    """
+    return _years_from_args(parse_arguments())
+
+
 def main():
     """Main function to read and process J-League match data."""
-    years = parse_years()
+    args = parse_arguments()
+    years = _years_from_args(args)
 
-    process_years(years)
+    process_years(years, frame=args.frame)
 
 
 if __name__ == '__main__':
