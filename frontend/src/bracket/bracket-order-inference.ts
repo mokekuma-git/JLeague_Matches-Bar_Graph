@@ -12,6 +12,11 @@ function parseBracketDepth(row: RawMatchRow): number | undefined {
   return Math.abs(value);
 }
 
+// "No.74の勝者" -- an unplayed slot still pointing at its feeder match. Kept
+// local: bracket-reference-graph.ts imports this module, so importing its
+// parseSlotReference back would make a cycle.
+const WINNER_REFERENCE_PATTERN = /^No\.(\d+)の勝者$/;
+
 function buildSeedSubtree(team: string, sideSize: number): (string | null)[] {
   return [team, ...Array.from({ length: Math.max(0, sideSize - 1) }, () => null)];
 }
@@ -60,6 +65,17 @@ export function inferBracketOrderFromRows(rows: RawMatchRow[]): (string | null)[
   if (finalMatchNumber === undefined) return undefined;
 
   function expandTeam(team: string, currentMatchNumber: number, sideSize: number): (string | null)[] {
+    // An unplayed slot names its feeder match directly; without this, a
+    // tournament fetched mid-way stops expanding at the first placeholder.
+    const reference = WINNER_REFERENCE_PATTERN.exec(team);
+    if (reference) {
+      const referencedNumber = Number.parseInt(reference[1], 10);
+      const referencedRow = rowsByMatchNumber.get(referencedNumber);
+      if (referencedNumber < currentMatchNumber && referencedRow) {
+        return expandMatch(referencedRow, referencedNumber);
+      }
+    }
+
     const history = matchHistory.get(team) ?? [];
     const feederMatchNumber = [...history].reverse().find((matchNumber) => matchNumber < currentMatchNumber);
     if (feederMatchNumber === undefined) {

@@ -23,10 +23,12 @@ CSV_DIR = Path(__file__).parent / '../csv'
 OUTPUT_DIR = Path(__file__).parent / '../local_data/match_detail'
 
 # Shorthand aliases for --filter
+# 'ルヴァンカップ' is the 大会 name used from the 2026/27 season onward
+# (previously 'ＹＬＣ'/'ＹＮＣ').
 FILTER_ALIASES: dict[str, str] = {
-    'JLeagueCup': 'ＹＬＣ|ＹＮＣ',
+    'JLeagueCup': 'ＹＬＣ|ＹＮＣ|ルヴァンカップ',
     'nabisco': 'ＹＮＣ',
-    'levain': 'ＹＬＣ',
+    'levain': 'ＹＬＣ|ルヴァンカップ',
     'jleague': 'Ｊ',
 }
 

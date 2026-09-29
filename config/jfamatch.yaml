@@ -47,7 +47,7 @@ competitions:
   EmperorsCup:
     schedule_url: https://www.jfa.jp/match/emperorscup_{year}/match/schedule.json
     csv_path: ../docs/csv/{year}_allmatch_result-EmperorsCup.csv
-    years: 2014-2025
+    years: 2014-2026
     tournament: true
     year_overrides:
       "2014": https://www.jfa.jp/match/emperorscup_2014/2014/match/schedule.json
@@ -104,6 +104,17 @@ competitions:
       いわてグルージャ盛岡: 盛岡
       鹿児島ユナイテッドFC: 鹿児島
       高知ユナイテッドSC: 高知
+      栃木シティ: 栃木Ｃ
+      ヴァンラーレ八戸: 八戸
+      テゲバジャーロ宮崎: 宮崎
+      ザスパ群馬: 群馬
+      AC長野パルセイロ: 長野
+      ガイナーレ鳥取: 鳥取
+      レイラック滋賀FC: 滋賀
+      奈良クラブ: 奈良
+      レノファ山口FC: 山口
+      愛媛FC: 愛媛
+      アスルクラロ沼津: 沼津
 
 ## Program Settings must be start with lower case letter and no space.
 debug: false

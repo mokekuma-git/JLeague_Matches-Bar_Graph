@@ -13,6 +13,7 @@ sys.path.insert(0, str(_REPO_ROOT / 'scripts' / 'legacy'))
 import pandas as pd
 
 from fetch_match_detail import FILTER_ALIASES
+from match_utils import _recalculate_match_index_in_section
 from read_older2020_matches import parse_years
 from set_config import Config
 
@@ -160,13 +161,121 @@ def _derive_leg(section: str) -> str:
     return ''
 
 
-def make_jleaguecup_csv(year: int) -> None:
-    """Convert Levain Cup (YLC) match results from intermediate CSV into final CSV.
+_FRAME_ID_JLEAGUECUP = 11  # competition_frame_ids for ルヴァンカップ (SFMS01)
 
-    Filters YLC matches from csv/{year}.csv, derives round/leg columns,
-    and outputs docs/csv/{year}_allmatch_result-JLeagueCup.csv.
+# Round order for section_no assignment, earliest to latest, for the rounds that come
+# after 1stラウンド. 1stラウンド's 'N回戦' entries sort numerically ahead of these and
+# are not listed here (see _jleaguecup_round_sort_key).
+_JLEAGUECUP_FIXED_ROUND_ORDER = ('プレーオフラウンド', '準々決勝', '準決勝', '決勝')
+
+# Bracket-feeder placeholder used by SFMS01 for not-yet-decided later-round teams,
+# e.g. '[39]w' (winner of match No.39), '[40]l' (loser of match No.40).
+_FEEDER_PLACEHOLDER = re.compile(r'^\[(\d+)\]([wl])$')
+
+# Official match number, embedded at the start of the broadcast column, e.g. 'マッチＮｏ［１］／...'.
+_MATCH_NO_PATTERN = re.compile(r'マッチＮｏ［([０-９]+)］')
+
+
+def _season_label(season_value: object, year: int) -> str:
+    """Derive the published season label from a raw SFMS01 シーズン/年度 value.
+
+    A cross-year season 'YYYY/YY' (used from the 2026/27 season onward) becomes
+    'YY-YY' (e.g. '2026/27' -> '26-27'); anything else falls back to str(year).
     """
-    filename = config.get_path('match_data.csv_path_format', year=year)
+    match = re.match(r'^(\d{4})/(\d{2})$', str(season_value).strip())
+    if match:
+        return f'{match.group(1)[2:]}-{match.group(2)}'
+    return str(year)
+
+
+def _season_label_from_matches(matches: pd.DataFrame, year: int) -> str:
+    """Look up the season label from whichever season column the source CSV carries."""
+    for col in ('シーズン', '年度'):
+        if col in matches.columns and not matches[col].empty:
+            return _season_label(matches[col].iat[0], year)
+    return str(year)
+
+
+def _jleaguecup_round_sort_key(round_label: str) -> tuple:
+    """Order JLeagueCup rounds by tournament progression rather than by match date.
+
+    4回戦 matches between already-seeded clubs are sometimes played before 3回戦
+    finishes (e.g. in 2026: 4回戦第１日 on 10/03, before 3回戦第１日 on 10/14), so
+    date-based ordering (as used by match_utils.assign_bracket_section_no) would
+    invert them. Order explicitly instead: 1stラウンドの N回戦 (by N) ->
+    プレーオフラウンド -> プライムラウンド (準々決勝 -> 準決勝 -> 決勝).
+    """
+    match = re.match(r'(\d+)回戦$', round_label)
+    if match:
+        return (0, int(match.group(1)))
+    if round_label in _JLEAGUECUP_FIXED_ROUND_ORDER:
+        return (1, _JLEAGUECUP_FIXED_ROUND_ORDER.index(round_label))
+    return (2, round_label)
+
+
+def _assign_jleaguecup_section_no(matches: pd.DataFrame) -> pd.DataFrame:
+    """Assign section_no from tournament round order and recalculate round-local indexes.
+
+    The earliest present round gets -(number of distinct rounds present), the latest -1
+    (matching the bracket-depth convention used elsewhere, see match_utils.CSV_COLUMN_SCHEMA).
+    """
+    present_rounds = sorted(matches['round'].unique(), key=_jleaguecup_round_sort_key)
+    total_rounds = len(present_rounds)
+    round_to_section = {
+        round_name: index - total_rounds for index, round_name in enumerate(present_rounds)
+    }
+    result = matches.copy()
+    result['section_no'] = result['round'].map(round_to_section)
+    return _recalculate_match_index_in_section(result)
+
+
+def _convert_feeder_placeholder(value: object) -> object:
+    """Convert an SFMS01 bracket-feeder placeholder to the frontend's feeder-reference notation.
+
+    '[N]w' -> 'No.Nの勝者', '[N]l' -> 'No.Nの敗者' (matches the
+    ``/^No\\.(\\d+)の(勝者|敗者)$/`` pattern the frontend's topology parser expects
+    for a block's ``feeder_reference`` topology_source). Values that don't match the
+    placeholder shape (i.e. already-decided team names) pass through unchanged.
+    """
+    match = _FEEDER_PLACEHOLDER.match(str(value).strip())
+    if not match:
+        return value
+    number, kind = match.groups()
+    outcome = '勝者' if kind == 'w' else '敗者'
+    return f'No.{number}の{outcome}'
+
+
+def _extract_match_numbers(broadcast: pd.Series) -> pd.Series | None:
+    """Extract official マッチＮｏ［N］ numbers from the broadcast column.
+
+    Returns None (caller should fall back to match_card_id) unless every row has one;
+    in 2025 only 48/69 rows carried it, so a partial extraction isn't usable on its own.
+    """
+    def _extract_one(text: object) -> str | None:
+        match = _MATCH_NO_PATTERN.search(str(text))
+        return match.group(1).translate(_FW_DIGITS) if match else None
+
+    extracted = broadcast.fillna('').map(_extract_one)
+    if extracted.isna().any():
+        return None
+    return extracted
+
+
+def make_jleaguecup_csv(year: int) -> None:
+    """Convert Levain Cup (ルヴァンカップ, formerly YLC/YNC) match results into final CSV.
+
+    Prefers the frame-filtered intermediate CSV (csv/{year}_frame11.csv, fetched with
+    competition_frame_ids=11 to stay under the site's 1,500-row search limit on a full
+    season); falls back to csv/{year}.csv for years fetched before frame filtering was
+    needed. Filters cup matches from it, derives round/leg/match_number columns, assigns
+    section_no by tournament round order, and outputs
+    docs/csv/{season}_allmatch_result-JLeagueCup.csv (season label e.g. '26-27' for a
+    cross-year シーズン like '2026/27', else str(year)).
+    """
+    frame_filename = config.get_path('match_data.csv_path_format_with_frame',
+                                     year=year, frame=_FRAME_ID_JLEAGUECUP)
+    filename = frame_filename if frame_filename.exists() else config.get_path(
+        'match_data.csv_path_format', year=year)
     if not filename.exists():
         return
 
@@ -174,6 +283,8 @@ def make_jleaguecup_csv(year: int) -> None:
     matches = _df[_df['大会'].str.contains(FILTER_ALIASES['JLeagueCup'], na=False)].reset_index(drop=True)
     if matches.empty:
         return
+
+    season_label = _season_label_from_matches(matches, year)
 
     # Date: YY/MM/DD(day) → YYYY/MM/DD
     raw_date = matches['試合日'].str.replace(r'\(.+\)', '', regex=True)
@@ -187,14 +298,23 @@ def make_jleaguecup_csv(year: int) -> None:
     )
     matches['leg'] = matches['節'].apply(lambda s: _derive_leg(str(s)))
 
-    matches['section_no'] = 0
+    # Match number: prefer the official マッチＮｏ［N］ broadcast prefix; fall back to
+    # match_card_id (2025 semantics) unless every row in this year has it.
+    match_numbers = _extract_match_numbers(matches['インターネット中継・TV放送'])
+    if match_numbers is None:
+        match_numbers = matches['match_card_id'].astype(str)
+    matches['match_number'] = match_numbers
 
     # Rename JP columns → English
     rename_dict = config.rename_dict.to_dict()
     matches = matches.rename(columns=rename_dict)
     matches['スコア'] = matches['スコア'].fillna('')
 
-    # Parse scores (handles both "1-0" and "1-1 (PK2-4)")
+    # Bracket-feeder placeholders for not-yet-played later rounds, e.g. '[39]w' → 'No.39の勝者'
+    matches['home_team'] = matches['home_team'].apply(_convert_feeder_placeholder)
+    matches['away_team'] = matches['away_team'].apply(_convert_feeder_placeholder)
+
+    # Parse scores (handles both "1-0" and "1-1 (PK2-4)"; unplayed rows show "vs")
     score_parts = matches['スコア'].str.extract(r'^(\d+)-(\d+)')
     matches['home_goal'] = score_parts[0].fillna('')
     matches['away_goal'] = score_parts[1].fillna('')
@@ -212,20 +332,27 @@ def make_jleaguecup_csv(year: int) -> None:
                 lambda x: str(int(float(x))) if x != '' else ''
             )
 
-    # Status
+    # Status (handles unplayed "vs" rows via the future-match_date branch)
     matches['status'] = matches.apply(
         lambda row: _derive_status(row['スコア'], row['match_date']),
         axis=1,
     )
 
-    # match_index_in_section: sequential within each round+leg group
-    result_parts = []
+    # Seed match_index_in_section with per-(round, leg) arrival order (as returned by
+    # the site); this also gives each row a CSV row label that restarts per round/leg,
+    # matching the committed CSVs. _recalculate_match_index_in_section (below) uses this
+    # seed as a same-date tiebreak and to pair up two-leg fixtures, then overwrites it
+    # with the final value while preserving row order and these row labels.
+    seed_parts = []
     for _, group_df in matches.groupby(['round', 'leg'], sort=False):
         section = group_df.reset_index(drop=True).reset_index()
         section['index'] += 1
         section = section.rename(columns={'index': 'match_index_in_section'})
-        result_parts.append(section)
-    result = pd.concat(result_parts)
+        seed_parts.append(section)
+    matches = pd.concat(seed_parts)
+
+    # section_no by tournament round order + section-aware match_index_in_section
+    result = _assign_jleaguecup_section_no(matches)
 
     columns_list = [
         'match_date', 'section_no', 'match_index_in_section',
@@ -234,18 +361,18 @@ def make_jleaguecup_csv(year: int) -> None:
     ]
     if 'home_score_ex' in result.columns:
         columns_list.extend(['home_score_ex', 'away_score_ex'])
-    columns_list.append('leg')
+    columns_list.extend(['leg', 'match_number'])
 
     # Normalize nullable_int columns to int-strings or empty
     for col in ('leg', 'home_pk_score', 'away_pk_score',
-                'home_score_ex', 'away_score_ex'):
+                'home_score_ex', 'away_score_ex', 'match_number'):
         if col in result.columns:
             result[col] = result[col].fillna('').apply(
                 lambda x: str(int(float(x))) if x != '' else ''
             )
 
     outfile = config.get_path('match_data.league_csv_path',
-                              season=str(year), competition='JLeagueCup')
+                              season=season_label, competition='JLeagueCup')
     result[columns_list].to_csv(outfile, lineterminator='\n',
                                 encoding=config.match_data.encoding)
     logger.info("Stored: %s (%d rows)", outfile, len(result))

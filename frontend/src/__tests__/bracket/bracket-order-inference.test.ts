@@ -43,6 +43,27 @@ describe('inferBracketOrderFromRows', () => {
       'D', null, 'E', null,
     ]);
   });
+
+  test('follows "No.Xの勝者" placeholders of unplayed rounds to their feeder match', () => {
+    const rows: RawMatchRow[] = [
+      makeRow({ match_number: '1', section_no: '-3', round: '1回戦', home_team: 'B', away_team: 'C' }),
+      makeRow({ match_number: '2', section_no: '-2', round: '準決勝', home_team: 'A', away_team: 'B' }),
+      makeRow({
+        match_number: '3', section_no: '-2', round: '準決勝', home_team: 'D', away_team: 'E',
+        home_goal: '', away_goal: '', status: 'ＶＳ',
+      }),
+      makeRow({
+        match_number: '4', section_no: '-1', round: '決勝',
+        home_team: 'No.2の勝者', away_team: 'No.3の勝者',
+        home_goal: '', away_goal: '', status: 'ＶＳ',
+      }),
+    ];
+
+    expect(inferBracketOrderFromRows(rows)).toEqual([
+      'A', null, 'B', 'C',
+      'D', null, 'E', null,
+    ]);
+  });
 });
 
 describe('extractTeamsFromBracketOrder', () => {
