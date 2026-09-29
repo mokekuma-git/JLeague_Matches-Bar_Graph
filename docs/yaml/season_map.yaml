@@ -737,9 +737,11 @@ jleague:
           bracket_round_start: １回戦
         '2025':
           bracket_round_start: １回戦
+        '2026':
+          bracket_round_start: １回戦
       data_source:
         label: 'JFA公式: 天皇杯'
-        url: https://www.jfa.jp/match/emperorscup_2025/
+        url: https://www.jfa.jp/match/emperorscup_2026/
     JLeagueCup:
       league_display: Jリーグカップ
       view_type: [bracket]
