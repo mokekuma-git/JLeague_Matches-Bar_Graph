@@ -58,12 +58,13 @@ def store_year_data(year: int, frame: int | None = None) -> None:
         _url = config.get_format_str('match_data.url_format', year=year)
     html_text = requests.request('GET', _url, timeout=config.http_timeout).text
     if config.match_data.too_many_results_text in html_text:
-        logger.error(
-            "Search returned more than 1,500 rows for year %d%s; narrow the query "
-            "(e.g. pass --frame) and retry. URL: %s",
-            year, f" (frame={frame})" if frame is not None else "", _url,
+        # Raise rather than log and return: the daily cron runs this reader, and
+        # a clean exit would hide a query the site refuses.
+        raise RuntimeError(
+            f"Search returned more than 1,500 rows for year {year}"
+            f"{f' (frame={frame})' if frame is not None else ''}; narrow the query "
+            f"(e.g. pass --frame) and retry. URL: {_url}"
         )
-        return
 
     html_io = StringIO(html_text)
     df = pd.read_html(html_io)[0]

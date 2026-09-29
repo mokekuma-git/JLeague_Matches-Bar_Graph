@@ -117,6 +117,15 @@ class TestReaderSelection(unittest.TestCase):
         for competition in ('PrincePremierE', 'PrincePremierW', 'PrinceKanto'):
             self.assertIn(competition, joined)
         self.assertIn('read_we_league.py', joined)
+        self.assertIn('read_jfamatch.py EmperorsCup', joined)
+        self.assertIn('read_older2020_matches.py -y 2026 --frame 11', joined)
+        self.assertIn('make_old_matches_csv.py --competition JLeagueCup -y 2026', joined)
+
+    def test_levain_cup_is_fetched_before_it_is_built(self):
+        readers = _readers(_run(DAILY_CRON).stdout)
+        fetch = next(i for i, r in enumerate(readers) if 'read_older2020_matches.py' in r)
+        build = next(i for i, r in enumerate(readers) if 'make_old_matches_csv.py' in r)
+        self.assertLess(fetch, build)
 
     def test_finished_competitions_are_not_fetched(self):
         """WC2026 closed on 2026-07-19; running its readers daily only made the

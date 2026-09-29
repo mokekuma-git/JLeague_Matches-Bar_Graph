@@ -20,6 +20,7 @@ _WORKFLOW = _REPO_ROOT / '.github' / 'workflows' / 'update-match-csv.yaml'
 _STUB = """#!/bin/bash
 if [ "${STUB_CHANGE:-0}" = 1 ]; then
   echo "updated" >> docs/csv/sample.csv
+  echo "updated" >> csv/intermediate.csv
 fi
 exit "${STUB_EXIT:-0}"
 """
@@ -60,6 +61,9 @@ class TestUpdateStep(unittest.TestCase):
         _git(self.work, 'config', 'user.email', 'test@example.com')
         (self.work / 'docs' / 'csv').mkdir(parents=True)
         (self.work / 'docs' / 'csv' / 'sample.csv').write_text('header\n')
+        # The Levain Cup reader keeps its SFMS01 rows here, next to the published CSVs.
+        (self.work / 'csv').mkdir()
+        (self.work / 'csv' / 'intermediate.csv').write_text('header\n')
         (self.work / 'scripts').mkdir()
         (self.work / 'scripts' / 'call_update_csv.sh').write_text(_STUB)
         _git(self.work, 'add', '.')
@@ -101,6 +105,12 @@ class TestUpdateStep(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(self._commits_on_remote(), 2)
         self.assertIn('committed=true', outputs)
+
+    def test_intermediate_rows_are_committed_with_the_csv(self):
+        """Left unstaged, csv/ would also make the push-race rebase refuse to run."""
+        self._run_step(change=True, exit_status=0)
+
+        self.assertEqual(_git(self.work, 'status', '--porcelain'), '')
 
     def test_no_change_means_no_commit(self):
         status, outputs = self._run_step(change=False, exit_status=0)
