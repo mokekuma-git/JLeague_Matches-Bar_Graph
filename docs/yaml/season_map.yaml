@@ -1074,6 +1074,26 @@ jleague:
             bracket_order: [柏, 横浜FM, 川崎Ｆ, 浦和, 広島, 湘南, 神戸, 横浜FC]
             inclusive_tree: true
           note: 公式トーナメント図で順序確認。2025年は1stラウンド7ブロック、プレーオフラウンド4ペア、プライムラウンドで構成。H&A 判定は勝利数→得失点差→延長→PK。図中注記はACL=横浜FM/川崎Ｆ/神戸, CWC=浦和.
+        '26-27':
+          bracket_round_start: 1回戦
+          bracket_blocks:
+          - label: 1stラウンド ①
+            round_filter: [1回戦, 2回戦, 3回戦, 4回戦]
+            bracket_order: [松本, 湘南, 群馬, 新潟, 八戸, 栃木Ｃ, ~, 広島, 栃木SC, 山形, ~, 横浜FM, 金沢, 今治, ~, 清水]
+          - label: 1stラウンド ②
+            round_filter: [1回戦, 2回戦, 3回戦, 4回戦]
+            bracket_order: [岐阜, 徳島, 琉球, 横浜FC, 宮崎, 富山, ~, 浦和, 北九州, いわき, ~, 名古屋, 鹿児島, 札幌, ~, 岡山]
+          - label: 1stラウンド ③
+            round_filter: [1回戦, 2回戦, 3回戦, 4回戦]
+            bracket_order: [相模原, 磐田, 讃岐, 千葉, 熊本, 大分, ~, 川崎Ｆ, 奈良, 鳥栖, 滋賀, 東京Ｖ, FC大阪, 甲府, ~, 福岡]
+          - label: 1stラウンド ④
+            round_filter: [1回戦, 2回戦, 3回戦, 4回戦]
+            bracket_order: [鳥取, 大宮, 高知, 長崎, 山口, 藤枝, ~, Ｃ大阪, 福島, 仙台, 長野, 水戸, 愛媛, 秋田, ~, FC東京]
+          - label: 1stラウンド 4回戦 (シード)
+            round_filter: [4回戦]
+            bracket_order: [町田, 京都, 柏, Ｇ大阪]
+            matchup_pairs: true
+          note: 秋春制移行後の 26-27 シーズン。1stラウンドは1回戦〜4回戦の1試合制で、ブロック①〜④は試合番号の勝ち上がり (4回戦 No.47〜50) から構成。町田・京都・柏・Ｇ大阪は4回戦から出場。プライムラウンドは組み合わせ確定後に追加する.
 national:
   display_name: ナショナルチーム
   css_files: [national_team_style.css]
