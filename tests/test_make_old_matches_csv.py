@@ -26,6 +26,17 @@ def test_derive_status_maps_played_and_unplayed_scores() -> None:
     assert _derive_status(None, date.today() - timedelta(days=1)) == '試合中止'
 
 
+@pytest.mark.parametrize('score', ['vs', 'VS', 'ＶＳ', 'ｖｓ'])
+@pytest.mark.parametrize('match_date', [None, '2000/01/01', '2026/10/03', '2099/01/01'])
+def test_explicit_unplayed_score_does_not_become_cancelled(score, match_date) -> None:
+    """SFMS01's vs is still scheduled when a result has not been posted yet."""
+    assert _derive_status(score, match_date) == 'ＶＳ'
+
+
+def test_blank_score_on_today_is_not_a_cancellation() -> None:
+    assert _derive_status('', date.today()) == 'ＶＳ'
+
+
 def test_make_each_csv_adds_status_for_legacy_league_csv(tmp_path: Path) -> None:
     src = pd.DataFrame(
         [

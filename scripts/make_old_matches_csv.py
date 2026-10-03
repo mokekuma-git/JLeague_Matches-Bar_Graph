@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -31,6 +32,10 @@ def _derive_status(score: object, match_date: object = None) -> str:
         return '試合不実施'
     if '中止' in score_text:
         return '試合中止'
+    # An explicit vs means the source has not supplied a result.  A delayed
+    # update or postponed fixture must not turn into a cancellation as days pass.
+    if unicodedata.normalize('NFKC', score_text).casefold() == 'vs':
+        return 'ＶＳ'
 
     if match_date is not None:
         date_text = '' if pd.isna(match_date) else str(match_date).strip()
@@ -38,7 +43,7 @@ def _derive_status(score: object, match_date: object = None) -> str:
             parsed = pd.to_datetime(date_text).date()
         except (ValueError, TypeError):
             parsed = None
-        if parsed is not None and parsed > date.today():
+        if parsed is not None and parsed >= date.today():
             return 'ＶＳ'
 
     return '試合中止'
