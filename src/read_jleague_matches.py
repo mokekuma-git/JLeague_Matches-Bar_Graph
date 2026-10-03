@@ -86,6 +86,9 @@ HEADER_DATE_RE = re.compile(r'(\d{4})/(\d{1,2})/(\d{1,2})')
 TIME_RE = re.compile(r'^\d{1,2}:\d{2}$')
 # The detail page keeps the kick-off in its header: '2026/8/22 (土) 18:00 KO'.
 DETAIL_KICKOFF_RE = re.compile(r'(\d{1,2}:\d{2})\s*KO')
+# React streams some card fields into hidden fragments and inserts them at
+# template slots with $RS(source_id, slot_id).  Parse these calls, never execute JS.
+STREAM_SLOT_RE = re.compile(r'\$RS\("([^"]+)",\s*"([^"]+)"\)')
 
 # Status vocabulary of the published CSV.  'ＶＳ' means not played yet; a status
 # containing '速報中' marks a match in progress (the front-end strips the marker
@@ -166,6 +169,26 @@ def season_periods(months: int = 12, start_month: int = None) -> list[tuple[str,
     return periods
 
 
+def restore_streamed_slots(soup: BeautifulSoup) -> None:
+    """Move delivered HTML fragments into their template slots, in place.
+
+    BeautifulSoup does not execute the page's React streaming instructions.
+    Leaving the fragments detached makes a real match look like a team-less
+    card and loses its score, venue and detail link.  Delivery order also handles
+    nested slots.  A second call is harmless because restored slots are gone.
+    """
+    for script in soup.find_all('script'):
+        for source_id, slot_id in STREAM_SLOT_RE.findall(script.string or ''):
+            source = soup.find(id=source_id)
+            slot = soup.find('template', id=slot_id)
+            if source is None or slot is None:
+                continue
+            for child in list(source.contents):
+                slot.insert_before(child.extract())
+            slot.decompose()
+            source.decompose()
+
+
 def read_match_from_web(soup: BeautifulSoup, competition: str) -> pd.DataFrame:
     """Parse one schedule page into the published CSV shape.
 
@@ -176,6 +199,7 @@ def read_match_from_web(soup: BeautifulSoup, competition: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame holding CSV_COLUMNS (unnumbered).
     """
+    restore_streamed_slots(soup)
     sections = read_sections_from_web(soup)
     category = competition.lower()
 
@@ -362,6 +386,7 @@ def read_detail_links(soup: BeautifulSoup, competition: str) -> dict[tuple, str]
     Returns:
         dict[tuple, str]: {(match_date, home_team, away_team): '/match/j3/2026/082225/'}
     """
+    restore_streamed_slots(soup)
     category = competition.lower()
     links = {}
     for link in soup.find_all('a', href=MATCH_LINK_RE):

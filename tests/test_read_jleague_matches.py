@@ -22,6 +22,8 @@ from read_jleague_matches import season_periods
 from read_jleague_matches import get_match_dates_of_section
 from read_jleague_matches import get_sections_to_update
 from read_jleague_matches import read_match_from_web
+from read_jleague_matches import read_match
+from read_jleague_matches import read_detail_links
 from read_jleague_matches import read_teams_from_web
 
 
@@ -222,6 +224,66 @@ class TestReadMatchFromWeb(HtmlLoadingTestCase):
 
         self.assertTrue(empty.empty)
         self.assertEqual(list(empty.columns), CSV_COLUMNS)
+
+
+class TestStreamedMatchCards(HtmlLoadingTestCase):
+    """The first card's score and away team arrive in separate HTML fragments."""
+
+    test_data_dir = Path(__file__).parent / 'test_data'
+
+    def _page(self):
+        return self._load_html_file('jleague_match_streamed.html')
+
+    def test_fetch_recovers_the_finished_match_and_its_detail_link(self):
+        html = str(self._page())
+        with patch('read_jleague_matches.requests.get') as request:
+            request.return_value.text = html
+            matches = read_match('J3', [('2026-10-02', '2026-10-03')])
+
+        self.assertEqual(len(matches), 1)
+        row = matches.iloc[0]
+        self.assertEqual((row['home_team'], row['away_team']), ('滋賀', '熊本'))
+        self.assertEqual((row['home_goal'], row['away_goal'], row['status']),
+                         ('0', '0', '試合終了'))
+        self.assertEqual((row['stadium'], row['broadcast']), ('たけびし', 'DAZN'))
+        self.assertEqual(matches.attrs['detail_links'],
+                         {('2026/10/02', '滋賀', '熊本'): '/match/j3/2026/100201/'})
+
+    def test_detail_links_can_be_read_before_the_matches(self):
+        page = self._page()
+        links = read_detail_links(page, 'J3')
+        matches = read_match_from_web(page, 'J3')
+
+        self.assertEqual(links,
+                         {('2026/10/02', '滋賀', '熊本'): '/match/j3/2026/100201/'})
+        self.assertEqual(len(matches), 1)
+
+    def test_a_streamed_live_score_keeps_its_elapsed_time(self):
+        page = self._page()
+        over = page.find(class_='m-schedule__game-over-text')
+        over['class'] = ['m-schedule__live-text']
+        over.string = '後半 49分'
+        matches = read_match_from_web(page, 'J3')
+
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches.iloc[0]['status'], '速報中後半 49分')
+
+    def test_nested_fragments_are_restored_in_delivery_order(self):
+        page = self._page()
+        away = page.find(id='S:6')
+        nested = page.new_tag('div', id='S:away', hidden='')
+        for child in list(away.contents):
+            nested.append(child.extract())
+        away.append(page.new_tag('template', id='P:away'))
+        page.body.append(nested)
+        script = page.new_tag('script')
+        script.string = '$RS("S:away","P:away")'
+        page.body.append(script)
+
+        matches = read_match_from_web(page, 'J3')
+
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches.iloc[0]['away_team'], '熊本')
 
 
 class TestReadSectionsFromWeb(HtmlLoadingTestCase):
