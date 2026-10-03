@@ -90,9 +90,9 @@ def resolve_watch_date(now: datetime) -> datetime.date:
     meant a run landing past midnight looked for fixtures on the new day, found
     none and quit, while the evening's matches were still unsettled.
 
-    Yesterday wins whenever its CSVs still show a match that kicked off and has
-    not finished.  The look-back stops at one day, so a fixture the site never
-    settles cannot pin the watch to it for good.
+    Yesterday remains worth catching up until today's match window opens.
+    An old unreported result must not take priority over today's live games.
+    The look-back stops at one day.
 
     Args:
         now (datetime): Current time, in the league's timezone.
@@ -104,6 +104,11 @@ def resolve_watch_date(now: datetime) -> datetime.date:
     yesterday = today - timedelta(days=1)
     left_over = load_todays_matches(yesterday)
     if has_started_unfinished(left_over, yesterday, now, tzinfo=now.tzinfo):
+        current = load_todays_matches(today)
+        window = match_window(current, today, now, tzinfo=now.tzinfo)
+        if not all_settled(current) and window is not None and window[0] <= now:
+            logger.info("Today's match window has opened; watching %s", today)
+            return today
         logger.info("Yesterday (%s) still has a match under way; watching that day", yesterday)
         return yesterday
     return today
@@ -244,6 +249,24 @@ def stop_reason(matches: pd.DataFrame, stale_polls: int, max_stale: int) -> str 
     return None
 
 
+def next_unstarted_kickoff(matches: pd.DataFrame, day: datetime.date,
+                           now: datetime) -> datetime | None:
+    """Find the next known kick-off among fixtures still waiting to start."""
+    if matches.empty:
+        return None
+    pending = matches[~matches['status'].fillna('').isin(SETTLED)]
+    kickoffs = []
+    for value in pending['start_time'].fillna(''):
+        try:
+            clock = datetime.strptime(str(value).strip(), '%H:%M').time()
+        except ValueError:
+            continue
+        kickoff = datetime.combine(day, clock, tzinfo=now.tzinfo)
+        if kickoff > now:
+            kickoffs.append(kickoff)
+    return min(kickoffs) if kickoffs else None
+
+
 def run(command: list[str], cwd: Path = None) -> subprocess.CompletedProcess:
     """Run a command, capturing its output.
 
@@ -274,7 +297,7 @@ def commit_and_push(retries: int = 3) -> bool:
     if not status.stdout.strip():
         return False
 
-    stamp = datetime.now().strftime('%m/%d %H:%M')
+    stamp = datetime.now(config.timezone).strftime('%m/%d %H:%M')
     run(['git', 'add', 'docs/csv/'], cwd=_REPO_ROOT)
     run(['git', 'commit', '-m', f'Make new csv (live update on {stamp})'], cwd=_REPO_ROOT)
 
@@ -372,8 +395,8 @@ def main() -> int:
     now = datetime.now(tzinfo)
     deadline = now + timedelta(minutes=args.budget_minutes)
 
-    # The day under watch is settled here and never re-read from the clock: a
-    # match still being played must not be abandoned when the date rolls (#311).
+    # Keep an overnight match's date until the next day's games need watching;
+    # merely reaching midnight must not discard it (#311).
     watch_date = resolve_watch_date(now)
     matches = load_todays_matches(watch_date)
     window = match_window(matches, watch_date, now, tzinfo=now.tzinfo)
@@ -413,6 +436,21 @@ def main() -> int:
     stale_polls = 0
     previous = matches
     while True:
+        now = datetime.now(tzinfo)
+        if watch_date < now.date():
+            candidate = resolve_watch_date(now)
+            if candidate != watch_date:
+                logger.info("Handing watch over from %s to %s", watch_date, candidate)
+                watch_date = candidate
+                previous = load_todays_matches(watch_date)
+                stale_polls = 0
+                window = match_window(previous, watch_date, now, tzinfo=now.tzinfo)
+                if window is not None and not all_settled(previous):
+                    if window[0] >= deadline:
+                        logger.info("Next day's window is beyond this job's budget")
+                        return 0
+                    if now < window[0]:
+                        time.sleep((window[0] - now).total_seconds())
         poll_once()
         if args.no_push:
             logger.info("--no-push: leaving any change uncommitted")
@@ -435,11 +473,28 @@ def main() -> int:
 
         reason = stop_reason(today, stale_polls, args.max_stale_polls)
         if reason:
-            logger.info("Stopping: %s", reason)
+            logger.info("Watch status for %s: %s", watch_date, reason)
             if not all_settled(today):
-                # A result stays missing until the nightly update, so make the
-                # stall visible from the run list and not only in the log.
-                print(f"::warning::Live watch gave up: {reason}")
+                # Report an unresolved result even when later games are still
+                # worth watching within this job's budget.
+                print(f"::warning::Live watch stalled on {watch_date}: {reason}")
+            if watch_date < now.date():
+                current = load_todays_matches(now.date())
+                window = match_window(current, now.date(), now, tzinfo=now.tzinfo)
+                if not all_settled(current) and window is not None and window[0] < deadline:
+                    logger.info("Handing watch over from %s to %s", watch_date, now.date())
+                    watch_date = now.date()
+                    previous = current
+                    stale_polls = 0
+                    if now < window[0]:
+                        time.sleep((window[0] - now).total_seconds())
+                    continue
+            kickoff = next_unstarted_kickoff(today, watch_date, now)
+            if kickoff is not None and kickoff < deadline:
+                logger.info("Waiting until the next kick-off at %s", kickoff.strftime('%H:%M'))
+                stale_polls = 0
+                time.sleep((kickoff - now).total_seconds())
+                continue
             return 0
 
         if now + timedelta(minutes=args.interval) >= deadline:

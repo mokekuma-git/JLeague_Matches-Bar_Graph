@@ -305,6 +305,21 @@ class TestWatchDateFollowsTheData(unittest.TestCase):
     def test_a_yesterday_without_matches_hands_over_to_today(self):
         self.assertEqual(self._resolve(pd.DataFrame()), self.NOW.date())
 
+    def test_todays_match_window_takes_priority_over_a_stale_yesterday(self):
+        now = JST.localize(datetime(2026, 10, 3, 14, 22))
+        frames = {date(2026, 10, 2): _matches(('19:00', 'ＶＳ')),
+                  now.date(): _matches(('14:00', '速報中前半 22分'), ('17:00', 'ＶＳ'))}
+        with mock.patch.object(wlm, 'load_todays_matches',
+                               side_effect=lambda day: frames[day]):
+            self.assertEqual(wlm.resolve_watch_date(now), now.date())
+
+    def test_tonights_fixture_does_not_abandon_yesterdays_live_match(self):
+        frames = {self.YESTERDAY: _matches(('19:00', '速報中後半 50分')),
+                  self.NOW.date(): _matches(('19:00', 'ＶＳ'))}
+        with mock.patch.object(wlm, 'load_todays_matches',
+                               side_effect=lambda day: frames[day]):
+            self.assertEqual(wlm.resolve_watch_date(self.NOW), self.YESTERDAY)
+
     def test_a_run_landing_past_midnight_still_watches_the_evening(self):
         """Reaching sleep means the run found yesterday's match and started polling.
 
@@ -428,6 +443,82 @@ class TestStallIsJudgedOnMatchData(unittest.TestCase):
 
         self.assertEqual((code, sleeps), (0, 0))
         self.assertNotIn('::warning::', out)
+
+
+class TestWatchHandsOverToUpcomingMatches(unittest.TestCase):
+    """One unreported result must not cut off the next day's or evening's games."""
+
+    def _watch(self, previous_day, initial_hour=None, initial_minute=0, max_stale=1,
+               budget_minutes=360):
+        hour = initial_hour if initial_hour is not None else (12 if previous_day else 15)
+        now = JST.localize(datetime(2026, 10, 3, hour, initial_minute))
+        day = now.date()
+        yesterday = day - timedelta(days=1)
+        stuck = _matches(('19:00' if previous_day else '14:00', 'ＶＳ'))
+        fixtures = _matches(('17:00', 'ＶＳ'))
+        frames = {yesterday: stuck if previous_day else pd.DataFrame(),
+                  day: fixtures if previous_day else pd.concat([stuck, fixtures])}
+        polls = []
+
+        class _Clock(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return now
+
+        def _sleep(seconds):
+            nonlocal now
+            now += timedelta(seconds=seconds)
+            if len(polls) > 30:
+                raise _StopLoop
+
+        def _poll():
+            polls.append(now)
+            if now.hour >= 17:
+                done = _matches(('17:00', '試合終了'))
+                frames[day] = done if previous_day else pd.concat([stuck, done])
+
+        argv = ['watch', '--no-push', '--budget-minutes', str(budget_minutes),
+                '--max-stale-polls', str(max_stale)]
+        out = io.StringIO()
+        with mock.patch.object(wlm, 'datetime', _Clock), \
+                mock.patch.object(wlm, 'load_todays_matches',
+                                  side_effect=lambda d: frames.get(d, pd.DataFrame())), \
+                mock.patch.object(wlm, 'poll_once', side_effect=_poll), \
+                mock.patch.object(wlm.time, 'sleep', side_effect=_sleep), \
+                mock.patch.object(sys, 'argv', argv), \
+                contextlib.redirect_stdout(out):
+            code = wlm.main()
+        return code, polls, out.getvalue()
+
+    def test_a_stalled_yesterday_hands_over_to_todays_kickoff(self):
+        code, polls, _ = self._watch(previous_day=True)
+
+        self.assertEqual(code, 0)
+        self.assertTrue(any(p.hour >= 17 for p in polls),
+                        'stopped on yesterday before polling the 17:00 match')
+
+    def test_a_stalled_afternoon_result_does_not_abandon_the_evening(self):
+        code, polls, _ = self._watch(previous_day=False)
+
+        self.assertEqual(code, 0)
+        self.assertTrue(any(p.hour >= 17 for p in polls),
+                        'stopped on the missing 14:00 result before the 17:00 match')
+
+    def test_an_opening_window_hands_over_before_the_stall_limit(self):
+        code, polls, out = self._watch(previous_day=True, initial_hour=16,
+                                      initial_minute=50, max_stale=12)
+
+        self.assertEqual(code, 0)
+        self.assertTrue(any(p.hour >= 17 for p in polls))
+        self.assertNotIn('::warning::', out,
+                         'kept watching yesterday after today reached kick-off')
+
+    def test_a_kickoff_beyond_the_budget_is_left_for_a_later_run(self):
+        code, polls, _ = self._watch(previous_day=True, budget_minutes=60)
+
+        self.assertEqual(code, 0)
+        self.assertEqual(len(polls), 1,
+                         'waited past the job budget to reach the next kick-off')
 
 
 class TestWindowBounds(unittest.TestCase):
