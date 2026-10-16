@@ -72,6 +72,54 @@ test.describe('Bracket rendering — connectors and layout', () => {
   });
 });
 
+test.describe('Bracket rendering — responsive multi-section width', () => {
+  for (const layout of ['horizontal', 'vertical']) {
+    test(`${layout} sections use the available width and scroll to the last card`, async ({ page }) => {
+      await page.goto('/matches.html?competition=JLeagueCup&season=2025');
+      await waitForBracketRender(page);
+      await page.locator('#round_start_key').selectOption('__multi_section__');
+      await page.locator('#layout_toggle').selectOption(layout);
+      const section = page.locator('.bracket-section-content').first();
+      await expect(section).toBeVisible();
+
+      // iPad landscape/portrait and a narrower window, including live resize.
+      for (const viewport of [
+        { width: 1194, height: 834 },
+        { width: 834, height: 1194 },
+        { width: 600, height: 960 },
+      ]) {
+        await page.setViewportSize(viewport);
+        for (const scale of ['1', '0.5', '0.3']) {
+          await page.locator('#bracket_scale_slider').fill(scale);
+          await page.locator('#bracket_scale_slider').dispatchEvent('input');
+
+          const bounds = await section.evaluate((element) => {
+            const content = element as HTMLElement;
+            content.scrollLeft = content.scrollWidth;
+            const rect = content.getBoundingClientRect();
+            const cards = Array.from(content.querySelectorAll('.bracket-match'));
+            return {
+              width: rect.width,
+              availableWidth: document.getElementById('bracket_view')!.clientWidth,
+              right: rect.right,
+              lastCardRight: Math.max(...cards.map(card => card.getBoundingClientRect().right)),
+              overflowWidth: content.scrollWidth - content.clientWidth,
+              scrollLeft: content.scrollLeft,
+              documentWidth: document.documentElement.scrollWidth,
+              viewportWidth: window.innerWidth,
+            };
+          });
+
+          expect(bounds.width).toBeGreaterThanOrEqual(bounds.availableWidth - 2);
+          expect(bounds.lastCardRight).toBeLessThanOrEqual(bounds.right + 1);
+          expect(bounds.scrollLeft).toBeCloseTo(bounds.overflowWidth, 0);
+          expect(bounds.documentWidth).toBeLessThanOrEqual(bounds.viewportWidth);
+        }
+      }
+    });
+  }
+});
+
 test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-render' }, () => {
   test('multi-section mode renders separate section containers', async ({ page }) => {
     // JLeagueCup 2025 has bracket_blocks (1回戦, 2回戦, プレーオフ, プライム)

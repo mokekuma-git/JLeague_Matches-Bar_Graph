@@ -833,6 +833,10 @@ function applyScale(): void {
   const value = String(controlState.bracket.scale);
   container.style.transform = `scale(${value})`;
   container.style.transformOrigin = 'top left';
+  // Sections scroll inside this container. Compensate its layout width so
+  // scaling the cards does not also narrow their viewport and clip cards
+  // that would otherwise fit in the available browser width.
+  container.style.width = `${100 / controlState.bracket.scale}%`;
   syncBracketContainerHeight(container);
   refs.scaleSlider.value = value;
   refs.currentScale.textContent = value;
