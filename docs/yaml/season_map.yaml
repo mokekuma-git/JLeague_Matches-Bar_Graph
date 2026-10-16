@@ -738,7 +738,69 @@ jleague:
         '2025':
           bracket_round_start: １回戦
         '2026':
-          bracket_round_start: １回戦
+          bracket_round_start: __multi_section__
+          round_start_options: [__multi_section__]
+          bracket_blocks:
+          # The official draw splits the tournament at the round of 16.
+          # https://www.jfa.jp/match/emperorscup_2026/schedule_result/pdf/Tournament_3round.pdf
+          - label: 1〜3回戦 ①
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [鹿島, ~, アトレチコ鈴鹿, FC BASARA HYOGO, 札幌, ~, 甲府, ~]
+          - label: 1〜3回戦 ②
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [名古屋, ~, 鳥取, 熊本, 東京Ｖ, ~, 東北学院大学, 群馬]
+          - label: 1〜3回戦 ③
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [川崎Ｆ, ~, 栃木, ブリオベッカ浦安・市川, 磐田, ~, 宮崎, ~]
+          - label: 1〜3回戦 ④
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [Ｇ大阪, ~, 滋賀, JAPANサッカーカレッジ, 徳島, ~, ＦＣ徳島, 川副クラブ]
+          - label: 1〜3回戦 ⑤
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [広島, ~, 北九州, 沖縄SV, いわき, ~, 大分, ~]
+          - label: 1〜3回戦 ⑥
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [岡山, ~, ベルガロッソいわみ, 長崎国際大学, 千葉, ~, アルテリーヴォ和歌山, 沼津]
+          - label: 1〜3回戦 ⑦
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [神戸, ~, ヴェロスクロノス都農, 讃岐, 鳥栖, ~, 富山, ~]
+          - label: 1〜3回戦 ⑧
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [福岡, ~, ヴェルスパ大分, 高知, 横浜FC, ~, 流通経済大学, クリアソン新宿]
+          - label: 1〜3回戦 ⑨
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [柏, ~, 専修大学, 筑波大学, 今治, ~, 秋田, ~]
+          - label: 1〜3回戦 ⑩
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [横浜FM, ~, 福島, 大山サッカークラブ, 水戸, ~, 金沢星稜大学, 京都産業大学]
+          - label: 1〜3回戦 ⑪
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [浦和, ~, 山梨学院大学, 東京国際大学ＦＣ, 大宮, ~, 八戸, ~]
+          - label: 1〜3回戦 ⑫
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [Ｃ大阪, ~, 岐阜, 富山新庄クラブ, 新潟, ~, 鹿児島, 山口]
+          - label: 1〜3回戦 ⑬
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [京都, ~, ＳＲＣ広島, ＦＣマルヤス岡崎, 山形, ~, 藤枝, ~]
+          - label: 1〜3回戦 ⑭
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [清水, ~, 奈良, FC大阪, 長崎, ~, 愛媛, 環太平洋大学]
+          - label: 1〜3回戦 ⑮
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [町田, ~, 盛岡, 札幌大学, 仙台, ~, 栃木Ｃ, ~]
+          - label: 1〜3回戦 ⑯
+            round_filter: [１回戦, ２回戦, ３回戦]
+            bracket_order: [FC東京, ~, 長野, 福井ユナイテッドＦＣ, 湘南, ~, ラインメール青森, 秋田大学]
+          # https://www.jfa.jp/match/emperorscup_2026/schedule_result/pdf/Tournament.pdf
+          - label: ラウンド16〜決勝
+            round_filter: [ラウンド16, 準々決勝, 準決勝, 決勝戦]
+            bracket_order: [神戸, 清水, 鹿島, Ｃ大阪, 横浜FC, FC東京, 川崎Ｆ, 横浜FM, 町田, 東京Ｖ, 柏, 岡山, 京都, 広島, Ｇ大阪, 浦和]
+            bracket_topology:
+            - [73, 74, 75, 76, 77, 78, 79, 80]
+            - [81, 82, 83, 84]
+            - [85, 86]
+            - [87]
+          note: 1〜3回戦は16ブロックで実施。ラウンド16（4回戦）以降は2026年10月15日の再抽選で決定した別の山として表示。ラウンド16は12月9日、準々決勝は12月23日、準決勝は12月27日、決勝は2027年1月1日。
       data_source:
         label: 'JFA公式: 天皇杯'
         url: https://www.jfa.jp/match/emperorscup_2026/

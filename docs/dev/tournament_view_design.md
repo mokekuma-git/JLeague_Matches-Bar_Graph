@@ -1,7 +1,7 @@
 # Tournament View 設計ガイド
 
 **作成日**: 2026-03-15
-**最終更新**: 2026-09-05 (bracket_topology の追加)
+**最終更新**: 2026-10-16 (再抽選時の block 分割)
 **目的**: Tournament View の設計意図、データ構造、拡張方針を明文化する
 
 ---
@@ -131,8 +131,11 @@ Tournament 構造の**正本** (#287)。1 ブロック season でも必ずこれ
 - `matchup_pairs: true` の場合は elimination tree ではなく対戦カード単位で描画する
 - `inclusive_tree: true` は包括ツリーの主 block を指すマーカー
   (非 matchup block が複数あるときのみ必要)
-- authored 構造を持たない season (EmperorsCup) は `bracket_blocks` ごと省略し、
+- authored 構造を持たない season (EmperorsCup 2014–2025 等) は `bracket_blocks` ごと省略し、
   CSV (`match_number` 参照) から全構造を推定する
+- 途中で再抽選する大会は抽選前後を別 block にする。EmperorsCup 2026 は
+  1〜3回戦の16ブロックとラウンド16〜決勝の1ブロックに分け、
+  `round_start_options: [__multi_section__]` で独立表示する
 
 ### 5.2 `bracket_order` (block 内)
 
