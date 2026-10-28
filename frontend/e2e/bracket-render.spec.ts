@@ -175,8 +175,13 @@ test.describe('Bracket rendering — multi-section @full-render', { tag: '@full-
     const matchCount = await page.locator('.bracket-match').count();
     expect(matchCount).toBeGreaterThanOrEqual(16);
 
-    // No match is played yet, so the whole main tree shows as the structural
-    // (dashed) skeleton rather than decided-path connectors.
+    // Viewed before kickoff, no match is decided, so the main tree shows as the
+    // structural (dashed) skeleton.  Pin the date: the tournament has since been
+    // played out, which leaves no undecided match at the latest date.
+    const slider = page.locator('#bracket_date_slider');
+    await slider.fill('0');
+    await slider.dispatchEvent('change');
+    await page.locator('.bracket-match').first().waitFor({ timeout: 5000 });
     const tbdConnectors = await page.locator('svg polyline.bracket-connector-tbd').count();
     expect(tbdConnectors).toBeGreaterThan(0);
   });
