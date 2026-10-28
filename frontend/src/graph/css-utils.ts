@@ -87,7 +87,7 @@ export function setSpace(value: string): void {
 
 // Vertical gap below each block row; keep in sync with the
 // `.group_block_row` margin-bottom in docs/j_points.css.
-const BLOCK_ROW_GAP = 35;
+const BLOCK_ROW_GAP = 50;
 
 /** Largest .point_column clientHeight within a root element (0 if none). */
 function maxPointColumnHeight(root: ParentNode): number {

@@ -104,9 +104,10 @@ p {
   flex-direction: row;
   align-items: flex-end;
 }
-/* Leave room below each row for the group labels (positioned at bottom: -25px). */
+/* Leave room below each row for the group labels (positioned at bottom: -25px),
+   plus a gap before the next row so stacked groups read as separate blocks. */
 #box_container.blockrows .group_block_row {
-  margin-bottom: 35px;
+  margin-bottom: 50px;
 }
 
 .group_wrapper {
@@ -114,6 +115,10 @@ p {
   flex-direction: row;
   align-items: flex-end;
   position: relative;
+}
+/* Keep neighbouring groups' edge point columns from touching. */
+.group_block_row .group_wrapper + .group_wrapper {
+  margin-left: 16px;
 }
 .group_label {
   position: absolute;
