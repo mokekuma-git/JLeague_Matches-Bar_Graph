@@ -576,9 +576,17 @@
   background: -webkit-linear-gradient(left, darkgreen 70%, black);
   background: linear-gradient(to right, darkgreen 70%, black);
 }
-.三菱養和SCユース, .三菱養和サッカークラブユース {
+.三菱養和SCユース, .三菱養和サッカークラブユース, .養和 {
   color: white;
   background-color: #D30E17;
+}
+.都農, .ヴェロスクロノス都農 {
+  color: #192f60;
+  background-color: #00a3af;
+}
+.ＥＳＣ, .エスペランサSCユース {
+  color: #ffd900;
+  background-color: #1d4fa3;
 }
 .矢板中央高校	{
   color: white;
