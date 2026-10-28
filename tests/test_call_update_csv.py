@@ -120,12 +120,18 @@ class TestReaderSelection(unittest.TestCase):
         self.assertIn('read_jfamatch.py EmperorsCup', joined)
         self.assertIn('read_older2020_matches.py -y 2026 --frame 11', joined)
         self.assertIn('make_old_matches_csv.py --competition JLeagueCup -y 2026', joined)
+        self.assertIn('read_older2020_matches.py -y 2026 --frame 50', joined)
+        self.assertIn('make_old_matches_csv.py --competition JYouthCup -y 2026', joined)
 
-    def test_levain_cup_is_fetched_before_it_is_built(self):
+    def test_sfms01_cups_are_fetched_before_they_are_built(self):
         readers = _readers(_run(DAILY_CRON).stdout)
-        fetch = next(i for i, r in enumerate(readers) if 'read_older2020_matches.py' in r)
-        build = next(i for i, r in enumerate(readers) if 'make_old_matches_csv.py' in r)
-        self.assertLess(fetch, build)
+        for frame, competition in (('11', 'JLeagueCup'), ('50', 'JYouthCup')):
+            with self.subTest(competition=competition):
+                fetch = next(i for i, r in enumerate(readers)
+                             if 'read_older2020_matches.py' in r and f'--frame {frame}' in r)
+                build = next(i for i, r in enumerate(readers)
+                             if f'--competition {competition}' in r)
+                self.assertLess(fetch, build)
 
     def test_finished_competitions_are_not_fetched(self):
         """WC2026 closed on 2026-07-19; running its readers daily only made the

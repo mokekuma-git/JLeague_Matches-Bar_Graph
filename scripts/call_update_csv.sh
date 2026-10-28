@@ -98,6 +98,10 @@ run_reader uv run python src/read_jfamatch.py EmperorsCup
 # the published CSV from them.  Update -y when the next season starts.
 run_reader uv run python scripts/legacy/read_older2020_matches.py -y 2026 --frame 11
 run_reader uv run python scripts/make_old_matches_csv.py --competition JLeagueCup -y 2026
+# J Youth Cup 26-27: same route, frame 50 (csv/2026_frame50.csv).  Runs until
+# the knockout final in June 2027.
+run_reader uv run python scripts/legacy/read_older2020_matches.py -y 2026 --frame 50
+run_reader uv run python scripts/make_old_matches_csv.py --competition JYouthCup -y 2026
 # run_reader uv run python src/read_aclgl_matches.py
 
 if [ ${#FAILED[@]} -gt 0 ]; then
