@@ -1589,6 +1589,8 @@ jyouth:
       league_display: Jユースカップ 1stラウンド
       promotion_label: 上位リーグ
       tiebreak_order: [goal_diff, goal_get, head_to_head]
+      # 4-team groups: the advance line is highlighted without a mid-table axis.
+      interior_point_columns: false
       seasons:
         26-27:
           team_count: 4
