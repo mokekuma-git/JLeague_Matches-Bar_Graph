@@ -14,7 +14,7 @@ sys.path.insert(0, str(_REPO_ROOT / 'scripts' / 'legacy'))
 import pandas as pd
 
 from fetch_match_detail import FILTER_ALIASES
-from match_utils import _recalculate_match_index_in_section
+from match_utils import MatchUtils, _recalculate_match_index_in_section
 from read_older2020_matches import parse_years
 from set_config import Config
 
@@ -185,11 +185,17 @@ def _season_label(season_value: object, year: int) -> str:
     """Derive the published season label from a raw SFMS01 シーズン/年度 value.
 
     A cross-year season 'YYYY/YY' (used from the 2026/27 season onward) becomes
-    'YY-YY' (e.g. '2026/27' -> '26-27'); anything else falls back to str(year).
+    'YY-YY' (e.g. '2026/27' -> '26-27'). A 4-digit year followed by a non-digit
+    suffix (e.g. '2026Jユース', '2026特別') becomes that year ('2026'). Anything
+    else falls back to str(year).
     """
-    match = re.match(r'^(\d{4})/(\d{2})$', str(season_value).strip())
+    text = str(season_value).strip()
+    match = re.match(r'^(\d{4})/(\d{2})$', text)
     if match:
         return f'{match.group(1)[2:]}-{match.group(2)}'
+    match = re.match(r'^(\d{4})\D', text)
+    if match:
+        return match.group(1)
     return str(year)
 
 
@@ -383,6 +389,200 @@ def make_jleaguecup_csv(year: int) -> None:
     logger.info("Stored: %s (%d rows)", outfile, len(result))
 
 
+_FRAME_ID_JYOUTHCUP = 50  # competition_frame_ids for Ｊユースカップ (SFMS01)
+
+# Knockout round order for section_no assignment, earliest to latest, after the
+# numbered 'N回戦' rounds (see _jyouthcup_round_sort_key).
+_JYOUTHCUP_FIXED_ROUND_ORDER = ('ラウンド16', '準々決勝', '準決勝', '3位決定戦', '決勝')
+
+_JYOUTHCUP_GROUP_STAGE_PATTERN = re.compile(r'(1st|2nd)ラウンド(.+)$')
+
+# The site spells a few clubs two ways within one season (26/27: one 栃木ＳＣ among
+# 栃木SC rows), which would split a group's table into an extra team.  The frontend
+# does not apply season_map's team_rename_map, so unify them here.
+_JYOUTHCUP_TEAM_ALIASES = {
+    '栃木ＳＣ': '栃木SC',
+}
+
+_JYOUTHCUP_STAGE_COMPETITION = {
+    '1st': 'JYouthCup_1st',
+    '2nd': 'JYouthCup_2nd',
+    'KO': 'JYouthCup_KO',
+}
+
+
+def _classify_jyouthcup_stage(competition_name: object) -> tuple[str, str] | None:
+    """Classify a Ｊユースカップ 大会 value into (stage, group).
+
+    Returns ('1st' | '2nd', group label) for group stages, ('KO', '') for the
+    knockout rounds, and None for exhibitions (Showcase Match) that must be
+    dropped. Any other value raises ValueError so that an unknown stage in the
+    daily cron fails loudly instead of being silently dropped.
+    """
+    text = unicodedata.normalize('NFKC', str(competition_name)).strip()
+    match = _JYOUTHCUP_GROUP_STAGE_PATTERN.search(text)
+    if match:
+        return match.group(1), match.group(2).strip()
+    if 'ノックアウトラウンド' in text:
+        return 'KO', ''
+    if 'Showcase' in text:
+        return None
+    raise ValueError(f'Unexpected Ｊユースカップ 大会 value: {competition_name!r}')
+
+
+def _jyouthcup_round_sort_key(round_label: str) -> tuple:
+    """Order Ｊユースカップ knockout rounds by tournament progression.
+
+    'N回戦' (by N) -> ラウンド16 -> 準々決勝 -> 準決勝 -> 3位決定戦 -> 決勝.
+    Unknown labels raise ValueError rather than being placed arbitrarily.
+    """
+    match = re.match(r'(\d+)回戦$', round_label)
+    if match:
+        return (0, int(match.group(1)))
+    if round_label in _JYOUTHCUP_FIXED_ROUND_ORDER:
+        return (1, _JYOUTHCUP_FIXED_ROUND_ORDER.index(round_label))
+    raise ValueError(f'Unexpected Ｊユースカップ round label: {round_label!r}')
+
+
+def _jyouthcup_match_date(raw: object) -> str:
+    """'YY/MM/DD(曜)' -> 'YYYY/MM/DD'; any other value (e.g. '未定') is kept verbatim."""
+    text = '' if pd.isna(raw) else str(raw).strip()
+    text = re.sub(r'\(.+\)', '', text)
+    if re.match(r'^\d{2}/\d{2}/\d{2}$', text):
+        return f'20{text}'
+    return text
+
+
+def _parse_jyouthcup_section_no(section: object) -> int:
+    """'第N節' (possibly full-width) -> N. Unknown formats raise ValueError."""
+    text = unicodedata.normalize('NFKC', str(section)).strip()
+    match = re.match(r'^第(\d+)節$', text)
+    if not match:
+        raise ValueError(f'Unexpected Ｊユースカップ 節 value: {section!r}')
+    return int(match.group(1))
+
+
+def make_jyouthcup_csv(year: int) -> None:
+    """Convert Ｊユースカップ match results into one final CSV per stage.
+
+    Reads the frame-filtered intermediate CSV (csv/{year}_frame50.csv; year is the
+    site's competition_years code, e.g. 1026 for the 2026 edition), drops Showcase
+    Match exhibitions, and writes docs/csv/{season}_allmatch_result-JYouthCup_{1st,2nd,KO}.csv
+    for each stage present. Group stages carry `group` and per-(group, section)
+    match_index_in_section; the knockout stage carries `round` and negative
+    section_no by tournament round order.
+    """
+    filename = config.get_path('match_data.csv_path_format_with_frame',
+                               year=year, frame=_FRAME_ID_JYOUTHCUP)
+    if not filename.exists():
+        logger.warning("JYouthCup source not found: %s", filename)
+        return
+
+    _df = pd.read_csv(filename, index_col=0)
+    if _df.empty:
+        return
+
+    classified = _df['大会'].map(_classify_jyouthcup_stage)
+    dropped = int(classified.isna().sum())
+    if dropped:
+        logger.info("Dropped %d Showcase Match rows from %s", dropped, filename)
+    matches = _df[classified.notna()].reset_index(drop=True)
+    classified = classified[classified.notna()].reset_index(drop=True)
+    if matches.empty:
+        return
+
+    season_label = _season_label_from_matches(matches, year)
+
+    result = pd.DataFrame({
+        'stage': classified.map(lambda c: c[0]),
+        'group': classified.map(lambda c: c[1]),
+        'match_date': matches['試合日'].map(_jyouthcup_match_date),
+        'start_time': matches['K/O時刻'].fillna('').astype(str),
+        'stadium': matches['スタジアム'].fillna('').astype(str).replace('●未定●', '未定'),
+        'home_team': matches['ホーム'].replace(_JYOUTHCUP_TEAM_ALIASES),
+        'away_team': matches['アウェイ'].replace(_JYOUTHCUP_TEAM_ALIASES),
+    })
+    score = matches['スコア'].fillna('').astype(str)
+    goals = score.str.extract(r'^(\d+)-(\d+)')
+    result['home_goal'] = goals[0].fillna('')
+    result['away_goal'] = goals[1].fillna('')
+    pks = score.str.extract(r'\(PK(\d+)-(\d+)\)')
+    result['home_pk_score'] = pks[0].fillna('')
+    result['away_pk_score'] = pks[1].fillna('')
+    result['status'] = [_derive_status(s, d) for s, d in zip(score, result['match_date'])]
+    result['match_number'] = matches['match_card_id']
+    result['_section'] = matches['節']
+
+    # Normalize nullable_int columns to int-strings or empty
+    for col in ('home_goal', 'away_goal', 'home_pk_score', 'away_pk_score', 'match_number'):
+        result[col] = result[col].fillna('').apply(
+            lambda x: str(int(float(x))) if x != '' else ''
+        )
+
+    group_columns = [
+        'match_date', 'section_no', 'match_index_in_section',
+        'start_time', 'stadium', 'home_team', 'home_goal', 'away_goal',
+        'away_team', 'status', 'group', 'match_number',
+    ]
+    ko_columns = [
+        'match_date', 'section_no', 'match_index_in_section',
+        'start_time', 'stadium', 'home_team', 'home_goal', 'away_goal',
+        'away_team', 'status', 'round', 'home_pk_score', 'away_pk_score',
+        'match_number',
+    ]
+
+    for stage, stage_df in result.groupby('stage', sort=False):
+        stage_df = stage_df.reset_index(drop=True)
+        if stage == 'KO':
+            stage_df['round'] = stage_df['_section'].map(
+                lambda s: unicodedata.normalize('NFKC', str(s)).strip())
+            present_rounds = sorted(stage_df['round'].unique(), key=_jyouthcup_round_sort_key)
+            total_rounds = len(present_rounds)
+            round_to_section = {r: i - total_rounds for i, r in enumerate(present_rounds)}
+            stage_df['section_no'] = stage_df['round'].map(round_to_section)
+            # Seed with per-round arrival order as the same-date tiebreak
+            stage_df['match_index_in_section'] = stage_df.groupby('round').cumcount() + 1
+            stage_df = _recalculate_match_index_in_section(stage_df)
+            columns_list = ko_columns
+        else:
+            stage_df['section_no'] = stage_df['_section'].map(_parse_jyouthcup_section_no)
+            # 1-based within each (group, section_no): by date (unparseable such as 未定 last),
+            # then site order
+            stage_df['_date_sort'] = pd.to_datetime(
+                stage_df['match_date'], format='%Y/%m/%d', errors='coerce')
+            ordered = stage_df.sort_values(['_date_sort'], kind='stable',
+                                           na_position='last')
+            ordered['match_index_in_section'] = (
+                ordered.groupby(['group', 'section_no']).cumcount() + 1)
+            stage_df['match_index_in_section'] = ordered['match_index_in_section']
+            columns_list = group_columns
+
+        stage_df = stage_df.reset_index(drop=True)
+        csv_name = config.get_format_str('match_data.league_csv_path', season=season_label,
+                                         competition=_JYOUTHCUP_STAGE_COMPETITION[stage])
+        _write_csv_if_changed(stage_df[columns_list], csv_name)
+
+
+def _write_csv_if_changed(df: pd.DataFrame, csv_name: str) -> None:
+    """Write a published CSV and stamp csv_timestamp.csv, but only when its text changes.
+
+    The league view shows each CSV's timestamp, so a competition updated daily needs
+    one; an unchanged rerun leaves both files alone. ``csv_name`` is the unresolved
+    path (e.g. '../docs/csv/...'), which is the key format of the timestamp file.
+    """
+    outfile = Path(csv_name).resolve()
+    csv_text = df.to_csv(lineterminator='\n')
+    encoding = config.match_data.encoding
+    if outfile.exists() and outfile.read_text(encoding=encoding) == csv_text:
+        logger.info("No changes found in %s", outfile)
+        return
+    outfile.write_text(csv_text, encoding=encoding)
+    stamper = MatchUtils()
+    stamper.config = config
+    stamper.update_timestamp(csv_name)
+    logger.info("Stored: %s (%d rows)", outfile, len(df))
+
+
 def init_season_dict(matches: pd.DataFrame, year: int) -> dict[str, str]:
     """Create a dictionary mapping season names to their respective start dates
 
@@ -424,15 +624,21 @@ if __name__ == '__main__':
                          default=['J1', 'J2', 'J3'],
                          help='Competitions to process (default: J1 J2 J3). '
                               'Use JLeagueCup for Levain/Nabisco Cup '
-                              '(aliases: leaguecup, levain, nabisco).')
+                              '(aliases: leaguecup, levain, nabisco). '
+                              'Use JYouthCup for the Ｊユースカップ '
+                              '(aliases: jyouth, youthcup).')
     # Inject competition arg before parse_years() consumes --year/--range/--list
     _comp_args, _remaining = _parser.parse_known_args()
     sys.argv = [sys.argv[0]] + _remaining  # Let parse_years() handle year args
     years = parse_years()
     _jleaguecup_aliases = {'JLeagueCup', 'leaguecup', 'levain', 'nabisco'}
+    _jyouthcup_aliases = {'JYouthCup', 'jyouth', 'youthcup'}
     for _comp in _comp_args.competition:
         if _comp in _jleaguecup_aliases:
             for year in years:
                 make_jleaguecup_csv(year)
+        elif _comp in _jyouthcup_aliases:
+            for year in years:
+                make_jyouthcup_csv(year)
         else:
             make_old_matches_csv(_comp, years)

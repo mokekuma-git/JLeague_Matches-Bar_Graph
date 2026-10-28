@@ -30,6 +30,7 @@ FILTER_ALIASES: dict[str, str] = {
     'nabisco': 'ＹＮＣ',
     'levain': 'ＹＬＣ|ルヴァンカップ',
     'jleague': 'Ｊ',
+    'JYouthCup': 'Ｊユースカップ',
 }
 
 

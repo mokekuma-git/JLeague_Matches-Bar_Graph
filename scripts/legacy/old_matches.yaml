@@ -1,5 +1,10 @@
 debug: false
 http_timeout: 60
+timezone: "Asia/Tokyo"
+
+paths:
+  # Shared with the other readers; the league view shows each CSV's entry.
+  timestamp_file: "../docs/csv/csv_timestamp.csv"
 
 league_name:
   - - "Ｊ１"

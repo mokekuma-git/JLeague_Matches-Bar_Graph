@@ -81,7 +81,7 @@ jobs:
         STATUS=0
         bash scripts/call_update_csv.sh "${{ github.event.schedule }}" || STATUS=$?
         if (git diff --shortstat | grep '[0-9]'); then
-          # csv/ holds the Levain Cup's intermediate SFMS01 rows; leaving them
+          # csv/ holds the cups' intermediate SFMS01 rows; leaving them
           # unstaged would also block the rebase below.
           git add docs/csv/ csv/
           git commit -m "Make new csv (append games on $DATE)"

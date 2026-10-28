@@ -1578,3 +1578,44 @@ we:
           - label: 決勝トーナメント
             bracket_order: [Ｃ大阪, 大宮, 広島, 東京NB]
           bracket_round_start: 準決勝
+jyouth:
+  display_name: Jユースカップ
+  css_files: [team_style.css]
+  data_source:
+    label: 'Jリーグデータサイト: 日程・結果'
+    url: https://data.j-league.or.jp/SFMS01/
+  competitions:
+    JYouthCup_1st:
+      league_display: Jユースカップ 1stラウンド
+      promotion_label: 上位リーグ
+      tiebreak_order: [goal_diff, goal_get, head_to_head]
+      seasons:
+        26-27:
+          team_count: 4
+          promotion_count: 2
+          relegation_count: 0
+          teams: []
+          # String keys: an unordered group list would sort as 1, 10, 11, ..., 2.
+          shown_groups: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16']
+          note: 64チームを4チームずつ16グループに分けた1回戦総当たり。各グループ上位2チームが2ndラウンドの上位リーグ (グループA〜H)、下位2チームが下位リーグ (グループI〜P) に進む。試合日程は対戦チーム同士の調整で順次決まる。
+          data_source:
+            label: 'Jリーグ公式: 2026/27 Jユースカップ'
+            url: https://www.jleague.jp/special/jyouth/2026-27/
+    JYouthCup_KO:
+      league_display: Jユースカップ KO
+      view_type: [bracket]
+      seasons:
+        '2026':
+          bracket_round_start: 1回戦
+          bracket_blocks:
+          # https://www.jleague.jp/jyouth/2026/tournament/
+          # The official chart numbers 16 blocks of four (1回戦・2回戦) and pairs their
+          # winners in 3回戦 as 7-1, 2-3, 4-5, 8-6, 12-10, 14-16, 11-15, 13-9; the
+          # semifinals were 4-5-8-6 v 11-15-13-9 and 12-10-14-16 v 7-1-2-3.  The blocks
+          # are listed in that tree order, each in the chart's top-to-bottom order.
+          - label: ノックアウトラウンド
+            bracket_order: [神戸, 京都, 讃岐, 徳島, 愛媛, 今治, 広島, 鳥取, 大分, 長崎, 鳥栖, 都農, 岡山, 山口, 琉球, 宮崎, 川崎Ｆ, 栃木Ｃ, 町田, 養和, FC東京, 千葉SC, 清水, 沼津, 鹿島, 群馬, 千葉, ＥＳＣ, 秋田, 札幌, 仙台, 八戸, 横浜FC, 湘南, 横浜FM, 相模原, 新潟, いわき, 山形, 福島, 柏, 水戸, 大宮, 甲府, 東京Ｖ, YS横浜, 浦和, 栃木SC, 熊本, 北九州, 福岡, 鹿児島, 名古屋, 藤枝, 松本, 富山, 磐田, 岐阜, 長野, 金沢, Ｇ大阪, 奈良, Ｃ大阪, FC大阪]
+          note: 64チームによる1回戦制トーナメント。1・2回戦は4チームずつの16ブロックで行い、3回戦以降はセントラル開催。80分 (決勝のみ90分) で決着しない場合はPK戦。2回戦 FC東京 3-0 清水 は没収試合。
+          data_source:
+            label: 'Jリーグ公式: 2026 Jユースカップ'
+            url: https://www.jleague.jp/jyouth/2026/
