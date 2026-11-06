@@ -111,6 +111,7 @@ CSV_COLUMN_SCHEMA: dict[str, str] = {
     'match_number': 'nullable_int',   # Tournament match number (column may be absent)
     'leg': 'nullable_int',             # H&A leg number: 1 or 2 (column may be absent)
     'timezone': 'str',                # Source IANA TZ of start_time (column may be absent)
+    'advantage_team': 'str',          # Explicit league-rank priority on a completed KO draw
 }
 
 

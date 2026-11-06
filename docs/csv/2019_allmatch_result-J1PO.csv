@@ -1,0 +1,5 @@
+,match_date,section_no,match_index_in_section,start_time,stadium,home_team,home_goal,away_goal,away_team,status,round,home_pk_score,away_pk_score,home_score_ex,away_score_ex,leg,match_number,advantage_team
+0,2019/12/01,-3,1,13:05,鳴門大塚,徳島,1,1,甲府,試合終了,1回戦,,,,,,22715,徳島
+1,2019/12/01,-3,2,13:08,ＮＡＣＫ,大宮,0,2,山形,試合終了,1回戦,,,,,,22714,大宮
+2,2019/12/08,-2,1,13:08,鳴門大塚,徳島,1,0,山形,試合終了,2回戦,,,,,,22716,徳島
+3,2019/12/14,-1,1,13:03,ＢＭＷス,湘南,1,1,徳島,試合終了,決定戦,,,,,,22717,湘南

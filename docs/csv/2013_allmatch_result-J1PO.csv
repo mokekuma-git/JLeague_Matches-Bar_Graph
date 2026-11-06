@@ -1,0 +1,4 @@
+,match_date,section_no,match_index_in_section,start_time,stadium,home_team,home_goal,away_goal,away_team,status,round,home_pk_score,away_pk_score,home_score_ex,away_score_ex,leg,match_number,advantage_team
+0,2013/12/01,-2,1,14:04,西京極,京都,0,0,長崎,試合終了,準決勝,,,,,,15621,京都
+1,2013/12/01,-2,2,14:04,鳴門大塚,徳島,1,1,千葉,試合終了,準決勝,,,,,,15622,徳島
+2,2013/12/08,-1,1,15:30,国立,京都,0,2,徳島,試合終了,決勝,,,,,,15623,京都

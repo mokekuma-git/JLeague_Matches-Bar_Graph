@@ -173,6 +173,9 @@ function buildSingleTooltip(node: BracketNode): string {
   // truncated .bracket-team-name can be read in full for a not-yet-played match.
   const matchup = (hg !== '' && ag !== '') ? `${home} ${hg}-${ag} ${away}${ann}` : `${home} - ${away}`;
   lines.push(`<div class="bracket-tooltip-leg-score">${matchup}</div>`);
+  if (node.decidedBy === 'advantage') {
+    lines.push(`<div class="bracket-tooltip-total">${node.winner}: リーグ順位の上位優遇で勝ち抜け</div>`);
+  }
 
   return lines.join('');
 }
