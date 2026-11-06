@@ -73,6 +73,7 @@ summary "| --- | --- |"
 
 # Run one reader, recording its name if it fails.
 run_reader() {
+  LAST_READER_SUCCEEDED=false
   echo "--- Running: $* ---"
   # Set UPDATE_CSV_DRY_RUN to check which readers a schedule selects without
   # reaching the network; the branch tests rely on it.
@@ -81,6 +82,7 @@ run_reader() {
     return
   fi
   if "$@"; then
+    LAST_READER_SUCCEEDED=true
     summary_row "$*" "ok"
   else
     echo "::error::Reader failed: $*"
@@ -137,6 +139,9 @@ fi
 # J Youth Cup 26-27: same route, frame 50 (csv/2026_frame50.csv).  Runs until
 # the knockout final in June 2027.
 run_reader uv run python scripts/legacy/read_older2020_matches.py -y 2026 --frame 50
+if [ -n "${GITHUB_OUTPUT:-}" ]; then
+  echo "jyouth_fetch_succeeded=$LAST_READER_SUCCEEDED" >> "$GITHUB_OUTPUT"
+fi
 run_reader uv run python scripts/make_old_matches_csv.py --competition JYouthCup -y 2026
 # run_reader uv run python src/read_aclgl_matches.py
 
