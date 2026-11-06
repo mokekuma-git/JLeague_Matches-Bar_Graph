@@ -1137,7 +1137,8 @@ jleague:
             inclusive_tree: true
           note: 公式トーナメント図で順序確認。2025年は1stラウンド7ブロック、プレーオフラウンド4ペア、プライムラウンドで構成。H&A 判定は勝利数→得失点差→延長→PK。図中注記はACL=横浜FM/川崎Ｆ/神戸, CWC=浦和.
         '26-27':
-          bracket_round_start: 1回戦
+          aggregate_tiebreak_order: [wins, penalties]
+          bracket_round_start: 準々決勝
           bracket_blocks:
           - label: 1stラウンド ①
             round_filter: [1回戦, 2回戦, 3回戦, 4回戦]
@@ -1155,7 +1156,11 @@ jleague:
             round_filter: [4回戦]
             bracket_order: [町田, 京都, 柏, Ｇ大阪]
             matchup_pairs: true
-          note: 秋春制移行後の 26-27 シーズン。1stラウンドは1回戦〜4回戦の1試合制で、ブロック①〜④は試合番号の勝ち上がり (4回戦 No.47〜50) から構成。町田・京都・柏・Ｇ大阪は4回戦から出場。プライムラウンドは組み合わせ確定後に追加する.
+          - label: プライムラウンド
+            round_filter: [準々決勝, 準決勝, 決勝]
+            bracket_order: [町田, 神戸, Ｃ大阪, 浦和, 鹿島, 横浜FM, 柏, 川崎Ｆ]
+            inclusive_tree: true
+          note: 秋春制移行後の 26-27 シーズン。1stラウンドは1回戦〜4回戦の1試合制で、ブロック①〜④は4回戦 No.47〜50へ接続。町田・京都・柏・Ｇ大阪は4回戦から、鹿島・神戸はプライムラウンドから出場。プライムの順序・接続は2026年10月29日の公式抽選図に準拠。準々決勝・準決勝はH&A (勝利数→得失点差→延長→PK)、決勝は単試合.
 national:
   display_name: ナショナルチーム
   css_files: [national_team_style.css]
