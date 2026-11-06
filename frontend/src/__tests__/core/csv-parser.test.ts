@@ -26,6 +26,45 @@ const BASE_FIELDS = [
 ];
 
 describe('parseCsvResults', () => {
+  describe('team renaming', () => {
+    test('merges aliases and canonical names across matches and pre-populated teams', () => {
+      const rows = [
+        makeRow({ home_team: 'AliasA' }),
+        makeRow({ home_team: 'TeamB', away_team: 'TeamA', home_goal: '0', away_goal: '1' }),
+      ];
+      const originalRows = rows.map(row => ({ ...row }));
+      const teamList = ['AliasA', 'TeamA', 'AliasC', 'TeamB'];
+      const result = parseCsvResults(
+        rows, BASE_FIELDS, teamList, 'DefaultGroup', 'standard', undefined,
+        { AliasA: 'TeamA', AliasC: 'TeamC' },
+      );
+      const teams = result.DefaultGroup;
+
+      expect(Object.keys(teams)).toEqual(['TeamA', 'TeamC', 'TeamB']);
+      expect(teams.TeamA.df).toHaveLength(2);
+      expect(teams.TeamB.df).toHaveLength(2);
+      expect(teams.TeamC.df).toHaveLength(0);
+      expect(teams.TeamA.df.map(match => match.opponent)).toEqual(['TeamB', 'TeamB']);
+      expect(teams.TeamB.df.map(match => match.opponent)).toEqual(['TeamA', 'TeamA']);
+      calculateTeamStats(teams.TeamA, '2025/12/31', 'section_no');
+      expect(teams.TeamA.latestStats.point).toBe(6);
+      expect(teams.TeamA.latestStats.resultCounts.win).toBe(2);
+      expect(rows).toEqual(originalRows);
+      expect(teamList).toEqual(['AliasA', 'TeamA', 'AliasC', 'TeamB']);
+    });
+
+    test('applies the configured replacement once to both sides of each match', () => {
+      const result = parseCsvResults(
+        [makeRow()], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup', 'standard', undefined,
+        { TeamA: 'TeamB', TeamB: 'TeamC' },
+      );
+
+      expect(Object.keys(result.DefaultGroup)).toEqual(['TeamB', 'TeamC']);
+      expect(result.DefaultGroup.TeamB.df[0].opponent).toBe('TeamC');
+      expect(result.DefaultGroup.TeamC.df[0].opponent).toBe('TeamB');
+    });
+  });
+
   describe('basic structure', () => {
     test('creates one TeamMatch per team from a single row', () => {
       const result = parseCsvResults([makeRow()], BASE_FIELDS, ['TeamA', 'TeamB'], 'DefaultGroup');

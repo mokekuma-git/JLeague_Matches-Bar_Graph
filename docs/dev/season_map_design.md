@@ -100,7 +100,10 @@ Season entry object の count / team 系フィールドは、次の規則で解�
 - `group_team_count`: Competition + Entry をマージ (Entry 優先)。入力は `dict` に加えて scalar shorthand も許容し、`shown_groups` で dict に展開してから解決する
 - `team_rename_map`: Competition + Entry をマージ (Entry 優先)
 
-注: 現行実装では `team_rename_map` に Group レベルを適用しない。
+`team_rename_map` は League View の CSV 読み込み時に、`teams` の事前登録名と各試合のホーム・アウェイ名へ一度だけ適用する。
+置換後の名前をチームの同一視・集計・順位表・対戦相手表示に共通で使用し、元の CSV は変更しない。
+短縮名を追加するときは、対応する CSS にも同じチーム色の別名セレクタを追加する。
+Family レベルの設定は継承しない。
 
 ---
 

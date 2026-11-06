@@ -313,15 +313,15 @@
   color: white;
   background-color: #00205b;
 }
-.ユナイテッドシティ {
+.ユナイテッドシティ, .UCFC {
   color: black;
   background-color: #fff100;
 }
-.タンピネス {
+.タンピネス, .タンピ {
   color: white;
   background-color: #501010;
 }
-.ポートFC, .チェンライU, .ラーチャブリー {
+.ポートFC, .ポート, .チェンライU, .チェン, .ラーチャブリー, .ラチャ {
   color: white;
   background-color: #f18900;
 }
@@ -329,11 +329,11 @@
   color: black;
   background-color: #7399d1;
 }
-.ベトテル, .広州FC {
+.ベトテル, .Viettel, .広州FC {
   color: white;
   background-color: #e50012;
 }
-.北京FC, .パトゥムユナイテッド, .全北現代, .全北現代モータース {
+.北京FC, .パトゥムユナイテッド, .パトゥ, .全北現代, .全北, .全北現代モータース {
   color: white;
   background-color: #009844;
 }
@@ -341,19 +341,19 @@
   color: yellow;
   background-color: black;
 }
-.セーラーズ, .ライオン・シティ・セーラーズ {
+.セーラーズ, .セーラ, .ライオン・シティ・セーラーズ {
   color: #E57623;
   background: -moz-linear-gradient(top left, #000084, #000084, #478EF7);
   background: -webkit-linear-gradient(top left, #000084, #000084, #478EF7);
   background: linear-gradient(to bottom right, #000084, #000084, #478EF7);
 }
-.山東泰山 {
+.山東泰山, .山東 {
   color: white;
   background: -moz-linear-gradient(top left, #FF6020, #FF752D, #FF8030);
   background: -webkit-linear-gradient(top left, #FF6020, #FF752D, #FF8030);
   background: linear-gradient(to bottom right, #FF6020, #FF752D, #FF8030);
 }
-.メルボルンシティ, .メルボルン・シティ {
+.メルボルンシティ, .メルボ, .メルボルン・シティ {
   color: black;
   background: -moz-linear-gradient(top left, #7FB9E8, #7FB9E8, #FFFFFF);
   background: -webkit-linear-gradient(top left, #7FB9E8, #7FB9E8, #FFFFFF);
@@ -365,11 +365,11 @@
   background: -webkit-linear-gradient(left, #FFED00 80%, #000000);
   background: linear-gradient(to right, #FFED00 80%, #000000);
 }
-.ホアンアインザライ {
+.ホアンアインザライ, .ホアン {
   color: blue;
   background-color: yellow;
 }
-.シドニーFC {
+.シドニーFC, .シドニ {
   color: black;
   background-color: #52AEE3;
 }
