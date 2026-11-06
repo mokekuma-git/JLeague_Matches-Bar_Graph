@@ -150,6 +150,50 @@ class TestReaderSelection(unittest.TestCase):
             self.assertNotIn(reader, joined)
 
 
+class TestYouthFetchOutput(unittest.TestCase):
+    """A cached next-stage CSV is not evidence that today's fetch succeeded."""
+
+    def _run_stubbed(self, fetch_status: int, other_status: int = 0):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            uv = directory / 'uv'
+            uv.write_text(
+                '#!/bin/bash\n'
+                'if [[ "$*" == *"read_older2020_matches.py -y 2026 --frame 50"* ]]; then\n'
+                '  exit "$YOUTH_FETCH_EXIT"\n'
+                'fi\n'
+                'if [[ "$*" == *"read_jleague_matches.py"* ]]; then\n'
+                '  exit "$OTHER_READER_EXIT"\n'
+                'fi\n'
+                'exit 0\n')
+            uv.chmod(0o755)
+            output = directory / 'output'
+            env = {**os.environ, 'PATH': f'{directory}:{os.environ["PATH"]}',
+                   'GITHUB_OUTPUT': str(output), 'DAILY_DONE': 'false',
+                   'YOUTH_FETCH_EXIT': str(fetch_status), 'OTHER_READER_EXIT': str(other_status)}
+            env.pop('UPDATE_CSV_DRY_RUN', None)
+            env.pop('GITHUB_STEP_SUMMARY', None)
+            result = subprocess.run(['bash', str(_SCRIPT)], cwd=_REPO_ROOT,
+                                    capture_output=True, text=True, check=False, env=env)
+            return result, output.read_text()
+
+    def test_failed_frame50_fetch_never_claims_a_fresh_source(self):
+        result, output = self._run_stubbed(fetch_status=1)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('jyouth_fetch_succeeded=false', output)
+
+    def test_an_unrelated_failed_reader_does_not_hide_a_successful_frame50_fetch(self):
+        result, output = self._run_stubbed(fetch_status=0, other_status=1)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('jyouth_fetch_succeeded=true', output)
+
+    def test_a_dry_run_does_not_claim_to_have_fetched_anything(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'output'
+            _run(output_path=output)
+            self.assertIn('jyouth_fetch_succeeded=false', output.read_text())
+
+
 class TestJobSummary(unittest.TestCase):
     """Which readers ran has to be visible without opening the log (#309)."""
 

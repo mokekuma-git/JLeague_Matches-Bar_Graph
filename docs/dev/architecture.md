@@ -68,3 +68,4 @@ JLeague_Matches-Bar_Graph/
 - `docs/` 内の CSV, YAML, CSS, `docs/dev/` の設計文書はそのまま git 管理 (直接更新)
 - `check-build-artifacts.yaml` が PR 時にビルド生成物の誤コミットを検出
 - 終了した天皇杯・ルヴァンは取得済みCSVから判定し、日次取得を省略する。条件と手動再取得は [終了大会の定期取得停止](cup_reader_completion.md) を参照
+- Jユースカップ次ラウンドの着手可能通知は [jyouth_stage_readiness.md](jyouth_stage_readiness.md) を参照

@@ -32,6 +32,7 @@ jobs:
     permissions:
       contents: write
       actions: write
+      issues: write
 
     steps:
     - name: git checkout
@@ -109,6 +110,18 @@ jobs:
       run: gh workflow run deploy-pages.yaml
       env:
         GH_TOKEN: ${{ github.token }}
+
+    - name: Notify J Youth Cup stages ready for implementation
+      # Other readers may fail while frame50 succeeds. A stale cached source
+      # must never notify when frame50 failed or this was a Skip/dry run.
+      if: ${{ !cancelled() && steps.update_csv.outputs.jyouth_fetch_succeeded == 'true' }}
+      env:
+        GH_TOKEN: ${{ github.token }}
+        JYOUTH_FETCH_SUCCEEDED: ${{ steps.update_csv.outputs.jyouth_fetch_succeeded }}
+      run: >-
+        uv run python scripts/monitor_jyouth_readiness.py --notify
+        --repository "$GITHUB_REPOSITORY"
+        --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
     # Only a full update with every reader through counts: a failed reader fails
     # the update step, these steps are skipped, and the next slot tries again.
