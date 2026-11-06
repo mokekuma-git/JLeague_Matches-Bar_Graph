@@ -22,6 +22,7 @@ export interface RawMatchRow {
   match_number?: string;    // Tournament match number (column may be absent)
   leg?: string;             // H&A leg number: 1 or 2 (column may be absent)
   timezone?: string;        // Source IANA TZ of start_time (column may be absent)
+  advantage_team?: string;  // League-rank priority on a completed KO draw (optional)
 }
 
 // Per-match data from a single team's perspective, produced by parse_csvresults.

@@ -1,0 +1,4 @@
+,match_date,section_no,match_index_in_section,start_time,stadium,home_team,home_goal,away_goal,away_team,status,round,home_pk_score,away_pk_score,home_score_ex,away_score_ex,leg,match_number,advantage_team
+0,2012/11/18,-2,1,14:03,ニッパ球,横浜FC,0,4,千葉,試合終了,準決勝,,,,,,14778,横浜FC
+1,2012/11/18,-2,2,14:04,西京極,京都,0,4,大分,試合終了,準決勝,,,,,,14777,京都
+2,2012/11/23,-1,1,13:05,国立,大分,1,0,千葉,試合終了,決勝,,,,,,14779,千葉

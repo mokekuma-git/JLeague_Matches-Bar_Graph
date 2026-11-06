@@ -62,7 +62,14 @@ export function determineWinner(row: RawMatchRow): string | null {
   // home_goal/away_goal already include ET — no need to add score_ex
   if (hg !== ag) return hg > ag ? row.home_team : row.away_team;
 
-  // Equal score without PK — shouldn't happen in KO but return null
+  // Promotion playoffs can explicitly award a completed draw to the club with
+  // league-rank priority. Never infer this from home/away or an in-progress score.
+  if (row.status === '試合終了' && row.advantage_team
+      && (row.advantage_team === row.home_team || row.advantage_team === row.away_team)) {
+    return row.advantage_team;
+  }
+
+  // A draw without an explicit decision remains unresolved.
   return null;
 }
 

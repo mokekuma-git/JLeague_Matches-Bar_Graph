@@ -651,19 +651,212 @@ jleague:
             '5': promoted_playoff
             '6': promoted_playoff
     J1PO:
-      league_display: J1百年構想リーグ 順位決定戦
+      league_display: J1プレーオフ・入れ替え戦
       view_type: [bracket]
       data_source:
-        label: 'Jリーグ公式: J1百年構想リーグ'
-        url: https://www.jleague.jp/special/2026specialseason/j1/
+        label: 'Jリーグ公式データサイト: 試合結果'
+        url: https://data.j-league.or.jp/SFMS01/
       seasons:
+        '1998':
+          aggregate_tiebreak_order: [wins, penalties]
+          league_display: J1参入決定戦
+          round_start_options: [__multi_section__]
+          bracket_blocks:
+          - label: 予備戦
+            bracket_order: [福岡, 川崎Ｆ]
+            round_filter: [予備戦]
+            matchup_pairs: true
+          - label: 第1・第2参入クラブ決定戦
+            bracket_order: [福岡, 市原, 神戸, 札幌]
+            round_filter: [第1・第2参入クラブ決定戦]
+            matchup_pairs: true
+          - label: 第3参入クラブ決定戦
+            bracket_order: [福岡, 札幌]
+            round_filter: [第3参入クラブ決定戦]
+            matchup_pairs: true
+          note: 予備戦のみ1試合制・Vゴール方式。以降はホーム&アウェイ。第1・第2参入クラブ決定戦の勝者2クラブと、その敗者同士の第3参入クラブ決定戦の勝者がJ1参入。市原・神戸・福岡が参入。
+        '2004':
+          league_display: J1・J2入れ替え戦
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [福岡, 柏]
+          aggregate_tiebreak_order: [wins, penalties]
+          note: ホーム&アウェイ2試合。勝利数、得失点差、延長戦、PK戦の順で決定。
+        '2005':
+          league_display: J1・J2入れ替え戦
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [甲府, 柏]
+          aggregate_tiebreak_order: [wins, penalties]
+          note: ホーム&アウェイ2試合。勝利数、得失点差、延長戦、PK戦の順で決定。
+        '2006':
+          league_display: J1・J2入れ替え戦
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [神戸, 福岡]
+          aggregate_tiebreak_order: [wins, away_goals, penalties]
+          note: ホーム&アウェイ2試合。勝利数、得失点差、アウェイゴール、延長戦、PK戦の順で決定。
+        '2007':
+          league_display: J1・J2入れ替え戦
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [京都, 広島]
+          aggregate_tiebreak_order: [wins, away_goals, penalties]
+          note: ホーム&アウェイ2試合。勝利数、得失点差、アウェイゴール、延長戦、PK戦の順で決定。
+        '2008':
+          league_display: J1・J2入れ替え戦
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [仙台, 磐田]
+          aggregate_tiebreak_order: [wins, away_goals, penalties]
+          note: ホーム&アウェイ2試合。勝利数、得失点差、アウェイゴール、延長戦、PK戦の順で決定。
+        '2012':
+          league_display: J1昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [京都, 大分, 横浜FC, 千葉]
+          note: 1試合制。引き分け時はJ2年間順位上位クラブが勝ち抜け。
+        '2013':
+          league_display: J1昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [京都, 長崎, 徳島, 千葉]
+          note: 1試合制。引き分け時はJ2年間順位上位クラブが勝ち抜け。
+        '2014':
+          league_display: J1昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [千葉, ~, 磐田, 山形]
+          note: 1試合制。引き分け時はJ2年間順位上位クラブが勝ち抜け。5位北九州はJ1クラブライセンス未取得のため不参加。3位千葉は決勝シード。
+        '2015':
+          league_display: J1昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [福岡, 長崎, Ｃ大阪, 愛媛]
+          note: 1試合制。引き分け時はJ2年間順位上位クラブが勝ち抜け。
+        '2016':
+          league_display: J1昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [松本, 岡山, Ｃ大阪, 京都]
+          note: 1試合制。引き分け時はJ2年間順位上位クラブが勝ち抜け。
+        '2017':
+          league_display: J1昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [名古屋, 千葉, 福岡, 東京Ｖ]
+          note: 1試合制。引き分け時はJ2年間順位上位クラブが勝ち抜け。
+        '2018':
+          league_display: J1参入プレーオフ
+          bracket_blocks:
+          - label: 参入プレーオフ
+            bracket_order: [磐田, ~, ~, ~, 横浜FC, ~, 大宮, 東京Ｖ]
+          note: J2クラブの1・2回戦後、J1年間16位クラブとの決定戦。全て1試合制。引き分け時はJ2順位上位、決定戦はJ1クラブが勝ち抜け。J2・4位町田はJ1クラブライセンス未取得のため不参加。横浜FCは2回戦シード。
+        '2019':
+          league_display: J1参入プレーオフ
+          bracket_blocks:
+          - label: 参入プレーオフ
+            bracket_order: [湘南, ~, ~, ~, 大宮, 山形, 徳島, 甲府]
+          note: J2クラブの1・2回戦後、J1年間16位クラブとの決定戦。全て1試合制。引き分け時はJ2順位上位、決定戦はJ1クラブが勝ち抜け。
+        '2022':
+          league_display: J1参入プレーオフ
+          bracket_blocks:
+          - label: 参入プレーオフ
+            bracket_order: [京都, ~, ~, ~, 岡山, 山形, 熊本, 大分]
+          note: J2クラブの1・2回戦後、J1年間16位クラブとの決定戦。全て1試合制。引き分け時はJ2順位上位、決定戦はJ1クラブが勝ち抜け。
+        '2023':
+          league_display: J1昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [東京Ｖ, 千葉, 清水, 山形]
+          note: 準決勝・決勝とも1試合制。引き分け時はJ2年間順位上位クラブが勝ち抜け。
+        '2024':
+          league_display: J1昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [長崎, 仙台, 山形, 岡山]
+          note: 準決勝・決勝とも1試合制。引き分け時はJ2年間順位上位クラブが勝ち抜け。
+        '2025':
+          league_display: J1昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [千葉, 大宮, 徳島, 磐田]
+          note: 準決勝・決勝とも1試合制。引き分け時はJ2年間順位上位クラブが勝ち抜け。
         '2026':
+          league_display: J1百年構想リーグ 順位決定戦
+          data_source:
+            label: 'Jリーグ公式: J1百年構想リーグ'
+            url: https://www.jleague.jp/special/2026specialseason/j1/
           round_start_options: [__multi_section__]
           bracket_blocks:
           - label: 順位決定戦
             bracket_order: [神戸, 鹿島, Ｃ大阪, FC東京, 町田, 名古屋, 広島, 川崎Ｆ, Ｇ大阪, 東京Ｖ, 岡山, 浦和, 横浜FM, 清水, 柏, 京都, 長崎, 水戸, 福岡, 千葉]
             matchup_pairs: true
           note: East n位 vs West n位 のホーム&アウェイ2戦制。合算で勝者が奇数位・敗者が偶数位。
+    J2PO:
+      league_display: J2プレーオフ・入れ替え戦
+      view_type: [bracket]
+      data_source:
+        label: 'Jリーグ公式データサイト: 試合結果'
+        url: https://data.j-league.or.jp/SFMS01/
+      seasons:
+        '2013':
+          aggregate_tiebreak_order: [wins, away_goals, penalties]
+          league_display: J2・JFL入れ替え戦
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [讃岐, 鳥取]
+          note: ホーム&アウェイ2試合。勝利数、得失点差、アウェイゴール、延長戦、PK戦の順で決定。
+        '2014':
+          aggregate_tiebreak_order: [wins, away_goals, penalties]
+          league_display: J2・J3入れ替え戦
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [長野, 讃岐]
+          note: ホーム&アウェイ2試合。勝利数、得失点差、アウェイゴール、延長戦、PK戦の順で決定。
+        '2015':
+          aggregate_tiebreak_order: [wins, away_goals, penalties]
+          league_display: J2・J3入れ替え戦
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [町田, 大分]
+          note: ホーム&アウェイ2試合。勝利数、得失点差、アウェイゴール、延長戦、PK戦の順で決定。
+        '2016':
+          aggregate_tiebreak_order: [wins, away_goals, penalties]
+          league_display: J2・J3入れ替え戦
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [栃木, 金沢]
+          note: ホーム&アウェイ2試合。勝利数、得失点差、アウェイゴール、延長戦、PK戦の順で決定。
+        '2024':
+          league_display: J2昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [富山, FC大阪, 松本, 福島]
+          note: 準決勝・決勝とも1試合制。引き分け時はJ3年間順位上位クラブが勝ち抜け。
+        '2025':
+          league_display: J2昇格プレーオフ
+          bracket_blocks:
+          - label: 昇格プレーオフ
+            bracket_order: [FC大阪, 金沢, 宮崎, 鹿児島]
+          note: 準決勝・決勝とも1試合制。引き分け時はJ3年間順位上位クラブが勝ち抜け。
+    J3PO:
+      league_display: J3・JFL入れ替え戦
+      view_type: [bracket]
+      data_source:
+        label: 'Jリーグ公式データサイト: 試合結果'
+        url: https://data.j-league.or.jp/SFMS01/
+      aggregate_tiebreak_order: [wins, penalties]
+      note: ホーム&アウェイ2試合。勝利数、得失点差、延長戦、PK戦の順で決定。アウェイゴールルールは適用しない。
+      seasons:
+        '2024':
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [高知, YS横浜]
+        '2025':
+          bracket_blocks:
+          - label: 入れ替え戦
+            bracket_order: [滋賀, 沼津]
     J2J3PO:
       league_display: J2・J3百年構想リーグ 順位決定戦
       view_type: [bracket]

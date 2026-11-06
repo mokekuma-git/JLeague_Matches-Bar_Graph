@@ -90,6 +90,8 @@ function nodeFromMatch(
     decidedBy = 'pending';
   } else if (hPk != null && aPk != null) {
     decidedBy = 'penalties';
+  } else if (hGoal === aGoal && row.advantage_team === winner) {
+    decidedBy = 'advantage';
   } else if (hEx != null && aEx != null) {
     decidedBy = 'extra_time';
   } else {

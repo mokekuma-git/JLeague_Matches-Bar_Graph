@@ -19,6 +19,7 @@
 - `leg`: H&A の第1戦/第2戦を示す整数 1 or 2 (省略可能。aggregate 合算処理の識別子)
 - `match_number`: 公式の試合採番 (省略可能。data.j-league.jpやJFA JSONなどから取得可能な場合に付与)
 - `timezone`: `start_time` のソースTZ (IANA名。省略可能)。複数TZにまたがる CSV (WC2026 GS等) で per-row 指定。解決順序: 行 `timezone` → season_map `timezone` → 無変換 (現地時刻のまま)。`start_time` は現地 wall-clock のまま据え置き
+- `advantage_team`: 引き分け時にリーグ順位の上位優遇を受けるクラブ名 (省略可能)。ホーム・アウェイのいずれかと一致し、`status` が「試合終了」、得点が同数、PK決着が無い場合だけ勝ち抜け判定に使用する。得点・PK列は実際の記録を保持し、ホームという理由で自動付与しない。出典付きの歴史大会の設定は [historical_playoffs.md](./historical_playoffs.md) を参照
 - その他付加情報 [`broadcast`, `attendance`]
 
 ## 関連文書
