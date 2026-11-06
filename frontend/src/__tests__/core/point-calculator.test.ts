@@ -58,18 +58,24 @@ describe('getPointFromResult', () => {
     });
   });
 
-  describe('string comparison behaviour (ported from JS, single-digit only)', () => {
-    // goalGet > goalLose uses lexicographic string comparison.
-    // Within single-digit scores this is correct: '2' > '1', '9' > '0', etc.
+  describe('numeric score comparisons', () => {
     test('9-1: single-digit win', () => {
       expect(getPointFromResult('9', '1')).toBe(3);
     });
 
-    // Lexicographic edge: '9' > '1' (first char), so '9' is detected as win vs '10'.
-    // Document the existing behaviour — this is a known limitation of string comparison.
-    test('lexicographic edge: "9" vs "10" → treated as win (string "9" > "10")', () => {
-      // String '9' > '10' because '9' > '1' at the first character.
-      expect(getPointFromResult('9', '10')).toBe(3);
+    test('compares one- and two-digit scores by their numeric values', () => {
+      expect(getPointFromResult('9', '10')).toBe(0);
+      expect(getPointFromResult('10', '9')).toBe(3);
+      expect(getPointFromResult('2', '10')).toBe(0);
+      expect(getPointFromResult('10', '2')).toBe(3);
+      expect(getPointFromResult('10', '10')).toBe(1);
+    });
+
+    test('numeric results also select the correct historical points', () => {
+      expect(getPointFromResult('10', '2', null, null, null, null, 'victory-count')).toBe(1);
+      expect(getPointFromResult('2', '10', null, null, null, null, 'victory-count')).toBe(0);
+      expect(getPointFromResult('10', '9', 1, 0, null, null, 'ex-win-2')).toBe(2);
+      expect(getPointFromResult('9', '10', 0, 1, null, null, 'ex-win-2')).toBe(0);
     });
   });
 

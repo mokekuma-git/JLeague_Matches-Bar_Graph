@@ -50,8 +50,10 @@ export function getPointFromResult(
   if (!(goalGet && goalLose)) return 0;
   const map = POINT_MAPS[pointSystem];
   const hasExtra = scoreExGet !== null && scoreExLose !== null;
-  if (goalGet > goalLose) return hasExtra ? map.ex_win : map.win;
-  if (goalGet < goalLose) return hasExtra ? map.ex_loss : map.loss;
+  const scored = Number(goalGet);
+  const conceded = Number(goalLose);
+  if (scored > conceded) return hasExtra ? map.ex_win : map.win;
+  if (scored < conceded) return hasExtra ? map.ex_loss : map.loss;
   // Tied after 90 min → PK or draw
   if (pkGet !== null && pkLose !== null) {
     return pkGet > pkLose ? map.pk_win : map.pk_loss;
