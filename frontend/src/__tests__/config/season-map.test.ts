@@ -145,6 +145,20 @@ describe('findCompetition', () => {
 // ---- resolveLeagueSeasonInfo ----------------------------------------------
 
 describe('resolveLeagueSeasonInfo', () => {
+  test('merges per-group advancement overrides and replaces the fallback team order', () => {
+    const comp: CompetitionEntry = {
+      seasons: {}, group_promotion_count: { A: 1, B: 1 },
+      tiebreak_team_order: ['A', 'B'],
+    };
+    const entry: RawSeasonEntry = {
+      team_count: 4, promotion_count: 0, relegation_count: 0,
+      group_promotion_count: { B: 0 }, tiebreak_team_order: ['B', 'A'],
+    };
+    const info = resolveLeagueSeasonInfo(sampleFamily, comp, entry);
+    expect(info.groupPromotionCount).toEqual({ A: 1, B: 0 });
+    expect(info.tiebreakTeamOrder).toEqual(['B', 'A']);
+  });
+
   test('basic J1 season without extra options', () => {
     const entry: RawSeasonEntry = { team_count: 20, promotion_count: 3, relegation_count: 3, teams: ['神戸', '広島'] };
     const info = resolveLeagueSeasonInfo(sampleFamily, sampleFamily.competitions.J1, entry);

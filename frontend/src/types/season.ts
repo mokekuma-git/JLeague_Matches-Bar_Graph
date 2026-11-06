@@ -81,6 +81,8 @@ export interface SeasonEntryOptions {
   css_files?: string[];
   team_rename_map?: Record<string, string>;
   tiebreak_order?: string[];
+  // Final fallback after current-round statistics, e.g. previous-stage standings.
+  tiebreak_team_order?: string[];
   season_start_month?: number;
   shown_groups?: string[];
   cross_group_standing?: CrossGroupStanding;
@@ -93,6 +95,8 @@ export interface SeasonEntryOptions {
   // is never split). Default 16. Single-group leagues never wrap.
   max_row_teams?: number;
   group_team_count?: number | Record<string, number>;
+  // Per-group advancement count; omitted groups use promotion_count.
+  group_promotion_count?: Record<string, number>;
   note?: string | string[];
   data_source?: DataSource;
   promotion_label?: string;
@@ -159,12 +163,14 @@ export interface LeagueSeasonInfo extends BaseSeasonInfo {
   pointSystem: PointSystem;
   teamRenameMap: Record<string, string>;
   tiebreakOrder: string[];
+  tiebreakTeamOrder?: string[];
   seasonStartMonth: number;
   shownGroups?: string[];
   crossGroupStanding?: CrossGroupStanding;
   interiorPointColumns: boolean;
   maxRowTeams: number;
   groupTeamCount?: Record<string, number>;
+  groupPromotionCount?: Record<string, number>;
   promotionLabel: string;
 }
 

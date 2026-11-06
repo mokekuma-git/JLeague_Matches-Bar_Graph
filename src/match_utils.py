@@ -147,9 +147,9 @@ class SeasonEntry:
         'teams',
         'rank_properties', 'group_display', 'url_category',
         'league_display', 'point_system', 'css_files',
-        'team_rename_map', 'tiebreak_order', 'season_start_month',
+        'team_rename_map', 'tiebreak_order', 'tiebreak_team_order', 'season_start_month',
         'shown_groups', 'cross_group_standing', 'interior_point_columns',
-        'group_team_count', 'max_row_teams',
+        'group_team_count', 'group_promotion_count', 'max_row_teams',
         'note', 'data_source', 'promotion_label',
         'aggregate_tiebreak_order',
         'bracket_round_start', 'round_start_options',
@@ -264,6 +264,24 @@ class SeasonEntry:
                 raise TypeError(
                     f"Season '{season_key}': group_team_count must be int or dict, "
                     f"got {type(group_team_count).__name__}")
+
+        group_promotion_count = raw.get('group_promotion_count')
+        if group_promotion_count is not None and (
+                not isinstance(group_promotion_count, dict)
+                or any(not isinstance(key, str) or type(value) is not int or value < 0
+                       for key, value in group_promotion_count.items())):
+            raise TypeError(
+                f"Season '{season_key}': group_promotion_count must be str -> nonnegative int")
+
+        tiebreak_team_order = raw.get('tiebreak_team_order')
+        if tiebreak_team_order is not None:
+            if (not isinstance(tiebreak_team_order, list)
+                    or any(not isinstance(name, str) for name in tiebreak_team_order)):
+                raise TypeError(
+                    f"Season '{season_key}': tiebreak_team_order must be list[str]")
+            if len(tiebreak_team_order) != len(set(tiebreak_team_order)):
+                raise ValueError(
+                    f"Season '{season_key}': tiebreak_team_order must contain unique names")
 
         self.team_count: int = resolved_counts['team_count']
         self.promotion_count: int = resolved_counts['promotion_count']

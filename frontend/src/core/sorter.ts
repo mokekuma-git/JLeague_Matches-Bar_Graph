@@ -173,12 +173,14 @@ function applyTiebreaker(
  * @param teams         - Single-group team map (team name → TeamData)
  * @param sortKey       - Field name to sort by (e.g. 'point', 'disp_avlbl_pt')
  * @param tiebreakOrder - Ordered list of tiebreaker keys (default: ['goal_diff', 'goal_get'])
+ * @param teamOrder - Final fallback for teams still tied (earlier names rank higher).
  * @returns Sorted list of team names, highest first
  */
 export function getSortedTeamList(
   teams: Record<string, TeamData>,
   sortKey: string,
   tiebreakOrder: string[] = ['goal_diff', 'goal_get'],
+  teamOrder: string[] = [],
 ): string[] {
   const { field, disp } = parseSortKey(sortKey);
   const accessor = SORT_FIELD_ACCESSORS[field];
@@ -211,6 +213,16 @@ export function getSortedTeamList(
       }
     }
     groups = newGroups;
+  }
+
+  // Prior-round or seeded order can resolve a remaining tie without adding its
+  // points to this round. Unlisted teams retain their relative input order.
+  if (teamOrder.length > 0) {
+    const priority = new Map(teamOrder.map((name, index) => [name, index]));
+    for (const group of groups) {
+      group.sort((a, b) =>
+        (priority.get(a) ?? Infinity) - (priority.get(b) ?? Infinity));
+    }
   }
 
   // 4. Flatten

@@ -146,6 +146,24 @@ class TestSeasonEntryCompetitionDefaults(unittest.TestCase):
 
         self.assertEqual(entry.options['group_team_count'], 4)
 
+    def test_group_promotion_count_requires_nonnegative_integers(self):
+        for invalid in ({'1': -1}, {'1': '1'}, {'1': True}, {1: 1}, [1]):
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(TypeError, 'group_promotion_count'):
+                    SeasonEntry('2025', {
+                        'team_count': 4, 'promotion_count': 0, 'relegation_count': 0,
+                        'group_promotion_count': invalid,
+                    })
+
+    def test_tiebreak_team_order_requires_unique_team_names(self):
+        for invalid in ('A', ['A', 1], ['A', 'A']):
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex((TypeError, ValueError), 'tiebreak_team_order'):
+                    SeasonEntry('2025', {
+                        'team_count': 4, 'promotion_count': 0, 'relegation_count': 0,
+                        'tiebreak_team_order': invalid,
+                    })
+
     def test_group_team_count_dict_requires_int_values(self):
         with self.assertRaisesRegex(TypeError, 'group_team_count dict must be str -> int'):
             SeasonEntry(

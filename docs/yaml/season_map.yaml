@@ -1597,6 +1597,15 @@ jyouth:
       # 4-team groups: the advance line is highlighted without a mid-table axis.
       interior_point_columns: false
       seasons:
+        '2025':
+          team_count: 4
+          promotion_count: 2
+          relegation_count: 0
+          shown_groups: [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P]
+          note: 64チームを4チームずつ16グループに分けた1回戦総当たり。上位2チームは2ndラウンド上位リーグ (グループ1〜8)、下位2チームは下位リーグ (グループ9〜16) に進出する。YS横浜対町田の0-0はみなし結果。
+          data_source:
+            label: 'Jリーグ公式: 2025 Jユースカップ'
+            url: https://www.jleague.jp/jyouth/2025/
         26-27:
           team_count: 4
           promotion_count: 2
@@ -1608,10 +1617,39 @@ jyouth:
           data_source:
             label: 'Jリーグ公式: 2026/27 Jユースカップ'
             url: https://www.jleague.jp/special/jyouth/2026-27/
+    JYouthCup_2nd:
+      league_display: Jユースカップ 2ndラウンド
+      promotion_label: KO進出
+      interior_point_columns: false
+      seasons:
+        '2025':
+          team_count: 4
+          promotion_count: 0
+          relegation_count: 0
+          shown_groups: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16']
+          group_promotion_count: {'1': 1, '2': 1, '3': 1, '4': 1, '5': 1, '6': 1, '7': 1, '8': 1}
+          tiebreak_order: [goal_diff, goal_get]
+          # Final fallback: 1st-round points, goal difference, goals scored.
+          # Every 2nd-round group has four distinct 1st-round stat tuples.
+          tiebreak_team_order: [仙台, 広島, 東京Ｖ, 京都, 秋田, 浦和, 柏, 千葉, 金沢, 川崎Ｆ, 磐田, 鳥栖, 湘南, 鹿児島, 横浜FM, 奈良, 鹿島, 岡山, Ｇ大阪, 長崎, 横浜FC, 福島, 山形, 熊本, 大宮, 福岡, 愛媛, 名古屋, 松本, 清水, 鳥取, 大分, 町田, 長野, Ｃ大阪, 徳島, 養和, 神戸, 水戸, FC東京, 甲府, 讃岐, ＳＯＬ, 沼津, 札幌, 岩手, 相模原, 新潟, 藤枝, 山口, 琉球, YS横浜, 岐阜, 栃木SC, 富山, 今治, 北九州, 宮崎, 八戸, 栃木Ｃ, 塩釜, 群馬, いわき, FC大阪]
+          note: 1stラウンドの成績で上位リーグ (グループ1〜8) と下位リーグ (グループ9〜16) に分け、1stラウンドで対戦していない2チームと対戦する (各チーム2試合)。勝点・得失点差・総得点は2ndラウンドのみを集計。同値の場合は1stラウンド3試合の勝点→得失点差→総得点で順位を決める。上位リーグ各組1位だけがKOへ進出する。
+          data_source:
+            label: 'Jリーグ公式: 2025 Jユースカップ'
+            url: https://www.jleague.jp/jyouth/2025/
     JYouthCup_KO:
       league_display: Jユースカップ KO
       view_type: [bracket]
       seasons:
+        '2025':
+          bracket_round_start: 準々決勝
+          bracket_blocks:
+          # https://www.jleague.jp/img/news/2025/10/32310_0.jpg
+          - label: ノックアウトラウンド
+            bracket_order: [奈良, 仙台, 広島, 川崎Ｆ, 浦和, 鳥栖, 東京Ｖ, 鹿島]
+          note: 2ndラウンド上位リーグ各組1位の8チームが参加し、終了後の抽選で組み合わせを決定。90分で同点の場合は20分の延長戦を行い、なお同点の場合はPK戦。鹿島優勝。
+          data_source:
+            label: 'Jリーグ公式: 2025 Jユースカップ'
+            url: https://www.jleague.jp/jyouth/2025/
         '2026':
           bracket_round_start: 1回戦
           bracket_blocks:

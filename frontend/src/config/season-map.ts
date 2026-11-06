@@ -287,6 +287,13 @@ export function resolveLeagueSeasonInfo(
   );
   const groupTeamCount = hasEntries(groupTeamCountRaw) ? groupTeamCountRaw : undefined;
 
+  const groupPromotionCountRaw = mergeObjects<Record<string, number>>(
+    comp.group_promotion_count,
+    entry.group_promotion_count,
+  );
+  const groupPromotionCount = hasEntries(groupPromotionCountRaw) ? groupPromotionCountRaw : undefined;
+  const tiebreakTeamOrder = pickCascade(entry.tiebreak_team_order, comp.tiebreak_team_order);
+
   const promotionLabel = pickCascade(
     entry.promotion_label,
     comp.promotion_label,
@@ -325,12 +332,14 @@ export function resolveLeagueSeasonInfo(
     cssFiles: base.cssFiles,
     teamRenameMap,
     tiebreakOrder: base.tiebreakOrder,
+    tiebreakTeamOrder,
     seasonStartMonth,
     shownGroups,
     crossGroupStanding,
     interiorPointColumns,
     maxRowTeams,
     groupTeamCount,
+    groupPromotionCount,
     dataSource: base.dataSource,
     notes,
     promotionLabel,

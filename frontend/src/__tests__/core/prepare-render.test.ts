@@ -28,6 +28,18 @@ function makeTestInput(overrides: Partial<PrepareRenderInput> = {}): PrepareRend
 }
 
 describe('prepareRenderData', () => {
+  test('uses a previous-stage order for otherwise identical teams without carrying over points', () => {
+    const match = makeMatch({ point: 3, goal_get: 1, goal_lose: 0, match_date: '2025/10/01' });
+    const input = makeTestInput({
+      groupData: { 神戸: makeTeamData([match]), Ｃ大阪: makeTeamData([match]) },
+      seasonInfo: makeLeagueSeasonInfo({ tiebreakTeamOrder: ['Ｃ大阪', '神戸'] }),
+    });
+    const result = prepareRenderData(input);
+    expect(result.sortedTeams).toEqual(['Ｃ大阪', '神戸']);
+    expect(result.groupData.Ｃ大阪.latestStats.point).toBe(3);
+    expect(result.groupData.神戸.latestStats.point).toBe(3);
+  });
+
   test('returns groupData with stats calculated', () => {
     const result = prepareRenderData(makeTestInput());
     // TeamA: 3 + 0 = 3pt, TeamB: 0 + 1 = 1pt, TeamC: 3 + 1 = 4pt

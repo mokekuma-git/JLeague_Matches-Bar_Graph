@@ -92,6 +92,21 @@ describe('getStats', () => {
 });
 
 describe('getSortedTeamList', () => {
+  test('uses the configured team order only after all statistical tiebreakers', () => {
+    const teams = {
+      神戸: makeStats({ point: 3, goal_diff: 1, goal_get: 4 }),
+      Ｃ大阪: makeStats({ point: 3, goal_diff: 1, goal_get: 4 }),
+      岐阜: makeStats({ point: 3, goal_diff: 1, goal_get: 3 }),
+      首位: makeStats({ point: 6, goal_diff: 0, goal_get: 2 }),
+    };
+    // The previous round ranks Cerezo above Kobe; it never overrides a current
+    // points/goal difference/goals decision, or changes unconfigured seasons.
+    expect(getSortedTeamList(teams, 'point', ['goal_diff', 'goal_get'], ['岐阜', 'Ｃ大阪', '神戸']))
+      .toEqual(['首位', 'Ｃ大阪', '神戸', '岐阜']);
+    expect(getSortedTeamList(teams, 'point', ['goal_diff', 'goal_get']))
+      .toEqual(['首位', '神戸', 'Ｃ大阪', '岐阜']);
+  });
+
   test('throws on unknown sort field', () => {
     const teams = { TeamA: makeStats({ point: 10 }) };
     expect(() => getSortedTeamList(teams, 'unknown_field')).toThrow('Unknown sort field');
