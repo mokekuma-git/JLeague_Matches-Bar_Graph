@@ -487,12 +487,14 @@ function renderFromCache(
     if (!singleGroupData) continue;
 
     // For multi-group: use per-group team count from config.
-    // promotionCount is kept as-is (group-stage competitions advance a fixed number per group).
+    // Advancement can differ between upper and lower groups in the same stage.
     // relegationCount is zeroed because relegation is never decided per-group.
     const groupTeamCount = seasonInfo.groupTeamCount?.[groupKey] ?? seasonInfo.teamCount;
-    const perGroupInfo: LeagueSeasonInfo = isMultiGroup
-      ? { ...seasonInfo, teamCount: groupTeamCount, relegationCount: 0 }
-      : seasonInfo;
+    const perGroupInfo: LeagueSeasonInfo = {
+      ...seasonInfo,
+      ...(isMultiGroup ? { teamCount: groupTeamCount, relegationCount: 0 } : {}),
+      promotionCount: seasonInfo.groupPromotionCount?.[groupKey] ?? seasonInfo.promotionCount,
+    };
 
     const { groupData, sortedTeams } = prepareRenderData({
       groupData: singleGroupData, seasonInfo: perGroupInfo, targetDate, sortKey, matchSortKey,

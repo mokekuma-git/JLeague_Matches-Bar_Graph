@@ -81,6 +81,7 @@ Season entry object の count / team 系フィールドは、次の規則で解�
 - `league_display`
 - `point_system`
 - `tiebreak_order`
+- `tiebreak_team_order`: 集計値によるタイブレークをすべて適用しても同順位の場合に使うチーム順。前ラウンドの成績など、現在のラウンドへ加算しない固定の優先順を指定できる。Competition + Entry の下位指定が配列全体を置き換える。未指定チーム同士は元の順序を維持する
 - `aggregate_tiebreak_order`
 - `season_start_month`
 - `shown_groups`
@@ -98,6 +99,7 @@ Season entry object の count / team 系フィールドは、次の規則で解�
 ### 4.3 オブジェクト
 
 - `group_team_count`: Competition + Entry をマージ (Entry 優先)。入力は `dict` に加えて scalar shorthand も許容し、`shown_groups` で dict に展開してから解決する
+- `group_promotion_count`: Competition + Entry をマージ (Entry 優先)。`dict[str, int]` でグループごとの進出人数を上書きする。省略したグループは `promotion_count` を使用し、`0` は進出なしを表す。例: Jユース2025の2ndラウンドは上位8組だけ1位がKO進出する
 - `team_rename_map`: Competition + Entry をマージ (Entry 優先)
 
 注: 現行実装では `team_rename_map` に Group レベルを適用しない。

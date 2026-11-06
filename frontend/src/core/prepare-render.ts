@@ -53,7 +53,9 @@ export function prepareRenderData(input: PrepareRenderInput): PrepareRenderResul
     calculateTeamStats(teamData, targetDate, matchSortKey, seasonInfo.pointSystem);
   }
 
-  const sortedTeams = getSortedTeamList(groupData, sortKey, seasonInfo.tiebreakOrder);
+  const sortedTeams = getSortedTeamList(
+    groupData, sortKey, seasonInfo.tiebreakOrder, seasonInfo.tiebreakTeamOrder,
+  );
 
   return { groupData, sortedTeams };
 }
