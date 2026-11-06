@@ -1,9 +1,12 @@
 """Tests for scripts/call_update_csv.sh"""
 import os
+import csv
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+
+import yaml
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SCRIPT = _REPO_ROOT / 'scripts' / 'call_update_csv.sh'
@@ -22,7 +25,8 @@ _PREFIX = '--- Running: '
 
 
 def _run(*args, summary_path: Path = None, daily_done: bool = None,
-         output_path: Path = None) -> subprocess.CompletedProcess:
+         output_path: Path = None, completion_config: Path = None,
+         completion_now: str = '2026-11-06T12:00:00+00:00') -> subprocess.CompletedProcess:
     """Run the dispatcher with the readers stubbed out.
 
     Runs from the repository root so that an unquoted argument would glob into
@@ -33,8 +37,13 @@ def _run(*args, summary_path: Path = None, daily_done: bool = None,
             as a local run does.
     """
     env = {**os.environ, 'UPDATE_CSV_DRY_RUN': '1'}
-    for name in ('GITHUB_STEP_SUMMARY', 'GITHUB_OUTPUT', 'DAILY_DONE'):
+    for name in ('GITHUB_STEP_SUMMARY', 'GITHUB_OUTPUT', 'DAILY_DONE',
+                 'COMPETITION_COMPLETION_CONFIG', 'COMPETITION_COMPLETION_NOW'):
         env.pop(name, None)
+    # Freeze completion checks even as production CSVs acquire future results.
+    env['COMPETITION_COMPLETION_NOW'] = completion_now
+    if completion_config is not None:
+        env['COMPETITION_COMPLETION_CONFIG'] = str(completion_config)
     if summary_path is not None:
         env['GITHUB_STEP_SUMMARY'] = str(summary_path)
     if output_path is not None:
@@ -164,6 +173,99 @@ class TestJobSummary(unittest.TestCase):
         self.assertIn('### CSV update: Skip', written)
         self.assertIn('already done', written)
         self.assertNotIn('| Reader |', written)
+
+
+class TestCompetitionCompletion(unittest.TestCase):
+    """The automatic retirement gate controls whole reader groups."""
+
+    def _policies(self, directory: Path, *, cup_pending: bool = False) -> Path:
+        policies = {}
+        for name, final, count in [('EmperorsCup', '決勝戦', 2), ('JLeagueCup', '決勝', 3)]:
+            path = directory / f'{name}.csv'
+            rows = [{
+                'match_date': '2026/01/01', 'start_time': '14:00',
+                'home_team': f'Home{i}', 'away_team': f'Away{i}',
+                'home_goal': '1', 'away_goal': '0', 'status': '試合終了',
+                'round': final if i == count else '準決勝',
+                'match_number': str(i), 'leg': '',
+                'home_pk_score': '', 'away_pk_score': '',
+            } for i in range(1, count + 1)]
+            if name == 'JLeagueCup' and cup_pending:
+                rows[-1].update(status='ＶＳ', home_goal='', away_goal='')
+            with path.open('w', newline='') as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+                writer.writeheader()
+                writer.writerows(rows)
+            policies[name] = {'csv_path': str(path), 'expected_matches': count,
+                              'final_rounds': [final]}
+        config = directory / 'completion.yaml'
+        config.write_text(yaml.safe_dump({'competitions': policies}, allow_unicode=True))
+        return config
+
+    def test_scheduled_completed_cups_skip_fetch_and_conversion_but_keep_other_readers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._policies(Path(tmp))
+            result = _run(DAILY_CRON, completion_config=config)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        readers = '\n'.join(_readers(result.stdout))
+        self.assertNotIn('read_jfamatch.py EmperorsCup', readers)
+        self.assertNotIn('--frame 11', readers)
+        self.assertNotIn('--competition JLeagueCup', readers)
+        for reader in ('read_jleague_matches.py -f', 'read_we_league.py', '--frame 50',
+                       '--competition JYouthCup'):
+            self.assertIn(reader, readers)
+        self.assertIn('EmperorsCup', result.stdout)
+        self.assertIn('completed', result.stdout)
+
+    def test_only_the_completed_competition_is_skipped(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._policies(Path(tmp), cup_pending=True)
+            result = _run(DAILY_CRON, completion_config=config)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        readers = '\n'.join(_readers(result.stdout))
+        self.assertNotIn('read_jfamatch.py EmperorsCup', readers)
+        self.assertIn('--frame 11', readers)
+        self.assertIn('--competition JLeagueCup', readers)
+
+    def test_manual_update_refreshes_completed_cups_for_result_corrections(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config = self._policies(Path(tmp))
+            result = _run('', completion_config=config)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        readers = '\n'.join(_readers(result.stdout))
+        self.assertIn('read_jfamatch.py EmperorsCup', readers)
+        self.assertIn('--frame 11', readers)
+        self.assertIn('--competition JLeagueCup', readers)
+
+    def test_missing_local_csvs_keep_collecting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            config = self._policies(directory)
+            for path in directory.glob('*.csv'):
+                path.unlink()
+            result = _run(DAILY_CRON, completion_config=config)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        readers = '\n'.join(_readers(result.stdout))
+        self.assertIn('read_jfamatch.py EmperorsCup', readers)
+        self.assertIn('--frame 11', readers)
+
+    def test_checker_errors_are_reported_without_stopping_healthy_readers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            config = Path(tmp) / 'invalid.yaml'
+            config.write_text('competitions: [')
+            result = _run(DAILY_CRON, completion_config=config)
+        self.assertNotEqual(result.returncode, 0)
+        readers = '\n'.join(_readers(result.stdout))
+        for reader in ('read_jfamatch.py EmperorsCup', '--frame 11',
+                       '--competition JLeagueCup', '--frame 50'):
+            self.assertIn(reader, readers)
+        self.assertIn('::error::', result.stdout)
+
+    def test_manual_update_does_not_depend_on_the_completion_checker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = _run('', completion_config=Path(tmp) / 'missing.yaml')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('--frame 11', '\n'.join(_readers(result.stdout)))
 
 
 if __name__ == '__main__':

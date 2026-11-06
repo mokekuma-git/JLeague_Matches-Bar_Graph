@@ -1,0 +1,12 @@
+# A reader stops only after this entire fixture set, including the exact final
+# round, has valid finished results and actual kickoff datetimes in the past.
+# Fixture counts are independent of the subset currently published by a source.
+competitions:
+  EmperorsCup:
+    csv_path: docs/csv/2026_allmatch_result-EmperorsCup.csv
+    expected_matches: 87
+    final_rounds: [決勝戦]
+  JLeagueCup:
+    csv_path: docs/csv/26-27_allmatch_result-JLeagueCup.csv
+    expected_matches: 65
+    final_rounds: [決勝]
