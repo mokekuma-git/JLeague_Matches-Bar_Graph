@@ -400,6 +400,42 @@ describe('buildBracket — H&A aggregate', () => {
     expect(root.round).toBe('Round 1');
   });
 
+  it('preserves the round and scheduled legs before either H&A match is played', () => {
+    const rows = [
+      makeRow({
+        home_team: 'A', away_team: 'B', status: 'ＶＳ',
+        round: '準々決勝 第1戦', match_date: '2026/11/11',
+        stadium: 'A Stadium', leg: '1',
+      }),
+      makeRow({
+        home_team: 'B', away_team: 'A', status: 'ＶＳ',
+        round: '準々決勝 第2戦', match_date: '2026/11/15',
+        stadium: 'B Stadium', leg: '2',
+      }),
+    ];
+    const root = buildBracket(rows, ['A', 'B']);
+
+    // The round picker uses this label even before any score is available.
+    expect(root.round).toBe('準々決勝');
+    expect(root.legs).toEqual([
+      expect.objectContaining({
+        matchDate: '2026/11/11', stadium: 'A Stadium',
+        homeTeam: 'A', awayTeam: 'B', leg: '1',
+        homeGoal: undefined, awayGoal: undefined,
+      }),
+      expect.objectContaining({
+        matchDate: '2026/11/15', stadium: 'B Stadium',
+        homeTeam: 'B', awayTeam: 'A', leg: '2',
+        homeGoal: undefined, awayGoal: undefined,
+      }),
+    ]);
+    expect(root.homeGoal).toBeUndefined();
+    expect(root.awayGoal).toBeUndefined();
+    expect(root.status).toBe('ＶＳ');
+    expect(root.winner).toBeNull();
+    expect(root.decidedBy).toBe('pending');
+  });
+
   it('is pending when not all legs played', () => {
     const rows = [
       makeRow({
@@ -415,6 +451,9 @@ describe('buildBracket — H&A aggregate', () => {
       }),
     ];
     const root = buildBracket(rows, ['A', 'B']);
+    expect(root.homeGoal).toBe(2);
+    expect(root.awayGoal).toBe(1);
+    expect(root.legs).toHaveLength(2);
     expect(root.winner).toBeNull();
     expect(root.decidedBy).toBe('pending');
   });

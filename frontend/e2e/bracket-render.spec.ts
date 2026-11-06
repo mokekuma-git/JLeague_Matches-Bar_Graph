@@ -72,6 +72,34 @@ test.describe('Bracket rendering — connectors and layout', () => {
   });
 });
 
+test('26-27 Levain Cup shows the unplayed prime draw and keeps the 1st round accessible', async ({ page }) => {
+  await page.goto('/matches.html?competition=JLeagueCup&season=26-27');
+  await waitForBracketRender(page);
+
+  const roundSelect = page.locator('#round_start_key');
+  await expect(roundSelect).toHaveValue('準々決勝');
+  await expect(page.locator('.bracket-match')).toHaveCount(7);
+
+  // Pin the date before the prime round so this remains valid after kickoff.
+  await page.locator('#bracket_date_slider').fill('0');
+  await page.locator('#bracket_date_slider').dispatchEvent('change');
+  const entrants = page.locator('.bracket-team[data-team]:not([data-team=""])');
+  await expect(entrants).toHaveCount(8);
+  expect(await entrants.evaluateAll(elements => elements.map(element => element.getAttribute('data-team'))))
+    .toEqual(['町田', '神戸', 'Ｃ大阪', '浦和', '鹿島', '横浜FM', '柏', '川崎Ｆ']);
+
+  await roundSelect.selectOption('__multi_section__');
+  await expect(page.locator('.bracket-section')).toHaveCount(6);
+  const prime = page.locator('.bracket-section').filter({
+    has: page.locator('.bracket-section-summary', { hasText: 'プライムラウンド' }),
+  });
+  await expect(prime.locator('.bracket-match')).toHaveCount(7);
+  await expect(page.locator('.bracket-section-summary')).toContainText([
+    '1stラウンド ①', '1stラウンド ②', '1stラウンド ③', '1stラウンド ④',
+    '1stラウンド 4回戦 (シード)', 'プライムラウンド',
+  ]);
+});
+
 test.describe('Bracket rendering — responsive multi-section width', () => {
   for (const layout of ['horizontal', 'vertical']) {
     test(`${layout} sections use the available width and scroll to the last card`, async ({ page }) => {

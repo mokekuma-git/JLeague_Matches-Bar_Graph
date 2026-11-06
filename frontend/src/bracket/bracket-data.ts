@@ -140,6 +140,24 @@ function nodeFromAggregate(
     v ? parseInt(v, 10) : undefined;
 
   for (const row of matches) {
+    if (!roundName && row.round) roundName = normalizeBracketRoundLabel(row.round);
+
+    // Keep the schedule and round available before either leg has a score.
+    // Store each leg in CSV order and retain its original home/away orientation.
+    legs.push({
+      matchDate: row.match_date,
+      stadium: row.stadium,
+      homeTeam: row.home_team,
+      awayTeam: row.away_team,
+      homeGoal: parse(row.home_goal),
+      awayGoal: parse(row.away_goal),
+      homePkScore: parse(row.home_pk_score),
+      awayPkScore: parse(row.away_pk_score),
+      homeScoreEx: parse(row.home_score_ex),
+      awayScoreEx: parse(row.away_score_ex),
+      leg: row.leg,
+    });
+
     if (!row.home_goal || !row.away_goal) { allPlayed = false; continue; }
     anyPlayed = true;
     const hg = parseInt(row.home_goal, 10);
@@ -164,23 +182,6 @@ function nodeFromAggregate(
       if (isUpperHome) lowerWins += 1;
       else upperWins += 1;
     }
-
-    // Store per-leg detail in CSV original order (homeTeam/awayTeam match homeGoal/awayGoal)
-    legs.push({
-      matchDate: row.match_date,
-      stadium: row.stadium,
-      homeTeam: row.home_team,
-      awayTeam: row.away_team,
-      homeGoal: parse(row.home_goal),
-      awayGoal: parse(row.away_goal),
-      homePkScore: parse(row.home_pk_score),
-      awayPkScore: parse(row.away_pk_score),
-      homeScoreEx: parse(row.home_score_ex),
-      awayScoreEx: parse(row.away_score_ex),
-      leg: row.leg,
-    });
-
-    if (!roundName && row.round) roundName = normalizeBracketRoundLabel(row.round);
   }
 
   // Aggregate ET scores across all legs (mapped to upper/lower position)
