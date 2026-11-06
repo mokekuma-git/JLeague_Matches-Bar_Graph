@@ -15,11 +15,11 @@
   color: crimson;
   background-color: #00205b;
 }
-.ニュージーランド {
+.ニュージーランド, .ニュージー {
   color: white;
   background-color: black;
 }
-.ホンジュラス {
+.ホンジュラス, .ホンジュラ {
   color: white;
   background-color: blue;
 }
@@ -31,7 +31,7 @@
   color: black;
   background-color: red;
 }
-.アルゼンチン {
+.アルゼンチン, .アルゼン {
   color: white;
   background-color: #4e84e9;
 }
@@ -39,7 +39,7 @@
   color: white;
   background-color: red;
 }
-.オーストラリア {
+.オーストラリア, .豪州 {
   color: darkgreen;
   background-color: yellow;
 }
@@ -47,11 +47,11 @@
   color: black;
   background-color: red;
 }
-.コートジボワール {
+.コートジボワール, .コートジボ {
   color: white;
   background-color: orange;
 }
-.サウジアラビア {
+.サウジアラビア, .サウジ, .サウジアラ {
   color: white;
   background-color: darkgreen;
 }
@@ -117,7 +117,7 @@
     background: -webkit-linear-gradient(top, lightblue 15%, white 45%);
     background: linear-gradient(to bottom, lightblue 15%, white 45%);
   }
-.アメリカ {
+.アメリカ, .米国 {
     color: red;
     background-color: darkblue;
 }
@@ -228,7 +228,7 @@
   color: #003399;
   background-color: #FFD700;
 }
-.ウズベキスタン {
+.ウズベキスタン, .ウズベキスタ {
   color: white;
   background: -moz-linear-gradient(top left, #1EB53A, #1EB53A, #0099B5);
   background: -webkit-linear-gradient(top left, #1EB53A, #1EB53A, #0099B5);
@@ -240,7 +240,7 @@
   background: -webkit-linear-gradient(left, #CE1126 33%, #FCD116 33%, #FCD116 66%, #009460 66%);
   background: linear-gradient(to right, #CE1126 33%, #FCD116 33%, #FCD116 66%, #009460 66%);
 }
-.ドミニカ共和国 {
+.ドミニカ共和国, .ドミニカ共 {
   color: white;
   background: -moz-linear-gradient(top left, #002D62, #002D62, #CE1126);
   background: -webkit-linear-gradient(top left, #002D62, #002D62, #CE1126);

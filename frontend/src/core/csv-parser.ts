@@ -51,6 +51,8 @@ function makeLiveAttr(match: RawMatchRow): boolean {
  *                       The string 'null' is treated as 'DefaultGroup' (matches original JS behavior).
  * @param seasonTimezone - Season-level source IANA TZ, used as fallback when a
  *                       row has no `timezone` column value. undefined = no conversion.
+ * @param teamRenameMap - Exact team-name replacements, applied once to configured
+ *                       teams and both sides of each row without mutating the CSV data.
  * @return TeamMap object structured as { [groupName]: { [teamName]: { df: TeamMatch[] } } }
  */
 export function parseCsvResults(
@@ -60,24 +62,30 @@ export function parseCsvResults(
   defaultGroup: string | null = null,
   pointSystem: PointSystem = 'standard',
   seasonTimezone?: string,
+  teamRenameMap: Record<string, string> = {},
 ): TeamMap {
   const teamMap: TeamMap = {};
+  const renameTeam = (name: string): string =>
+    Object.prototype.hasOwnProperty.call(teamRenameMap, name) ? teamRenameMap[name] : name;
 
   if (defaultGroup === 'null') defaultGroup = 'DefaultGroup';
   const hasGroupColumn = fields.includes('group');
 
   for (const match of data) {
+    const homeTeam = renameTeam(match.home_team);
+    const awayTeam = renameTeam(match.away_team);
     const csvGroup = hasGroupColumn ? match.group : undefined;
     const group = (csvGroup && csvGroup !== '') ? csvGroup : (defaultGroup ?? 'DefaultGroup');
 
     if (!(group in teamMap)) {
       teamMap[group] = {};
-      for (const teamName of teamList) {
+      for (const rawTeamName of teamList) {
+        const teamName = renameTeam(rawTeamName);
         teamMap[group][teamName] = { df: [], latestStats: new TeamStats(), displayStats: new TeamStats() };
       }
     }
-    if (!(match.home_team in teamMap[group])) teamMap[group][match.home_team] = { df: [], latestStats: new TeamStats(), displayStats: new TeamStats() };
-    if (!(match.away_team in teamMap[group])) teamMap[group][match.away_team] = { df: [], latestStats: new TeamStats(), displayStats: new TeamStats() };
+    if (!(homeTeam in teamMap[group])) teamMap[group][homeTeam] = { df: [], latestStats: new TeamStats(), displayStats: new TeamStats() };
+    if (!(awayTeam in teamMap[group])) teamMap[group][awayTeam] = { df: [], latestStats: new TeamStats(), displayStats: new TeamStats() };
 
     let matchDateStr = match.match_date;
     const matchDate = new Date(match.match_date);
@@ -98,7 +106,7 @@ export function parseCsvResults(
 
     const homeMatch: TeamMatch = {
       is_home: true,
-      opponent: match.away_team,
+      opponent: awayTeam,
       goal_get: homeGoal,
       goal_lose: awayGoal,
       pk_get: homePk,
@@ -115,11 +123,11 @@ export function parseCsvResults(
       live,
       timezone,
     };
-    teamMap[group][match.home_team].df.push(homeMatch);
+    teamMap[group][homeTeam].df.push(homeMatch);
 
     const awayMatch: TeamMatch = {
       is_home: false,
-      opponent: match.home_team,
+      opponent: homeTeam,
       goal_get: awayGoal,
       goal_lose: homeGoal,
       pk_get: awayPk,
@@ -136,7 +144,7 @@ export function parseCsvResults(
       live,
       timezone,
     };
-    teamMap[group][match.away_team].df.push(awayMatch);
+    teamMap[group][awayTeam].df.push(awayMatch);
   }
 
   return teamMap;
