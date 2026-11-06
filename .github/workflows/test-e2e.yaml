@@ -14,15 +14,18 @@ on:
       - 'refactor/**'
     paths:
       - 'frontend/**'
+      - '.github/workflows/test-e2e.yaml'
   push:
     branches:
       - main
     paths:
       - 'frontend/**'
+      - '.github/workflows/test-e2e.yaml'
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    # Playwright 1.58 supports Ubuntu 24.04, but not the newer ubuntu-latest.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
 
     steps:
