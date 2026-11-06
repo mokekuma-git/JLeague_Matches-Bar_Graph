@@ -89,15 +89,51 @@ run_reader() {
   fi
 }
 
+# Finished cups leave scheduled updates automatically. A manual full refresh
+# still visits them so that corrected official results can be picked up.
+should_update_competition() {
+  local competition="$1"
+  local reason status
+  local args=("$competition")
+  if [ -z "$SCHEDULE" ]; then
+    return 0
+  fi
+  if [ -n "${COMPETITION_COMPLETION_CONFIG:-}" ]; then
+    args+=(--config "$COMPETITION_COMPLETION_CONFIG")
+  fi
+  if [ -n "${COMPETITION_COMPLETION_NOW:-}" ]; then
+    args+=(--now "$COMPETITION_COMPLETION_NOW")
+  fi
+  if reason=$(uv run python scripts/competition_completion.py "${args[@]}"); then
+    echo "Skipping $competition: completed ($reason)"
+    summary_row "$competition" "skipped (completed: $reason)"
+    return 1
+  else
+    status=$?
+    if [ "$status" -ne 1 ]; then
+      echo "::error::Completion check failed for $competition; continuing its readers"
+      FAILED+=("completion check: $competition")
+      summary_row "$competition completion" "**check failed**; readers will continue"
+    else
+      summary_row "$competition completion" "active: $reason"
+    fi
+  fi
+  return 0
+}
+
 # 1日の最初の実行 ⇒ 全CSVのアップデートを実行 (Skip は上で終了済み)
 run_reader uv run python src/read_jleague_matches.py -f
 run_reader uv run python src/read_jfamatch.py PrincePremierE PrincePremierW PrinceKanto
 run_reader uv run python src/read_we_league.py
-run_reader uv run python src/read_jfamatch.py EmperorsCup
+if should_update_competition EmperorsCup; then
+  run_reader uv run python src/read_jfamatch.py EmperorsCup
+fi
 # Levain Cup: fetch the cup-only SFMS01 rows (csv/2026_frame11.csv), then build
 # the published CSV from them.  Update -y when the next season starts.
-run_reader uv run python scripts/legacy/read_older2020_matches.py -y 2026 --frame 11
-run_reader uv run python scripts/make_old_matches_csv.py --competition JLeagueCup -y 2026
+if should_update_competition JLeagueCup; then
+  run_reader uv run python scripts/legacy/read_older2020_matches.py -y 2026 --frame 11
+  run_reader uv run python scripts/make_old_matches_csv.py --competition JLeagueCup -y 2026
+fi
 # J Youth Cup 26-27: same route, frame 50 (csv/2026_frame50.csv).  Runs until
 # the knockout final in June 2027.
 run_reader uv run python scripts/legacy/read_older2020_matches.py -y 2026 --frame 50
@@ -105,12 +141,12 @@ run_reader uv run python scripts/make_old_matches_csv.py --competition JYouthCup
 # run_reader uv run python src/read_aclgl_matches.py
 
 if [ ${#FAILED[@]} -gt 0 ]; then
-  echo "::error::${#FAILED[@]} reader(s) failed:"
+  echo "::error::${#FAILED[@]} CSV update task(s) failed:"
   for reader in "${FAILED[@]}"; do
     echo "  - $reader"
   done
   summary ""
-  summary "${#FAILED[@]} reader(s) failed."
+  summary "${#FAILED[@]} CSV update task(s) failed."
   exit 1
 fi
 
