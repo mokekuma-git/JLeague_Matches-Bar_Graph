@@ -15,7 +15,7 @@ import pandas as pd
 
 from fetch_match_detail import FILTER_ALIASES
 from match_utils import MatchUtils, _recalculate_match_index_in_section
-from read_older2020_matches import parse_years
+from read_older2020_matches import intermediate_csv_path, parse_years
 from set_config import Config
 
 logger = logging.getLogger(__name__)
@@ -283,8 +283,7 @@ def make_jleaguecup_csv(year: int) -> None:
     docs/csv/{season}_allmatch_result-JLeagueCup.csv (season label e.g. '26-27' for a
     cross-year シーズン like '2026/27', else str(year)).
     """
-    frame_filename = config.get_path('match_data.csv_path_format_with_frame',
-                                     year=year, frame=_FRAME_ID_JLEAGUECUP)
+    frame_filename = intermediate_csv_path(config, year, _FRAME_ID_JLEAGUECUP)
     filename = frame_filename if frame_filename.exists() else config.get_path(
         'match_data.csv_path_format', year=year)
     if not filename.exists():
@@ -465,15 +464,14 @@ def _parse_jyouthcup_section_no(section: object) -> int:
 def make_jyouthcup_csv(year: int) -> None:
     """Convert Ｊユースカップ match results into one final CSV per stage.
 
-    Reads the frame-filtered intermediate CSV (csv/{year}_frame50.csv; year is the
-    site's competition_years code, e.g. 1026 for the 2026 edition), drops Showcase
-    Match exhibitions, and writes docs/csv/{season}_allmatch_result-JYouthCup_{1st,2nd,KO}.csv
+    Reads the frame-filtered intermediate CSV (csv/{season}_frame50.csv), resolving
+    the season name from the site's competition_years code via frame_seasons.
+    Drops Showcase Match exhibitions and writes docs/csv/{season}_allmatch_result-JYouthCup_{1st,2nd,KO}.csv
     for each stage present. Group stages carry `group` and per-(group, section)
     match_index_in_section; the knockout stage carries `round` and negative
     section_no by tournament round order.
     """
-    filename = config.get_path('match_data.csv_path_format_with_frame',
-                               year=year, frame=_FRAME_ID_JYOUTHCUP)
+    filename = intermediate_csv_path(config, year, _FRAME_ID_JYOUTHCUP)
     if not filename.exists():
         logger.warning("JYouthCup source not found: %s", filename)
         return

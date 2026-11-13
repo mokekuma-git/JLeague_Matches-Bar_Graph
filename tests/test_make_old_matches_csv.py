@@ -186,7 +186,7 @@ def redirected_jleaguecup_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     """Point make_jleaguecup_csv's I/O paths at tmp_path so tests never touch csv/ or docs/csv/."""
     monkeypatch.setattr(config.match_data, 'csv_path_format', str(tmp_path / '{year}.csv'))
     monkeypatch.setattr(config.match_data, 'csv_path_format_with_frame',
-                         str(tmp_path / '{year}_frame{frame}.csv'))
+                         str(tmp_path / '{season}_frame{frame}.csv'))
     monkeypatch.setattr(config.match_data, 'league_csv_path',
                          str(tmp_path / '{season}_allmatch_result-{competition}.csv'))
     monkeypatch.setattr(config.paths, 'timestamp_file', str(tmp_path / 'csv_timestamp.csv'))
@@ -353,8 +353,8 @@ _KO = 'Ｊユースカップ ノックアウトラウンド'
 _SHOWCASE = 'Ｊユースカップ Ｓｈｏｗｃａｓｅ Ｍａｔｃｈ'
 
 
-def _write_frame50(base: Path, year: int, rows: list[dict]) -> None:
-    pd.DataFrame(rows).to_csv(base / f'{year}_frame50.csv')
+def _write_frame50(base: Path, season: int | str, rows: list[dict]) -> None:
+    pd.DataFrame(rows).to_csv(base / f'{season}_frame50.csv')
 
 
 def test_make_jyouthcup_csv_knockout(redirected_jleaguecup_paths: Path) -> None:
@@ -376,7 +376,7 @@ def test_make_jyouthcup_csv_knockout(redirected_jleaguecup_paths: Path) -> None:
                               match_date='26/07/10(金)', home='丙', away='丁',
                               score='0-0', match_card_id=33680),
     ]
-    _write_frame50(redirected_jleaguecup_paths, 1026, rows)
+    _write_frame50(redirected_jleaguecup_paths, 2026, rows)
 
     make_jyouthcup_csv(1026)
 
@@ -433,7 +433,7 @@ def test_make_jyouthcup_csv_group_stage(redirected_jleaguecup_paths: Path) -> No
                               match_date='26/10/03(土)', home='Ｇ', away='Ｈ',
                               score='vs', match_card_id=''),
     ]
-    _write_frame50(redirected_jleaguecup_paths, 2026, rows)
+    _write_frame50(redirected_jleaguecup_paths, '26_27', rows)
 
     make_jyouthcup_csv(2026)
 
@@ -472,7 +472,7 @@ def test_make_jyouthcup_csv_writes_one_file_per_stage(
                               match_date='27/03/20(土)', home='Ｃ', away='Ｄ',
                               score='vs', match_card_id=''),
     ]
-    _write_frame50(redirected_jleaguecup_paths, 2026, rows)
+    _write_frame50(redirected_jleaguecup_paths, '26_27', rows)
 
     make_jyouthcup_csv(2026)
 
@@ -491,7 +491,7 @@ def test_make_jyouthcup_csv_unifies_team_spellings(redirected_jleaguecup_paths: 
                               match_date='未定', home='大宮', away='栃木SC',
                               score='vs', match_card_id=''),
     ]
-    _write_frame50(redirected_jleaguecup_paths, 2026, rows)
+    _write_frame50(redirected_jleaguecup_paths, '26_27', rows)
 
     make_jyouthcup_csv(2026)
 
@@ -510,7 +510,7 @@ def test_make_jyouthcup_csv_stamps_only_changed_files(
                               section='第１節', match_date='26/09/20(日)', home='Ａ', away='Ｂ',
                               score='vs', match_card_id=''),
     ]
-    _write_frame50(redirected_jleaguecup_paths, 2026, rows)
+    _write_frame50(redirected_jleaguecup_paths, '26_27', rows)
     outfile = redirected_jleaguecup_paths / '26-27_allmatch_result-JYouthCup_1st.csv'
     stamp_file = redirected_jleaguecup_paths / 'csv_timestamp.csv'
 
@@ -523,7 +523,7 @@ def test_make_jyouthcup_csv_stamps_only_changed_files(
     assert stamp_file.read_text(encoding='utf-8') == first_stamp
 
     rows[0]['スコア'] = '2-1'
-    _write_frame50(redirected_jleaguecup_paths, 2026, rows)
+    _write_frame50(redirected_jleaguecup_paths, '26_27', rows)
     make_jyouthcup_csv(2026)
     assert stamp_file.read_text(encoding='utf-8') != first_stamp
     assert pd.read_csv(outfile, index_col=0)['status'].tolist() == ['試合終了']
@@ -536,7 +536,7 @@ def test_make_jyouthcup_csv_unknown_competition_raises(
                               section='第１節', match_date='26/09/20(日)', home='Ａ', away='Ｂ',
                               score='1-0', match_card_id=1),
     ]
-    _write_frame50(redirected_jleaguecup_paths, 2026, rows)
+    _write_frame50(redirected_jleaguecup_paths, '26_27', rows)
 
     with pytest.raises(ValueError, match='謎の大会'):
         make_jyouthcup_csv(2026)

@@ -136,7 +136,7 @@ if should_update_competition JLeagueCup; then
   run_reader uv run python scripts/legacy/read_older2020_matches.py -y 2026 --frame 11
   run_reader uv run python scripts/make_old_matches_csv.py --competition JLeagueCup -y 2026
 fi
-# J Youth Cup 26-27: same route, frame 50 (csv/2026_frame50.csv).  Runs until
+# J Youth Cup 26-27: search code 2026, frame 50 (csv/26_27_frame50.csv). Runs until
 # the knockout final in June 2027.
 run_reader uv run python scripts/legacy/read_older2020_matches.py -y 2026 --frame 50
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
