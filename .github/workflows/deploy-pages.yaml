@@ -18,6 +18,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -46,5 +47,47 @@ jobs:
           path: docs/
 
       - name: Deploy to GitHub Pages
-        id: deployment
+        id: attempt_1
+        continue-on-error: true
         uses: actions/deploy-pages@v4
+
+      # The action retries status polling, but not artifact lookup or deployment
+      # creation. page_url is set once creation succeeds: retry only before then,
+      # so a failed, already-started deployment is never started a second time.
+      - name: Wait before the second deployment attempt
+        if: steps.attempt_1.outcome == 'failure' && steps.attempt_1.outputs.page_url == ''
+        run: |
+          echo "Retrying Pages deployment in 10 seconds"
+          sleep 10
+
+      - name: Retry GitHub Pages deployment
+        id: attempt_2
+        if: steps.attempt_1.outcome == 'failure' && steps.attempt_1.outputs.page_url == ''
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+
+      - name: Wait before the final deployment attempt
+        if: steps.attempt_2.outcome == 'failure' && steps.attempt_2.outputs.page_url == ''
+        run: |
+          echo "Retrying Pages deployment in 30 seconds"
+          sleep 30
+
+      - name: Final GitHub Pages deployment attempt
+        id: attempt_3
+        if: steps.attempt_2.outcome == 'failure' && steps.attempt_2.outputs.page_url == ''
+        uses: actions/deploy-pages@v4
+
+      # continue-on-error on the first two attempts must not hide a final failure,
+      # including one after creation (which intentionally skips the retries).
+      - name: Check deployment result
+        id: deployment
+        if: ${{ !cancelled() && (steps.attempt_1.outcome == 'success' || steps.attempt_1.outcome == 'failure') }}
+        env:
+          DEPLOYED: ${{ steps.attempt_1.outcome == 'success' || steps.attempt_2.outcome == 'success' || steps.attempt_3.outcome == 'success' }}
+          PAGE_URL: ${{ steps.attempt_1.outputs.page_url || steps.attempt_2.outputs.page_url || steps.attempt_3.outputs.page_url }}
+        run: |
+          if [ "$DEPLOYED" != true ]; then
+            echo "::error::GitHub Pages deployment did not succeed"
+            exit 1
+          fi
+          echo "page_url=$PAGE_URL" >> "$GITHUB_OUTPUT"
