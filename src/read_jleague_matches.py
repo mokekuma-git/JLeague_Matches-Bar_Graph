@@ -200,7 +200,7 @@ def read_match_from_web(soup: BeautifulSoup, competition: str) -> pd.DataFrame:
         pd.DataFrame: DataFrame holding CSV_COLUMNS (unnumbered).
     """
     restore_streamed_slots(soup)
-    sections = read_sections_from_web(soup)
+    sections = read_sections_from_web(soup, competition)
     category = competition.lower()
 
     rows = []
@@ -248,22 +248,25 @@ def read_match_from_web(soup: BeautifulSoup, competition: str) -> pd.DataFrame:
     return matches.reindex(columns=CSV_COLUMNS)
 
 
-def read_sections_from_web(soup: BeautifulSoup) -> dict[str, int]:
-    """Map match dates to section numbers using the page's group headers.
+def read_sections_from_web(soup: BeautifulSoup, competition: str) -> dict[str, int]:
+    """Map match dates to section numbers within the requested competition.
 
-    Headers read like '2026/9/12 (土) 第7節'.  Only league headers carry a
-    section number, so cup and continental fixtures drop out here.  Headers are
-    not interleaved with the cards they label, which is why the date is used as
-    the join key rather than document order.
+    Headers read like '2026/9/12 (土) 第7節'.  Other competitions, including
+    U-21, can carry section numbers too.  The logo modifier identifies which
+    competition a header belongs to.  Headers and cards can arrive in separate
+    streamed fragments, so their date remains the join key, not document order.
 
     Args:
         soup (BeautifulSoup): BeautifulSoup object containing the web data
+        competition (str): Competition key (e.g. 'J1', 'J2', 'J3')
 
     Returns:
         dict[str, int]: {'2026/09/12': 7, ...}
     """
     sections = {}
     for header in soup.find_all(class_='m-section-header'):
+        if header.find(class_=f'a-tournament-logo--{competition.lower()}') is None:
+            continue
         text = header.get_text(' ', strip=True)
         _date = HEADER_DATE_RE.search(text)
         _section = SECTION_RE.search(text)
