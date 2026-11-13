@@ -15,6 +15,7 @@ on:
       - 'setup.cfg'
       - 'pytest.ini'
       - '.github/workflows/update-match-csv.yaml'
+      - '.github/workflows/deploy-pages.yaml'
       - '.github/workflows/test-python.yaml'
   push:
     branches:
@@ -28,6 +29,7 @@ on:
       - 'setup.cfg'
       - 'pytest.ini'
       - '.github/workflows/update-match-csv.yaml'
+      - '.github/workflows/deploy-pages.yaml'
       - '.github/workflows/test-python.yaml'
 
 jobs:

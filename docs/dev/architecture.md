@@ -1,6 +1,6 @@
 # アーキテクチャ概要
 
-**最終更新**: 2026-09-04
+**最終更新**: 2026-11-13
 **目的**: リポジトリのディレクトリ構造とデプロイモデルのリファレンス。
 
 ---
@@ -60,6 +60,7 @@ JLeague_Matches-Bar_Graph/
 ## デプロイモデル
 
 - **GitHub Pages は GitHub Actions 経由** (`deploy-pages.yaml`): main push 時に TS ビルド → `docs/` を artifact としてアップロード → デプロイ
+- **公開開始前の失敗は最大3回まで試行する**: 成果物未検出や公開開始APIの一時失敗に対し、10秒・30秒の待機を挟んで再試行する。公開開始済みの試行は再起動せず、公式アクションの状況監視に任せる。成功した試行のURLを公開先として出力し、最後まで成功しなければジョブを失敗にする
 - **ワークフローが push する場合はデプロイを明示起動する**: GITHUB_TOKEN による push は
   再帰防止のため他のワークフローを起動しない。CSV を自動更新する `update-match-csv.yaml` /
   `live-update-csv.yaml` は `gh workflow run deploy-pages.yaml` を自分で呼ぶ必要があり、
