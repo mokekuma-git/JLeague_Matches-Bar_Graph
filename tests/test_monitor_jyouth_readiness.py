@@ -207,7 +207,11 @@ def test_main_notifies_with_a_fresh_source_and_records_its_summary(tmp_path, mon
     monkeypatch.setattr(monitor.sys, 'argv', [
         'monitor', '--notify', '--repository', 'owner/repo', '--season-map', str(season_map),
     ])
-    monkeypatch.setattr(monitor, 'read_rows', lambda _: [row()])
+    def read_rows(path):
+        assert path == monitor.ROOT / 'csv/26_27_frame50.csv'
+        return [row()]
+
+    monkeypatch.setattr(monitor, 'read_rows', read_rows)
     monkeypatch.setattr(monitor, 'github_api', api)
     monkeypatch.setenv('JYOUTH_FETCH_SUCCEEDED', 'true')
     monkeypatch.setenv('GITHUB_STEP_SUMMARY', str(summary))
@@ -224,7 +228,7 @@ def test_source_schema_errors_fail_before_any_notification(tmp_path):
 
 
 def test_checked_in_frame50_currently_has_no_next_stage():
-    rows = monitor.read_rows(monitor.ROOT / 'csv/2026_frame50.csv')
+    rows = monitor.read_rows(monitor.ROOT / 'csv/26_27_frame50.csv')
     # Time-independent: add only the snapshot's 1st round to this assertion so a
     # future daily update publishing next-stage rows does not break CI.
     first = [row for row in rows if '1stラウンド' in monitor.normalize(row['大会'])]

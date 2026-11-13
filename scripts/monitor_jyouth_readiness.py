@@ -206,7 +206,7 @@ def notify(results: list[Readiness], repository: str, issue: int, run_url: str =
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--csv', type=Path, default=ROOT / 'csv/2026_frame50.csv')
+    parser.add_argument('--csv', type=Path, default=ROOT / 'csv/26_27_frame50.csv')
     parser.add_argument('--season-map', type=Path, default=ROOT / 'docs/yaml/season_map.yaml')
     parser.add_argument('--notify', action='store_true', help='Post one Issue comment per ready stage')
     parser.add_argument('--repository', default=os.environ.get('GITHUB_REPOSITORY', ''))

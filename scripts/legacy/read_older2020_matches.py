@@ -39,13 +39,23 @@ def read_href(td_tag: bs4.element.Tag) -> str | None:
     return None
 
 
+def intermediate_csv_path(settings: Config, year: int, frame: int | None = None) -> Path:
+    """Resolve a season-based filename independently of the SFMS01 search code."""
+    if frame is None:
+        return settings.get_path('match_data.csv_path_format', year=year)
+    seasons = settings.match_data.frame_seasons.get(str(frame), {})
+    season = seasons.get(str(year), str(year))
+    return settings.get_path('match_data.csv_path_format_with_frame',
+                             season=season, frame=frame)
+
+
 def store_year_data(year: int, frame: int | None = None) -> None:
     """Get J-League match data for the given year and store it in a CSV file.
 
     The result row is linked by a tag, and if the match ID is read, it is added to the column.
 
     Args:
-        year: Year to get match data for
+        year: SFMS01 competition_years search code, which may differ from the season
         frame: Optional competition_frame_ids filter (e.g. 11 = Levain Cup). Narrowing
             by frame keeps a season's query under the site's 1,500-row search limit and
             writes to a separate intermediate file so the full-year file is never clobbered.
@@ -75,10 +85,7 @@ def store_year_data(year: int, frame: int | None = None) -> None:
         id_list.append(read_href(_td))
     df['match_card_id'] = id_list
 
-    if frame is not None:
-        csv_file = config.get_path('match_data.csv_path_format_with_frame', year=year, frame=frame)
-    else:
-        csv_file = config.get_path('match_data.csv_path_format', year=year)
+    csv_file = intermediate_csv_path(config, year, frame)
     df.to_csv(csv_file, lineterminator='\n', encoding=config.match_data.encoding)
     logger.info("Stored: %s", csv_file)
 
@@ -100,7 +107,8 @@ def parse_arguments() -> argparse.Namespace:
 
     # Make target year optional
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('-y', '--year', type=int, help='Specify a single year (e.g., 2000)')
+    group.add_argument('-y', '--year', type=int,
+                       help='SFMS01 competition_years code (e.g. 1026 for the 2026 J Youth Cup)')
     group.add_argument('-r', '--range', nargs=2, type=int, metavar=('START', 'END'),
                        help='Specify a range of years (e.g., 1993 2020)')
     group.add_argument('-l', '--list', nargs='+', type=int, metavar='YEAR',
@@ -108,7 +116,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('--frame', type=int, default=None,
                         help='Optional competition_frame_ids filter (e.g. 11 = Levain Cup). '
                              'Narrows the search to stay under the site\'s 1,500-row limit; '
-                             'writes to csv/{year}_frame{frame}.csv instead of csv/{year}.csv.')
+                             'writes to csv/{season}_frame{frame}.csv using the configured '
+                             'season name instead of csv/{year}.csv.')
 
     args = parser.parse_args()
     return args

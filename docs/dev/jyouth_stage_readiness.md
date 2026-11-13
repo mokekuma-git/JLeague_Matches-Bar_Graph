@@ -1,6 +1,6 @@
 # Jユースカップ26-27の着手可能通知
 
-日次更新で取得する `csv/2026_frame50.csv` を使い、2ndラウンドとノックアウトラウンドの表示追加に着手できるかを検査する。条件を満たした段階で [Issue #352](https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph/issues/352) へ一度だけコメントする。表示実装や自動コーディングの開始、Issueのcloseは行わない。
+日次更新で取得する `csv/26_27_frame50.csv` を使い、2ndラウンドとノックアウトラウンドの表示追加に着手できるかを検査する。条件を満たした段階で [Issue #352](https://github.com/mokekuma-git/JLeague_Matches-Bar_Graph/issues/352) へ一度だけコメントする。表示実装や自動コーディングの開始、Issueのcloseは行わない。
 
 ## 対象と着手条件
 
@@ -42,7 +42,7 @@ Issueが閉じている場合は投稿も再オープンも行わない。2ndの
 
 ```bash
 uv run python scripts/monitor_jyouth_readiness.py
-uv run python scripts/monitor_jyouth_readiness.py --csv /path/to/2026_frame50.csv
+uv run python scripts/monitor_jyouth_readiness.py --csv /path/to/26_27_frame50.csv
 ```
 
 `--notify` は日次更新で使用する。試験ではGitHub APIをfakeに置き換え、実Issueへ試験コメントを投稿しない。
