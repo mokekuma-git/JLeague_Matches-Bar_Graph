@@ -294,11 +294,44 @@ class TestReadSectionsFromWeb(HtmlLoadingTestCase):
 
     def test_only_league_headers_are_kept(self):
         """Cup rounds ('1回戦') carry no section number and must not appear."""
-        sections = read_sections_from_web(self._load_html_file('jleague_match_mixed.html'))
+        sections = read_sections_from_web(self._load_html_file('jleague_match_mixed.html'), 'J1')
 
         self.assertEqual(sections['2026/09/02'], 5)
         self.assertEqual(sections['2026/09/12'], 7)
         self.assertTrue(all(isinstance(v, int) for v in sections.values()))
+
+    def _header(self, category, section):
+        return (f'<div class="m-section-header">2026/11/1 (日) '
+                f'<span class="a-tournament-logo--{category}"></span>第{section}節</div>')
+
+    def _page(self, *headers, category='j1'):
+        card = (f'<a href="/match/{category}/2026/110101/">'
+                '<div class="m-schedule__match">'
+                '<span class="m-schedule__team-name" data-media="sp">甲</span>'
+                '<span class="m-schedule__team-name" data-media="sp">乙</span>'
+                '</div></a>')
+        return BeautifulSoup(''.join(headers) + card, 'lxml')
+
+    def test_an_earlier_unrelated_header_cannot_supply_the_section(self):
+        for category in ('j1', 'j2', 'j3'):
+            with self.subTest(competition=category):
+                page = self._page(self._header('u-21', 1), self._header(category, 13),
+                                  category=category)
+                matches = read_match_from_web(page, category.upper())
+                self.assertEqual(matches['section_no'].tolist(), [13])
+
+    def test_a_later_unrelated_header_does_not_emit_a_conflict_warning(self):
+        page = self._page(self._header('j1', 13), self._header('u-21', 1))
+        with self.assertNoLogs('read_jleague_matches', level='WARNING'):
+            matches = read_match_from_web(page, 'J1')
+        self.assertEqual(matches['section_no'].tolist(), [13])
+
+    def test_conflicting_sections_within_the_same_competition_still_warn(self):
+        page = self._page(self._header('j1', 13), self._header('j1', 14))
+        with self.assertLogs('read_jleague_matches', level='WARNING') as logs:
+            matches = read_match_from_web(page, 'J1')
+        self.assertEqual(matches['section_no'].tolist(), [13])
+        self.assertIn('carries sections 13 and 14', '\n'.join(logs.output))
 
 
 class TestDeriveStatus(unittest.TestCase):
@@ -536,7 +569,8 @@ class TestTeamLessCardIsDropped(unittest.TestCase):
     and from there it was re-read and kept on every later fetch.
     """
 
-    HEADER = ('<div class="m-section-header">2026/8/7 (金) 第1節</div>')
+    HEADER = ('<div class="m-section-header">2026/8/7 (金) '
+              '<span class="a-tournament-logo--j1"></span>第1節</div>')
 
     def _card(self, match_id, teams):
         names = ''.join(
